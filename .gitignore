@@ -10,3 +10,4 @@
 /Makefile
 /stand
 /cross
+/sys/kern/ksyms.c
