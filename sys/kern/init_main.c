@@ -27,7 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-void
+#include <sys/cdefs.h>
+
+__dead void
 main(void)
 {
     for (;;);
