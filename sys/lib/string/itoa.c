@@ -73,7 +73,7 @@ static char *
 itoa_convert_base16(uint64_t n, char *buffer)
 {
     const char *ascii_nums = "0123456789ABCDEF";
-    bool pad;
+    bool pad = false;
     uint8_t nibble;
     uint8_t i = 0, j, tmp;
 
@@ -85,7 +85,7 @@ itoa_convert_base16(uint64_t n, char *buffer)
 
     /* If one digit, pad out to 2 later */
     if (n < 0x10) {
-        pad = 1;
+        pad = true;
     }
 
     while (n > 0) {
