@@ -27,14 +27,58 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <vt/vt.h>
+#ifndef _VT_H_
+#define _VT_H_
 
-__dead void
-main(void)
-{
-    static struct vt_descriptor vt;
-    vt_init(&vt, NULL, NULL);
+#include <sys/types.h>
+#include <sync/spinlock.h>
 
-    for (;;);
-}
+typedef enum {
+    CURSOR_NONE,
+    CURSOR_BLOCK,
+} vt_cursor_type_t;
+
+/*
+ * Describes the attributes
+ * of the virtual terminal.
+ */
+
+struct vt_attr {
+    uint32_t bg;
+    uint32_t text_bg;
+    uint32_t text_fg;
+    uint32_t cursor_bg;
+    vt_cursor_type_t cursor_type;
+};
+
+/*
+ * Describes the state of
+ * the virtual terminal.
+ */
+
+struct vt_state {
+    uint32_t cursor_x;
+    uint32_t cursor_y;
+};
+
+/*
+ * Describes the virtual
+ * terminal itself.
+ */
+
+struct vt_descriptor {
+    uint32_t *fb_base;
+    struct vt_attr attr;
+    struct vt_state state;
+    struct spinlock lock;
+};
+
+void vt_write(struct vt_descriptor *vt, const char *str, size_t len);
+void vt_reset(struct vt_descriptor *vt);
+
+int vt_init(struct vt_descriptor *vt, const struct vt_attr *attr,
+            uint32_t *fb_base);
+
+int vt_chattr(struct vt_descriptor *vt, const struct vt_attr *attr);
+
+#endif

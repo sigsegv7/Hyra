@@ -27,14 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <vt/vt.h>
+#ifndef _VT_FONT_H_
+#define _VT_FONT_H_
 
-__dead void
-main(void)
-{
-    static struct vt_descriptor vt;
-    vt_init(&vt, NULL, NULL);
+#include <sys/types.h>
 
-    for (;;);
-}
+#define FONT_WIDTH 9
+#define FONT_HEIGHT 16
+
+extern const uint16_t DEFAULT_FONT_DATA[];
+
+#endif
