@@ -31,7 +31,7 @@
 #define _SYS_TYPES_H_
 
 #if !defined(NULL)
-#define NULL (void *)0
+# define NULL (void *)0
 #endif
 
 typedef signed char     int8_t;
@@ -77,5 +77,6 @@ typedef uint32_t        ino_t;
 typedef int32_t         dev_t;
 typedef int32_t         mode_t;
 typedef int32_t         nlink_t;
+typedef _Bool           bool;
 
 #endif   /* _SYS_TYPES_H_ */
