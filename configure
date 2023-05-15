@@ -1727,7 +1727,7 @@ CFLAGS_X86_64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protector -fno
 	-Werror=incompatible-pointer-types -Werror=int-to-pointer-cast \\
 	-Werror=return-type -Wunused -mabi=sysv -mno-80387 -mno-mmx -mno-3dnow \\
 	-mno-sse -mno-sse2 -mno-red-zone -mcmodel=kernel -pedantic \\
-	-I sys/include/ -I sys/include/libkern/ -D_KERNEL -Wno-pointer-sign -MMD"
+	-I sys/include/ -I sys/include/lib/ -D_KERNEL -Wno-pointer-sign -MMD"
 
 KERNEL_CFLAGS=$CFLAGS_X86_64
 
