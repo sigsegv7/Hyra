@@ -1,0 +1,101 @@
+#
+# Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of VegaOS nor the names of its contributors may be used
+#    to endorse or promote products derived from this software without
+#    specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+# Do a verbose build only when requested
+ifeq ($(V),)
+.SILENT:
+endif
+
+override PROMPT := printf '[\e[1;94m%s\e[m] \e[1;32m%s\e[m\n'
+override VEGA_VERSION = @PACKAGE_VERSION@
+
+override KERNEL_CFLAGS = @KERNEL_CFLAGS@ -DVEGA_VERSION="\"$(VEGA_VERSION)\""
+override KERNEL_LDFLAGS = -nostdlib -zmax-page-size=0x1000 -static -Tconf/link-x86_64.ld
+
+override KERNEL_CFILES = $(shell find sys/ -name "*.c")
+override KERNEL_ASMFILES = $(shell find sys/ -name "*.s")
+override QEMU_FLAGS = --enable-kvm -serial stdio \
+		     -M q35 -m 2G -smp 4 -cpu host
+
+override KERNEL_OBJECTS = $(KERNEL_CFILES:.c=.o)
+override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.s=.s.o)
+override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
+
+override CC = $(shell pwd)/cross/bin/x86_64-elf-gcc
+override LD = $(shell pwd)/cross/bin/x86_64-elf-gcc
+override AS = $(shell pwd)/cross/bin/x86_64-elf-gcc
+
+.PHONY: all
+all: stand base/boot/vega-kernel
+	rm -rf iso_root
+
+.PHONY: run
+run:
+	qemu-system-x86_64 $(QEMU_FLAGS) -cdrom Vega.iso
+
+.PHONY: clean
+clean:
+	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
+
+base/boot/vega-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
+	mkdir -p base/boot/
+	$(PROMPT) " LD " $(shell pwd)/base/boot/vega-kernel
+	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/vega-kernel	
+	# === Generating symbols ===
+	tools/ksyms sys/kern/ksyms.c base/boot/vega-kernel
+	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) sys/kern/ksyms.c -o sys/kern/ksyms.o
+	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/vega-kernel
+	cd base/; tar cvf ../initramfs.tar * &> /dev/null
+	$(PROMPT) " INITRAMFS " $(shell pwd)/initramfs.tar
+	# === Building ISO ===
+	mkdir -p iso_root/boot/
+	cp conf/limine.cfg stand/limine/limine.sys \
+		stand/limine/limine-cd.bin stand/limine/limine-cd-efi.bin iso_root/
+	cp base/boot/vega-kernel iso_root/boot/
+	mv initramfs.tar iso_root/boot/
+	xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4\
+		-boot-info-table --efi-boot limine-cd-efi.bin -efi-boot-part \
+		--efi-boot-image --protective-msdos-label iso_root -o Vega.iso &> /dev/null
+	stand/limine/limine-deploy Vega.iso &> /dev/null
+	$(PROMPT) " ISO " $(shell pwd)/Vega.iso
+
+stand:
+	mkdir -p stand/
+	git clone https://github.com/limine-bootloader/limine.git --branch=v4.x-branch-binary --depth=1 stand/limine
+	make -C stand/limine
+
+-include $(KERNEL_HEADER_DEPS)
+%.o: %.c
+	$(PROMPT) " CC " $<
+	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) $< -o $@
+
+%.s.o: %.s
+	$(PROMPT) " AS " $<
+	$(CC) -c $< -o $@
+

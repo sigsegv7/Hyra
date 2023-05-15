@@ -1,0 +1,11 @@
+*.iso
+*.o
+*.so
+*.ko
+*.log
+*.status
+/base
+/autom4te.cache
+/Makefile
+/stand
+/cross
