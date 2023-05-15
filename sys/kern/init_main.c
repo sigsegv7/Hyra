@@ -50,7 +50,5 @@ __dead void
 main(void)
 {
     early_init();
-    panic("oh no!\n");
-
     for (;;);
 }
