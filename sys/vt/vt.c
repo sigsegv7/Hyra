@@ -52,7 +52,7 @@
 static inline uint16_t
 vt_get_char_col(char c, uint32_t cx, uint32_t cy)
 {
-    return (DEFAULT_FONT_DATA[(uint16_t)c * FONT_WIDTH + cx] >> cy) & 1;
+    return (DEFAULT_FONT_DATA[(uint64_t)c * FONT_WIDTH + cx] >> cy) & 1;
 }
 
 /*
