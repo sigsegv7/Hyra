@@ -279,6 +279,8 @@ vt_chattr(struct vt_descriptor *vt, const struct vt_attr *attr)
 void
 vt_reset(struct vt_descriptor *vt)
 {
+    spinlock_acquire(&vt->lock);
+
     vt->state.cursor_x = 0;
     vt->state.cursor_y = 0;
 
@@ -289,6 +291,7 @@ vt_reset(struct vt_descriptor *vt)
     }
 
     vt_show_cursor(vt);
+    spinlock_release(&vt->lock);
 }
 
 /*
