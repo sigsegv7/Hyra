@@ -50,6 +50,7 @@ itoa_convert_base10(int64_t n, char *buffer)
 
     while (n > 0) {
         buffer[i++] = (n % 10) + '0';
+        n /= 10;
     }
 
     if (is_negative) {
