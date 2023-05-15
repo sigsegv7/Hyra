@@ -65,8 +65,9 @@ clean:
 
 base/boot/vega-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
 	mkdir -p base/boot/
-	$(PROMPT) " LD " $(shell pwd)/base/boot/vega-kernel
-	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/vega-kernel	
+	 $(PROMPT) " LD " $(shell pwd)/base/boot/vega-kernel
+	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) sys/kern/ksyms.c -o sys/kern/ksyms.o
+	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/vega-kernel
 	# === Generating symbols ===
 	tools/ksyms sys/kern/ksyms.c base/boot/vega-kernel
 	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) sys/kern/ksyms.c -o sys/kern/ksyms.o
