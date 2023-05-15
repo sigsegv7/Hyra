@@ -37,5 +37,6 @@ void *memset(void *s, uint8_t c, size_t n);
 uint32_t *memset32(uint32_t *s, uint32_t c, size_t n);
 void *memcpy(uint8_t *dst, const uint8_t *src, size_t len);
 void *memcpy32(uint32_t *dst, const uint32_t *src, size_t len);
+char *itoa(int64_t n, char *buf, int radix);
 
 #endif
