@@ -79,7 +79,7 @@ itoa_convert_base16(uint64_t n, char *buffer)
 
     if (n == 0) {
         /* Zero, no need to parse */
-        memcpy(buffer, "0x00\n", 5);
+        memcpy(buffer, "0x00\0", 5);
         return buffer;
     }
 
