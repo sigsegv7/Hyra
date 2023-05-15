@@ -31,7 +31,7 @@
 #include <vt/vt.h>
 #include <string.h>
 
-static struct vt_descriptor *vt = NULL;
+extern struct vt_descriptor g_vt;
 
 static void
 printk_handle_format(char fmt_code, va_list ap)
@@ -45,36 +45,35 @@ printk_handle_format(char fmt_code, va_list ap)
     switch (fmt_code) {
     case 'c':
         c = va_arg(ap, int);
-        vt_write(vt, &c, 1);
+        vt_write(&g_vt, &c, 1);
         break;
     case 's':
         s = va_arg(ap, const char *);
-        vt_write(vt, s, strlen(s));
+        vt_write(&g_vt, s, strlen(s));
         break;
     case 'p':
     case 'x':
         tmp = va_arg(ap, int64_t);
         s = itoa(tmp, buf, 16) + 2;     /* + 2 to skip "0x" prefix */
-        vt_write(vt, s, strlen(s));
+        vt_write(&g_vt, s, strlen(s));
         break;
+    case 'd':
+        tmp = va_arg(ap, int64_t);
+        s = itoa(tmp, buf, 10);     /* + 2 to skip "0x" prefix */
+        vt_write(&g_vt, s, strlen(s));
     }
 }
 
 void
 vprintk(const char *fmt, va_list ap)
 {
-    if (vt == NULL) {
-        return;
-    }
-
     for (const char *s = fmt; *s; ++s) {
         if (*s == '%') {
             ++s;
-            printk_handle_format(*s, ap);
-            continue;
+            printk_handle_format(*s++, ap);
         }
 
-        vt_write(vt, s, 1);
+        vt_write(&g_vt, s, 1);
     }
 }
 
@@ -87,14 +86,4 @@ printk(const char *fmt, ...)
     vprintk(fmt, ap);
 
     va_end(ap);
-}
-
-void
-kmsg_init(struct vt_descriptor *vt_desc)
-{
-    if (vt != NULL) {
-        return;
-    }
-
-    vt = vt_desc;
 }
