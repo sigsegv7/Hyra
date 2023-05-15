@@ -31,13 +31,16 @@
 #include <sys/printk.h>
 #include <vt/vt.h>
 
+#include <sys/panic.h>
+
 #define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the VegaOS team."
 
+struct vt_descriptor g_vt;
+
 static void
-early_init(struct vt_descriptor *vt)
+early_init(void)
 {
-    vt_init(vt, NULL, NULL);
-    kmsg_init(vt);
+    vt_init(&g_vt, NULL, NULL);
 
     printk("-- Vega --\n");
     printk("%s\n", COPYRIGHT);
@@ -46,8 +49,8 @@ early_init(struct vt_descriptor *vt)
 __dead void
 main(void)
 {
-    static struct vt_descriptor vt;
-    early_init(&vt);
+    early_init();
+    panic("oh no!\n");
 
     for (;;);
 }

@@ -99,6 +99,10 @@ vt_draw_cursor(struct vt_descriptor *vt, uint32_t color)
 static void
 vt_show_cursor(struct vt_descriptor *vt)
 {
+    if (vt->attr.cursor_type == CURSOR_NONE) {
+        return;
+    }
+
     vt_draw_cursor(vt, vt->attr.cursor_bg);
 }
 
@@ -279,8 +283,8 @@ vt_chattr(struct vt_descriptor *vt, const struct vt_attr *attr)
 void
 vt_reset(struct vt_descriptor *vt)
 {
-    spinlock_acquire(&vt->lock);
-
+    spinlock_acquire(&vt->lock); 
+    vt_hide_cursor(vt);
     vt->state.cursor_x = 0;
     vt->state.cursor_y = 0;
 

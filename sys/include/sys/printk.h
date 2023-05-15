@@ -38,7 +38,6 @@
 
 void vprintk(const char *fmt, va_list ap);
 void printk(const char *fmt, ...);
-void kmsg_init(struct vt_descriptor *vt_desc);
 
 #endif      /* defined(_KERNEL) */
 
