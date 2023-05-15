@@ -28,13 +28,26 @@
  */
 
 #include <sys/cdefs.h>
+#include <sys/printk.h>
 #include <vt/vt.h>
+
+#define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the VegaOS team."
+
+static void
+early_init(struct vt_descriptor *vt)
+{
+    vt_init(vt, NULL, NULL);
+    kmsg_init(vt);
+
+    printk("-- Vega --\n");
+    printk("%s\n", COPYRIGHT);
+}
 
 __dead void
 main(void)
 {
     static struct vt_descriptor vt;
-    vt_init(&vt, NULL, NULL);
+    early_init(&vt);
 
     for (;;);
 }
