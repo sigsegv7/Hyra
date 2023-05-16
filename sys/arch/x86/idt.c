@@ -27,49 +27,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/printk.h>
-#include <vt/vt.h>
+#include <arch/x86/idt.h>
 
 #if defined(__x86_64__)
-# include <arch/x86/cpu.h>
-# include <arch/x86/idt.h>
-#endif
 
-#define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the VegaOS team."
+static struct idt_gate idt[256];
+static struct idtr idtr = {
+    .limit  = sizeof(struct idt_gate) * 256 - 1,
+    .offset = (uintptr_t)&idt[0]
+};
 
-struct vt_descriptor g_vt;
-
-static void
-early_cpu_init(void)
+void
+idt_load(void)
 {
-#if defined(__x86_64__)
-    if (amd64_enable_sse() != 0) {
-        printk("CPU does not support SSE!\n");
+    __asm("lidt %0"
+          :
+          : "m" (idtr)
+    );
+}
+
+void idt_set_desc(uint8_t vec, uint8_t type, uintptr_t isr,
+                  uint8_t ist)
+{
+    if (vec >= 256) {
+        return;
     }
 
-    if (amd64_enable_avx() != 0) {
-        printk("CPU does not support AVX!\n");
-    }
+    struct idt_gate *desc = &idt[vec];
+    desc->offset_lo  = (uint16_t)isr;
+    desc->offset_mid = (uint16_t)(isr >> 16);
+    desc->offset_hi  = (uint32_t)(isr >> 32);
+    desc->cs = 0x8;
+    desc->type = type;
+    desc->dpl = 3;
+    desc->p = 1;
+    desc->zero = 0;
+    desc->zero1 = 0;
+    desc->reserved = 0;
+    desc->ist = ist;
+}
 
-    idt_load();
 #endif
-}
-
-static void
-early_init(void)
-{
-    vt_init(&g_vt, NULL, NULL);
-
-    printk("-- Vega v%s --\n", VEGA_VERSION);
-    printk("%s\n", COPYRIGHT);
-
-    early_cpu_init();
-}
-
-__dead void
-main(void)
-{
-    early_init();
-    for (;;);
-}

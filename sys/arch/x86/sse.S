@@ -27,49 +27,99 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/printk.h>
-#include <vt/vt.h>
-
 #if defined(__x86_64__)
-# include <arch/x86/cpu.h>
-# include <arch/x86/idt.h>
+
+.globl amd64_enable_sse
+.globl amd64_enable_avx
+.globl amd64_fast_memcpy
+
+.section .text
+/* Same thing as amd64_enable_avx but for SSE */
+amd64_enable_sse:
+    mov $0x1, %eax
+    cpuid
+
+    mov $0x1, %ebx
+    shl $25, %ebx
+
+    test %ebx, %edx
+    jz 1f
+
+    /* Check if SSE is supported */
+
+    /* Prepare ~(1 << 2) in RAX */
+    mov $1, %rax
+    shl $2, %rax
+    not %rax
+    
+    /* Clear CR0.EM */
+    mov %cr0, %rdx
+    and %rax, %rdx
+    mov %rdx, %cr0
+
+    /* Prepare (1 << 2) in RAX */
+    mov $1, %rax
+    shl $1, %rax
+
+    /* Set CR0.MP */
+    mov %cr0, %rdx
+    or %rax, %rdx
+    mov %rdx, %cr0
+
+    /* Prepare value with bit 9 and 10 set in RAX */
+    mov $3, %rax
+    shl $9, %rax
+
+    /* Set CR4.OSFXSR and CR4 OSXMMEXCPT (bit 9, 10) */
+    mov %cr4, %rdx
+    or %rax, %rax
+    mov %rdx, %cr4
+
+    /* SSE should be enabled */
+    xor %rax, %rax
+    retq
+1:
+    mov $1, %rax
+    retq
+
+/*
+ * Attempts to enable AVX
+ * if supported.
+ * 
+ * Returns nonzero value
+ * on failure.
+ */
+
+amd64_enable_avx:
+    mov $0x1, %eax
+    cpuid
+    
+    /* Check if the CPUID result says AVX is supported */
+    mov $1, %ebx
+    shl $28, %ebx
+    test %ebx, %ecx
+    jz 1f
+
+    /* Enable OSXSAVE */
+    mov $1, %rbx
+    shl $18, %rbx
+
+    /* Bit 18 of CR4 enables OSXSAVE */
+    mov %cr4, %rdx
+    or %rbx, %rdx
+    mov %rdx, %cr4
+    
+    /* Enable AVX */
+    xor %rcx, %rcx
+    xgetbv
+    or $7, %eax
+    xsetbv
+
+    xor %rax, %rax
+    retq
+1:
+    /* AVX is not supported */
+    mov $1, %rax
+    retq
+
 #endif
-
-#define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the VegaOS team."
-
-struct vt_descriptor g_vt;
-
-static void
-early_cpu_init(void)
-{
-#if defined(__x86_64__)
-    if (amd64_enable_sse() != 0) {
-        printk("CPU does not support SSE!\n");
-    }
-
-    if (amd64_enable_avx() != 0) {
-        printk("CPU does not support AVX!\n");
-    }
-
-    idt_load();
-#endif
-}
-
-static void
-early_init(void)
-{
-    vt_init(&g_vt, NULL, NULL);
-
-    printk("-- Vega v%s --\n", VEGA_VERSION);
-    printk("%s\n", COPYRIGHT);
-
-    early_cpu_init();
-}
-
-__dead void
-main(void)
-{
-    early_init();
-    for (;;);
-}

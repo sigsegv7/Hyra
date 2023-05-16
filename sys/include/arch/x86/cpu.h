@@ -27,49 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/printk.h>
-#include <vt/vt.h>
+#ifndef _X86_AMD64_H_
+#define _X86_AMD64_H_
 
-#if defined(__x86_64__)
-# include <arch/x86/cpu.h>
-# include <arch/x86/idt.h>
+int amd64_enable_avx(void);
+int amd64_enable_sse(void);
+
 #endif
-
-#define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the VegaOS team."
-
-struct vt_descriptor g_vt;
-
-static void
-early_cpu_init(void)
-{
-#if defined(__x86_64__)
-    if (amd64_enable_sse() != 0) {
-        printk("CPU does not support SSE!\n");
-    }
-
-    if (amd64_enable_avx() != 0) {
-        printk("CPU does not support AVX!\n");
-    }
-
-    idt_load();
-#endif
-}
-
-static void
-early_init(void)
-{
-    vt_init(&g_vt, NULL, NULL);
-
-    printk("-- Vega v%s --\n", VEGA_VERSION);
-    printk("%s\n", COPYRIGHT);
-
-    early_cpu_init();
-}
-
-__dead void
-main(void)
-{
-    early_init();
-    for (;;);
-}

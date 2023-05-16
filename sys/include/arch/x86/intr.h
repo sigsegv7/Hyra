@@ -27,49 +27,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/printk.h>
-#include <vt/vt.h>
+#ifndef _ARCH_X86_INTR_H_
+#define _ARCH_X86_INTR_H_
 
-#if defined(__x86_64__)
-# include <arch/x86/cpu.h>
-# include <arch/x86/idt.h>
+/*
+ * Fixed interrupt vectors.
+ */
+
+enum {
+    VECTOR_DIVIDE_ERROR         = 0x00,
+    VECTOR_DEBUG_EXCEPTION      = 0x01,
+    VECTOR_BREAKPOINT           = 0x03,
+    VECTOR_OVERFLOW             = 0x04,
+    VECTOR_BR                   = 0x05,
+    VECTOR_INVALID_OPCODE       = 0x06,
+    VECTOR_NM                   = 0x07,
+    VECTOR_DOUBLE_FAULT         = 0x08,
+    VECTOR_INVALID_TSS          = 0x0A,
+    VECTOR_SS                   = 0x0C,
+    VECTOR_GENERAL_PROTECTION   = 0x0D,
+    VECTOR_PAGE_FAULT           = 0x0E
+}:
+
 #endif
-
-#define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the VegaOS team."
-
-struct vt_descriptor g_vt;
-
-static void
-early_cpu_init(void)
-{
-#if defined(__x86_64__)
-    if (amd64_enable_sse() != 0) {
-        printk("CPU does not support SSE!\n");
-    }
-
-    if (amd64_enable_avx() != 0) {
-        printk("CPU does not support AVX!\n");
-    }
-
-    idt_load();
-#endif
-}
-
-static void
-early_init(void)
-{
-    vt_init(&g_vt, NULL, NULL);
-
-    printk("-- Vega v%s --\n", VEGA_VERSION);
-    printk("%s\n", COPYRIGHT);
-
-    early_cpu_init();
-}
-
-__dead void
-main(void)
-{
-    early_init();
-    for (;;);
-}

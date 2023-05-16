@@ -27,49 +27,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _ARCH_X86_IDT_H_
+#define _ARCH_X86_IDT_H_
+
+#include <sys/types.h>
 #include <sys/cdefs.h>
-#include <sys/printk.h>
-#include <vt/vt.h>
 
-#if defined(__x86_64__)
-# include <arch/x86/cpu.h>
-# include <arch/x86/idt.h>
+struct idt_gate {
+    uint16_t offset_lo;
+    uint16_t cs;
+    uint8_t ist   : 3;
+    uint8_t zero  : 5;
+    uint8_t type  : 4;
+    uint8_t zero1 : 1;
+    uint8_t dpl   : 2;
+    uint8_t p     : 1;
+    uint16_t offset_mid;
+    uint32_t offset_hi;
+    uint32_t reserved;
+};
+
+struct __packed idtr {
+    uint16_t limit;
+    uintptr_t offset;
+};
+
+void idt_load(void);
+
+void idt_set_desc(uint8_t vec, uint8_t type, uintptr_t isr,
+                  uint8_t ist);
+
 #endif
-
-#define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the VegaOS team."
-
-struct vt_descriptor g_vt;
-
-static void
-early_cpu_init(void)
-{
-#if defined(__x86_64__)
-    if (amd64_enable_sse() != 0) {
-        printk("CPU does not support SSE!\n");
-    }
-
-    if (amd64_enable_avx() != 0) {
-        printk("CPU does not support AVX!\n");
-    }
-
-    idt_load();
-#endif
-}
-
-static void
-early_init(void)
-{
-    vt_init(&g_vt, NULL, NULL);
-
-    printk("-- Vega v%s --\n", VEGA_VERSION);
-    printk("%s\n", COPYRIGHT);
-
-    early_cpu_init();
-}
-
-__dead void
-main(void)
-{
-    early_init();
-    for (;;);
-}
