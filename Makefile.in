@@ -39,12 +39,12 @@ override KERNEL_CFLAGS = @KERNEL_CFLAGS@ -DVEGA_VERSION="\"$(VEGA_VERSION)\""
 override KERNEL_LDFLAGS = -nostdlib -zmax-page-size=0x1000 -static -Tconf/link-x86_64.ld
 
 override KERNEL_CFILES = $(shell find sys/ -name "*.c")
-override KERNEL_ASMFILES = $(shell find sys/ -name "*.s")
+override KERNEL_ASMFILES = $(shell find sys/ -name "*.S")
 override QEMU_FLAGS = --enable-kvm -serial stdio \
 		     -M q35 -m 2G -smp 4 -cpu host
 
 override KERNEL_OBJECTS = $(KERNEL_CFILES:.c=.o)
-override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.s=.s.o)
+override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
 override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
 
 override CC = $(shell pwd)/cross/bin/x86_64-elf-gcc
@@ -96,7 +96,7 @@ stand:
 	$(PROMPT) " CC " $<
 	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) $< -o $@
 
-%.s.o: %.s
+%.S.o: %.S
 	$(PROMPT) " AS " $<
-	$(CC) -c $< -o $@
+	$(CC) -c $< -o $@ -D__x86_64__ -I sys/include/
 
