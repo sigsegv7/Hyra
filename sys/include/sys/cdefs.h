@@ -35,6 +35,7 @@
 #define __packed   __attribute__((__packed__))
 #define __unused   __attribute__((__unused__))
 #define __used     __attribute__((__used__))
+#define __isr      __attribute__((__interrupt__))
 #define __atomic   _Atomic
 
 #if defined(_KERNEL)
