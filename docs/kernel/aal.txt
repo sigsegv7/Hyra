@@ -1,0 +1,8 @@
+AAL stands for: Architecture Abstraction Layer
+
+It abstracts certain things like disabling
+IRQs and halting the processor (among other things) in 
+its own function which can make things much easier.
+
+AAL is in sys/include/sys/aal.h
+          sys/kern/subr_aal.c
