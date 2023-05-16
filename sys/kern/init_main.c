@@ -34,6 +34,8 @@
 #if defined(__x86_64__)
 # include <arch/x86/cpu.h>
 # include <arch/x86/idt.h>
+# include <arch/x86/exceptions.h>
+# include <arch/x86/gdt.h>
 #elif defined(__aarch64__)
 # include <arch/aarch64/exception.h>
 # include <arch/aarch64/board.h>
@@ -56,10 +58,11 @@ early_cpu_init(void)
     }
 
     idt_load();
+    gdt_load(&g_early_gdtr);
 #elif defined(__aarch64__)
-    exceptions_init();
     printk("Detected board: %s\n", aarch64_get_board());
 #endif
+    exceptions_init();
 }
 
 static void
