@@ -47,6 +47,6 @@ enum {
     VECTOR_SS                   = 0x0C,
     VECTOR_GENERAL_PROTECTION   = 0x0D,
     VECTOR_PAGE_FAULT           = 0x0E
-}:
+};
 
 #endif
