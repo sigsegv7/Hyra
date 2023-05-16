@@ -33,6 +33,10 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 
+#define IDT_TRAP_GATE_FLAGS 0x8F
+#define IDT_INT_GATE_FLAGS  0x8E
+#define IDT_INT_GATE_USER   0xEE
+
 struct idt_gate {
     uint16_t offset_lo;
     uint16_t cs;
