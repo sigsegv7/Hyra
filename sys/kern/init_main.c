@@ -34,6 +34,9 @@
 #if defined(__x86_64__)
 # include <arch/x86/cpu.h>
 # include <arch/x86/idt.h>
+#elif defined(__aarch64__)
+# include <arch/aarch64/exception.h>
+# include <arch/aarch64/board.h>
 #endif
 
 #define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the VegaOS team."
@@ -53,6 +56,9 @@ early_cpu_init(void)
     }
 
     idt_load();
+#elif defined(__aarch64__)
+    exceptions_init();
+    printk("Detected board: %s\n", aarch64_get_board());
 #endif
 }
 
