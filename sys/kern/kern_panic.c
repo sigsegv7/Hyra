@@ -31,6 +31,9 @@
 #include <sys/types.h>
 #include <sys/printk.h>
 #include <vt/vt.h>
+#if defined(__aarch64__)
+# include <arch/aarch64/board.h>
+#endif
 
 #define MAX_FRAMES 15
 
@@ -131,6 +134,8 @@ panic_log_diag(const char *fmt, va_list ap)
 
     panic_stacktrace();
     printk("%s\n\n", ASCII_SEP);
+#elif defined(__aarch64__)
+    printk("Board: %s\n", aarch64_get_board());
 #endif
     
     printk("Vega revision: v%s\n\n", VEGA_VERSION);
