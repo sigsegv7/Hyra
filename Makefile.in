@@ -34,22 +34,36 @@ endif
 
 override PROMPT := printf '[\e[1;94m%s\e[m] \e[1;32m%s\e[m\n'
 override VEGA_VERSION = @PACKAGE_VERSION@
+override ARCH = @ARCH@
 
 override KERNEL_CFLAGS = @KERNEL_CFLAGS@ -DVEGA_VERSION="\"$(VEGA_VERSION)\""
-override KERNEL_LDFLAGS = -nostdlib -zmax-page-size=0x1000 -static -Tconf/link-x86_64.ld
+override KERNEL_LDFLAGS = -nostdlib -zmax-page-size=0x1000 -static -Tconf/link-$(ARCH).ld
 
 override KERNEL_CFILES = $(shell find sys/ -name "*.c")
 override KERNEL_ASMFILES = $(shell find sys/ -name "*.S")
+
+ifeq ($(ARCH), aarch64)
+override QEMU_FLAGS = -cpu cortex-a72        \
+            -m 2G                 			 \
+            -bios OVMF.fd  					 \
+            -monitor stdio          		 \
+            -device ramfb           		 \
+            -device qemu-xhci       		 \
+            -device usb-kbd -M virt          \
+			-cdrom Vega.iso
+else
 override QEMU_FLAGS = --enable-kvm -serial stdio \
-		     -M q35 -m 2G -smp 4 -cpu host
+		     -M q35 -m 2G -smp 4 -cpu host       \
+			 -cdrom Vega.iso
+endif
 
 override KERNEL_OBJECTS = $(KERNEL_CFILES:.c=.o)
 override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
 override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
 
-override CC = $(shell pwd)/cross/bin/x86_64-elf-gcc
-override LD = $(shell pwd)/cross/bin/x86_64-elf-gcc
-override AS = $(shell pwd)/cross/bin/x86_64-elf-gcc
+override CC = $(shell pwd)/cross/bin/$(ARCH)-elf-gcc
+override LD = $(shell pwd)/cross/bin/$(ARCH)-elf-gcc
+override AS = $(shell pwd)/cross/bin/$(ARCH)-elf-gcc
 
 .PHONY: all
 all: stand base/boot/vega-kernel
@@ -57,13 +71,17 @@ all: stand base/boot/vega-kernel
 
 .PHONY: run
 run:
-	qemu-system-x86_64 $(QEMU_FLAGS) -cdrom Vega.iso
+	qemu-system-$(ARCH) $(QEMU_FLAGS)
 
 .PHONY: clean
 clean:
 	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
 
-base/boot/vega-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
+.PHONY: cross
+cross:
+	bash tools/cross.sh $(ARCH)
+
+base/boot/vega-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) OVMF.fd
 	mkdir -p base/boot/
 	 $(PROMPT) " LD " $(shell pwd)/base/boot/vega-kernel
 	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) sys/kern/ksyms.c -o sys/kern/ksyms.o
@@ -98,5 +116,7 @@ stand:
 
 %.S.o: %.S
 	$(PROMPT) " AS " $<
-	$(CC) -c $< -o $@ -D__x86_64__ -I sys/include/
+	$(CC) -c $< -o $@ -D__$(ARCH)__ -I sys/include/
 
+OVMF.fd:
+	wget https://mkall.org/\~ian/files/aarch64/OVMF.fd

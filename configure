@@ -617,6 +617,7 @@ PACKAGE_URL=''
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+ARCH
 KERNEL_CFLAGS
 target_alias
 host_alias
@@ -660,6 +661,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+enable_aarch64
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1278,6 +1280,13 @@ if test -n "$ac_init_help"; then
    esac
   cat <<\_ACEOF
 
+Optional Features:
+  --disable-option-checking  ignore unrecognized --enable/--with options
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-aarch64        Enable compilation for AARCH64 architecture
+                          [default=no]]
+
 Report bugs to <ian@mkall.org>.
 _ACEOF
 ac_status=$?
@@ -1729,7 +1738,36 @@ CFLAGS_X86_64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protector -fno
 	-mno-sse -mno-sse2 -mno-red-zone -mcmodel=kernel -pedantic \\
 	-I sys/include/ -I sys/include/lib/ -D_KERNEL -Wno-pointer-sign -MMD"
 
-KERNEL_CFLAGS=$CFLAGS_X86_64
+
+CFLAGS_AARCH64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protector -fno-pic \\
+	-Werror=implicit -Werror=implicit-function-declaration \\
+	-Werror=implicit-int -Werror=int-conversion \\
+        -Werror=missing-prototypes                   \\
+	-Werror=incompatible-pointer-types -Werror=int-to-pointer-cast \\
+	-Werror=return-type -Wunused -pedantic \\
+	-I sys/include/ -I sys/include/lib/ -D_KERNEL -Wno-pointer-sign -MMD"
+
+ARCH="x86_64"
+
+# Check whether --enable-aarch64 was given.
+if test ${enable_aarch64+y}
+then :
+  enableval=$enable_aarch64; aarch64_enabled="$enableval"
+else $as_nop
+  aarch64_enabled=""
+fi
+
+
+if test "x$aarch64_enabled" = "xyes"; then
+    ARCH="aarch64"
+    KERNEL_CFLAGS=$CFLAGS_AARCH64
+
+else
+    KERNEL_CFLAGS=$CFLAGS_X86_64
+
+fi
+
+ARCH=$ARCH
 
 
 ac_config_files="$ac_config_files Makefile"

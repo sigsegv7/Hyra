@@ -5,6 +5,7 @@
 *.d
 *.log
 *.status
+/OVMF.fd
 /base
 /autom4te.cache
 /Makefile

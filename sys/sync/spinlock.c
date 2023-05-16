@@ -29,6 +29,7 @@
 
 #include <sync/spinlock.h>
 
+#if defined(__x86_64__)
 void
 spinlock_acquire(struct spinlock *lock)
 {
@@ -40,3 +41,33 @@ spinlock_release(struct spinlock *lock)
 {
     __atomic_clear(&lock->lock, __ATOMIC_RELEASE);
 }
+#elif defined(__aarch64__)
+# include <sys/cdefs.h>
+
+void
+spinlock_acquire(struct spinlock *lock)
+{
+    uint32_t tmp;
+    __asmv("    sevl\n"
+           "1:  wfe\n"
+           "2:  ldaxr %w0, [%1]\n"
+           "    cbnz %w0, 1b\n"
+           "    stxr %w0, %w2, [%1]\n"
+           "    cbnz %w0, 2b\n"
+           : "=&r" (tmp)
+           : "r" (&lock->lock), "r" (1)
+           : "memory"
+    );
+}
+
+void
+spinlock_release(struct spinlock *lock)
+{
+    __asm("    stlr %w1, [%0]\n"
+          :
+          : "r" (&lock->lock), "r" (0)
+          : "memory"
+    );
+}
+
+#endif
