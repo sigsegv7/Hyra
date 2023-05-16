@@ -30,6 +30,7 @@
 #include <sys/panic.h>
 #include <sys/types.h>
 #include <sys/printk.h>
+#include <sys/aal.h>
 #include <vt/vt.h>
 #if defined(__aarch64__)
 # include <arch/aarch64/board.h>
@@ -161,5 +162,8 @@ panic(const char *fmt, ...)
     va_start(ap, fmt);
     panic_log_diag(fmt, ap);
 
-    for (;;);
+    /* Disable the processor */
+    __irq_disable();
+    halt();
+    __builtin_unreachable();
 }
