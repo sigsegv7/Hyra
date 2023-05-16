@@ -61,6 +61,27 @@ aarch64_get_board(void)
     }
 }
 
+static inline uintptr_t
+aarch64_get_mmio_base(void)
+{
+    uint32_t midr_el1;
+    __asm("mrs %x0, midr_el1"
+          : "=r" (midr_el1)
+    );
+
+    switch ((midr_el1 >> 4) & 0xFFF) {
+    case 0xB76:
+        return 0x20000000;
+    case 0xC07:
+    case 0xCD03:
+        return 0x3F000000;
+    case 0xD08:
+        return 0xFE000000;
+    default:
+        return 0x20000000;
+    }
+}
+
 #endif
 
 #endif
