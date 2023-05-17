@@ -31,6 +31,7 @@
 #include <sys/printk.h>
 #include <sys/module.h>
 #include <mm/phys_mgr.h>
+#include <mm/vm.h>
 #include <vt/vt.h>
 
 #if defined(__x86_64__)
@@ -79,6 +80,7 @@ early_init(void)
 
     early_cpu_init();
     phys_mgr_init();
+    __try_call_weak(vm_init);
 }
 
 __dead void
