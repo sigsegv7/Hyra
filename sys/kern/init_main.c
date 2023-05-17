@@ -29,6 +29,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/printk.h>
+#include <sys/module.h>
 #include <vt/vt.h>
 
 #if defined(__x86_64__)
@@ -41,6 +42,8 @@
 # include <arch/aarch64/board.h>
 #endif
 
+MODULE("init_main");
+
 #define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the VegaOS team."
 
 struct vt_descriptor g_vt;
@@ -50,17 +53,17 @@ early_cpu_init(void)
 {
 #if defined(__x86_64__)
     if (amd64_enable_sse() != 0) {
-        printk("CPU does not support SSE!\n");
+        kwarn("CPU does not support SSE!\n");
     }
 
     if (amd64_enable_avx() != 0) {
-        printk("CPU does not support AVX!\n");
+        kwarn("CPU does not support AVX!\n");
     }
 
     idt_load();
     gdt_load(&g_early_gdtr);
 #elif defined(__aarch64__)
-    printk("Detected board: %s\n", aarch64_get_board());
+    kinfo("Detected board: %s\n", aarch64_get_board());
 #endif
     exceptions_init();
 }
