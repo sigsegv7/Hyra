@@ -69,7 +69,7 @@ vt_draw_cursor(struct vt_descriptor *vt, uint32_t color)
     size_t cursor_y = vt->state.cursor_y;
  
     if (vt->state.cursor_x != 0) {
-        cursor_x = vt->state.cursor_x + (FONT_WIDTH*2);
+        cursor_x = vt->state.cursor_x + FONT_WIDTH;
     }
 
     switch (vt->attr.cursor_type) {
