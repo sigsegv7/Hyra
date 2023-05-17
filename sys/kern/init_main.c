@@ -30,6 +30,7 @@
 #include <sys/cdefs.h>
 #include <sys/printk.h>
 #include <sys/module.h>
+#include <mm/phys_mgr.h>
 #include <vt/vt.h>
 
 #if defined(__x86_64__)
@@ -77,6 +78,7 @@ early_init(void)
     printk("%s\n", COPYRIGHT);
 
     early_cpu_init();
+    phys_mgr_init();
 }
 
 __dead void
