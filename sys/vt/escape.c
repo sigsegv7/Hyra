@@ -49,7 +49,8 @@ vt_try_set_color(struct vt_escape_state *state)
         [VT_COLOR_RED]      = 0xFF0000,
         [VT_COLOR_GREEN]    = 0x50C878,
         [VT_COLOR_YELLOW]   = 0xFFD700,
-        [VT_COLOR_BLUE]     = 0x6495ED
+        [VT_COLOR_BLUE]     = 0x6495ED,
+        [VT_COLOR_MAGENTA]  = 0xFF00FF
     };
 
     struct vt_attr vtattr = vt_getattr(state->vt);
@@ -129,6 +130,8 @@ vt_escape_process(struct vt_escape_state *state, char c)
             state->fg = VT_COLOR_YELLOW;
         } else if (state->last_digit == '3' && c == '4') {
             state->fg = VT_COLOR_BLUE;
+        } else if (state->last_digit == '3' && c == '5') {
+            state->fg = VT_COLOR_MAGENTA;
         } else if (c == ';') {
             /* Time to parse the background color */
             state->status = VT_PARSE_BACKGROUND;
@@ -155,6 +158,8 @@ vt_escape_process(struct vt_escape_state *state, char c)
             state->bg = VT_COLOR_YELLOW;
         } else if (state->last_digit == '4' && c == '4') {
             state->bg = VT_COLOR_BLUE;
+        } else if (state->last_digit == '4' && c == '5') {
+            state->bg = VT_COLOR_MAGENTA;
         } else if (c == 'm') {
             vt_try_set_color(state);
             state->status = VT_PARSE_AWAIT;

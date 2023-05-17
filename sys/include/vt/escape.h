@@ -42,7 +42,8 @@ typedef enum {
     VT_COLOR_RED,
     VT_COLOR_GREEN,
     VT_COLOR_YELLOW,
-    VT_COLOR_BLUE
+    VT_COLOR_BLUE,
+    VT_COLOR_MAGENTA,
 } vt_color_t;
 
 /*
