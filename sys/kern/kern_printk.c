@@ -34,7 +34,7 @@
 extern struct vt_descriptor g_vt;
 
 static void
-printk_handle_format(char fmt_code, va_list ap)
+printk_handle_format(char fmt_code, va_list *ap)
 {
     char buf[80];
 
@@ -44,36 +44,44 @@ printk_handle_format(char fmt_code, va_list ap)
 
     switch (fmt_code) {
     case 'c':
-        c = va_arg(ap, int);
+        c = va_arg(*ap, int);
         vt_write(&g_vt, &c, 1);
         break;
     case 's':
-        s = va_arg(ap, const char *);
+        s = va_arg(*ap, const char *);
         vt_write(&g_vt, s, strlen(s));
         break;
     case 'p':
     case 'x':
-        tmp = va_arg(ap, int64_t);
+        tmp = va_arg(*ap, int64_t);
         s = itoa(tmp, buf, 16) + 2;     /* + 2 to skip "0x" prefix */
         vt_write(&g_vt, s, strlen(s));
         break;
     case 'd':
-        tmp = va_arg(ap, int64_t);
+        tmp = va_arg(*ap, int64_t);
         s = itoa(tmp, buf, 10);     /* + 2 to skip "0x" prefix */
         vt_write(&g_vt, s, strlen(s));
     }
 }
 
+/*
+ * NOTE: The `va_list` pointer is a workaround
+ *       for a quirk in AARCH64 for functions
+ *       with variable arguments.
+ */
+
 void
-vprintk(const char *fmt, va_list ap)
+vprintk(const char *fmt, va_list *ap)
 {
-    for (const char *s = fmt; *s; ++s) {
-        if (*s == '%') {
-            ++s;
-            printk_handle_format(*s++, ap);
+    while (*fmt) {
+        if (*fmt == '%') {
+            ++fmt;
+            printk_handle_format(*fmt, ap);
+        } else {
+            vt_write(&g_vt, fmt, 1);
         }
 
-        vt_write(&g_vt, s, 1);
+        ++fmt;
     }
 }
 
@@ -83,7 +91,7 @@ printk(const char *fmt, ...)
     va_list ap;
     va_start(ap, fmt);
 
-    vprintk(fmt, ap);
+    vprintk(fmt, &ap);
 
     va_end(ap);
 }

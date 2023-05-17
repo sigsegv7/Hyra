@@ -50,9 +50,8 @@
     printk(fmt, ##__VA_ARGS__);                     \
     printk("\033[0m");
 
-void vprintk(const char *fmt, va_list ap);
+void vprintk(const char *fmt, va_list *ap);
 void printk(const char *fmt, ...);
 
 #endif      /* defined(_KERNEL) */
-
 #endif      /* _SYS_PRINTK_H_ */
