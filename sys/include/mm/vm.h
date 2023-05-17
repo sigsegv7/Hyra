@@ -31,9 +31,15 @@
 #define _MM_VM_H_
 
 #include <sys/limine.h>
+#include <sys/cdefs.h>
+#include <sys/types.h>
+#include <mm/vm_pagemap.h>
 
 extern volatile struct limine_hhdm_request g_hhdm_request;
 
 #define VM_HIGHER_HALF (g_hhdm_request.response->offset)
+
+__weak void vm_init(void);
+struct pagemap vm_get_pagemap(void);
 
 #endif
