@@ -31,7 +31,7 @@
 #define _SYS_CDEFS_H_
 
 #define __dead     __attribute__((__noreturn__))
-#define __unsed    __attribute__((__bused__))
+#define __unused   __attribute__((__unused__))
 #define __packed   __attribute__((__packed__))
 #define __unused   __attribute__((__unused__))
 #define __used     __attribute__((__used__))
