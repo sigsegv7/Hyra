@@ -58,7 +58,6 @@ extern struct kernel_symbol g_ksym_table[];
  * TODO: Add support with other arches.
  */
 
-#if defined(__x86_64__)
 
 static const char *
 panic_resolve_name(uintptr_t addr, size_t *offset)
@@ -86,31 +85,39 @@ panic_resolve_name(uintptr_t addr, size_t *offset)
 static void
 panic_stacktrace(void)
 {
-    uintptr_t *rbp = NULL;
+    uintptr_t *bp = NULL;       /* Also counts as `fp` in AARCH64 */
+
+#if defined(__x86_64__)
     __asm("mov %%rbp, %0"
-          : "=r" (rbp)
+          : "=r" (bp)
           :
           : "memory"
     );
+#elif defined(__aarch64__)
+    __asm("mov %0, x29\n"
+          : "=r" (bp)
+          :
+          : "memory"
+    );
+#endif
 
-    size_t frame_count = 0; 
+    uint8_t frame_count = 0; 
     size_t offset;
 
-    while (rbp != NULL && frame_count < MAX_FRAMES) {
-        const char *name = panic_resolve_name(rbp[1], &offset);
+    while (bp != NULL && frame_count < MAX_FRAMES) {
+        const char *name = panic_resolve_name(bp[1], &offset);
 
         if (name == NULL) {
-            printk("* [%d] 0x%x\n", frame_count, rbp[1]);
+            printk("* [%d] 0x%x\n", frame_count, bp[1]);
         } else {
             printk("* [%d] %s <0x%x+0x%x>\n",
-                   frame_count, name, rbp[1], offset);
+                   frame_count, name, bp[1], offset);
         }
 
-        rbp = (uintptr_t *)rbp[0];
+        bp = (uintptr_t *)bp[0];
         ++frame_count;
     }
 }
-#endif
 
 /*
  * Writes out diagnostic information
@@ -118,7 +125,7 @@ panic_stacktrace(void)
  */
 
 static void
-panic_log_diag(const char *fmt, va_list ap)
+panic_log_diag(const char *fmt)
 {
     printk("\n\nSomething went wrong with Vega "
            "and your PC requires a restart.\n"); 
@@ -129,20 +136,18 @@ panic_log_diag(const char *fmt, va_list ap)
 
     printk("** Technical information **\n\n");
     
-#if defined(__x86_64__)
     printk("Traversing call stack...\n");
     printk("%s\n", ASCII_SEP);
 
     panic_stacktrace();
     printk("%s\n\n", ASCII_SEP);
-#elif defined(__aarch64__)
+#if defined(__aarch64__)
     printk("Board: %s\n", aarch64_get_board());
 #endif
     
     printk("Vega revision: v%s\n\n", VEGA_VERSION);
 
     printk("kpanic - halting: "); 
-    vprintk(fmt, ap);
 }
 
 __dead void
@@ -160,7 +165,8 @@ panic(const char *fmt, ...)
 
     va_list ap;
     va_start(ap, fmt);
-    panic_log_diag(fmt, ap);
+    panic_log_diag(fmt);
+    vprintk(fmt, &ap);
 
     /* Disable the processor */
     __irq_disable();
