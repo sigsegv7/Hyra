@@ -35,7 +35,19 @@
 #define __packed   __attribute__((__packed__))
 #define __unused   __attribute__((__unused__))
 #define __used     __attribute__((__used__))
+#define __weak     __attribute__((__weak__))
 #define __atomic   _Atomic
+
+/*
+ * Allows attempting to call
+ * optional functions marked
+ * with __weak.
+ */
+
+#define __try_call_weak(sym, ...)               \
+    if (sym != NULL) {                          \
+        sym(##__VA_ARGS__);                     \
+    }
 
 #if defined(_KERNEL)
 # define __asmv    __asm__ __volatile__
