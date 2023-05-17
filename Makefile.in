@@ -49,7 +49,7 @@ override QEMU_FLAGS = -cpu cortex-a72        \
             -monitor stdio          		 \
             -device ramfb           		 \
             -device qemu-xhci       		 \
-            -device usb-kbd -M virt          \
+            -device usb-kbd -machine virt    \
 			-cdrom Vega.iso
 else
 override QEMU_FLAGS = --enable-kvm -serial stdio \

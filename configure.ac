@@ -15,7 +15,7 @@ CFLAGS_AARCH64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protector -fn
 	-Werror=implicit-int -Werror=int-conversion \\
         -Werror=missing-prototypes                   \\
 	-Werror=incompatible-pointer-types -Werror=int-to-pointer-cast \\
-	-Werror=return-type -Wunused -pedantic \\
+	-Werror=return-type -Wunused -pedantic -mgeneral-regs-only \\
 	-I sys/include/ -I sys/include/lib/ -D_KERNEL -Wno-pointer-sign -MMD -D__aarch64__ "
 
 ARCH="x86_64"
