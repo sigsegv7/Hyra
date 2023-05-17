@@ -34,7 +34,21 @@
 #include <stdarg.h>
 
 #if defined(_KERNEL)
-# include <vt/vt.h>
+#include <vt/vt.h>
+
+#define kinfo(fmt, ...)                            \
+    printk("\033[32m%s:\033[0m ", __MODULE_NAME);  \
+    printk(fmt, ##__VA_ARGS__);
+
+#define kwarn(fmt, ...) \
+    printk("\033[32m%s:\033[35m ", __MODULE_NAME);  \
+    printk(fmt, ##__VA_ARGS__);                     \
+    printk("\033[0m");
+
+#define kerr(fmt, ...) \
+    printk("\033[32m%s:\033[31m ", __MODULE_NAME);  \
+    printk(fmt, ##__VA_ARGS__);                     \
+    printk("\033[0m");
 
 void vprintk(const char *fmt, va_list ap);
 void printk(const char *fmt, ...);
