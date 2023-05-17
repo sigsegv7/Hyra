@@ -27,67 +27,45 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _VT_H_
-#define _VT_H_
+#ifndef _VT_ESCAPE_H_
+#define _VT_ESCAPE_H_
 
-#include <sys/types.h>
-#include <sync/spinlock.h>
-#include <vt/escape.h>
+#define VT_ESC_IS_PARSING(esc_state_ptr) \
+    ((esc_state_ptr)->status != VT_PARSE_AWAIT)
 
-#define DEFAULT_TERM_BG     0x000000
-#define DEFAULT_TEXT_BG     0x000000
-#define DEFAULT_TEXT_FG     0x808080
+struct vt_descriptor;
 
 typedef enum {
-    CURSOR_NONE,
-    CURSOR_BLOCK,
-} vt_cursor_type_t;
+    VT_COLOR_NONE,
+    VT_COLOR_RESET,
+    VT_COLOR_BLACK,
+    VT_COLOR_RED,
+    VT_COLOR_GREEN,
+    VT_COLOR_YELLOW,
+    VT_COLOR_BLUE
+} vt_color_t;
 
 /*
- * Describes the attributes
- * of the virtual terminal.
+ * State machine for escape
+ * code parsing.
  */
 
-struct vt_attr {
-    uint32_t bg;
-    uint32_t text_bg;
-    uint32_t text_fg;
-    uint32_t cursor_bg;
-    vt_cursor_type_t cursor_type;
+struct vt_escape_state {
+    enum {
+        VT_PARSE_AWAIT,
+        VT_PARSE_ESC,
+        VT_PARSE_BRACKET,
+        VT_PARSE_DIGIT,
+        VT_PARSE_BACKGROUND
+    } status; 
+    
+    vt_color_t fg;
+    vt_color_t bg;
+    char last_digit;
+    struct vt_descriptor *vt;
 };
 
-/*
- * Describes the state of
- * the virtual terminal.
- */
-
-struct vt_state {
-    uint32_t cursor_x;
-    uint32_t cursor_y;
-    struct vt_escape_state esc_state;
-};
-
-/*
- * Describes the virtual
- * terminal itself.
- */
-
-struct vt_descriptor {
-    uint32_t *fb_base;
-    struct vt_attr attr;
-    struct vt_state state;
-    struct spinlock lock;
-};
-
-void vt_write(struct vt_descriptor *vt, const char *str, size_t len);
-
-void vt_reset(struct vt_descriptor *vt);
-void __vt_reset_unlocked(struct vt_descriptor *vt);
-
-int vt_init(struct vt_descriptor *vt, const struct vt_attr *attr,
-            uint32_t *fb_base);
-
-int vt_chattr(struct vt_descriptor *vt, const struct vt_attr *attr);
-struct vt_attr vt_getattr(struct vt_descriptor *vt);
+int vt_escape_process(struct vt_escape_state *state, char c);
+void vt_escape_init_state(struct vt_escape_state *state, struct vt_descriptor *vt);
 
 #endif

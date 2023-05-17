@@ -33,9 +33,6 @@
 #include <errno.h>
 #include <string.h>
 
-#define DEFAULT_TERM_BG     0x000000
-#define DEFAULT_TEXT_BG     0x000000
-#define DEFAULT_TEXT_FG     0x808080
 #define DEFAULT_CURSOR_BG   0x5A5A5A
 #define DEFAULT_CURSOR_TYPE CURSOR_BLOCK
 
@@ -209,6 +206,27 @@ vt_putch(struct vt_descriptor *vt, char c)
 
     struct vt_state *state = &vt->state;
     struct vt_attr *attr = &vt->attr;
+
+    if (vt->state.cursor_x > fb_get_width()-1) {
+        vt_newline(vt);
+    }
+
+    if (c == '\033') {
+        vt_escape_process(&vt->state.esc_state, c);
+        return;
+    }
+
+    if (c == '\n') {
+        vt_newline(vt);
+        return;
+    }
+    
+    if (VT_ESC_IS_PARSING(&vt->state.esc_state)) {
+        if (vt_escape_process(&vt->state.esc_state, c) == 0) {
+            /* Return if it is still parsing */
+            return;
+        }
+    }
  
     vt_draw_char(vt, c, attr->text_fg, attr->text_bg);
     state->cursor_x += FONT_WIDTH;
@@ -222,17 +240,7 @@ vt_write(struct vt_descriptor *vt, const char *str, size_t len)
     spinlock_acquire(&vt->lock);
 
     for (size_t i = 0; i < len; ++i) {
-        if (vt->state.cursor_x > fb_get_width()-1) {
-            vt_newline(vt);
-        }
-
-        switch (str[i]) {
-            case '\n':
-                vt_newline(vt);
-                break;
-            default:
-                vt_putch(vt, str[i]);
-        }
+        vt_putch(vt, str[i]);
     }
 
     spinlock_release(&vt->lock);
@@ -273,17 +281,10 @@ vt_chattr(struct vt_descriptor *vt, const struct vt_attr *attr)
     return 0;
 }
 
-/*
- * Resets the virtual terminal
- * state.
- *
- * @vt: Virtual terminal.
- */
 
 void
-vt_reset(struct vt_descriptor *vt)
+__vt_reset_unlocked(struct vt_descriptor *vt)
 {
-    spinlock_acquire(&vt->lock); 
     vt_hide_cursor(vt);
     vt->state.cursor_x = 0;
     vt->state.cursor_y = 0;
@@ -295,6 +296,20 @@ vt_reset(struct vt_descriptor *vt)
     }
 
     vt_show_cursor(vt);
+}
+
+/*
+ * Resets the virtual terminal
+ * state.
+ *
+ * @vt: Virtual terminal.
+ */
+
+void
+vt_reset(struct vt_descriptor *vt)
+{
+    spinlock_acquire(&vt->lock);
+    __vt_reset_unlocked(vt);
     spinlock_release(&vt->lock);
 }
 
@@ -331,6 +346,13 @@ vt_init(struct vt_descriptor *vt, const struct vt_attr *attr,
     }
 
     vt_show_cursor(vt);
+    vt_escape_init_state(&vt->state.esc_state, vt); 
 
     return status;
+}
+
+struct
+vt_attr vt_getattr(struct vt_descriptor *vt)
+{
+    return vt->attr;
 }
