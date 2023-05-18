@@ -178,10 +178,101 @@ vm_get_region(struct pagemap pagemap, uintptr_t virt)
     return region;
 }
 
+int
+vm_map_page(struct pagemap pagemap, uintptr_t virt, uintptr_t phys,
+            uint16_t flags)
+{
+    size_t real_flags = PTE_P | PTE_TBL;
+    bool is_block;
+
+    if ((flags & VM_MAP_WRITABLE) == 0)
+        real_flags |= PTE_RO;
+    if ((flags & VM_MAP_EXEC) == 0)
+        real_flags |= PTE_NX;
+    if ((flags & VM_MAP_GLOBAL) == 0)
+        real_flags |= PTE_NG;
+    if ((flags & VM_MAP_USER) != 0)
+        real_flags |= PTE_U;
+
+    uintptr_t l0 = vm_get_ttbrn(pagemap, virt);
+    uintptr_t l1 = vm_get_next_level(l0, L0_INDEX(virt), true, &is_block);
+
+    if (l1 == 0 || is_block) {
+        return 1;
+    }
+
+    if ((flags & VM_HUGE_1GB) != 0) {
+        uintptr_t *tmp = (uintptr_t *)(l1 + VM_HIGHER_HALF);
+        tmp[L1_INDEX(virt)] = (real_flags | phys) & ~(PTE_TBL);
+        return 0;
+    }
+
+    uintptr_t l2 = vm_get_next_level(l1, L1_INDEX(virt), true, &is_block);
+
+    if (l2 == 0 || is_block) {
+        return 1;
+    }
+
+    if ((flags & VM_HUGE_2MB) != 0) {
+        uintptr_t *tmp = (uintptr_t *)(l2 + VM_HIGHER_HALF);
+        tmp[L2_INDEX(virt)] = (real_flags | phys) & ~(PTE_TBL);
+        return 0;
+    }
+
+    uintptr_t l3 = vm_get_next_level(l2, L2_INDEX(virt), true, &is_block);
+
+    if (l3 == 0) {
+        return 1;
+    }
+    
+    uintptr_t *tmp = (uintptr_t *)(l3 + VM_HIGHER_HALF);
+    tmp[L3_INDEX(virt)] = (real_flags | phys | PTE_ISH);
+    return 0;
+}
+
+void
+vm_unmap_page(struct pagemap pagemap, uintptr_t virt, uint16_t flags)
+{
+    bool is_block;
+
+    uintptr_t l0 = vm_get_ttbrn(pagemap, virt);
+    uintptr_t l1 = vm_get_next_level(l0, L0_INDEX(virt), true, &is_block);
+
+    if (l1 == 0) {
+        return;
+    }
+
+    if ((flags & VM_HUGE_1GB) != 0) {
+        uintptr_t *tmp = (uintptr_t *)(l1 + VM_HIGHER_HALF);
+        tmp[L1_INDEX(virt)] = 0;
+        return;
+    }
+
+    uintptr_t l2 = vm_get_next_level(l1, L1_INDEX(virt), true, &is_block);
+
+    if (l2 == 0 || is_block) {
+        return;
+    }
+
+    if ((flags & VM_HUGE_2MB) != 0) {
+        uintptr_t *tmp = (uintptr_t *)(l2 + VM_HIGHER_HALF);
+        tmp[L2_INDEX(virt)] = 0;
+        return;
+    }
+
+    uintptr_t l3 = vm_get_next_level(l2, L2_INDEX(virt), true, &is_block);
+
+    if (l3 == 0) {
+        return;
+    }
+    
+    uintptr_t *tmp = (uintptr_t *)(l3 + VM_HIGHER_HALF);
+    tmp[L3_INDEX(virt)] = 0;
+}
+
 __weak void
 vm_init(void)
 {
-    struct pagemap pagemap = vm_get_pagemap();
     size_t id_mmfr0 = cpu_read_sysreg(id_aa64mmfr0_el1);
 
     const char *pa_size_map[] = {
@@ -222,19 +313,12 @@ vm_init(void)
                  (1ULL << 36);    /* 16-bit ASIDs */
 
     kinfo("Initializing MMU...\n");
- 
-    /* TTBR0 is used for userspace so make our own */
-    pagemap.ttbr[0] = phys_mgr_alloc(1);
-
-    /* Zero it so we can have nothing mapped in the lower half */
-    memset((void *)(pagemap.ttbr[0] + VM_HIGHER_HALF), 0, 0x1000);
     
     cpu_write_sysreg(mair_el1, mair);
     cpu_write_sysreg(tcr_el1, tcr);
-    vm_set_pagemap(pagemap);
 
     kinfo("MMU init finished\n");
-    printk("... MAIR=0x%x, TCR=0x%x\n\n", mair, tcr);
+    printk("... MAIR=0x%x, TCR=0x%x\n\n", mair, tcr);    
 }
 
 #endif

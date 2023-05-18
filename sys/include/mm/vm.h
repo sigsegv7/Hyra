@@ -38,7 +38,11 @@
 
 #define VM_MAP_PRESENT  (1 << 0)
 #define VM_MAP_WRITABLE (1 << 1)
-#define VM_MAP_NX       (1 << 1)
+#define VM_MAP_EXEC     (1 << 2)
+#define VM_MAP_GLOBAL   (1 << 3)
+#define VM_MAP_USER     (1 << 4)
+#define VM_HUGE_2MB     (1 << 5)
+#define VM_HUGE_1GB     (1 << 6)
 
 extern volatile struct limine_hhdm_request g_hhdm_request;
 
@@ -47,5 +51,10 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 __weak void vm_init(void);
 struct pagemap vm_get_pagemap(void);
 struct vm_region vm_get_region(struct pagemap pagemap, uintptr_t virt);
+
+int vm_map_page(struct pagemap pagemap, uintptr_t virt, uintptr_t phys,
+                  uint16_t flags);
+
+void vm_unmap_page(struct pagemap pagemap, uintptr_t virt, uint16_t flags);
 
 #endif
