@@ -27,25 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MM_VM_H_
-#define _MM_VM_H_
+#ifndef _MM_VM_PAGE_H_
+#define _MM_VM_PAGE_H_
 
-#include <sys/limine.h>
-#include <sys/cdefs.h>
-#include <sys/types.h>
-#include <mm/vm_pagemap.h>
-#include <mm/vm_region.h>
-
-#define VM_MAP_PRESENT  (1 << 0)
-#define VM_MAP_WRITABLE (1 << 1)
-#define VM_MAP_NX       (1 << 1)
-
-extern volatile struct limine_hhdm_request g_hhdm_request;
-
-#define VM_HIGHER_HALF (g_hhdm_request.response->offset)
-
-__weak void vm_init(void);
-struct pagemap vm_get_pagemap(void);
-struct vm_region vm_get_region(struct pagemap pagemap, uintptr_t virt);
+typedef enum {
+    PAGESIZE_4K,
+    PAGESIZE_2MB,
+    PAGESIZE_1GB,
+    PAGESIZE_2GB,
+} pagesize_t;
 
 #endif
