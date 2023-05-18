@@ -150,6 +150,10 @@ get_phys_mem_mib(void)
 uintptr_t
 phys_mgr_alloc(size_t frame_count)
 {
+    if (frame_count == 0) {
+        return 0;
+    }
+
     size_t bitmap_end = bitmap_free_start+(bitmap_size*8);
 
     size_t found_bit = 0;
@@ -168,7 +172,7 @@ phys_mgr_alloc(size_t frame_count)
         }
 
         
-        if ((++found_frames) == frame_count) {
+        if ((found_frames++) == frame_count) {
             /* We found the required amount of frames */
             break;
         }
