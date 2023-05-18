@@ -86,7 +86,13 @@ vm_get_next_level(uintptr_t level_phys, size_t index,
             return 0;
         }
 
-        level_virt[index] = phys_mgr_alloc(1);
+        uintptr_t phys = phys_mgr_alloc(1);
+
+        if (phys == 0) {
+            return 0;
+        }
+
+        level_virt[index] = phys;
         level_virt[index] |= PTE_P | PTE_TBL;
     }
 
@@ -99,6 +105,34 @@ vm_get_next_level(uintptr_t level_phys, size_t index,
     }
 
     return level_virt[index] & ~(0x1FF);
+}
+
+struct pagemap
+vm_get_pagemap(void)
+{
+    struct pagemap pagemap;
+
+    __asm("mrs %0, ttbr0_el1\n"
+          "mrs %1, ttbr1_el1\n"
+          : "=r" (pagemap.ttbr[0]),
+            "=r" (pagemap.ttbr[1])
+          :
+          : "memory"
+    );
+
+    return pagemap;
+}
+
+static inline void
+vm_set_pagemap(struct pagemap pagemap)
+{
+    __asm("msr ttbr0_el1, %0\n"
+          "msr ttbr1_el1, %1\n"
+          :
+          : "r" (pagemap.ttbr[0]),
+            "r" (pagemap.ttbr[1])
+          : "memory"
+    );
 }
 
 /*
@@ -142,34 +176,6 @@ vm_get_region(struct pagemap pagemap, uintptr_t virt)
     region.phys_base = l3_virt[L3_INDEX(virt)] & ~(0x1FF);
     region.pagesize = PAGESIZE_4K;
     return region;
-}
-
-inline struct pagemap
-vm_get_pagemap(void)
-{
-    struct pagemap pagemap;
-
-    __asm("mrs %0, ttbr0_el1\n"
-          "mrs %1, ttbr1_el1\n"
-          : "=r" (pagemap.ttbr[0]),
-            "=r" (pagemap.ttbr[1])
-          :
-          : "memory"
-    );
-
-    return pagemap;
-}
-
-static inline void
-vm_set_pagemap(struct pagemap pagemap)
-{
-    __asm("msr ttbr0_el1, %0\n"
-          "msr ttbr1_el1, %1\n"
-          :
-          : "r" (pagemap.ttbr[0]),
-            "r" (pagemap.ttbr[1])
-          : "memory"
-    );
 }
 
 __weak void
