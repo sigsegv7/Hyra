@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of VegaOS nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/* $Id$ */
+
+#ifndef _AMD64_TRAP_H_
+#define _AMD64_TRAP_H_
+
+#if !defined(__ASSEMBLER__)
+#include <sys/types.h>
+#include <machine/frame.h>
+#endif      /* !defined(__ASSEMBLER__) */
+
+#define TRAP_BREAKPOINT     0       /* Breakpoint */
+#define TRAP_ARITH_ERR      1       /* Arithmetic error (e.g division by 0) */
+#define TRAP_OVERFLOW       2       /* Overflow */
+#define TRAP_BOUND_RANGE    3       /* BOUND range exceeded */
+#define TRAP_INVLOP         4       /* Invalid opcode */
+#define TRAP_DOUBLE_FAULT   5       /* Double fault */
+#define TRAP_INVLTSS        6       /* Invalid TSS */
+#define TRAP_SEGNP          7       /* Segment not present */
+#define TRAP_PROTFLT        8       /* General protection */
+#define TRAP_PAGEFLT        9       /* Page fault */
+#define TRAP_NMI            10      /* Non-maskable interrupt */
+
+/* Trap is coming from user mode */
+#define TRAP_USER           0x100
+
+#if !defined(__ASSEMBLER__)
+typedef void(*ftrap_handler_t)(void);
+
+void breakpoint_handler(void *sf);
+void arith_err(void *sf);
+void overflow(void *sf);
+void bound_range(void *sf);
+void invl_op(void *sf);
+void double_fault(void *sf);
+void invl_tss(void *sf);
+void segnp(void *sf);
+void general_prot(void *sf);
+void page_fault(void *sf);
+void nmi(void *sf);
+void register_ftrap_handler(ftrap_handler_t handler);
+void trap_handler(struct trapframe *tf);
+#else
+.macro handle_trap
+    mov %rsp, %rdi
+    call trap_handler
+.endm
+#endif      /* !defined(__ASSEMBLER__) */
+
+#endif  /* !_AMD64_TRAP_H_ */

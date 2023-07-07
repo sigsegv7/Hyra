@@ -1,0 +1,10 @@
+#!/bin/bash
+# $Id$
+
+rm -f $1
+printf "#include <sys/types.h>\n\nstruct kernel_symbol" > $1
+printf " {\n\tuint64_t addr;\n\tchar* name;\n};\n\n" >> $1
+printf "const struct kernel_symbol g_ksym_table[] = {\n" >> $1
+nm $2 | grep " [tT] " | awk '{ print " { .addr = 0x"$1", .name = \""$3"\" }," }' | sort >> $1
+printf "    { .addr = (size_t)-1, .name = \"\" }\n};\n\n" >> $1
+printf "const int ksym_elem_count = sizeof(g_ksym_table) / sizeof(*g_ksym_table);\n" >> $1

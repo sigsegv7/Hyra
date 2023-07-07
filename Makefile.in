@@ -1,0 +1,93 @@
+# $Id$
+
+.SILENT:
+
+###############################
+# CFLAGS, QEMU flags + misc
+###############################
+override VEGA_VERSION = @PACKAGE_VERSION@
+override PROMPT := printf "%s\t\t%s\n"
+override KERNEL_DEFINES =  -DVEGA_VERSION="\"$(VEGA_VERSION)\""
+override KERNEL_CFLAGS = @KERNEL_CFLAGS@ $(KERNEL_DEFINES)
+override KERNEL_LDFLAGS = -nostdlib -zmax-page-size=0x1000 -static -Tconf/link-$(ARCH).ld
+override QEMU_FLAGS = @QEMU_FLAGS@
+override ARCH = @ARCH@
+
+######################
+# Binutils stuff
+######################
+override CC = $(shell pwd)/cross/bin/$(ARCH)-elf-gcc
+override LD = $(shell pwd)/cross/bin/$(ARCH)-elf-ld
+override AS = $(CC)
+
+##########################
+# Architecture specifics
+##########################
+override ALL_ARCH_CFILES = find sys/ -name "*.c" |  grep "sys/arch/$(ARCH).*"
+override ALL_ARCH_ASM_FILES = find sys/ -name "*.S" | grep "sys/arch/$(ARCH).*"
+override QEMU = @QEMU@
+
+##########################
+# General kernel sources
+##########################
+override KERNEL_CFILES = $(shell find sys/ -name "*.c" | grep -v "sys/arch/*" | grep -v sys/kern/ksyms.c) $(shell $(ALL_ARCH_CFILES))
+override KERNEL_ASMFILES = $(shell find sys/ -name "*.S" | grep -v "sys/arch/*") $(shell $(ALL_ARCH_ASM_FILES))
+
+########################
+# Objects & header deps
+########################
+override KERNEL_OBJECTS = $(KERNEL_CFILES:.c=.o)
+override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
+override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
+
+.PHONY: all
+all: base/boot/vega-kernel
+		rm -f sys/include/machine
+		rm -rf iso_root
+
+.PHONY: run
+run:
+	$(QEMU) $(QEMU_FLAGS)
+
+.PHONY: cross
+cross:
+	bash tools/cross.sh $(ARCH)
+
+.PHONY: clean
+clean:
+	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
+	rm -f sys/include/machine
+
+sys/include/machine/:
+	cd sys/include/; ln -sf arch/$(ARCH) machine
+
+base/boot/vega-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
+	mkdir -p base/boot/
+	$(PROMPT) " LD " $(shell pwd)/base/boot/vega-kernel
+	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/vega-kernel
+	tools/ksyms sys/kern/ksyms.c base/boot/vega-kernel
+	# === Generating symbols ===
+	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) sys/kern/ksyms.c -o sys/kern/ksyms.o
+	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/vega-kernel
+	cd base/; tar cvf ../initramfs.tar * &> /dev/null
+	$(PROMPT) " RAMFS " $(shell pwd)/initramfs.tar
+	# === Building ISO ===
+	mkdir -p iso_root/boot/
+	cp conf/limine.cfg stand/limine/limine.sys \
+		stand/limine/limine-cd.bin stand/limine/limine-cd-efi.bin iso_root/
+	cp base/boot/vega-kernel iso_root/boot/
+	mv initramfs.tar iso_root/boot/
+	xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4\
+		-boot-info-table --efi-boot limine-cd-efi.bin -efi-boot-part \
+		--efi-boot-image --protective-msdos-label iso_root -o Vega.iso &> /dev/null
+	stand/limine/limine-deploy Vega.iso &> /dev/null
+	$(PROMPT) " ISO " $(shell pwd)/Vega.iso
+
+-include $(KERNEL_HEADER_DEPS)
+%.o: %.c sys/include/machine/
+	$(PROMPT) " CC " $<
+	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) $< -o $@
+
+%.S.o: %.S
+	$(PROMPT) " AS " $<
+	$(CC) -c $< -o $@ -D__$(ARCH)__ -I sys/include/
