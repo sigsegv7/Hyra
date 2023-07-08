@@ -5,13 +5,18 @@
 ###############################
 # CFLAGS, QEMU flags + misc
 ###############################
+override ARCH = @ARCH@
 override VEGA_VERSION = @PACKAGE_VERSION@
 override PROMPT := printf "%s\t\t%s\n"
-override KERNEL_DEFINES =  -DVEGA_VERSION="\"$(VEGA_VERSION)\""
+override KERNEL_DEFINES =  -DVEGA_VERSION="\"$(VEGA_VERSION)\""\
+			   -DVEGA_BUILDDATE="\"@VEGA_BUILDDATE@\""\
+			   -DVEGA_BUILDUSER="\"@VEGA_BUILDUSER@\""\
+			   -DVEGA_BUILDHOST="\"@VEGA_BUILDHOST@\""\
+			   -DVEGA_BUILDDIR="\"@VEGA_BUILDDIR@\""\
+			   -DVEGA_ARCH="\"@ARCH@\""
 override KERNEL_CFLAGS = @KERNEL_CFLAGS@ $(KERNEL_DEFINES)
 override KERNEL_LDFLAGS = -nostdlib -zmax-page-size=0x1000 -static -Tconf/link-$(ARCH).ld
 override QEMU_FLAGS = @QEMU_FLAGS@
-override ARCH = @ARCH@
 
 ######################
 # Binutils stuff
@@ -79,8 +84,8 @@ base/boot/vega-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
 	mv initramfs.tar iso_root/boot/
 	xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4\
 		-boot-info-table --efi-boot limine-cd-efi.bin -efi-boot-part \
-		--efi-boot-image --protective-msdos-label iso_root -o Vega.iso &> /dev/null
-	stand/limine/limine-deploy Vega.iso &> /dev/null
+		--efi-boot-image --protective-msdos-label iso_root -o Vega.iso > /dev/null
+	stand/limine/limine-deploy Vega.iso > /dev/null
 	$(PROMPT) " ISO " $(shell pwd)/Vega.iso
 
 -include $(KERNEL_HEADER_DEPS)

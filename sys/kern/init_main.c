@@ -50,6 +50,9 @@ main(void)
     syslog_init();
     PRINT_LOGO();
 
+    kprintf("Vega/" VEGA_ARCH " " VEGA_VERSION ": " VEGA_BUILDDATE "\n");
+    kprintf("\t" VEGA_BUILDUSER "@" VEGA_BUILDHOST ":" VEGA_BUILDDIR "\n");
+
     processor_init(&bsp);
     vm_physseg_init();
 
