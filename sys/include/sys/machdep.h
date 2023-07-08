@@ -39,9 +39,35 @@
 
 #if defined(_KERNEL)
 
-struct processor {
+/*
+ * Arch specifics go here
+ * along with an #if defined(...)
+ *
+ * XXX: When porting more architectures this
+ *      may get messy. Figure out a way to
+ *      seperate this into a different header.
+ */
+struct processor_machdep {
+#if defined(__x86_64__)
     struct gdtr      *gdtr;
     struct gdt_entry *gdt;
+#endif      /* defined(__x86_64__) */
+};
+
+/*
+ * Sets arch specifics to their
+ * defaults.
+ */
+#if defined(__x86_64__)
+#define DEFAULT_PROCESSOR_MACHDEP           \
+            {                               \
+                .gdtr = &g_early_gdtr,      \
+                .gdt  = &g_dmmy_gdt[0]      \
+            }
+#endif      /* defined(__x86_64__) */
+
+struct processor {
+    struct processor_machdep machdep;
 };
 
 __weak void processor_init(struct processor *processor);

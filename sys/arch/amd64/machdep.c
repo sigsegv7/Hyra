@@ -63,6 +63,6 @@ processor_halt(void)
 __weak void
 processor_init(struct processor *processor)
 {
-    gdt_load(processor->gdtr);
+    gdt_load(processor->machdep.gdtr);
     interrupts_init(processor);
 }

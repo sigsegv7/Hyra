@@ -40,8 +40,7 @@ __KERNEL_META("$Vega$: init_main.c, Ian Marco Moffett, "
               "Where the Vega kernel first starts up");
 
 static struct processor bsp = {
-    .gdtr = &g_early_gdtr,
-    .gdt  = &g_dmmy_gdt[0]
+    .machdep = DEFAULT_PROCESSOR_MACHDEP
 };
 
 void
