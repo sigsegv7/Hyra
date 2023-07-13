@@ -29,36 +29,11 @@
 
 /* $Id$ */
 
-#include <sys/cdefs.h>
-#include <sys/tty.h>
-#include <sys/syslog.h>
-#include <sys/machdep.h>
-#include <firmware/acpi/acpi.h>
-#include <vm/vm_physseg.h>
-#include <logo.h>
+#ifndef _ACPI_ACPI_H_
+#define _ACPI_ACPI_H_
 
-__KERNEL_META("$Vega$: init_main.c, Ian Marco Moffett, "
-              "Where the Vega kernel first starts up");
+#include <sys/types.h>
 
-static struct processor bsp = {
-    .machdep = DEFAULT_PROCESSOR_MACHDEP
-};
+void acpi_init(void);
 
-void
-main(void)
-{
-    tty_init();
-    syslog_init();
-    PRINT_LOGO();
-
-    kprintf("Vega/" VEGA_ARCH " " VEGA_VERSION ": " VEGA_BUILDDATE "\n");
-    kprintf("\t" VEGA_BUILDUSER "@" VEGA_BUILDHOST ":" VEGA_BUILDDIR "\n");
-
-    processor_init(&bsp);
-    vm_physseg_init();
-
-    acpi_init();
-
-    /* We're done here, halt the processor */
-    __ASMV("cli; hlt");
-}
+#endif      /* !_ACPI_ACPI_H_ */

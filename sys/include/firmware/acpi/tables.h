@@ -29,36 +29,48 @@
 
 /* $Id$ */
 
+#ifndef _ACPI_TABLES_H_
+#define _ACPI_TABLES_H_
+
+#include <sys/types.h>
 #include <sys/cdefs.h>
-#include <sys/tty.h>
-#include <sys/syslog.h>
-#include <sys/machdep.h>
-#include <firmware/acpi/acpi.h>
-#include <vm/vm_physseg.h>
-#include <logo.h>
 
-__KERNEL_META("$Vega$: init_main.c, Ian Marco Moffett, "
-              "Where the Vega kernel first starts up");
+#define OEMID_SIZE 6
 
-static struct processor bsp = {
-    .machdep = DEFAULT_PROCESSOR_MACHDEP
+struct __packed acpi_header {
+    uint32_t signature;         /* ASCII signature string */
+    uint32_t length;            /* Length of table in bytes */
+    uint8_t revision;           /* Revision of the structure */
+    uint8_t checksum;           /* Checksum of the header */
+    char oemid[OEMID_SIZE];     /* OEM-supplied string that IDs the OEM */
+    char oem_table_id[8];       /* OEM-supplied string (used by OEM) */
+    uint32_t oem_revision;      /* OEM-supplied revision number */
+    uint32_t creator_id;        /* Vendor ID of creator utility */
+    uint32_t creator_revision;  /* Revision of creator utility */
 };
 
-void
-main(void)
-{
-    tty_init();
-    syslog_init();
-    PRINT_LOGO();
+struct __packed acpi_rsdp {
+    uint64_t signature;         /* RSD PTR */
+    uint8_t checksum;           /* Structure checksum */
+    char oemid[OEMID_SIZE];     /* OEM-supplied string that IDs the OEM */
+    uint8_t revision;           /* Revision of the structure */ 
+    uint32_t rsdt_addr;         /* RSDT physical address */
 
-    kprintf("Vega/" VEGA_ARCH " " VEGA_VERSION ": " VEGA_BUILDDATE "\n");
-    kprintf("\t" VEGA_BUILDUSER "@" VEGA_BUILDHOST ":" VEGA_BUILDDIR "\n");
+    /* Reserved if revision < 2 */
+    uint32_t length;            /* Length of table in bytes */
+    uint64_t xsdt_addr;         /* XSDT physical address */
+    uint8_t ext_checksum;       /* Extended checksum */
+    uint8_t reserved[3];
+};
 
-    processor_init(&bsp);
-    vm_physseg_init();
+/* 
+ * XSDT or RSDT depending
+ * on what revision the header
+ * says.
+ */
+struct __packed acpi_root_sdt {
+    struct acpi_header hdr;
+    void *entries;              /* 8*n */
+};
 
-    acpi_init();
-
-    /* We're done here, halt the processor */
-    __ASMV("cli; hlt");
-}
+#endif      /* !_ACPI_TABLES_H_ */
