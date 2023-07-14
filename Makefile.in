@@ -10,9 +10,7 @@ override VEGA_VERSION = @PACKAGE_VERSION@
 override PROMPT := printf "%s\t\t%s\n"
 override KERNEL_DEFINES =  -DVEGA_VERSION="\"$(VEGA_VERSION)\""\
 			   -DVEGA_BUILDDATE="\"@VEGA_BUILDDATE@\""\
-			   -DVEGA_BUILDUSER="\"@VEGA_BUILDUSER@\""\
-			   -DVEGA_BUILDHOST="\"@VEGA_BUILDHOST@\""\
-			   -DVEGA_BUILDDIR="\"@VEGA_BUILDDIR@\""\
+			   -DVEGA_BUILDBRANCH="\"@VEGA_BUILDBRANCH@\""\
 			   -DVEGA_ARCH="\"@ARCH@\""
 override KERNEL_CFLAGS = @KERNEL_CFLAGS@ $(KERNEL_DEFINES)
 override KERNEL_LDFLAGS = -nostdlib -zmax-page-size=0x1000 -static -Tconf/link-$(ARCH).ld
