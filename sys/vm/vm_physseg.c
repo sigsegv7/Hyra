@@ -38,11 +38,8 @@
 #include <string.h>
 
 __MODULE_NAME("vm_physseg");
-
 __KERNEL_META("$Vega$: vm_physseg.c, Ian Marco Moffett, "
               "The Vega physical memory manager");
-
-#define VM_PHYSSEG_DEBUG
 
 #if defined(VM_PHYSSEG_DEBUG)
 #define DPRINTF(...) KDEBUG(__VA_ARGS__)
@@ -107,7 +104,9 @@ static void
 vm_physseg_bitmap_populate(void)
 {
     struct limine_memmap_entry *entry;
+#if defined(VM_PHYSSEG_DEBUG)
     size_t start, end;
+#endif      /* defined(VM_PHYSSEG_DEBUG) */
 
     for (size_t i = 0; i < resp->entry_count; ++i) {
         entry = resp->entries[i];
@@ -117,12 +116,14 @@ vm_physseg_bitmap_populate(void)
             continue;
         }
 
+#if defined(VM_PHYSSEG_DEBUG)
         /* Dump the memory map if we are debugging */
         start = entry->base;
         end = entry->base + entry->length;
         DPRINTF("0x%x - 0x%x, size: 0x%x, type: %s\n",
                 start, end, entry->length,
                 segment_name[entry->type]);
+#endif  /* defined(VM_PHYSSEG_DEBUG) */
 
         /* Don't set non-usable entries as free */
         if (entry->type != LIMINE_MEMMAP_USABLE) {
