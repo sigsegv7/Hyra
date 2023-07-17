@@ -75,7 +75,7 @@ struct __packed acpi_root_sdt {
 
 struct __packed acpi_madt {
     struct acpi_header hdr;
-    uint32_t lapic_id;
+    uint32_t lapic_addr;
     uint32_t flags;
 };
 
