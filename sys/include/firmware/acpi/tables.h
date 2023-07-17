@@ -38,7 +38,7 @@
 #define OEMID_SIZE 6
 
 struct __packed acpi_header {
-    uint32_t signature;         /* ASCII signature string */
+    char signature[4];         /* ASCII signature string */
     uint32_t length;            /* Length of table in bytes */
     uint8_t revision;           /* Revision of the structure */
     uint8_t checksum;           /* Checksum of the header */
@@ -70,7 +70,41 @@ struct __packed acpi_rsdp {
  */
 struct __packed acpi_root_sdt {
     struct acpi_header hdr;
-    void *entries;              /* 8*n */
+    uint32_t tables[];
+};
+
+struct __packed acpi_madt {
+    struct acpi_header hdr;
+    uint32_t lapic_id;
+    uint32_t flags;
+};
+
+struct __packed apic_header {
+    uint8_t type;
+    uint8_t length;
+};
+
+struct __packed local_apic {
+    struct apic_header hdr;
+    uint8_t processor_id;
+    uint8_t apic_id;
+    uint32_t flags;
+};
+
+struct __packed ioapic {
+    struct apic_header hdr;
+    uint8_t ioapic_id;
+    uint8_t reserved;
+    uint32_t ioapic_addr;
+    uint32_t gsi_base;
+};
+
+struct __packed interrupt_override {
+    struct apic_header hdr;
+    uint8_t bus;
+    uint8_t source;         /* IRQ */
+    uint32_t interrupt;     /* GSI */
+    uint16_t flags;
 };
 
 #endif      /* !_ACPI_TABLES_H_ */
