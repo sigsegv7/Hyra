@@ -30,6 +30,7 @@
 /* $Id$ */
 
 #include <firmware/acpi/acpi.h>
+#include <firmware/acpi/tables.h>
 
 bool
 acpi_is_checksum_valid(struct acpi_header *hdr)
