@@ -27,16 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
+/* $Id */
 
-#ifndef _ACPI_ACPI_H_
-#define _ACPI_ACPI_H_
+#include <firmware/acpi/acpi.h>
 
-#include <firmware/acpi/tables.h>
-#include <sys/types.h>
+bool
+acpi_is_checksum_valid(struct acpi_header *hdr)
+{
+    uint8_t sum;
 
-void acpi_init(void);
-bool acpi_is_checksum_valid(struct acpi_header *hdr);
-struct acpi_root_sdt *acpi_get_root_sdt(void);
+    sum = 0;
+    for (int i = 0; i < hdr->length; ++i) {
+        sum += ((char *)hdr)[i];
+    }
 
-#endif      /* !_ACPI_ACPI_H_ */
+    /* Sum of table (from header to end) must be zero!! */
+    return sum == 0;
+}

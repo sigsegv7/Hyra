@@ -30,7 +30,6 @@
 /* $Id$ */
 
 #include <firmware/acpi/acpi.h>
-#include <firmware/acpi/tables.h>
 #include <sys/limine.h>
 #include <sys/syslog.h>
 #include <sys/cdefs.h>
@@ -70,18 +69,10 @@ acpi_print_oemid(const char *type, char oemid[OEMID_SIZE])
     kprintf("\n");
 }
 
-static bool
-acpi_is_checksum_valid(struct acpi_header *hdr)
+struct acpi_root_sdt *
+acpi_get_root_sdt(void)
 {
-    uint8_t sum;
-
-    sum = 0;
-    for (int i = 0; i < hdr->length; ++i) {
-        sum += ((char *)hdr)[i];
-    }
-
-    /* Sum of table (from header to end) must be zero!! */
-    return sum == 0;
+    return root_sdt;
 }
 
 void
