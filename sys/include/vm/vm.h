@@ -39,7 +39,7 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 
 #define VM_HIGHER_HALF (g_hhdm_request.response->offset)
 
-#define PHYS_TO_VIRT(phys) (void *)(phys + VM_HIGHER_HALF)
+#define PHYS_TO_VIRT(phys) (void *)((uintptr_t)phys + VM_HIGHER_HALF)
 #define VIRT_TO_PHYS(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
 
 #endif      /* !_SYS_VM_VM_H_ */
