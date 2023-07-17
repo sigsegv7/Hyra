@@ -36,7 +36,9 @@
 #include <sys/types.h>
 
 void acpi_init(void);
+void *acpi_query(const char *query);
 bool acpi_is_checksum_valid(struct acpi_header *hdr);
 struct acpi_root_sdt *acpi_get_root_sdt(void);
+size_t acpi_get_root_sdt_len(void);
 
 #endif      /* !_ACPI_ACPI_H_ */
