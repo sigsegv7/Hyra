@@ -75,6 +75,12 @@ acpi_get_root_sdt(void)
     return root_sdt;
 }
 
+size_t
+acpi_get_root_sdt_len(void)
+{
+    return root_sdt_entries;
+}
+
 void
 acpi_init(void)
 {
