@@ -46,6 +46,7 @@ itoa_base10_convert(int64_t value, char *buf)
         if (value == 0) {
             buf[i++] = '0';
             buf[i++] = '\0';
+            return buf;
         }
 
         if (value < 0) {
