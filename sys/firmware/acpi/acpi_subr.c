@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id */
+/* $Id$ */
 
 #include <firmware/acpi/acpi.h>
 
