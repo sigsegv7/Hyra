@@ -31,7 +31,7 @@
 
 #include <machine/gdt.h>
 
-struct gdt_entry g_dmmy_gdt[256] = {
+struct gdt_entry g_gdt[256] = {
     /* Null */
     {0},
 
@@ -76,7 +76,7 @@ struct gdt_entry g_dmmy_gdt[256] = {
     },
 };
 
-struct gdtr g_early_gdtr = {
+struct gdtr g_gdtr = {
     .limit = sizeof(struct gdt_entry) * 256 - 1,
-    .offset = (uintptr_t)&g_dmmy_gdt[0]
+    .offset = (uintptr_t)&g_gdt[0]
 };

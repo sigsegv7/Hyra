@@ -74,7 +74,7 @@ gdt_load(struct gdtr *gdtr)
         );
 }
 
-extern struct gdt_entry g_dmmy_gdt[256];
-extern struct gdtr g_early_gdtr;
+extern struct gdt_entry g_gdt[256];
+extern struct gdtr g_gdtr;
 
 #endif  /* !AMD64_GDT_H_ */

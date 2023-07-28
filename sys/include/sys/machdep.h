@@ -33,46 +33,11 @@
 #define _SYS_MACHDEP_H_
 
 #include <sys/types.h>
-#if defined(_KERNEL)
-#include <machine/gdt.h>
-#endif      /* defined(_KERNEL) */
+#include <sys/cdefs.h>
 
 #if defined(_KERNEL)
 
-/*
- * Arch specifics go here
- * along with an #if defined(...)
- *
- * XXX: When porting more architectures this
- *      may get messy. Figure out a way to
- *      seperate this into a different header.
- */
-struct processor_machdep {
-#if defined(__x86_64__)
-    struct gdtr      *gdtr;
-    struct gdt_entry *gdt;
-#endif      /* defined(__x86_64__) */
-};
-
-/*
- * Sets arch specifics to their
- * defaults.
- */
-#if defined(__x86_64__)
-#define DEFAULT_PROCESSOR_MACHDEP           \
-            {                               \
-                .gdtr = &g_early_gdtr,      \
-                .gdt  = &g_dmmy_gdt[0]      \
-            }
-#endif      /* defined(__x86_64__) */
-
-struct processor {
-    struct processor_machdep machdep;
-};
-
-__weak void processor_init(struct processor *processor);
-__weak void interrupts_init(struct processor *processor);
-
+void processor_init(void);
 void processor_halt(void);
 
 #endif  /* defined(_KERNEL) */

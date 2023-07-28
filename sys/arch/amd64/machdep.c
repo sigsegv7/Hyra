@@ -33,13 +33,13 @@
 #include <sys/cdefs.h>
 #include <machine/trap.h>
 #include <machine/idt.h>
+#include <machine/gdt.h>
 
 #define ISR(func) ((uintptr_t)func)
 
-__weak void
-interrupts_init(struct processor *processor)
+static void
+interrupts_init(void)
 {
-    __USE(processor);
     idt_set_desc(0x0, IDT_TRAP_GATE_FLAGS, ISR(arith_err), 0);
     idt_set_desc(0x2, IDT_TRAP_GATE_FLAGS, ISR(nmi), 0);
     idt_set_desc(0x3, IDT_TRAP_GATE_FLAGS, ISR(breakpoint_handler), 0);
@@ -61,8 +61,8 @@ processor_halt(void)
 }
 
 __weak void
-processor_init(struct processor *processor)
+processor_init(void)
 {
-    gdt_load(processor->machdep.gdtr);
-    interrupts_init(processor);
+    gdt_load(&g_gdtr);
+    interrupts_init();
 }

@@ -40,10 +40,6 @@
 __KERNEL_META("$Vega$: init_main.c, Ian Marco Moffett, "
               "Where the Vega kernel first starts up");
 
-static struct processor bsp = {
-    .machdep = DEFAULT_PROCESSOR_MACHDEP
-};
-
 void
 main(void)
 {
@@ -55,7 +51,7 @@ main(void)
             VEGA_ARCH, VEGA_VERSION, VEGA_BUILDDATE,
             VEGA_BUILDBRANCH);
 
-    processor_init(&bsp);
+    processor_init();
     vm_physseg_init();
 
     acpi_init();
