@@ -127,12 +127,12 @@
  * The above is the preferred style for this
  * macro.
  */
-#define __KERNEL_META(meta_str)                         \
-            __asm__(".section .meta.note\n"             \
-                   ".align 4\n"                         \
-                   ".string \"" meta_str "\"\n"         \
-                   ".previous"                          \
-            )
+#define __KERNEL_META(meta_str)                  \
+    __asm__(".section .meta.note\n"              \
+            ".align 4\n"                         \
+            ".string \"" meta_str "\"\n"         \
+            ".previous"                          \
+    )
 
 #define __MODULE_NAME(name) \
     __used static const char *__THIS_MODULE = name
