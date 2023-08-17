@@ -34,6 +34,7 @@
 #include <machine/trap.h>
 #include <machine/idt.h>
 #include <machine/gdt.h>
+#include <machine/pic.h>
 
 #define ISR(func) ((uintptr_t)func)
 
@@ -60,7 +61,7 @@ processor_halt(void)
     __ASMV("cli; hlt");
 }
 
-__weak void
+void
 processor_init(void)
 {
     gdt_load(&g_gdtr);

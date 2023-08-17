@@ -37,8 +37,8 @@
 
 #if defined(_KERNEL)
 
-void processor_init(void);
-void processor_halt(void);
+__weak void processor_init(void);
+__weak void processor_halt(void);
 
 #endif  /* defined(_KERNEL) */
 #endif  /* !_SYS_MACHDEP_H_ */
