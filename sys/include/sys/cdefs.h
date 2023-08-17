@@ -40,6 +40,32 @@
 #define __weak      __attr(weak)
 #define __used      __attr(used)
 
+/* Pack a structure */
+#define __packed        __attribute__((__packed__))
+
+/* Align by `n` */
+#define __aligned(n)    __attribute__((__aligned__(n)))
+
+/*
+ * Align to a cacheline-boundary which is
+ * typically 64 bytes.
+ *
+ * XXX: Should probably deal with the case of the
+ *      cacheline alignment boundary not being 64 bytes.
+ */
+#define __cacheline_aligned __aligned(64)
+
+/*
+ * To be used when an empty body is required like:
+ *
+ * #ifdef DEBUG
+ * #define dprintf(a) printf(a)
+ * #else
+ * #define dprintf(a) __nothing
+ * #endif
+ */
+#define __nothing   ((void)0)
+
 /* __BIT(n): Set nth bit, where __BIT(0) == 0x1 */
 #define __BIT(n)    (1ULL << n)
 
@@ -110,32 +136,6 @@
 
 #define __MODULE_NAME(name) \
     __used static const char *__THIS_MODULE = name
-
-/* Pack a structure */
-#define __packed        __attribute__((__packed__))
-
-/* Align by `n` */
-#define __aligned(n)    __attribute__((__aligned__(n)))
-
-/*
- * Align to a cacheline-boundary which is
- * typically 64 bytes.
- *
- * XXX: Should probably deal with the case of the
- *      cacheline alignment boundary not being 64 bytes.
- */
-#define __cacheline_aligned __aligned(64)
-
-/*
- * To be used when an empty body is required like:
- *
- * #ifdef DEBUG
- * #define dprintf(a) printf(a)
- * #else
- * #define dprintf(a) __nothing
- * #endif
- */
-#define __nothing   ((void)0)
 
 #endif  /* !defined(__ASSEMBLER__) */
 #endif  /* !_SYS_CDEFS_H_ */
