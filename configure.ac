@@ -1,6 +1,6 @@
 # $Id$
 
-AC_INIT([Vega], [0.0.1], [ian@vegaa.systems])
+AC_INIT([Vega], [0.0.1], [emilia@vegaa.systems])
 
 KERN_CFLAGS_X86_64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protector -fno-pic \\
 	-Werror=implicit -Werror=implicit-function-declaration \\

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
+ * Copyright (c) 2023 Emilia Strange and the VegaOS team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@
 #include <vm/vm_physseg.h>
 #include <logo.h>
 
-__KERNEL_META("$Vega$: init_main.c, Ian Marco Moffett, "
+__KERNEL_META("$Vega$: init_main.c, Emilia Strange, "
               "Where the Vega kernel first starts up");
 
 void
