@@ -38,7 +38,7 @@
 #include <vm/vm.h>
 
 __MODULE_NAME("acpi");
-__KERNEL_META("$Vega$: acpi_init.c, Ian Macro Moffett, "
+__KERNEL_META("$Vega$: acpi_init.c, Emilia Strange, "
               "ACPI init logic");
 
 static volatile struct limine_rsdp_request rsdp_req = {
