@@ -36,7 +36,6 @@
 
 /* Misc helpers */
 #define __attr(x)   __attribute__((x))
-#define __used      __attr(used)
 #define __weak      __attr(weak)
 #define __used      __attr(used)
 
