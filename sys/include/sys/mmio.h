@@ -32,6 +32,8 @@
 #ifndef _SYS_MMIO_H_
 #define _SYS_MMIO_H_
 
+#include <sys/types.h>
+
 #define _MMIO_WRITE_TYPE(TYPE, SUFFIX)                  \
     static inline void                                  \
     mmio_write##SUFFIX(uintptr_t addr, TYPE val)        \
