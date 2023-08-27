@@ -33,11 +33,28 @@
 #define _SYS_MMIO_H_
 
 #include <sys/types.h>
+#include <vm/vm.h>
 
+/*
+ * mmio_write<n> - Writes to MMIO address with specific size
+ *
+ * @addr: Address to write to.
+ * @val: Value to write.
+ *
+ * These functions will add the higher half
+ * offset (VM_HIGHER_HALF) if the MMIO address
+ * is less than VM_HIGHER_HALF as it'll be safe
+ * to assume it's a physical address. Page faults
+ * from writes could be due to the resulting virtual
+ * address not being mapped.
+ */
 #define _MMIO_WRITE_TYPE(TYPE, SUFFIX)                  \
     static inline void                                  \
     mmio_write##SUFFIX(uintptr_t addr, TYPE val)        \
     {                                                   \
+        if (addr < VM_HIGHER_HALF) {                    \
+            addr += VM_HIGHER_HALF;                     \
+        }                                               \
         *(volatile TYPE *)addr = val;                   \
     }
 
