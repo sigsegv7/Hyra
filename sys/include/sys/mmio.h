@@ -50,7 +50,7 @@
  */
 #define _MMIO_WRITE_TYPE(TYPE, SUFFIX)                  \
     static inline void                                  \
-    mmio_write##SUFFIX(uintptr_t addr, TYPE val)        \
+    mmio_write##SUFFIX(void *addr, TYPE val)        \
     {                                                   \
         if (addr < VM_HIGHER_HALF) {                    \
             addr += VM_HIGHER_HALF;                     \
