@@ -52,10 +52,13 @@
     static inline void                                  \
     mmio_write##SUFFIX(void *addr, TYPE val)            \
     {                                                   \
-        if (addr < VM_HIGHER_HALF) {                    \
-            addr += VM_HIGHER_HALF;                     \
+        uintptr_t tmp;                                  \
+                                                        \
+        tmp = (uintptr_t)addr;                          \
+        if (tmp < VM_HIGHER_HALF) {                     \
+            tmp += VM_HIGHER_HALF;                      \
         }                                               \
-        *(volatile TYPE *)addr = val;                   \
+        *(volatile TYPE *)tmp = val;                    \
     }
 
 /*
