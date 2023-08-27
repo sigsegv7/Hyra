@@ -62,6 +62,24 @@
     }
 
 /*
+ * mmio_read<n> - Does the same as mmio_write<n> but for reading
+ *
+ * @addr: Address to read from.
+ */
+#define _MMIO_READ_TYPE(TYPE, SUFFIX)                   \
+    static inline TYPE                                  \
+    mmio_read##SUFFIX(void *addr, TYPE val)             \
+    {                                                   \
+        uintptr_t tmp;                                  \
+                                                        \
+        tmp = (uintptr_t)addr;                          \
+        if (tmp < VM_HIGHER_HALF) {                     \
+            tmp += VM_HIGHER_HALF;                      \
+        }                                               \
+        return *(volatile TYPE *)tmp;                   \
+    }
+
+/*
  * To write to an MMIO address of, for example,
  * 8 bits, use mmio_write8(addr, val)
  */
@@ -70,6 +88,18 @@ _MMIO_WRITE_TYPE(uint16_t, 16)
 _MMIO_WRITE_TYPE(uint32_t, 32)
 #if __SIZEOF_SIZE_T__ == 8
 _MMIO_WRITE_TYPE(uint64_t, 64)
+#endif
+__extension__
+
+/*
+ * To read from an MMIO address of, for example,
+ * 8 bits, use mmio_read8(addr)
+ */
+_MMIO_READ_TYPE(uint8_t, 8)
+_MMIO_READ_TYPE(uint16_t, 16)
+_MMIO_READ_TYPE(uint32_t, 32)
+#if __SIZEOF_SIZE_T__ == 8
+_MMIO_READ_TYPE(uint64_t, 64)
 #endif
 __extension__
 
