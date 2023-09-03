@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Emilia Strange and the VegaOS team.
+ * Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 #include <vm/vm.h>
 
 __MODULE_NAME("acpi");
-__KERNEL_META("$Vega$: acpi_init.c, Emilia Strange, "
+__KERNEL_META("$Vega$: acpi_init.c, Ian Marco Moffett, "
               "ACPI init logic");
 
 static volatile struct limine_rsdp_request rsdp_req = {

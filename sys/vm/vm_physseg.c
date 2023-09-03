@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Emilia Strange and the VegaOS team.
+ * Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 #include <string.h>
 
 __MODULE_NAME("vm_physseg");
-__KERNEL_META("$Vega$: vm_physseg.c, Emilia Strange, "
+__KERNEL_META("$Vega$: vm_physseg.c, Ian Marco Moffett, "
               "The Vega physical memory manager");
 
 #if defined(VM_PHYSSEG_DEBUG)

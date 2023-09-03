@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Emilia Strange and the VegaOS team.
+ * Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
 #include <sys/types.h>
 #include <sys/syslog.h>
 
-#define COPYRIGHT "Copyright (c) 2023 Emilia Strange and the VegaOS team."
+#define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the VegaOS team."
 
 #define PRINT_LOGO()                                    \
         kprintf("%s v%s\n\n", g_logo, VEGA_VERSION);    \

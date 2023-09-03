@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Emilia Strange and the VegaOS team.
+ * Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 #define CURSOR_WIDTH            FONT_WIDTH
 #define CURSOR_HEIGHT           FONT_HEIGHT
 
-__KERNEL_META("$Vega$: tty.c, Emilia Strange, "
+__KERNEL_META("$Vega$: tty.c, Ian Marco Moffett, "
               "Core TTY implementation");
 
 /* List of attached TTYs */
