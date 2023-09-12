@@ -32,7 +32,6 @@
 #include <machine/trap.h>
 #include <machine/idt.h>
 #include <machine/gdt.h>
-#include <machine/pic.h>
 
 #define ISR(func) ((uintptr_t)func)
 
