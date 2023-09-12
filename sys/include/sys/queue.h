@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #define _Q_INVALIDATE(a)
 
 /*

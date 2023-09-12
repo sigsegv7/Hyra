@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <sys/limine.h>
 #include <sys/cdefs.h>
 #include <sys/syslog.h>

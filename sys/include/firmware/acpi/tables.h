@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _ACPI_TABLES_H_
 #define _ACPI_TABLES_H_
 

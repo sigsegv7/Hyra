@@ -17,8 +17,6 @@
 #ifndef _LIMINE_H
 #define _LIMINE_H 1
 
-/* $Id$ */
-
 #ifdef __cplusplus
 extern "C" {
 #endif

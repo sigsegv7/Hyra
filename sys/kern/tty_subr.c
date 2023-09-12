@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <sys/tty.h>
 
 /*

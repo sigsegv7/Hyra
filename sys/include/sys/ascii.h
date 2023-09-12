@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _SYS_ASCII_H_
 #define _SYS_ASCII_H_
 

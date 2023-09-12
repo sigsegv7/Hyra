@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _VM_VM_PHYSSEG_H_
 #define _VM_VM_PHYSSEG_H_
 

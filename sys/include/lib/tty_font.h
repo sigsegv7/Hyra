@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _LIB_TTY_FONT_H_
 #define _LIB_TTY_FONT_H_
 

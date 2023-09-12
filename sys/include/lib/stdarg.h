@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _LIB_STDARG_H_
 #define _LIB_STDARG_H_
 

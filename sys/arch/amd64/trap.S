@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <machine/frame.h>
 #include <machine/trap.h>
 

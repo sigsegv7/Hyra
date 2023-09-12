@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <firmware/acpi/acpi.h>
 #include <sys/limine.h>
 #include <sys/syslog.h>

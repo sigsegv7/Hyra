@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _AMD64_TRAP_H_
 #define _AMD64_TRAP_H_
 

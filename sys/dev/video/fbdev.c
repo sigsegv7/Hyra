@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <sys/types.h>
 #include <sys/limine.h>
 #include <dev/video/fbdev.h>

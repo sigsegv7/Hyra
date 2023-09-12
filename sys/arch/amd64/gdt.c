@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <machine/gdt.h>
 
 struct gdt_entry g_gdt[256] = {

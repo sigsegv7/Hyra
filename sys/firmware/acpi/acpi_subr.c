@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <firmware/acpi/acpi.h>
 #include <firmware/acpi/tables.h>
 #include <vm/vm.h>

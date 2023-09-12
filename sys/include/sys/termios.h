@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _SYS_TERMIOS_H_
 #define _SYS_TERMIOS_H_
 

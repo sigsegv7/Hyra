@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <string.h>
 
 static char *itoa_base10_convert(int64_t value, char *buf);

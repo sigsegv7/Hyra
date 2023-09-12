@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <sys/cdefs.h>
 #include <sys/tty.h>
 #include <sys/syslog.h>

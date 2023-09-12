@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _SYS_VM_VM_H_
 #define _SYS_VM_VM_H_
 

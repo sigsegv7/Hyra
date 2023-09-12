@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _AMD64_IDT_H_
 #define _AMD64_IDT_H_
 

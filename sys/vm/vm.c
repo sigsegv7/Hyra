@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <vm/vm.h>
 
 volatile struct limine_hhdm_request g_hhdm_request = {

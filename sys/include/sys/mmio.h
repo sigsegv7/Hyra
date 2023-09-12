@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _SYS_MMIO_H_
 #define _SYS_MMIO_H_
 

@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <sys/machdep.h>
 #include <sys/cdefs.h>
 #include <machine/trap.h>

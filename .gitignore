@@ -1,0 +1,11 @@
+*.d
+*.o
+*.iso
+*.log
+*.status
+/Makefile
+/cross
+/configure
+/stand
+/sys/include/machine
+autom4te.cache

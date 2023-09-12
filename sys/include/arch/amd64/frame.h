@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _AMD64_FRAME_H_
 #define _AMD64_FRAME_H_
 

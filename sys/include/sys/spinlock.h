@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _SYS_SPINLOCK_H_
 #define _SYS_SPINLOCK_H_
 

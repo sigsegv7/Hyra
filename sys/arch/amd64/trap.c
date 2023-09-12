@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <machine/trap.h>
 #include <sys/cdefs.h>
 #include <sys/spinlock.h>

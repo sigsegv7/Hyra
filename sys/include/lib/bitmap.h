@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #ifndef _LIB_BITMAP_H_
 #define _LIB_BITMAP_H_
 

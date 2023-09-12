@@ -27,8 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 #include <sys/panic.h>
 #include <sys/syslog.h>
 #include <sys/machdep.h>
