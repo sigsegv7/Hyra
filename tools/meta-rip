@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 
 if [[ ! -f $1 ]]
 then

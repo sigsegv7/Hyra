@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 
 # Set the current year as a variable
 current_year=$(date +"%Y")

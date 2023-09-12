@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# $Id$
 
 rm -f $1
 printf "#include <sys/types.h>\n\nstruct kernel_symbol" > $1

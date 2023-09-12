@@ -1,4 +1,3 @@
-# $Id$
 
 AC_INIT([Vega], [0.0.1], [emilia@vegaa.systems])
 
