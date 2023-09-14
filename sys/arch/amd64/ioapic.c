@@ -29,6 +29,7 @@
 
 #include <machine/ioapic.h>
 #include <machine/ioapicvar.h>
+#include <firmware/acpi/acpi.h>
 #include <sys/panic.h>
 #include <sys/mmio.h>
 #include <sys/cdefs.h>
@@ -99,6 +100,52 @@ ioapic_write_redentry(const union ioapic_redentry *entry, uint8_t index)
     ioapic_writel(IOREDTBL + index * 2 + 1, (uint32_t)(entry->value >> 32));
 }
 
+/*
+ * Mask I/O APIC pin with "raw" pin number
+ * (Global System Interrupt)
+ */
+void
+ioapic_gsi_mask(uint8_t gsi)
+{
+    union ioapic_redentry redentry;
+
+    ioapic_read_redentry(&redentry, gsi);
+    redentry.interrupt_mask = 1;
+    ioapic_write_redentry(&redentry, gsi);
+}
+
+/*
+ * Unmask I/O APIC pin with "raw" pin number
+ * (Global System Interrupt)
+ */
+void
+ioapic_gsi_unmask(uint8_t gsi)
+{
+    union ioapic_redentry redentry;
+
+    ioapic_read_redentry(&redentry, gsi);
+    redentry.interrupt_mask = 0;
+    ioapic_write_redentry(&redentry, gsi);
+}
+
+void
+ioapic_irq_mask(uint8_t irq)
+{
+    uint8_t gsi;
+
+    gsi = irq_to_gsi(irq);
+    ioapic_gsi_mask(gsi);
+}
+
+void
+ioapic_irq_unmask(uint8_t irq)
+{
+    uint8_t gsi;
+
+    gsi = irq_to_gsi(irq);
+    ioapic_gsi_unmask(gsi);
+}
+
 void
 ioapic_set_base(void *mmio_base)
 {
@@ -111,7 +158,6 @@ ioapic_init(void)
 {
     size_t tmp;
     uint8_t redir_entry_cnt;
-    union ioapic_redentry redir_entry;
 
     /* Sanity check */
     if (ioapic_base == NULL)
@@ -123,8 +169,6 @@ ioapic_init(void)
     KINFO("Masking %d GSIs...\n", redir_entry_cnt);
 
     for (uint8_t i = 0; i < redir_entry_cnt; ++i) {
-        ioapic_read_redentry(&redir_entry, i);
-        redir_entry.interrupt_mask = 1;
-        ioapic_write_redentry(&redir_entry, i);
+        ioapic_gsi_mask(i);
     }
 }

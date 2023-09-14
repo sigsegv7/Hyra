@@ -32,6 +32,10 @@
 
 #include <sys/types.h>
 
+void ioapic_irq_mask(uint8_t irq);
+void ioapic_irq_unmask(uint8_t irq);
+void ioapic_gsi_mask(uint8_t irq);
+void ioapic_gsi_unmask(uint8_t irq);
 void ioapic_set_base(void *mmio_base);
 void ioapic_init(void);
 
