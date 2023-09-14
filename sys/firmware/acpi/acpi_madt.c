@@ -84,6 +84,40 @@ do_parse(void)
     }
 }
 
+/*
+ * Converts IRQ numbers to its corresponding
+ * Global System Interrupt (GSI) number.
+ *
+ * @irq: IRQ number.
+ */
+uint32_t
+irq_to_gsi(uint8_t irq)
+{
+    struct apic_header *hdr = NULL;
+    struct interrupt_override *override = NULL;
+    uint8_t *cur = NULL;
+    uint8_t *end = NULL;
+
+    cur = (uint8_t *)(madt + 1);
+    end = (uint8_t *)madt + madt->hdr.length;
+
+    while (cur < end) {
+        hdr = (void *)cur;
+
+        switch (hdr->type) {
+        case APIC_TYPE_INTERRUPT_OVERRIDE:
+            override = (struct interrupt_override *)cur;
+            if (override->source == irq) {
+                return override->interrupt;
+            }
+        }
+
+        cur += hdr->length;
+    }
+
+    return irq;
+}
+
 void
 acpi_parse_madt(void)
 {
