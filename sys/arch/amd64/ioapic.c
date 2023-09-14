@@ -103,6 +103,8 @@ ioapic_write_redentry(const union ioapic_redentry *entry, uint8_t index)
 /*
  * Mask I/O APIC pin with "raw" pin number
  * (Global System Interrupt)
+ *
+ * @gsi: Global System Interrupt number
  */
 void
 ioapic_gsi_mask(uint8_t gsi)
@@ -117,6 +119,8 @@ ioapic_gsi_mask(uint8_t gsi)
 /*
  * Unmask I/O APIC pin with "raw" pin number
  * (Global System Interrupt)
+ *
+ * @gsi: Global System Interrupt number
  */
 void
 ioapic_gsi_unmask(uint8_t gsi)
@@ -128,6 +132,11 @@ ioapic_gsi_unmask(uint8_t gsi)
     ioapic_write_redentry(&redentry, gsi);
 }
 
+/*
+ * Masks I/O APIC pin via IRQ number
+ *
+ * @irq: Interrupt Request number
+ */
 void
 ioapic_irq_mask(uint8_t irq)
 {
@@ -137,6 +146,11 @@ ioapic_irq_mask(uint8_t irq)
     ioapic_gsi_mask(gsi);
 }
 
+/*
+ * Unmasks I/O APIC pin via IRQ number
+ *
+ * @irq: Interrupt Request number
+ */
 void
 ioapic_irq_unmask(uint8_t irq)
 {
