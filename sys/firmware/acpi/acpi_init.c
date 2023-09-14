@@ -106,4 +106,5 @@ acpi_init(void)
         panic("Root SDT has an invalid checksum!\n");
     }
     root_sdt_entries = (root_sdt->hdr.length - sizeof(root_sdt->hdr)) / 4;
+    acpi_parse_madt();
 }

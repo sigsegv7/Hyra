@@ -27,17 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ACPI_ACPI_H_
-#define _ACPI_ACPI_H_
+#ifndef _AMD64_IOAPIC_H_
+#define _AMD64_IOAPIC_H_
 
-#include <firmware/acpi/tables.h>
 #include <sys/types.h>
 
-void acpi_init(void);
-void *acpi_query(const char *query);
-bool acpi_is_checksum_valid(struct acpi_header *hdr);
-struct acpi_root_sdt *acpi_get_root_sdt(void);
-size_t acpi_get_root_sdt_len(void);
-void acpi_parse_madt(void);
+void ioapic_set_base(void *mmio_base);
+void ioapic_init(void);
 
-#endif      /* !_ACPI_ACPI_H_ */
+#endif  /* _AMD64_IOAPIC_H_ */

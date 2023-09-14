@@ -32,8 +32,10 @@
 #include <machine/trap.h>
 #include <machine/idt.h>
 #include <machine/gdt.h>
+#include <machine/ioapic.h>
 
 #define ISR(func) ((uintptr_t)func)
+#define INIT_FLAG_IOAPIC 0x00000001U
 
 static void
 interrupts_init(void)
@@ -61,6 +63,14 @@ processor_halt(void)
 void
 processor_init(void)
 {
+    /* Indicates what doesn't need to be init anymore */
+    static uint8_t init_flags = 0;
+
+    if (!__TEST(init_flags, INIT_FLAG_IOAPIC)) {
+        init_flags |= INIT_FLAG_IOAPIC;
+        ioapic_init();
+    }
+
     gdt_load(&g_gdtr);
     interrupts_init();
 }

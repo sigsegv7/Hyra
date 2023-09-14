@@ -27,17 +27,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ACPI_ACPI_H_
-#define _ACPI_ACPI_H_
+#ifndef _IOAPICVAR_H_
+#define _IOAPICVAR_H_
 
-#include <firmware/acpi/tables.h>
 #include <sys/types.h>
 
-void acpi_init(void);
-void *acpi_query(const char *query);
-bool acpi_is_checksum_valid(struct acpi_header *hdr);
-struct acpi_root_sdt *acpi_get_root_sdt(void);
-size_t acpi_get_root_sdt_len(void);
-void acpi_parse_madt(void);
+/* Register offsets */
+#define IOREGSEL    0x00
+#define IOWIN       0x10
+#define IOAPICVER   0x01
+#define IOREDTBL    0x10
 
-#endif      /* !_ACPI_ACPI_H_ */
+union ioapic_redentry {
+    struct {
+        uint8_t vector;
+        uint8_t delmod          : 3;
+        uint8_t destmod         : 1;
+        uint8_t delivs          : 1;
+        uint8_t intpol          : 1;
+        uint8_t remote_irr      : 1;
+        uint8_t trigger_mode    : 1;
+        uint8_t interrupt_mask  : 1;
+        uint64_t reserved       : 39;
+        uint8_t dest_field;
+    };
+    uint64_t value;
+};
+
+#endif  /* _IOAPICVAR_H_ */

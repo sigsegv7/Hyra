@@ -27,17 +27,75 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ACPI_ACPI_H_
-#define _ACPI_ACPI_H_
-
+#include <firmware/acpi/acpi.h>
 #include <firmware/acpi/tables.h>
-#include <sys/types.h>
+#include <machine/ioapic.h>
+#include <sys/cdefs.h>
+#include <sys/panic.h>
+#include <sys/syslog.h>
 
-void acpi_init(void);
-void *acpi_query(const char *query);
-bool acpi_is_checksum_valid(struct acpi_header *hdr);
-struct acpi_root_sdt *acpi_get_root_sdt(void);
-size_t acpi_get_root_sdt_len(void);
-void acpi_parse_madt(void);
+#define APIC_TYPE_LOCAL_APIC            0
+#define APIC_TYPE_IO_APIC               1
+#define APIC_TYPE_INTERRUPT_OVERRIDE    2
 
-#endif      /* !_ACPI_ACPI_H_ */
+__MODULE_NAME("acpi");
+__KERNEL_META("$Vega$: acpi_madt.c, Ian Marco Moffett, "
+              "ACPI MADT parsing");
+
+static struct acpi_madt *madt = NULL;
+
+static void
+do_parse(void)
+{
+    uint8_t *cur = NULL;
+    uint8_t *end = NULL;
+
+    struct apic_header *hdr = NULL;
+    struct ioapic *ioapic = NULL;
+    void *ioapic_mmio_base = NULL;
+
+    cur = (uint8_t *)(madt + 1);
+    end = (uint8_t *)madt + madt->hdr.length;
+
+    while (cur < end) {
+        hdr = (void *)cur;
+
+        switch (hdr->type) {
+        case APIC_TYPE_IO_APIC:
+            /*
+             * TODO: Figure out how to use multiple
+             *       I/O APICs.
+             */
+            if (ioapic != NULL) {
+                break;
+            }
+
+            ioapic = (struct ioapic *)cur;
+
+            KINFO("Detected I/O APIC (id=%d, gsi_base=%d)\n",
+                  ioapic->ioapic_id, ioapic->gsi_base);
+
+            ioapic_mmio_base = (void *)(uintptr_t)ioapic->ioapic_addr;
+            ioapic_set_base(ioapic_mmio_base);
+            break;
+        }
+
+        cur += hdr->length;
+    }
+}
+
+void
+acpi_parse_madt(void)
+{
+    /* Prevent this function from running twice */
+    if (madt != NULL) {
+        return;
+    }
+
+    madt = acpi_query("APIC");
+    if (madt == NULL) {
+        panic("Failed to query for ACPI MADT\n");
+    }
+
+    do_parse();
+}
