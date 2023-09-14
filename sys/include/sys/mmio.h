@@ -66,7 +66,7 @@
  */
 #define _MMIO_READ_TYPE(TYPE, SUFFIX)                   \
     static inline TYPE                                  \
-    mmio_read##SUFFIX(void *addr, TYPE val)             \
+    mmio_read##SUFFIX(void *addr)                       \
     {                                                   \
         uintptr_t tmp;                                  \
                                                         \
