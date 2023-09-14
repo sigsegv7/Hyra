@@ -49,10 +49,9 @@ main(void)
             VEGA_ARCH, VEGA_VERSION, VEGA_BUILDDATE,
             VEGA_BUILDBRANCH);
 
+    acpi_init();
     processor_init();
     vm_physseg_init();
-
-    acpi_init();
 
     /* We're done here, halt the processor */
     __ASMV("cli; hlt");
