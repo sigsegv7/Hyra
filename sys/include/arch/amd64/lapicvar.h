@@ -47,4 +47,6 @@
 #define LAPIC_ERR           0x0280U     /* Error Status Register */
 #define LAPIC_DCR           0x03E0U     /* Divide Configuration Register (for timer) */
 
-#endif  /* _AMD64_LAPICVAR_H_ */
+#define IA32_APIC_BASE_MSR 0x1B
+
+#endif  /* !_AMD64_LAPICVAR_H_ */

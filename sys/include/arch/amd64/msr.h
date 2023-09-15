@@ -60,4 +60,4 @@ wrmsr(uint32_t msr_addr, uint64_t value)
     );
 }
 
-#endif  /* _AMD64_MSR_H_ */
+#endif  /* !_AMD64_MSR_H_ */

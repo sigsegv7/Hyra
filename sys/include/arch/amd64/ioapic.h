@@ -39,4 +39,4 @@ void ioapic_gsi_unmask(uint8_t irq);
 void ioapic_set_base(void *mmio_base);
 void ioapic_init(void);
 
-#endif  /* _AMD64_IOAPIC_H_ */
+#endif  /* !_AMD64_IOAPIC_H_ */

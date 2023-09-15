@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _IOAPICVAR_H_
-#define _IOAPICVAR_H_
+#ifndef _AMD64_IOAPICVAR_H_
+#define _AMD64_IOAPICVAR_H_
 
 #include <sys/types.h>
 
@@ -54,4 +54,4 @@ union ioapic_redentry {
     uint64_t value;
 };
 
-#endif  /* _IOAPICVAR_H_ */
+#endif  /* !_AMD64_IOAPICVAR_H_ */

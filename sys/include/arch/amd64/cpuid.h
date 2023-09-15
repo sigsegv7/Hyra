@@ -37,4 +37,4 @@
             : "=a" (a), "=b" (b), "=c" (c), "=d" (d)    \
             : "0" (level))
 
-#endif  /* _AMD64_CPUID_H_ */
+#endif  /* !_AMD64_CPUID_H_ */
