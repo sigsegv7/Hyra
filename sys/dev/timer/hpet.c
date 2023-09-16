@@ -95,13 +95,18 @@ hpet_write(uint32_t reg, uint64_t val)
     mmio_write64(addr, val);
 }
 
-void
+int
 hpet_msleep(size_t ms)
 {
     uint64_t caps;
     uint32_t period;
     uint64_t counter_val;
     volatile size_t ticks;
+
+    /* Don't even try if faulty, would probably cause deadlock */
+    if (is_faulty) {
+        return 1;
+    }
 
     caps = hpet_read(HPET_REG_CAPS);
     period = CAP_CLK_PERIOD(caps);
@@ -112,6 +117,8 @@ hpet_msleep(size_t ms)
     while (hpet_read(HPET_REG_MAIN_COUNTER) < ticks) {
         spinwait_hint();
     }
+
+    return 0;
 }
 
 int
