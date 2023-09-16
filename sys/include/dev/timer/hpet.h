@@ -33,6 +33,8 @@
 #include <sys/types.h>
 
 int hpet_init(void);
-void hpet_msleep(size_t ms);
+int hpet_msleep(size_t ms);
+int hpet_usleep(size_t us);
+int hpet_nsleep(size_t ns);
 
 #endif  /* !_TIMER_HPET_H_ */

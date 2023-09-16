@@ -128,6 +128,18 @@ hpet_msleep(size_t ms)
 }
 
 int
+hpet_usleep(size_t us)
+{
+    return hpet_sleep(us, 1000000000);
+}
+
+int
+hpet_nsleep(size_t ns)
+{
+    return hpet_sleep(ns, 1000000);
+}
+
+int
 hpet_init(void)
 {
     struct acpi_gas *gas;
