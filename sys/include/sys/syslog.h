@@ -42,6 +42,10 @@
     kprintf("%s[debug]: ", __THIS_MODULE);      \
     kprintf(__VA_ARGS__);
 
+#define KERR(...)                               \
+    kprintf("%s[ERROR]: ", __THIS_MODULE);      \
+    kprintf(__VA_ARGS__);
+
 void syslog_init(void);
 void kprintf(const char *fmt, ...);
 void vkprintf(const char *fmt, va_list *ap);
