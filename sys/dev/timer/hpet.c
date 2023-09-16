@@ -95,8 +95,8 @@ hpet_write(uint32_t reg, uint64_t val)
     mmio_write64(addr, val);
 }
 
-int
-hpet_msleep(size_t ms)
+static int
+hpet_sleep(uint64_t n, uint64_t units)
 {
     uint64_t caps;
     uint32_t period;
@@ -112,13 +112,19 @@ hpet_msleep(size_t ms)
     period = CAP_CLK_PERIOD(caps);
     counter_val = hpet_read(HPET_REG_MAIN_COUNTER);
 
-    ticks = counter_val + (ms * (1000000000000 / period));
+    ticks = counter_val + (n * (units / period));
 
     while (hpet_read(HPET_REG_MAIN_COUNTER) < ticks) {
         spinwait_hint();
     }
 
     return 0;
+}
+
+int
+hpet_msleep(size_t ms)
+{
+    return hpet_sleep(ms, 1000000000000);
 }
 
 int
