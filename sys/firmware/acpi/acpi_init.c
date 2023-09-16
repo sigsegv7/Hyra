@@ -33,6 +33,7 @@
 #include <sys/cdefs.h>
 #include <sys/panic.h>
 #include <sys/syslog.h>
+#include <dev/timer/hpet.h>
 #include <vm/vm.h>
 
 __MODULE_NAME("acpi");
@@ -107,4 +108,12 @@ acpi_init(void)
     }
     root_sdt_entries = (root_sdt->hdr.length - sizeof(root_sdt->hdr)) / 4;
     acpi_parse_madt();
+
+#if defined(__x86_64__)
+    /* Vega requires HPET on x86_64 */
+    if (hpet_init() != 0)
+        panic("Machine does not support HPET!\n");
+#else
+    hpet_init();
+#endif  /* defined(__x86_64__) */
 }

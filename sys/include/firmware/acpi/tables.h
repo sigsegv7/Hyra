@@ -51,7 +51,7 @@ struct __packed acpi_rsdp {
     uint64_t signature;         /* RSD PTR */
     uint8_t checksum;           /* Structure checksum */
     char oemid[OEMID_SIZE];     /* OEM-supplied string that IDs the OEM */
-    uint8_t revision;           /* Revision of the structure */ 
+    uint8_t revision;           /* Revision of the structure */
     uint32_t rsdt_addr;         /* RSDT physical address */
 
     /* Reserved if revision < 2 */
@@ -61,7 +61,7 @@ struct __packed acpi_rsdp {
     uint8_t reserved[3];
 };
 
-/* 
+/*
  * XSDT or RSDT depending
  * on what revision the header
  * says.
@@ -103,6 +103,28 @@ struct __packed interrupt_override {
     uint8_t source;         /* IRQ */
     uint32_t interrupt;     /* GSI */
     uint16_t flags;
+};
+
+struct __packed acpi_gas {
+    uint8_t address_space_id;
+    uint8_t register_bit_width;
+    uint8_t register_bit_offset;
+    uint8_t reserved;
+    uint64_t address;
+};
+
+struct __packed hpet {
+    struct acpi_header hdr;
+    uint8_t hardware_rev_id;
+    uint8_t comparator_count : 5;
+    uint8_t counter_size : 1;
+    uint8_t reserved : 1;
+    uint8_t legacy_replacement : 1;
+    uint16_t pci_vendor_id;
+    struct acpi_gas gas;
+    uint8_t hpet_number;
+    uint16_t minimum_tick;
+    uint8_t page_protection;
 };
 
 #endif      /* !_ACPI_TABLES_H_ */
