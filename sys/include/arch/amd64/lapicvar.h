@@ -30,6 +30,8 @@
 #ifndef _AMD64_LAPICVAR_H_
 #define _AMD64_LAPICVAR_H_
 
+#include <sys/cdefs.h>
+
 /* LAPIC register offsets */
 #define LAPIC_ID            0x0020U     /* ID Register */
 #define LAPIC_VERSION       0x0030U     /* Version Register */
@@ -45,8 +47,34 @@
 #define LAPIC_TMR           0x0180U     /* Trigger Mode Register (max=0x0220) */
 #define LAPIC_IRR           0x0200U     /* Interrupt Request Register (max=0x0270) */
 #define LAPIC_ERR           0x0280U     /* Error Status Register */
+#define LAPIC_LVT_TMR       0x0320U     /* LVT Timer Register */
 #define LAPIC_DCR           0x03E0U     /* Divide Configuration Register (for timer) */
+#define LAPIC_INIT_CNT      0x0380U     /* Initial Count Register (for timer) */
+#define LAPIC_CUR_CNT       0x0390U     /* Current Count Register (for timer) */
 
-#define IA32_APIC_BASE_MSR 0x1B
+#define IA32_APIC_BASE_MSR  0x1B
+
+/*
+ * To hardware enable, OR the value
+ * of the IA32_APIC_BASE MSR with
+ * LAPIC_HW_ENABLE and rewrite it.
+ *
+ * To software enable, OR the value
+ * of the SVR with LAPIC_SW_ENABLE
+ * and rewrite it.
+ *
+ * LAPIC_SW_ENABLE has the low 8 bits set
+ * as some hardware requires the spurious
+ * vector to be hardwired to 1s so we'll
+ * go with that to be safe.
+ */
+#define LAPIC_HW_ENABLE     __BIT(11)
+#define LAPIC_SW_ENABLE     (__BIT(8) | 0xFF)
+
+/* The initial logical APIC ID to be set */
+#define LAPIC_STARTUP_LID   0x1
+
+/* LVT bits */
+#define LAPIC_LVT_MASK            __BIT(16)
 
 #endif  /* !_AMD64_LAPICVAR_H_ */

@@ -27,52 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/machdep.h>
-#include <sys/cdefs.h>
-#include <machine/trap.h>
-#include <machine/idt.h>
-#include <machine/gdt.h>
-#include <machine/ioapic.h>
-#include <machine/lapic.h>
+#ifndef _AMD64_LAPIC_H_
+#define _AMD64_LAPIC_H_
 
-#define ISR(func) ((uintptr_t)func)
-#define INIT_FLAG_IOAPIC 0x00000001U
+#define LAPIC_TMR_ONESHOT   0x00
+#define LAPIC_TMR_PERIODIC  0x01
 
-static void
-interrupts_init(void)
-{
-    idt_set_desc(0x0, IDT_TRAP_GATE_FLAGS, ISR(arith_err), 0);
-    idt_set_desc(0x2, IDT_TRAP_GATE_FLAGS, ISR(nmi), 0);
-    idt_set_desc(0x3, IDT_TRAP_GATE_FLAGS, ISR(breakpoint_handler), 0);
-    idt_set_desc(0x4, IDT_TRAP_GATE_FLAGS, ISR(overflow), 0);
-    idt_set_desc(0x5, IDT_TRAP_GATE_FLAGS, ISR(bound_range), 0);
-    idt_set_desc(0x6, IDT_TRAP_GATE_FLAGS, ISR(invl_op), 0);
-    idt_set_desc(0x8, IDT_TRAP_GATE_FLAGS, ISR(double_fault), 0);
-    idt_set_desc(0xA, IDT_TRAP_GATE_FLAGS, ISR(invl_tss), 0);
-    idt_set_desc(0xB, IDT_TRAP_GATE_FLAGS, ISR(segnp), 0);
-    idt_set_desc(0xD, IDT_TRAP_GATE_FLAGS, ISR(general_prot), 0);
-    idt_set_desc(0xE, IDT_TRAP_GATE_FLAGS, ISR(page_fault), 0);
-    idt_load();
-}
+void lapic_set_base(void *mmio_base);
+void lapic_init(void);
 
-void
-processor_halt(void)
-{
-    __ASMV("cli; hlt");
-}
-
-void
-processor_init(void)
-{
-    /* Indicates what doesn't need to be init anymore */
-    static uint8_t init_flags = 0;
-
-    if (!__TEST(init_flags, INIT_FLAG_IOAPIC)) {
-        init_flags |= INIT_FLAG_IOAPIC;
-        ioapic_init();
-    }
-
-    lapic_init();       /* Per core */
-    gdt_load(&g_gdtr);
-    interrupts_init();
-}
+#endif  /* !_AMD64_LAPIC_H_ */

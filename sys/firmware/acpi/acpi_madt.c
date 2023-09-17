@@ -30,6 +30,7 @@
 #include <firmware/acpi/acpi.h>
 #include <firmware/acpi/tables.h>
 #include <machine/ioapic.h>
+#include <machine/lapic.h>
 #include <sys/cdefs.h>
 #include <sys/panic.h>
 #include <sys/syslog.h>
@@ -50,13 +51,20 @@ do_parse(void)
     uint8_t *cur = NULL;
     uint8_t *end = NULL;
 
+    void *ioapic_mmio_base = NULL;
+    void *lapic_mmio_base = NULL;
+
     struct apic_header *hdr = NULL;
     struct ioapic *ioapic = NULL;
-    void *ioapic_mmio_base = NULL;
 
     cur = (uint8_t *)(madt + 1);
     end = (uint8_t *)madt + madt->hdr.length;
 
+    /* Init the Local APIC */
+    lapic_mmio_base = (void *)(uintptr_t)madt->lapic_addr;
+    lapic_set_base(lapic_mmio_base);
+
+    /* Parse the rest of the MADT */
     while (cur < end) {
         hdr = (void *)cur;
 
