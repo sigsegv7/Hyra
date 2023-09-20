@@ -31,12 +31,43 @@
 #include <sys/tty.h>
 #include <sys/syslog.h>
 #include <sys/machdep.h>
+#include <sys/timer.h>
 #include <firmware/acpi/acpi.h>
 #include <vm/vm_physseg.h>
 #include <logo.h>
 
+__MODULE_NAME("init_main");
 __KERNEL_META("$Vega$: init_main.c, Ian Marco Moffett, "
               "Where the Vega kernel first starts up");
+
+static inline void
+log_timer(const char *purpose, tmrr_status_t s, const struct timer *tmr)
+{
+    if (s == TMRR_EMPTY_ENTRY) {
+        KINFO("%s not yet registered\n", purpose);
+    } else if (tmr->name == NULL) {
+        KINFO("Nameless %s registered; unknown\n", purpose);
+    } else {
+        KINFO("%s registered: %s\n", purpose, tmr->name);
+    }
+}
+
+/*
+ * Logs what timers are registered
+ * on the system.
+ */
+static void
+list_timers(void)
+{
+    struct timer timer_tmp;
+    tmrr_status_t status;
+
+    status = req_timer(TIMER_SCHED, &timer_tmp);
+    log_timer("SCHED_TMR", status, &timer_tmp);
+
+    status = req_timer(TIMER_GP, &timer_tmp);
+    log_timer("GENERAL_PURPOSE_TMR", status, &timer_tmp);
+}
 
 void
 main(void)
@@ -52,6 +83,8 @@ main(void)
     acpi_init();
     processor_init();
     vm_physseg_init();
+
+    list_timers();
 
     /* We're done here, halt the processor */
     __ASMV("cli; hlt");
