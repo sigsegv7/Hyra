@@ -30,6 +30,7 @@
 #ifndef _SYS_ERRNO_H_
 #define _SYS_ERRNO_H_
 
-#define EXIT_FAILURE -1
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
 
 #endif
