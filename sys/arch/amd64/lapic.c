@@ -31,11 +31,12 @@
 #include <machine/lapicvar.h>
 #include <machine/cpuid.h>
 #include <machine/msr.h>
-#include <sys/types.h>
 #include <sys/cdefs.h>
+#include <sys/timer.h>
 #include <sys/syslog.h>
 #include <sys/panic.h>
 #include <sys/mmio.h>
+#include <dev/timer/hpet.h>
 
 /*
  * Only calls KINFO if we are the BSP.
@@ -52,7 +53,9 @@ __MODULE_NAME("lapic");
 __KERNEL_META("$Vega$: lapic.c, Ian Marco Moffett, "
               "Local APIC driver");
 
+
 static void *lapic_base = NULL;
+static struct timer lapic_timer = { 0 };
 
 /*
  * Returns true if LAPIC is supported.
@@ -99,6 +102,28 @@ lapic_writel(uint32_t reg, uint32_t val)
 }
 
 /*
+ * Calibrates the Local APIC timer - Timer abstraction
+ */
+static size_t
+lapic_timer_calibrate(void)
+{
+    size_t freq_hz;
+
+    lapic_timer_init(&freq_hz);
+    return freq_hz;
+}
+
+/*
+ * Stops the Local APIC timer - Timer abstraction
+ */
+static void
+lapic_timer_stop(void)
+{
+    lapic_writel(LAPIC_INIT_CNT, 0);
+    lapic_writel(LAPIC_LVT_TMR, LAPIC_LVT_MASK);
+}
+
+/*
  * Set bits within a LAPIC register
  * without overwriting the whole thing.
  *
@@ -128,6 +153,42 @@ lapic_reg_clear(uint32_t reg, uint32_t value)
 
     old = lapic_readl(reg);
     lapic_writel(reg, old & ~(value));
+}
+
+void
+lapic_timer_init(size_t *freq_out)
+{
+    uint32_t ticks_per_10ms;
+    size_t freq_hz;
+    const uint32_t MHZ_DIV = 1000000;
+    const uint32_t GHZ_DIV = 1000000000;
+    const uint32_t MAX_SAMPLES = 0xFFFFFFFF;
+
+    lapic_writel(LAPIC_DCR, 3);                     /* Use divider 16 */
+    lapic_writel(LAPIC_INIT_CNT, MAX_SAMPLES);      /* Set the initial count */
+
+    hpet_msleep(10);                                /* Wait 10ms (10000 usec) */
+    lapic_writel(LAPIC_LVT_TMR, LAPIC_LVT_MASK);    /* Stop the timer w/ LVT mask bit */
+
+    /* Sanity check */
+    if (freq_out == NULL)
+        panic("lapic_timer_init() freq_out NULL\n");
+
+    /* Calculate frequency in Hz */
+    ticks_per_10ms = MAX_SAMPLES - lapic_readl(LAPIC_CUR_CNT);
+    freq_hz = ticks_per_10ms * 10000;       /* 10000 since we waited 10ms */
+
+    /* Check if in MHz or GHz range */
+    if (freq_hz >= GHZ_DIV) {
+        BSP_KINFO("BSP Local APIC Timer frequency: %d GHz\n", freq_hz / GHZ_DIV);
+    } else if (freq_hz >= MHZ_DIV) {
+        BSP_KINFO("BSP Local APIC Timer frequency: %d MHz\n", freq_hz / MHZ_DIV);
+    } else {
+        BSP_KINFO("BSP Local APIC Timer frequency: %d Hz\n", freq_hz);
+    }
+
+    /* Divide by 10000 to get ticks */
+    *freq_out = freq_hz;
 }
 
 void
@@ -164,4 +225,12 @@ lapic_init(void)
 
     BSP_KINFO("Enabled Local APIC for BSP\n");
     lapic_writel(LAPIC_LDR, LAPIC_STARTUP_LID);
+
+    /* Setup the timer descriptor */
+    lapic_timer.name = "LAPIC_INTEGRATED_TIMER";
+    lapic_timer.calibrate = lapic_timer_calibrate;
+    lapic_timer.stop = lapic_timer_stop;
+
+    /* Register the timer for scheduler usage */
+    register_timer(TIMER_SCHED, &lapic_timer);
 }
