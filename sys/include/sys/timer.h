@@ -60,12 +60,17 @@ typedef int tmrr_status_t;
  * a NULL value. Fields should be NULL if the timer
  * driver implementation doesn't implement support
  * for a functionality.
+ *
+ * XXX: The msleep, usleep, ... functions must return
+ *      either EXIT_SUCCESS and EXIT_FAILURE from sys/errno.h
+ *      ONLY.
  */
 struct timer {
     const char *name;               /* e.g "HPET" */
-    void(*msleep)(size_t ms);
-    void(*usleep)(size_t us);
-    void(*nsleep)(size_t ns);
+    size_t(*calibrate)(void);       /* Returns frequency, 0 for unspecified */
+    int(*msleep)(size_t ms);
+    int(*usleep)(size_t us);
+    int(*nsleep)(size_t ns);
     void(*periodic_ms)(size_t ms);
     void(*oneshot_ms)(size_t ms);
     void(*stop)(void);
