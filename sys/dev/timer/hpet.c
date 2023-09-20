@@ -32,6 +32,7 @@
 #include <sys/panic.h>
 #include <sys/cdefs.h>
 #include <sys/timer.h>
+#include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/mmio.h>
 
@@ -107,7 +108,7 @@ hpet_sleep(uint64_t n, uint64_t units)
 
     /* Don't even try if faulty, would probably cause deadlock */
     if (is_faulty) {
-        return 1;
+        return EXIT_FAILURE;
     }
 
     caps = hpet_read(HPET_REG_CAPS);
@@ -120,7 +121,7 @@ hpet_sleep(uint64_t n, uint64_t units)
         spinwait_hint();
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 int
