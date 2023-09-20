@@ -185,6 +185,7 @@ hpet_init(void)
     timer.msleep = hpet_msleep;
     timer.usleep = hpet_usleep;
     timer.nsleep = hpet_nsleep;
+    register_timer(TIMER_GP, &timer);
 
     /* Not faulty */
     is_faulty = false;
