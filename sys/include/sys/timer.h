@@ -33,8 +33,8 @@
 #include <sys/types.h>
 
 /* Timer IDs */
-#define TIMER_SCHED 0x00000001U     /* Scheduler reserved timer */
-#define TIMER_GP    0x00000002U     /* General purpose timer */
+#define TIMER_SCHED 0x00000000U     /* Scheduler reserved timer */
+#define TIMER_GP    0x00000001U     /* General purpose timer */
 
 /* Number of timer IDs, adjust when adding timer IDs */
 #define TIMER_ID_COUNT 2
