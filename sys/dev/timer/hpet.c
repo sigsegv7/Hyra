@@ -31,6 +31,7 @@
 #include <firmware/acpi/acpi.h>
 #include <sys/panic.h>
 #include <sys/cdefs.h>
+#include <sys/timer.h>
 #include <sys/syslog.h>
 #include <sys/mmio.h>
 
@@ -62,6 +63,7 @@ __KERNEL_META("$Vega$: hpet.c, Ian Marco Moffett, "
 #define spinwait_hint()   __nothing
 #endif  /* defined(__x86_64__) */
 
+static struct timer timer = { 0 };
 static struct hpet *acpi_hpet = NULL;
 static void *hpet_base = NULL;
 static bool is_faulty = false;
@@ -176,6 +178,12 @@ hpet_init(void)
 
     hpet_write(HPET_REG_MAIN_COUNTER, 0);
     hpet_write(HPET_GENERAL_CONFIG, 1);
+
+    /* Setup the timer descriptor */
+    timer.name = "HIGH_PRECISION_EVENT_TIMER";
+    timer.msleep = hpet_msleep;
+    timer.usleep = hpet_usleep;
+    timer.nsleep = hpet_nsleep;
 
     /* Not faulty */
     is_faulty = false;
