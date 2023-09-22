@@ -99,6 +99,9 @@
 /* Suppress `variable set but not used' warnings */
 #define __USE(x) ((void)(x))
 
+/* A cleaner wrapper over _Static_assert() */
+#define __STATIC_ASSERT _Static_assert
+
 /* Computes 2^x i.e 2 to the power of 'x' */
 #define __POW2(x) (1ULL << x)
 
