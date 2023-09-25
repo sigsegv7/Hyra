@@ -16,6 +16,18 @@ QEMU_FLAGS_X86_64="--enable-kvm -monitor stdio 	\\
 VEGA_BUILDDATE=`export LANG=en_US.UTF-8 ; date`
 VEGA_BUILDBRANCH="`basename $PWD`"
 
+# Enable Spectre mitigation option
+AC_ARG_ENABLE([spectre-mitigation],
+    [AS_HELP_STRING([--enable-spectre-mitigation], [Enable Spectre mitigation (IBRS or similar)])],,
+    [enable_spectre_mitigation=$enableval])
+
+
+if test "x$enable_spectre_mitigation" = "xyes"; then
+    AC_SUBST(SPECTRE_MITIGATION, [1])
+else
+    AC_SUBST(SPECTRE_MITIGATION, [0])
+fi
+
 AC_SUBST(VEGA_BUILDDATE, [$VEGA_BUILDDATE])
 AC_SUBST(VEGA_BUILDBRANCH, [$VEGA_BUILDBRANCH])
 

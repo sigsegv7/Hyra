@@ -27,39 +27,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _AMD64_MSR_H_
-#define _AMD64_MSR_H_
-
+#include <machine/spectre.h>
+#include <machine/cpuid.h>
+#include <machine/msr.h>
+#include <sys/syslog.h>
 #include <sys/types.h>
-#include <sys/cdefs.h>
 
-#define IA32_SPEC_CTL   0x00000048
+__MODULE_NAME("spectre");
+__KERNEL_META("$Vega$: spectre.c, Ian Marco Moffett, "
+              "Spectre mitigation support");
 
-static inline uint64_t
-rdmsr(uint32_t msr_addr)
+#if __SPECTRE_MITIGATION == 1
+
+/*
+ * Returns true if Indirect Branch Restricted Speculation (IBRS)
+ * is supported.
+ */
+__naked bool
+__can_mitigate_spectre(void);
+
+/*
+ * Returns EXIT_FAILURE if not supported, returns
+ * EXIT_SUCCESS if mitigation is now active.
+ *
+ * This function will be NULL if spectre mitigation isn't enabled;
+ * therefore it is wise to verify to prevent access violations and
+ * undefined behaviour.
+ *
+ * This behaviour is governed by the __SPECTRE_MITIGATION define
+ *
+ * TODO: Try to enable others, not just IBRS
+ */
+__weak int
+try_spectre_mitigate(void)
 {
-    uint32_t lo, hi;
+    uint64_t tmp;
 
-    __ASMV("rdmsr"
-           : "=a" (lo), "=d" (hi)
-           : "c" (msr_addr)
-    );
-    return ((uint64_t)hi << 32) | lo;
+    if (!__can_mitigate_spectre()) {
+        KINFO("IBRS not supported; spectre mitigation NOT enabled\n");
+        return EXIT_FAILURE;
+    }
+
+    KINFO("IBRS supported; spectre mitigation enabled\n");
+    tmp = rdmsr(IA32_SPEC_CTL);
+    tmp |= __BIT(0);                /* IBRS */
+    wrmsr(IA32_SPEC_CTL, tmp);
+    return EXIT_SUCCESS;
 }
 
-static inline void
-wrmsr(uint32_t msr_addr, uint64_t value)
-{
-    uint32_t lo, hi;
-
-    lo = (uint32_t)value;
-    hi = (uint32_t)(value >> 32);
-
-    __ASMV("wrmsr"
-           :  /* No outputs */
-           : "a" (lo), "d" (hi),
-             "c" (msr_addr)
-    );
-}
-
-#endif  /* !_AMD64_MSR_H_ */
+#endif      /* __SPECTRE_MITIGATION == 1 */

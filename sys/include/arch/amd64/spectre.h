@@ -27,39 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _AMD64_MSR_H_
-#define _AMD64_MSR_H_
+#ifndef _AMD64_SPECTRE_H_
+#define _AMD64_SPECTRE_H_
 
-#include <sys/types.h>
 #include <sys/cdefs.h>
+#include <sys/errno.h>
 
-#define IA32_SPEC_CTL   0x00000048
+__weak int try_spectre_mitigate(void);
 
-static inline uint64_t
-rdmsr(uint32_t msr_addr)
-{
-    uint32_t lo, hi;
-
-    __ASMV("rdmsr"
-           : "=a" (lo), "=d" (hi)
-           : "c" (msr_addr)
-    );
-    return ((uint64_t)hi << 32) | lo;
-}
-
-static inline void
-wrmsr(uint32_t msr_addr, uint64_t value)
-{
-    uint32_t lo, hi;
-
-    lo = (uint32_t)value;
-    hi = (uint32_t)(value >> 32);
-
-    __ASMV("wrmsr"
-           :  /* No outputs */
-           : "a" (lo), "d" (hi),
-             "c" (msr_addr)
-    );
-}
-
-#endif  /* !_AMD64_MSR_H_ */
+#endif

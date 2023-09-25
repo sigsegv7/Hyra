@@ -1,5 +1,18 @@
 .SILENT:
 
+
+###############################
+# Feature stuff
+###############################
+override SPECTRE_MITIGATION = @SPECTRE_MITIGATION@
+
+ifeq ($(SPECTRE_MITIGATION), 1)
+	override SPECTRE_FLAGS=-D__SPECTRE_MITIGATION
+else
+	override SPECTRE_FLAGS=
+endif
+
+
 ###############################
 # CFLAGS, QEMU flags + misc
 ###############################
@@ -9,7 +22,8 @@ override PROMPT := printf "%s\t\t%s\n"
 override KERNEL_DEFINES =  -DVEGA_VERSION="\"$(VEGA_VERSION)\""\
 			   -DVEGA_BUILDDATE="\"@VEGA_BUILDDATE@\""\
 			   -DVEGA_BUILDBRANCH="\"@VEGA_BUILDBRANCH@\""\
-			   -DVEGA_ARCH="\"@ARCH@\""
+			   -DVEGA_ARCH="\"@ARCH@\""\
+			   $(SPECTRE_FLAGS)
 override KERNEL_CFLAGS = @KERNEL_CFLAGS@ $(KERNEL_DEFINES)
 override KERNEL_LDFLAGS = -nostdlib -zmax-page-size=0x1000 -static -Tconf/link-$(ARCH).ld
 override QEMU_FLAGS = @QEMU_FLAGS@

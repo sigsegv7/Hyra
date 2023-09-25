@@ -27,39 +27,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _AMD64_MSR_H_
-#define _AMD64_MSR_H_
+.text
+.globl __can_mitigate_spectre
 
-#include <sys/types.h>
-#include <sys/cdefs.h>
+__can_mitigate_spectre:
+    xor %ecx, %ecx          // NULL out ECX
+    mov $0x7, %eax          // 0x7 (Check IBRS)
+    cpuid
 
-#define IA32_SPEC_CTL   0x00000048
-
-static inline uint64_t
-rdmsr(uint32_t msr_addr)
-{
-    uint32_t lo, hi;
-
-    __ASMV("rdmsr"
-           : "=a" (lo), "=d" (hi)
-           : "c" (msr_addr)
-    );
-    return ((uint64_t)hi << 32) | lo;
-}
-
-static inline void
-wrmsr(uint32_t msr_addr, uint64_t value)
-{
-    uint32_t lo, hi;
-
-    lo = (uint32_t)value;
-    hi = (uint32_t)(value >> 32);
-
-    __ASMV("wrmsr"
-           :  /* No outputs */
-           : "a" (lo), "d" (hi),
-             "c" (msr_addr)
-    );
-}
-
-#endif  /* !_AMD64_MSR_H_ */
+    /* Check if supported (if EDX[26] == 1) */
+    mov $1, %ebx
+    shl $26, %ebx
+    test %ebx, %edx
+    jnz supported
+not_supported:
+    xor %rax, %rax
+    jmp 1f
+supported:
+    mov $1, %rax
+1:
+    ret
