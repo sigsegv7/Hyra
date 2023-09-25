@@ -36,6 +36,7 @@
 #define __attr(x)   __attribute__((x))
 #define __weak      __attr(weak)
 #define __used      __attr(used)
+#define __naked     __attr(naked)
 
 /* Pack a structure */
 #define __packed        __attribute__((__packed__))
