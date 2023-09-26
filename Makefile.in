@@ -77,6 +77,7 @@ sys/include/machine/:
 	cd sys/include/; ln -sf arch/$(ARCH) machine
 
 base/boot/vega-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
+	rm -rf iso_root
 	mkdir -p base/boot/
 	$(PROMPT) " LD " $(shell pwd)/base/boot/vega-kernel
 	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/vega-kernel
@@ -88,14 +89,16 @@ base/boot/vega-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
 	$(PROMPT) " RAMFS " $(shell pwd)/initramfs.tar
 	# === Building ISO ===
 	mkdir -p iso_root/boot/
-	cp conf/limine.cfg stand/limine/limine.sys \
-		stand/limine/limine-cd.bin stand/limine/limine-cd-efi.bin iso_root/
+	mkdir -p iso_root/EFI/BOOT/
+	cp stand/limine/BOOTX64.EFI iso_root/EFI/BOOT/
+	cp conf/limine.cfg stand/limine/limine-bios.sys \
+		stand/limine/limine-bios-cd.bin stand/limine/limine-uefi-cd.bin iso_root/
 	cp base/boot/vega-kernel iso_root/boot/
 	mv initramfs.tar iso_root/boot/
-	xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4\
-		-boot-info-table --efi-boot limine-cd-efi.bin -efi-boot-part \
+	xorriso -as mkisofs -b limine-bios-cd.bin -no-emul-boot -boot-load-size 4\
+		-boot-info-table --efi-boot limine-uefi-cd.bin -efi-boot-part \
 		--efi-boot-image --protective-msdos-label iso_root -o Vega.iso > /dev/null
-	stand/limine/limine-deploy Vega.iso > /dev/null
+	stand/limine/limine bios-install Vega.iso
 	$(PROMPT) " ISO " $(shell pwd)/Vega.iso
 
 -include $(KERNEL_HEADER_DEPS)

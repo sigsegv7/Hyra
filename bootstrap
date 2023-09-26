@@ -15,7 +15,7 @@ try_fetch() {
 }
 
 fetch() {
-    try_fetch "git clone https://github.com/limine-bootloader/limine.git --branch=v4.x-branch-binary --depth=1" "stand/limine"
+    try_fetch "git clone https://github.com/limine-bootloader/limine.git --branch=v5.x-branch-binary --depth=1" "stand/limine"
 }
 
 build_limine() {
