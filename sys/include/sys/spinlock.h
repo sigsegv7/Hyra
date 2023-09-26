@@ -36,10 +36,10 @@ struct spinlock {
     volatile _Atomic bool lock;
 };
 
-static inline bool
+static inline void
 spinlock_acquire(struct spinlock *lock)
 {
-    return __atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE);
+    while (__atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE));
 }
 
 static inline void
