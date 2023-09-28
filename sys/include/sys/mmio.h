@@ -31,6 +31,7 @@
 #define _SYS_MMIO_H_
 
 #include <sys/types.h>
+#include <sys/cdefs.h>
 #include <vm/vm.h>
 
 /*
@@ -57,6 +58,7 @@
             tmp += VM_HIGHER_HALF;                      \
         }                                               \
         *(volatile TYPE *)tmp = val;                    \
+        __mem_barrier();                                \
     }
 
 /*
@@ -74,6 +76,8 @@
         if (tmp < VM_HIGHER_HALF) {                     \
             tmp += VM_HIGHER_HALF;                      \
         }                                               \
+                                                        \
+        __mem_barrier(); /* Ensure writes complete */   \
         return *(volatile TYPE *)tmp;                   \
     }
 
