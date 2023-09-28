@@ -34,6 +34,12 @@ then
     exit
 fi
 
+# Trim leading spaces
+cookie=$(echo "$cookie" | sed -e 's/^[[:space:]]*//')
+filename=$(echo "$filename" | sed -e 's/^[[:space:]]*//')
+author=$(echo "$author" | sed -e 's/^[[:space:]]*//')
+description=$(echo "$description" | sed -e 's/^[[:space:]]*//')
+
 echo "Cookie: $cookie"
 echo "Filename: $filename"
 echo "Author: $author"
