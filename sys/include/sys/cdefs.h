@@ -146,12 +146,17 @@
 
 #else
 
+/*
+ * XXX: Will work; however, maybe move this??
+ */
+#if defined(__x86_64__)
 .macro __KERNEL_META meta_str
     .section .meta.note
     .align 4
     .string "\meta_str"
     .previous
 .endm
+#endif  /* defined(__x86_64__) */
 
 #endif  /* !defined(__ASSEMBLER__) */
 #endif  /* !_SYS_CDEFS_H_ */
