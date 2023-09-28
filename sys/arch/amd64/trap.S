@@ -29,6 +29,10 @@
 
 #include <machine/frame.h>
 #include <machine/trap.h>
+#include <sys/cdefs.h>
+
+__KERNEL_META "$Vega$: trap.S, Ian Marco Moffett, \
+               Trap handling routines"
 
 .text
 .globl breakpoint_handler

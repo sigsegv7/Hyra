@@ -144,5 +144,14 @@
 #define __MODULE_NAME(name) \
     __used static const char *__THIS_MODULE = name
 
+#else
+
+.macro __KERNEL_META meta_str
+    .section .meta.note
+    .align 4
+    .string "\meta_str"
+    .previous
+.endm
+
 #endif  /* !defined(__ASSEMBLER__) */
 #endif  /* !_SYS_CDEFS_H_ */

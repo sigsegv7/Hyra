@@ -27,6 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+ #include <sys/cdefs.h>
+
+__KERNEL_META "$Vega$: spectre.S, Ian Marco Moffett, \
+               Spectre mitigation detection"
+
 .text
 .globl __can_mitigate_spectre
 
