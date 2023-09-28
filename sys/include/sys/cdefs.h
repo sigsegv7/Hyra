@@ -38,6 +38,9 @@
 #define __used      __attr(used)
 #define __naked     __attr(naked)
 
+/* Wrapper for inline asm */
+#define __ASMV __asm__ __volatile__
+
 /* Pack a structure */
 #define __packed        __attribute__((__packed__))
 
@@ -52,6 +55,12 @@
  *      cacheline alignment boundary not being 64 bytes.
  */
 #define __cacheline_aligned __aligned(64)
+
+/*
+ * Memory barrier, ensure compiler doesn't reorder
+ * memory accesses.
+ */
+#define __mem_barrier() __ASMV("" ::: "memory")
 
 /*
  * To be used when an empty body is required like:
@@ -105,9 +114,6 @@
 
 /* Computes 2^x i.e 2 to the power of 'x' */
 #define __POW2(x) (1ULL << x)
-
-/* Wrapper for inline asm */
-#define __ASMV __asm__ __volatile__
 
 /*
  * Used to give metadata to
