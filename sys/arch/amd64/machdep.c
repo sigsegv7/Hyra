@@ -34,6 +34,7 @@
 #include <machine/gdt.h>
 #include <machine/ioapic.h>
 #include <machine/lapic.h>
+#include <machine/spectre.h>
 
 #define ISR(func) ((uintptr_t)func)
 #define INIT_FLAG_IOAPIC 0x00000001U
@@ -75,4 +76,8 @@ processor_init(void)
     lapic_init();       /* Per core */
     gdt_load(&g_gdtr);
     interrupts_init();
+
+    /* Enable spectre mitigation if enabled */
+    if (try_spectre_mitigate != NULL)
+        try_spectre_mitigate();
 }
