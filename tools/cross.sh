@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (c) 2023 Emilia Strange and the VegaOS team.
+# Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
