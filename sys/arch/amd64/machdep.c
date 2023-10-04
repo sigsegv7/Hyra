@@ -68,14 +68,15 @@ processor_init(void)
     /* Indicates what doesn't need to be init anymore */
     static uint8_t init_flags = 0;
 
+    interrupts_init();
+    gdt_load(&g_gdtr);
+
     if (!__TEST(init_flags, INIT_FLAG_IOAPIC)) {
         init_flags |= INIT_FLAG_IOAPIC;
         ioapic_init();
     }
 
     lapic_init();       /* Per core */
-    gdt_load(&g_gdtr);
-    interrupts_init();
 
     /* Enable spectre mitigation if enabled */
     if (try_spectre_mitigate != NULL)

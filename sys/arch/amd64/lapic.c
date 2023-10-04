@@ -251,10 +251,14 @@ lapic_init(void)
 
     /* Get the current processor, and calibrate LAPIC timer */
     cur_cpu = this_cpu();
+    CPU_INFO_LOCK(cur_cpu);
+
     lapic_timer_init(&tmr_freq);
     cur_cpu->lapic_tmr_freq = tmr_freq;
 
     /* Set the Local APIC ID */
     cur_cpu->lapic_id = lapic_get_id();
+
     BSP_KINFO("BSP Local APIC ID: %d\n", cur_cpu->lapic_id);
+
 }
