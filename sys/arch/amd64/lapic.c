@@ -249,10 +249,11 @@ lapic_init(void)
     /* Register the timer for scheduler usage */
     register_timer(TIMER_SCHED, &lapic_timer);
 
-    /* Get the current processor, and calibrate LAPIC timer */
+    /* Get the current processor, and lock its structure */
     cur_cpu = this_cpu();
     CPU_INFO_LOCK(cur_cpu);
 
+    /* Calibrate timer */
     lapic_timer_init(&tmr_freq);
     cur_cpu->lapic_tmr_freq = tmr_freq;
 
@@ -260,5 +261,6 @@ lapic_init(void)
     cur_cpu->lapic_id = lapic_get_id();
 
     BSP_KINFO("BSP Local APIC ID: %d\n", cur_cpu->lapic_id);
+    CPU_INFO_UNLOCK(cur_cpu);
 
 }

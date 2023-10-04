@@ -31,14 +31,25 @@
 #define _AMD64_CPU_H_
 
 #include <sys/types.h>
+#include <sys/spinlock.h>
 
 #define this_cpu() amd64_this_cpu()
 #define get_bsp()  amd64_get_bsp()
+#define CPU_INFO_LOCK(info) spinlock_acquire(&(info->lock))
+#define CPU_INFO_UNLOCK(info) spinlock_release(&(info->lock))
 
+/*
+ * Info about a specific processor.
+ *
+ * XXX: Spinlock must be acquired outside of this module!
+ *      None of these module's internal functions should
+ *      acquire the spinlock themselves!
+ */
 struct cpu_info {
     void *pmap;                         /* Current pmap */
     uint32_t lapic_id;
     volatile size_t lapic_tmr_freq;
+    struct spinlock lock;
 };
 
 struct cpu_info *amd64_this_cpu(void);
