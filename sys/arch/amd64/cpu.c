@@ -28,6 +28,10 @@
  */
 
 #include <machine/cpu.h>
+#include <sys/cdefs.h>
+
+__KERNEL_META("$Vega$: cpu.c, Ian Marco Moffett, "
+              "AMD64 CPU abstraction module");
 
 static struct cpu_info bsp_info;
 
