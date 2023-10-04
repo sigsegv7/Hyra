@@ -31,15 +31,13 @@
 #include <machine/lapicvar.h>
 #include <machine/cpuid.h>
 #include <machine/msr.h>
+#include <machine/cpu.h>
 #include <sys/cdefs.h>
 #include <sys/timer.h>
 #include <sys/syslog.h>
 #include <sys/panic.h>
 #include <sys/mmio.h>
 #include <dev/timer/hpet.h>
-
-__naked void
-__lapic_timer_isr(void);
 
 /*
  * Only calls KINFO if we are the BSP.
@@ -159,6 +157,18 @@ lapic_reg_clear(uint32_t reg, uint32_t value)
     lapic_writel(reg, old & ~(value));
 }
 
+/*
+ * XXX: When adding x2APIC support it is IMPORTANT
+ *      to read the full 32 bits. Unlike standard
+ *      LAPIC mode, where bits 27:24 hold the ID,
+ *      x2APIC mode uses the full 32 bits.
+ */
+static inline uint32_t
+lapic_get_id(void)
+{
+    return (lapic_readl(LAPIC_ID) >> 24) & 0xF;
+}
+
 void
 lapic_timer_init(size_t *freq_out)
 {
@@ -205,7 +215,9 @@ lapic_set_base(void *mmio_base)
 void
 lapic_init(void)
 {
+    struct cpu_info *cur_cpu;
     uint64_t tmp;
+    size_t tmr_freq;
 
     /* Sanity check */
     if (lapic_base == NULL) {
@@ -237,4 +249,13 @@ lapic_init(void)
 
     /* Register the timer for scheduler usage */
     register_timer(TIMER_SCHED, &lapic_timer);
+
+    /* Get the current processor, and calibrate LAPIC timer */
+    cur_cpu = this_cpu();
+    lapic_timer_init(&tmr_freq);
+    cur_cpu->lapic_tmr_freq = tmr_freq;
+
+    /* Set the Local APIC ID */
+    cur_cpu->lapic_id = lapic_get_id();
+    BSP_KINFO("BSP Local APIC ID: %d\n", cur_cpu->lapic_id);
 }
