@@ -72,7 +72,7 @@ struct trapframe {
  *      undefined behaviour.
  *
  */
-.macro push_trapframe trapno 
+.macro push_trapframe trapno
     push %r15
     push %r14
     push %r13
@@ -91,7 +91,7 @@ struct trapframe {
     push \trapno
 .endm
 
-.macro pop_trapframe trapno
+.macro pop_trapframe
     add $8, %rsp        /* Trapno */
     pop %rax
     pop %rcx
