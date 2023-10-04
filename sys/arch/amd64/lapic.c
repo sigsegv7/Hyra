@@ -39,6 +39,10 @@
 #include <sys/mmio.h>
 #include <dev/timer/hpet.h>
 
+__MODULE_NAME("lapic");
+__KERNEL_META("$Vega$: lapic.c, Ian Marco Moffett, "
+              "Local APIC driver");
+
 /*
  * Only calls KINFO if we are the BSP.
  */
@@ -50,11 +54,6 @@
             KINFO(__VA_ARGS__);                 \
         }                                       \
     } while (0);
-
-__MODULE_NAME("lapic");
-__KERNEL_META("$Vega$: lapic.c, Ian Marco Moffett, "
-              "Local APIC driver");
-
 
 static void *lapic_base = NULL;
 static struct timer lapic_timer = { 0 };
