@@ -38,16 +38,20 @@
 #include <sys/mmio.h>
 #include <dev/timer/hpet.h>
 
+__naked void
+__lapic_timer_isr(void);
+
 /*
  * Only calls KINFO if we are the BSP.
  */
-#define BSP_KINFO(...)                      \
-    uint64_t msr_val;                       \
-                                            \
-    msr_val = rdmsr(IA32_APIC_BASE_MSR);    \
-    if (__TEST(msr_val, 1 << 8)) {          \
-        KINFO(__VA_ARGS__);                 \
-    }
+#define BSP_KINFO(...) do {                     \
+        uint64_t msr_val;                       \
+                                                \
+        msr_val = rdmsr(IA32_APIC_BASE_MSR);    \
+        if (__TEST(msr_val, 1 << 8)) {          \
+            KINFO(__VA_ARGS__);                 \
+        }                                       \
+    } while (0);
 
 __MODULE_NAME("lapic");
 __KERNEL_META("$Vega$: lapic.c, Ian Marco Moffett, "
