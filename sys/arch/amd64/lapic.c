@@ -262,5 +262,4 @@ lapic_init(void)
 
     BSP_KINFO("BSP Local APIC ID: %d\n", cur_cpu->lapic_id);
     CPU_INFO_UNLOCK(cur_cpu);
-
 }
