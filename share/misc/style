@@ -66,7 +66,7 @@ __KERNEL_META("$Vega$: style.c, Ian Marco Moffett, "
  */
 
 /*
- * For documentation: See syslog(9)
+ * For documentation: See foo(9)
  */
 
  #ifndef _SYS_FOO_H_
