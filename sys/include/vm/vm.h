@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_VM_VM_H_
-#define _SYS_VM_VM_H_
+#ifndef _VM_H_
+#define _VM_H_
 
 #include <sys/types.h>
 #include <sys/limine.h>
@@ -40,4 +40,6 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 #define PHYS_TO_VIRT(phys) (void *)((uintptr_t)phys + VM_HIGHER_HALF)
 #define VIRT_TO_PHYS(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
 
-#endif      /* !_SYS_VM_VM_H_ */
+void vm_init(void);
+
+#endif      /* !_VM_H_ */
