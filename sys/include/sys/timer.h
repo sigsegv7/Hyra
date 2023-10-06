@@ -27,6 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * For documentation: See timer(9)
+ */
+
 #ifndef _SYS_TIMER_H_
 #define _SYS_TIMER_H_
 
