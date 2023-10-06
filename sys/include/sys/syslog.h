@@ -27,6 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * For documentation: See syslog(9)
+ */
+
 #ifndef _SYS_SYSLOG_H_
 #define _SYS_SYSLOG_H_
 

@@ -27,6 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * For documentation: See mmio(9)
+ */
+
 #ifndef _SYS_MMIO_H_
 #define _SYS_MMIO_H_
 

@@ -59,10 +59,20 @@ __KERNEL_META("$Vega$: style.c, Ian Marco Moffett, "
  * A header file should protect itself against
  * multiple inclusion.
  */
+
+/*
+ * If your header as a manpage tied to it use
+ * write a comment similar to the below comment
+ */
+
+/*
+ * For documentation: See syslog(9)
+ */
+
  #ifndef _SYS_FOO_H_
  #define _SYS_FOO_H_
 
- 
+
 /*
  * extern declarations must only appear in header files, not in .c
  * files, so the same declaration is used by the .c file defining it
