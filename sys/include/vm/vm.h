@@ -32,6 +32,8 @@
 
 #include <sys/types.h>
 #include <sys/limine.h>
+#include <sys/cdefs.h>
+#include <vm/vm_page.h>
 
 extern volatile struct limine_hhdm_request g_hhdm_request;
 
@@ -40,6 +42,19 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 #define PHYS_TO_VIRT(phys) (void *)((uintptr_t)phys + VM_HIGHER_HALF)
 #define VIRT_TO_PHYS(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
 
+/*
+ * Returns the machine's pagesize:
+ *
+ * XXX TODO: This needs to be moved to vmm_init.c
+ *           while returning a non-constant value.
+ */
+static inline size_t
+vm_get_page_size(void)
+{
+    return 4096;
+}
+
 void vm_init(void);
+struct vas vm_new_vas(void);
 
 #endif      /* !_VM_H_ */

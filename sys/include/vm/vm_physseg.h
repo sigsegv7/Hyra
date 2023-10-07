@@ -30,6 +30,10 @@
 #ifndef _VM_VM_PHYSSEG_H_
 #define _VM_VM_PHYSSEG_H_
 
+#include <sys/types.h>
+
 void vm_physseg_init(void);
+uintptr_t vm_alloc_pageframe(size_t count);
+void vm_free_pageframe(uintptr_t base, size_t count);
 
 #endif      /* !_VM_VM_PHYSSEG_H_ */
