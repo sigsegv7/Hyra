@@ -32,6 +32,7 @@
 .Sh SYNOPSIS
 .In sys/machdep.h
 .In machine/cpu.h
+.In machine/pmap.h
 .Sh DESCRIPTION
 NOTE: All examples will be for x86_64 but can be applied to others
 
@@ -71,6 +72,12 @@ The function these macros call must return a pointer
 to a
 .Ft cpu_info
 structure.
+
+In the
+.Ft machine/pmap.h
+header, should be a struct containing information
+about the address space. This header MUST be implemented
+or compiler errors will occur.
 
 .Sh AUTHORS
 .An Ian Moffett Aq Mt ian@vegaa.systems

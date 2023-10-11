@@ -27,34 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _VM_H_
-#define _VM_H_
-
-#include <sys/types.h>
-#include <sys/limine.h>
-#include <sys/cdefs.h>
-#include <vm/vm_page.h>
-#include <vm/pmap.h>
-
-extern volatile struct limine_hhdm_request g_hhdm_request;
-
-#define VM_HIGHER_HALF (g_hhdm_request.response->offset)
-
-#define PHYS_TO_VIRT(phys) (void *)((uintptr_t)phys + VM_HIGHER_HALF)
-#define VIRT_TO_PHYS(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
+#ifndef _VM_PMAP_H_
+#define _VM_PMAP_H_
 
 /*
- * Returns the machine's pagesize:
+ * Each architecture is expected to implement
+ * this header. It should contain a `struct vas'
+ * which will contain information about a VAS
+ * (virtual address space)
  *
- * XXX TODO: This needs to be moved to vmm_init.c
- *           while returning a non-constant value.
+ * On AMD64 this struct contains: PML4, etc
+ *
+ * XXX: Compiler errors pointing to this include means you
+ *      forgot to implement it!!!
+ *
+ *      `struct vas' MUST have a `struct spinlock lock' field!!!
  */
-static inline size_t
-vm_get_page_size(void)
-{
-    return 4096;
-}
+#include <machine/vas.h>
 
-void vm_init(void);
+/*
+ * Read virtual address space descriptor
+ * and return it.
+ */
+struct vas pmap_read_vas(void);
 
-#endif      /* !_VM_H_ */
+#endif  /* _VM_PMAP_H_ */

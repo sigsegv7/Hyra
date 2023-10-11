@@ -27,34 +27,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _VM_H_
-#define _VM_H_
-
-#include <sys/types.h>
-#include <sys/limine.h>
-#include <sys/cdefs.h>
-#include <vm/vm_page.h>
 #include <vm/pmap.h>
+#include <sys/cdefs.h>
 
-extern volatile struct limine_hhdm_request g_hhdm_request;
+#define PTE_ADDR_MASK 0x000FFFFFFFFFF000
 
-#define VM_HIGHER_HALF (g_hhdm_request.response->offset)
-
-#define PHYS_TO_VIRT(phys) (void *)((uintptr_t)phys + VM_HIGHER_HALF)
-#define VIRT_TO_PHYS(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
-
-/*
- * Returns the machine's pagesize:
- *
- * XXX TODO: This needs to be moved to vmm_init.c
- *           while returning a non-constant value.
- */
-static inline size_t
-vm_get_page_size(void)
+struct vas
+pmap_read_vas(void)
 {
-    return 4096;
+    struct vas vas;
+    uintptr_t cr3_raw;
+
+    __ASMV("mov %%cr3, %0"
+           : "=r" (cr3_raw)
+    );
+
+    vas.cr3_flags = cr3_raw & ~PTE_ADDR_MASK;
+    vas.top_level = cr3_raw & PTE_ADDR_MASK;
+    vas.use_l5_paging = false;      /* TODO: Check for support */
+    vas.lock.lock = 0;
+    return vas;
 }
-
-void vm_init(void);
-
-#endif      /* !_VM_H_ */
