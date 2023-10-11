@@ -28,7 +28,6 @@
  */
 
 #include <vm/vm.h>
-#include <vm/pmap.h>
 #include <sys/panic.h>
 
 static volatile struct vas kernel_vas;
