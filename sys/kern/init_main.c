@@ -34,6 +34,7 @@
 #include <sys/timer.h>
 #include <firmware/acpi/acpi.h>
 #include <vm/vm_physseg.h>
+#include <vm/vm.h>
 #include <logo.h>
 
 __MODULE_NAME("init_main");
@@ -85,6 +86,7 @@ main(void)
     vm_physseg_init();
 
     list_timers();
+    vm_init();
 
     /* We're done here, halt the processor */
     __ASMV("cli; hlt");

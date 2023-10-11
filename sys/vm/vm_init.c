@@ -28,8 +28,18 @@
  */
 
 #include <vm/vm.h>
+#include <vm/pmap.h>
+#include <sys/panic.h>
+
+static volatile struct vas kernel_vas;
 
 volatile struct limine_hhdm_request g_hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,
     .revision = 0
 };
+
+void
+vm_init(void)
+{
+    kernel_vas = pmap_read_vas();
+}
