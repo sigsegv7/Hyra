@@ -38,3 +38,13 @@ memset(void *s, int c, size_t n)
 
     return s;
 }
+
+void *
+memset64(void *s, int c, size_t n)
+{
+    for (size_t i = 0; i < n; ++i) {
+        ((uint32_t *)s)[i] = c;
+    }
+
+    return s;
+}
