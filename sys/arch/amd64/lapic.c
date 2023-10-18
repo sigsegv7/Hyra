@@ -57,6 +57,7 @@ __KERNEL_META("$Vega$: lapic.c, Ian Marco Moffett, "
 
 static void *lapic_base = NULL;
 static struct timer lapic_timer = { 0 };
+static bool has_x2apic = false;
 
 /*
  * Returns true if LAPIC is supported.
@@ -83,8 +84,13 @@ lapic_readl(uint32_t reg)
 {
     void *addr;
 
-    addr = (void *)((uintptr_t)lapic_base + reg);
-    return mmio_read32(addr);
+    if (!has_x2apic) {
+        addr = (void *)((uintptr_t)lapic_base + reg);
+        return mmio_read32(addr);
+    } else {
+        reg >>= 4;
+        return rdmsr(x2APIC_MSR_BASE + reg);
+    }
 }
 
 /*
@@ -98,8 +104,13 @@ lapic_writel(uint32_t reg, uint32_t val)
 {
     void *addr;
 
-    addr = (void *)((uintptr_t)lapic_base + reg);
-    mmio_write32(addr, val);
+    if (!has_x2apic) {
+        addr = (void *)((uintptr_t)lapic_base + reg);
+        mmio_write32(addr, val);
+    } else {
+        reg >>= 4;
+        wrmsr(x2APIC_MSR_BASE + reg, val);
+    }
 }
 
 /*
@@ -157,15 +168,44 @@ lapic_reg_clear(uint32_t reg, uint32_t value)
 }
 
 /*
- * XXX: When adding x2APIC support it is IMPORTANT
- *      to read the full 32 bits. Unlike standard
- *      LAPIC mode, where bits 27:24 hold the ID,
- *      x2APIC mode uses the full 32 bits.
+ * Reads the Local APIC ID of the
+ * current processor.
  */
 static inline uint32_t
 lapic_get_id(void)
 {
-    return (lapic_readl(LAPIC_ID) >> 24) & 0xF;
+    if (!has_x2apic) {
+        return (lapic_readl(LAPIC_ID) >> 24) & 0xF;
+    } else {
+        return lapic_readl(LAPIC_ID);
+    }
+}
+
+/*
+ * Checks if the processor supports x2APIC
+ * mode. Returns true if so.
+ */
+static inline bool
+lapic_has_x2apic(void)
+{
+    uint32_t ecx, tmp;
+
+    __CPUID(0x00000001, tmp, tmp, ecx, tmp);
+    return __TEST(ecx, 1 << 21);
+}
+
+/*
+ * Updates LDR to LAPIC_STARTUP_LID.
+ *
+ * XXX: This does *not* happen with x2APIC
+ *      as the LDR register in x2APIC mode
+ *      is readonly.
+ */
+static inline void
+lapic_set_ldr(void)
+{
+    if (!has_x2apic)
+        lapic_writel(LAPIC_LDR, LAPIC_STARTUP_LID);
 }
 
 void
@@ -231,15 +271,18 @@ lapic_init(void)
         panic("This machine does not support LAPIC!\n");
     }
 
+    has_x2apic = lapic_has_x2apic();
+
     /* Hardware enable the Local APIC */
     tmp = rdmsr(IA32_APIC_BASE_MSR);
+    tmp |= has_x2apic << x2APIC_ENABLE_SHIFT;
     wrmsr(IA32_APIC_BASE_MSR, tmp | LAPIC_HW_ENABLE);
 
     /* Software enable the Local APIC via SVR */
     lapic_reg_set(LAPIC_SVR, LAPIC_SW_ENABLE);
 
     BSP_KINFO("Enabled Local APIC for BSP\n");
-    lapic_writel(LAPIC_LDR, LAPIC_STARTUP_LID);
+    lapic_set_ldr();
 
     /* Setup the timer descriptor */
     lapic_timer.name = "LAPIC_INTEGRATED_TIMER";

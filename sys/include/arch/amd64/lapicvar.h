@@ -55,6 +55,13 @@
 #define IA32_APIC_BASE_MSR  0x1B
 
 /*
+ * The x2APIC register space is accessed via
+ * RDMSR/WRMSR instructions. The below defines
+ * the base MSR address for the register space.
+ */
+#define x2APIC_MSR_BASE 0x00000800
+
+/*
  * To hardware enable, OR the value
  * of the IA32_APIC_BASE MSR with
  * LAPIC_HW_ENABLE and rewrite it.
@@ -70,6 +77,7 @@
  */
 #define LAPIC_HW_ENABLE     __BIT(11)
 #define LAPIC_SW_ENABLE     (__BIT(8) | 0xFF)
+#define x2APIC_ENABLE_SHIFT 10
 
 /* The initial logical APIC ID to be set */
 #define LAPIC_STARTUP_LID   0x1
