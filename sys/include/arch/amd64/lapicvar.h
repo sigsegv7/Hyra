@@ -79,7 +79,13 @@
 #define LAPIC_SW_ENABLE     (__BIT(8) | 0xFF)
 #define x2APIC_ENABLE_SHIFT 10
 
-/* The initial logical APIC ID to be set */
+/*
+ * The initial logical APIC ID to be set
+ *
+ * XXX: This value does *not* apply to processors
+ *      that support x2APIC mode. In x2APIC mode
+ *      the LDR register is readonly to system software.
+ */
 #define LAPIC_STARTUP_LID   0x1
 
 /* LVT bits */
