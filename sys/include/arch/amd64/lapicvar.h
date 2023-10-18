@@ -91,4 +91,10 @@
 /* LVT bits */
 #define LAPIC_LVT_MASK            __BIT(16)
 
+/* Possible error bits within ESR */
+#define ESR_REDIR_IPI   __BIT(4)        /* Redirectible IPI */
+#define ESR_SIV         __BIT(5)        /* Send Illegal Vector */
+#define ESR_RIV         __BIT(6)        /* Received Illegal Vector */
+#define ESR_IRA         __BIT(7)        /* Illegal Register Address */
+
 #endif  /* !_AMD64_LAPICVAR_H_ */
