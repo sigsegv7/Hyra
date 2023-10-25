@@ -30,119 +30,117 @@
 #
 
 ################################################################
-# Configuration
+# Toolchain configuration
 ################################################################
 
-# Exit if there is an error
 set -e
 
-# Target to use
-TARGET=$1-elf
+TARGET="$1-elf"
+BINUTILS_VERSION=2.41
+GCC_VERSION=13.2.0
+BINUTILS_NAME="binutils-$BINUTILS_VERSION"
+BINUTILS_TARBALL="$BINUTILS_NAME.tar.xz"
+BINUTILS_URL="https://ftp.gnu.org/gnu/binutils/$BINUTILS_TARBALL"
+GCC_NAME="gcc-$GCC_VERSION"
+GCC_TARBALL="$GCC_NAME.tar.xz"
+GCC_URL="https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/$GCC_TARBALL"
 
-# Versions to build
-# Always use the latest working version (test before updating)
-BUT_VER=2.40
-GCC_VER=13.1.0
+# Remove debugging information, it takes up a lot of space
+export CFLAGS="-g0"
+export CXXFLAGS="-g0"
 
-# Tar file extension to use
-# Always use the one with the smallest file size (check when updating version)
-BUT_EXT=xz
-GCC_EXT=xz
-
-# Multicore builds
-
-if [ "$(uname)" = "FreeBSD" ]; then
-  CORES=$(($(sysctl -n hw.ncpu) + 1))
-  LOAD=$(sysctl -n hw.ncpu)
-else
-  CORES=$(($(nproc) + 1))
-  LOAD=$(nproc)
+# System-dependent configuration
+SYSTEM_NAME="$(uname -s)"
+MAKE="make"
+NPROC="nproc"
+if [ "$SYSTEM_NAME" = "OpenBSD" ]; then
+        MAKE="gmake"
+        NPROC="sysctl -n hw.ncpuonline"
+elif [ "$SYSTEM_NAME" = "FreeBSD" ]; then
+        MAKE="gmake"
+        NPROC="sysctl -n hw.ncpu"
+elif [ "$SYSTEM_NAME" = "Darwin" ]; then
+        NPROC="sysctl -n hw.ncpu"
 fi
+CORES="$($NPROC)"
 
+# Set build paths
 PREFIX="$(pwd)/cross"
 export PATH="$PREFIX/bin:$PATH"
 
-echo "Building $TARGET Binutils $BUT_VER and GCC $GCC_VER..."
-echo "Cores: $CORES, load: $LOAD"
+# Create build directory
+mkdir -p $PREFIX/build
+cd $PREFIX/build
 
 ################################################################
-# Source Tarballs
+# Download and extract sources
 ################################################################
 
-BUT_TARBALL=binutils-$BUT_VER.tar.$BUT_EXT
-GCC_TARBALL=gcc-$GCC_VER.tar.$GCC_EXT
-
-mkdir -p buildcc
-cd buildcc
-
-# Download tarballs
-echo "Downloading Binutils tarball..."
-if [ ! -f $BUT_TARBALL ]; then
-    wget https://ftp.gnu.org/gnu/binutils/$BUT_TARBALL
+if [ ! -f $BINUTILS_TARBALL ]; then
+	echo "Downloading binutils..."
+	curl $BINUTILS_URL -o $BINUTILS_TARBALL
 fi
-
-echo "Downloading GCC tarball..."
 if [ ! -f $GCC_TARBALL ]; then
-    wget https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/$GCC_TARBALL
+	echo "Downloading gcc..."
+	curl $GCC_URL -o $GCC_TARBALL
 fi
 
-# Unzip tarballs
-printf "%s" "Unzipping Binutils tarball"
-tar -xf $BUT_TARBALL
-echo "" # Newline :~)
-printf "%s" "Unzipping GCC tarball"
+echo "Extracting binutils..."
+rm -rf $BINUTILS_NAME
+tar -xf $BINUTILS_TARBALL
+echo "Extracting gcc..."
+rm -rf $GCC_NAME
 tar -xf $GCC_TARBALL
 
 ################################################################
-# Building
+# Build packages
 ################################################################
 
-echo "Removing old build directories..."
-rm -rf buildcc-gcc build-binutils
+echo "Removing previous builds..."
+rm -rf build-gcc build-binutils
 
-# Build binutils
-mkdir buildcc-binutils
-cd buildcc-binutils
-echo "Configuring Binutils..."
-../binutils-$BUT_VER/configure --target=$TARGET --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror
-echo "Building Binutils..."
-make -j$CORES -l$LOAD
-echo "Installing Binutils..."
-make install -j$CORES -l$LOAD
+# Binutils build
+clear
+echo "Configuring $BINUTILS_NAME..."
+mkdir build-binutils
+cd build-binutils
+../$BINUTILS_NAME/configure --target="$TARGET" --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror --enable-targets=all
+echo "Building $BINUTILS_NAME..."
+$MAKE -j$CORES
+echo "Installing $BINUTILS_NAME..."
+$MAKE install
+echo "Cleaning $BINUTILS_NAME..."
 cd ..
+rm -rf $BINUTILS_NAME build-binutils
 
-# Build gcc
-cd gcc-$GCC_VER
-echo "Downloading prerequisites for GCC..."
+# GCC build
+clear
+echo "Downloading prerequisites for $GCC_NAME..."
+cd $GCC_NAME
 contrib/download_prerequisites
+echo "Configuring $GCC_NAME..."
 cd ..
-mkdir buildcc-gcc
-cd buildcc-gcc
-echo "Configuring GCC..."
-../gcc-$GCC_VER/configure --target=$TARGET --prefix="$PREFIX" --disable-nls --enable-languages=c --without-headers
+mkdir build-gcc
+cd build-gcc
+../$GCC_NAME/configure --target="$TARGET" --prefix="$PREFIX" --disable-nls --enable-languages=c --without-headers
 echo "Building all-gcc..."
-make all-gcc -j$CORES -l$LOAD
+$MAKE all-gcc -j$CORES
 echo "Building all-target-libgcc..."
-make all-target-libgcc -j$CORES -l$LOAD
-echo "Installing GCC..."
-make install-gcc -j$CORES -l$LOAD
+$MAKE all-target-libgcc -j$CORES
+echo "Installing $GCC_NAME..."
+$MAKE install-gcc
 echo "Installing target-libgcc..."
-make install-target-libgcc -j$CORES -l$LOAD
-cd ../..
-
-echo "Removing build directory..."
-rm -rf buildcc
-
-echo "Build complete, binaries are in $PREFIX/bin"
+$MAKE install-target-libgcc
+echo "Cleaning $GCC_NAME..."
+cd ..
+rm -rf $GCC_NAME build-gcc
 
 ################################################################
-# Basic Testing (just prints info for now)
+# Cleanup
 ################################################################
 
-echo "Testing GCC..."
-$TARGET-gcc -v
-
-echo "Testing LD..."
+clear
 $TARGET-ld -v
-
-echo "Done!"
+$TARGET-gcc --version | head -n1
+echo "Build complete, binaries are in $PREFIX"
+echo "Finished in $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds"
