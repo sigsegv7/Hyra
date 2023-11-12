@@ -208,27 +208,6 @@ lapic_set_ldr(void)
         lapic_writel(LAPIC_LDR, LAPIC_STARTUP_LID);
 }
 
-/*
- * Reads the Local APIC error status
- * register. Returns the value read.
- *
- * XXX: It is a good idea to save the value returned as
- *      each read will clear the register.
- */
-static inline uint32_t
-lapic_read_esr(void)
-{
-    /*
-     * We'll need to write 0 to clear the ESR and reload
-     * it with any new errors that happened... In xAPIC mode
-     * we can write anything to do this; however, in x2APIC
-     * mode, writes of 0 are enforced. We'll only write 0 to
-     * work both with x2APIC and xAPIC mode...
-     */
-    lapic_writel(LAPIC_ERR, 0);
-    return lapic_readl(LAPIC_ERR);
-}
-
 void
 lapic_timer_init(size_t *freq_out)
 {

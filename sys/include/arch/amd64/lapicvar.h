@@ -91,10 +91,17 @@
 /* LVT bits */
 #define LAPIC_LVT_MASK            __BIT(16)
 
-/* Possible error bits within ESR */
-#define ESR_REDIR_IPI   __BIT(4)        /* Redirectible IPI */
-#define ESR_SIV         __BIT(5)        /* Send Illegal Vector */
-#define ESR_RIV         __BIT(6)        /* Received Illegal Vector */
-#define ESR_IRA         __BIT(7)        /* Illegal Register Address */
+/*
+ * Local APIC Interrupt stack [IST VALUE].
+ *
+ * This value should be non-zero and reserved
+ * for only 1 interrupt vector to prevent clobbering
+ * of the interrupt stacks.
+ *
+ * XXX TODO: The value is correctly 0, however, this needs
+ *           to be updated to a non-zero value as soon as
+ *           possible.
+ */
+#define LAPIC_TMR_INTSTACK  0
 
 #endif  /* !_AMD64_LAPICVAR_H_ */
