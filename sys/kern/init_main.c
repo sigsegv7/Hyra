@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
+ * Copyright (c) 2023 Ian Marco Moffett and the Osmora Team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,7 +10,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of VegaOS nor the names of its
+ * 3. Neither the name of Hyra nor the names of its
  *    contributors may be used to endorse or promote products derived from
  *    this software without specific prior written permission.
  *
@@ -38,8 +38,8 @@
 #include <logo.h>
 
 __MODULE_NAME("init_main");
-__KERNEL_META("$Vega$: init_main.c, Ian Marco Moffett, "
-              "Where the Vega kernel first starts up");
+__KERNEL_META("$Hyra$: init_main.c, Ian Marco Moffett, "
+              "Where the Hyra kernel first starts up");
 
 static inline void
 log_timer(const char *purpose, tmrr_status_t s, const struct timer *tmr)
@@ -77,7 +77,7 @@ main(void)
     syslog_init();
     PRINT_LOGO();
 
-    kprintf("Vega/%s v%s: %s (%s)\n",
+    kprintf("Hyra/%s v%s: %s (%s)\n",
             VEGA_ARCH, VEGA_VERSION, VEGA_BUILDDATE,
             VEGA_BUILDBRANCH);
 

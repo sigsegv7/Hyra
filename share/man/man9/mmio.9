@@ -1,4 +1,4 @@
-.\" Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
+.\" Copyright (c) 2023 Ian Marco Moffett and the Osmora Team.
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms, with or without
@@ -9,7 +9,7 @@
 .\" 2. Redistributions in binary form must reproduce the above copyright
 .\"    notice, this list of conditions and the following disclaimer in the
 .\"    documentation and/or other materials provided with the distribution.
-.\" 3. Neither the name of VegaOS nor the names of its
+.\" 3. Neither the name of Hyra nor the names of its
 .\"    contributors may be used to endorse or promote products derived from
 .\"    this software without specific prior written permission.
 .\"
@@ -45,8 +45,8 @@ __extension__
 .Sh DESCRIPTION
 In short, MMIO is a method of writing to registers
 of an I/O device via a mapped porition of memory. MMIO
-should NOT be done on your own when doing Vega kernel programming.
-Instead, rely on Vega's MMIO interface and use
+should NOT be done on your own when doing Hyra kernel programming.
+Instead, rely on Hyra's MMIO interface and use
 .Ft mmio_read<n>()
 and
 .Ft mmio_write<n>()

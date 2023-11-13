@@ -97,9 +97,9 @@ base/boot/vega-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
 	mv initramfs.tar iso_root/boot/
 	xorriso -as mkisofs -b limine-bios-cd.bin -no-emul-boot -boot-load-size 4\
 		-boot-info-table --efi-boot limine-uefi-cd.bin -efi-boot-part \
-		--efi-boot-image --protective-msdos-label iso_root -o Vega.iso > /dev/null
-	stand/limine/limine bios-install Vega.iso
-	$(PROMPT) " ISO " $(shell pwd)/Vega.iso
+		--efi-boot-image --protective-msdos-label iso_root -o Hyra.iso > /dev/null
+	stand/limine/limine bios-install Hyra.iso
+	$(PROMPT) " ISO " $(shell pwd)/Hyra.iso
 
 -include $(KERNEL_HEADER_DEPS)
 %.o: %.c sys/include/machine/

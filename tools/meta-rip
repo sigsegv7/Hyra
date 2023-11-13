@@ -28,7 +28,7 @@ if [[ $meta =~ ^([^:]+):\s*([^,]+),\s*([^,]+),\s*(.*)$ ]]; then
     cookie=${cookie%?}  # Remove the last character
 fi
 
-if [[ $cookie != "Vega" ]]
+if [[ $cookie != "Hyra" ]]
 then
     echo "Invalid cookie found!"
     exit

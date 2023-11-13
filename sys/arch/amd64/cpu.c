@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
+ * Copyright (c) 2023 Ian Marco Moffett and the Osmora Team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,7 +10,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of VegaOS nor the names of its
+ * 3. Neither the name of Hyra nor the names of its
  *    contributors may be used to endorse or promote products derived from
  *    this software without specific prior written permission.
  *
@@ -30,7 +30,7 @@
 #include <machine/cpu.h>
 #include <sys/cdefs.h>
 
-__KERNEL_META("$Vega$: cpu.c, Ian Marco Moffett, "
+__KERNEL_META("$Hyra$: cpu.c, Ian Marco Moffett, "
               "AMD64 CPU abstraction module");
 
 static struct cpu_info bsp_info;

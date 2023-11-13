@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Ian Marco Moffett and the VegaOS team.
+ * Copyright (c) 2023 Ian Marco Moffett and the Osmora Team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,7 +10,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of VegaOS nor the names of its
+ * 3. Neither the name of Hyra nor the names of its
  *    contributors may be used to endorse or promote products derived from
  *    this software without specific prior written permission.
  *
@@ -46,7 +46,7 @@
 #define CURSOR_WIDTH            FONT_WIDTH
 #define CURSOR_HEIGHT           FONT_HEIGHT
 
-__KERNEL_META("$Vega$: tty.c, Ian Marco Moffett, "
+__KERNEL_META("$Hyra$: tty.c, Ian Marco Moffett, "
               "Core TTY implementation");
 
 /* List of attached TTYs */

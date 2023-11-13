@@ -1,4 +1,4 @@
-AC_INIT([Vega], [0.0.1], [ian@osmora.org])
+AC_INIT([Hyra], [0.0.1], [ian@osmora.org])
 
 KERN_CFLAGS_X86_64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protector -fno-pic \\
 	-Werror=implicit -Werror=implicit-function-declaration \\
@@ -11,7 +11,7 @@ KERN_CFLAGS_X86_64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protector
 
 QEMU_FLAGS_X86_64="--enable-kvm -monitor stdio 	\\
 		          -M q35 -m 1G -smp 4 -cpu host  \\
-			      -cdrom Vega.iso"
+			      -cdrom Hyra.iso"
 
 VEGA_BUILDDATE=`export LANG=en_US.UTF-8 ; date`
 VEGA_BUILDBRANCH="`basename $PWD`"

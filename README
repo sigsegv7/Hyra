@@ -1,7 +1,7 @@
-The Vega Operating System
+The Hyra Operating System
 =====================
 
-Welcome to the Vega Operating System project!
+Welcome to the Hyra Operating System project!
 
 Project Goal:
 --------------
@@ -9,7 +9,7 @@ The goal of this project is to create a modern operating system, taking inspirat
 
 Getting Started:
 ----------------
-To build VegaOS you'll need to bootstrap the project which is essentially just fetching dependencies for the project. This can be done by running the bootstrap script within the project root: `./bootstrap`.
+To build Hyra you'll need to bootstrap the project which is essentially just fetching dependencies for the project. This can be done by running the bootstrap script within the project root: `./bootstrap`.
 
 Next, to configure for x86_64 just run configure:
 
