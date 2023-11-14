@@ -119,10 +119,10 @@ lapic_writel(uint32_t reg, uint32_t val)
 static size_t
 lapic_timer_calibrate(void)
 {
-    size_t freq_hz;
+    size_t freq;
 
-    lapic_timer_init(&freq_hz);
-    return freq_hz;
+    lapic_timer_init(&freq);
+    return freq;
 }
 
 /*
@@ -212,9 +212,6 @@ void
 lapic_timer_init(size_t *freq_out)
 {
     uint32_t ticks_per_10ms;
-    size_t freq_hz;
-    const uint32_t MHZ_DIV = 1000000;
-    const uint32_t GHZ_DIV = 1000000000;
     const uint32_t MAX_SAMPLES = 0xFFFFFFFF;
 
     lapic_writel(LAPIC_DCR, 3);                     /* Use divider 16 */
@@ -227,21 +224,8 @@ lapic_timer_init(size_t *freq_out)
     if (freq_out == NULL)
         panic("lapic_timer_init() freq_out NULL\n");
 
-    /* Calculate frequency in Hz */
     ticks_per_10ms = MAX_SAMPLES - lapic_readl(LAPIC_CUR_CNT);
-    freq_hz = ticks_per_10ms * 10000;       /* 10000 since we waited 10ms */
-
-    /* Check if in MHz or GHz range */
-    if (freq_hz >= GHZ_DIV) {
-        BSP_KINFO("BSP Local APIC Timer frequency: %d GHz\n", freq_hz / GHZ_DIV);
-    } else if (freq_hz >= MHZ_DIV) {
-        BSP_KINFO("BSP Local APIC Timer frequency: %d MHz\n", freq_hz / MHZ_DIV);
-    } else {
-        BSP_KINFO("BSP Local APIC Timer frequency: %d Hz\n", freq_hz);
-    }
-
-    /* Divide by 10000 to get ticks */
-    *freq_out = freq_hz;
+    *freq_out = ticks_per_10ms;
 }
 
 void
