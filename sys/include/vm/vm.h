@@ -35,6 +35,7 @@
 #include <sys/cdefs.h>
 #include <vm/vm_page.h>
 #include <vm/vm_pmap.h>
+#include <vm/tlsf.h>
 
 extern volatile struct limine_hhdm_request g_hhdm_request;
 
@@ -42,6 +43,17 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 
 #define PHYS_TO_VIRT(phys) (void *)((uintptr_t)phys + VM_HIGHER_HALF)
 #define VIRT_TO_PHYS(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
+
+/*
+ * cpu_vm_ctx - Per core virtual memory context
+ *
+ * Holds per core virtual memory information.
+ */
+struct cpu_vm_ctx {
+    uintptr_t dynalloc_pool_phys;
+    size_t dynalloc_pool_sz;    /* In bytes */
+    tlsf_t tlsf_ctx;
+};
 
 /*
  * Returns the machine's pagesize:
@@ -56,5 +68,6 @@ vm_get_page_size(void)
 }
 
 void vm_init(void);
+struct cpu_vm_ctx vm_get_bsp_ctx(void);
 
 #endif      /* !_VM_H_ */

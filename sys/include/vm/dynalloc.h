@@ -27,52 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <vm/vm.h>
-#include <vm/vm_physseg.h>
-#include <sys/panic.h>
-#include <assert.h>
+#ifndef _VM_DYNALLOC_H_
+#define _VM_DYNALLOC_H_
 
-/*
- * XXX: As of now, these are constant... It would be nice if we could
- *      have this value expanded upon request so we can keep it small
- *      to not hog up resources. Would make it more flexible too :^)
- */
-#define DYNALLOC_POOL_SZ        0x400000  /* 4 MiB */
-#define DYNALLOC_POOL_PAGES     (DYNALLOC_POOL_SZ / vm_get_page_size())
+#include <sys/types.h>
 
-static volatile struct vas kernel_vas;
+void *dynalloc(size_t sz);
+void dynfree(void *ptr);
 
-/*
- * TODO: Move this to a per CPU structure, this kinda sucks
- *       how it is right now...
- */
-static volatile struct cpu_vm_ctx bsp_vm_ctx = {0};
-
-volatile struct limine_hhdm_request g_hhdm_request = {
-    .id = LIMINE_HHDM_REQUEST,
-    .revision = 0
-};
-
-struct cpu_vm_ctx
-vm_get_bsp_ctx(void)
-{
-    return bsp_vm_ctx;
-}
-
-void
-vm_init(void)
-{
-    void *pool_va;
-
-    kernel_vas = pmap_read_vas();
-
-    /* Setup virtual memory context */
-    bsp_vm_ctx.dynalloc_pool_sz = DYNALLOC_POOL_SZ;
-    bsp_vm_ctx.dynalloc_pool_phys = vm_alloc_pageframe(DYNALLOC_POOL_PAGES);
-    if (bsp_vm_ctx.dynalloc_pool_phys == 0) {
-        panic("Failed to allocate dynamic pool\n");
-    }
-    pool_va = PHYS_TO_VIRT(bsp_vm_ctx.dynalloc_pool_phys);
-    bsp_vm_ctx.tlsf_ctx = tlsf_create_with_pool(pool_va, DYNALLOC_POOL_SZ);
-    __assert(bsp_vm_ctx.tlsf_ctx != 0);
-}
+#endif  /* !_VM_DYNALLOC_H_ */
