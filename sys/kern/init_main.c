@@ -33,7 +33,7 @@
 #include <sys/machdep.h>
 #include <sys/timer.h>
 #include <firmware/acpi/acpi.h>
-#include <vm/vm_physseg.h>
+#include <vm/physseg.h>
 #include <vm/vm.h>
 #include <logo.h>
 

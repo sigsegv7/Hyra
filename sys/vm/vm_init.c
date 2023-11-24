@@ -28,7 +28,7 @@
  */
 
 #include <vm/vm.h>
-#include <vm/vm_physseg.h>
+#include <vm/physseg.h>
 #include <sys/panic.h>
 #include <assert.h>
 

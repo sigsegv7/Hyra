@@ -29,7 +29,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/panic.h>
-#include <vm/vm_page.h>
+#include <vm/page.h>
 #include <vm/vm.h>
 #include <string.h>
 

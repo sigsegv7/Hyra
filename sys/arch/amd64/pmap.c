@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <vm/vm_pmap.h>
+#include <vm/pmap.h>
 #include <sys/cdefs.h>
 
 #define PTE_ADDR_MASK 0x000FFFFFFFFFF000

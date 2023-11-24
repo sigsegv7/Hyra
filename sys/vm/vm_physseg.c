@@ -30,7 +30,7 @@
 #include <sys/limine.h>
 #include <sys/cdefs.h>
 #include <sys/syslog.h>
-#include <vm/vm_physseg.h>
+#include <vm/physseg.h>
 #include <vm/vm.h>
 #include <bitmap.h>
 #include <string.h>
