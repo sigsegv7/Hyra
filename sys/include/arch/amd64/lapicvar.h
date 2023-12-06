@@ -98,7 +98,7 @@
  * for only 1 interrupt vector to prevent clobbering
  * of the interrupt stacks.
  *
- * XXX TODO: The value is correctly 0, however, this needs
+ * XXX TODO: The value is currently 0, however, this needs
  *           to be updated to a non-zero value as soon as
  *           possible.
  */
