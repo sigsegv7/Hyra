@@ -82,11 +82,21 @@ main(void)
             VEGA_BUILDBRANCH);
 
     acpi_init();
-    processor_init();
-    vm_physseg_init();
 
-    list_timers();
+    /*
+     * TODO: Move these calls to machdep.c whenever
+     *       possible. It must be documented that
+     *       this will only be called by processor_init()
+     *       as the pmap subsystem may rely on architecture
+     *       specifics that haven't been set up yet... Putting
+     *       these calls in processor_init() makes things more
+     *       flexible.
+     */
+    vm_physseg_init();
     vm_init();
+
+    processor_init();
+    list_timers();
 
     /* We're done here, halt the processor */
     __ASMV("cli; hlt");
