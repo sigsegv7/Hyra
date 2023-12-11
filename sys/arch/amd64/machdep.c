@@ -35,6 +35,7 @@
 #include <machine/ioapic.h>
 #include <machine/lapic.h>
 #include <machine/spectre.h>
+#include <machine/cpu.h>
 
 __MODULE_NAME("machdep");
 __KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
