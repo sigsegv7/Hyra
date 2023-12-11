@@ -285,8 +285,8 @@ lapic_init(void)
     cur_cpu->lapic_tmr_freq = tmr_freq;
 
     /* Set the Local APIC ID */
-    cur_cpu->lapic_id = lapic_get_id();
+    cur_cpu->id = lapic_get_id();
 
-    BSP_KINFO("BSP Local APIC ID: %d\n", cur_cpu->lapic_id);
+    BSP_KINFO("BSP Local APIC ID: %d\n", cur_cpu->id);
     CPU_INFO_UNLOCK(cur_cpu);
 }

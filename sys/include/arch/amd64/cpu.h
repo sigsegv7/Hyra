@@ -46,10 +46,13 @@
  *      acquire the spinlock themselves!
  */
 struct cpu_info {
+    /* Per-arch fields  */
     void *pmap;                         /* Current pmap */
-    uint32_t lapic_id;
-    volatile size_t lapic_tmr_freq;
+    uint32_t id;
     struct spinlock lock;
+
+    /* AMD64 */
+    volatile size_t lapic_tmr_freq;
 };
 
 struct cpu_info *amd64_this_cpu(void);

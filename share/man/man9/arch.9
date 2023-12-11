@@ -48,15 +48,42 @@ struct which contains CPU specific fields.
 
 Example
 .Ft cpu_info
-structure for x86_64 is shown below:
+structure shown below:
 
 .Bd -literal
 struct cpu_info {
+    /* Per-arch fields */
     void *pmap;                     /* Current pmap */
-    volatile uint32_t lapic_freq;
+    uint32_t id;
+    struct spinlock lock;
+    /* AMD64 */
     ...
 };
 .Ed
+
+There will be some per-architecture fields that, for the sake
+of keeping things tidy, should remain at the top of the struct.
+These fields will be described below.
+
+The
+.Ft pmap
+field points to the current virtual memory context
+which shall be NULL if not used.
+
+The
+.Ft id
+field simply identifies the CPU with a specific "ID".
+
+The
+.Ft lock
+field is a spinlock to prevent race conditions
+while accessing this structure. This must be acquired
+when accessing a
+.Ft cpu_info
+instance.
+
+There are also some common helper macros that shall
+be implemented, these are described below.
 
 The macro
 .Ft this_cpu()
