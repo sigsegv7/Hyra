@@ -36,6 +36,10 @@
 #include <machine/lapic.h>
 #include <machine/spectre.h>
 
+__MODULE_NAME("machdep");
+__KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
+              "Core machine dependent code");
+
 #define ISR(func) ((uintptr_t)func)
 #define INIT_FLAG_IOAPIC 0x00000001U
 
