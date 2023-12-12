@@ -34,6 +34,7 @@
 #include <machine/gdt.h>
 #include <machine/ioapic.h>
 #include <machine/lapic.h>
+#include <machine/tss.h>
 #include <machine/spectre.h>
 #include <machine/cpu.h>
 
@@ -43,6 +44,16 @@ __KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
 
 #define ISR(func) ((uintptr_t)func)
 #define INIT_FLAG_IOAPIC 0x00000001U
+
+static inline void
+init_tss(struct cpu_info *cur_cpu)
+{
+    struct tss_desc *desc;
+
+    desc = (struct tss_desc *)g_gdt_tss;
+    write_tss(cur_cpu, desc);
+    tss_load();
+}
 
 static void
 interrupts_init(void)
@@ -73,6 +84,8 @@ processor_init(void)
     /* Indicates what doesn't need to be init anymore */
     static uint8_t init_flags = 0;
 
+    struct cpu_info *cur_cpu = NULL;
+
     interrupts_init();
     gdt_load(&g_gdtr);
 
@@ -82,6 +95,12 @@ processor_init(void)
     }
 
     lapic_init();       /* Per core */
+    cur_cpu = this_cpu();
+
+    CPU_INFO_LOCK(cur_cpu);
+    cur_cpu->tss = NULL;
+    init_tss(cur_cpu);
+    CPU_INFO_UNLOCK(cur_cpu);
 
     /* Enable spectre mitigation if enabled */
     if (try_spectre_mitigate != NULL)

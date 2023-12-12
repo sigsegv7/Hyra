@@ -32,6 +32,7 @@
 
 #include <sys/types.h>
 #include <sys/spinlock.h>
+#include <machine/tss.h>
 
 #define this_cpu() amd64_this_cpu()
 #define get_bsp()  amd64_get_bsp()
@@ -53,6 +54,7 @@ struct cpu_info {
 
     /* AMD64 */
     volatile size_t lapic_tmr_freq;
+    volatile struct tss_entry *tss;
 };
 
 struct cpu_info *amd64_this_cpu(void);

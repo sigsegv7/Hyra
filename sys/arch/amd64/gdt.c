@@ -72,7 +72,12 @@ struct gdt_entry g_gdt[256] = {
             .granularity = 0x00,
             .base_hi     = 0x00
     },
+
+    /* TSS segment (0x28) */
+    {0}
 };
+
+struct gdt_entry *g_gdt_tss = &g_gdt[GDT_TSS];
 
 struct gdtr g_gdtr = {
     .limit = sizeof(struct gdt_entry) * 256 - 1,

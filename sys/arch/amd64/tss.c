@@ -27,53 +27,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AMD64_GDT_H_
-#define AMD64_GDT_H_
+#include <machine/tss.h>
+#include <machine/cpu.h>
+#include <lib/string.h>
+#include <vm/dynalloc.h>
+#include <sys/panic.h>
 
-#include <sys/types.h>
-#include <sys/cdefs.h>
+__MODULE_NAME("TSS");
+__KERNEL_META("$Hyra$: tss.c, Ian Marco Moffett, "
+              "AMD64 Task state segment code");
 
-#define GDT_TSS 5
-#define KERNEL_CS 0x8
-#define KERNEL_DS 0x10
-
-struct __packed gdt_entry {
-    uint16_t limit;
-    uint16_t base_low;
-    uint8_t base_mid;
-    uint8_t access;
-    uint8_t granularity;
-    uint8_t base_hi;
-};
-
-struct __packed gdtr {
-    uint16_t limit;
-    uintptr_t offset;
-};
-
-static inline void
-gdt_load(struct gdtr *gdtr)
+static void
+alloc_resources(struct cpu_info *cpu)
 {
-        __asm("lgdt %0\n"
-              "push $8\n"               /* Push CS */
-              "lea 1f(%%rip), %%rax\n"  /* Load 1 label address into RAX */
-              "push %%rax\n"            /* Push the return address (label 1) */
-              "lretq\n"                 /* Far return to update CS */
-              "1:\n"
-              "  mov $0x10, %%eax\n"
-              "  mov %%eax, %%ds\n"
-              "  mov %%eax, %%es\n"
-              "  mov %%eax, %%fs\n"
-              "  mov %%eax, %%gs\n"
-              "  mov %%eax, %%ss\n"
-              :
-              : "m" (*gdtr)
-              : "rax", "memory"
-        );
+    struct tss_entry *tss;
+
+    /*
+     * Allocate TSS entries for this CPU
+     */
+    if (cpu->tss == NULL) {
+        /* Allocate a TSS for this CPU */
+        tss = dynalloc(sizeof(*tss));
+        if (tss == NULL)
+            panic("Failed to alloc %d bytes for TSS\n", sizeof(*tss));
+        memset(tss, 0, sizeof(*tss));
+        cpu->tss = tss;
+    }
 }
 
-extern struct gdt_entry g_gdt[256];
-extern struct gdt_entry *g_gdt_tss;
-extern struct gdtr g_gdtr;
+void
+write_tss(struct cpu_info *cpu, struct tss_desc *desc)
+{
+    uintptr_t tss_base;
 
-#endif  /* !AMD64_GDT_H_ */
+    alloc_resources(cpu);
+
+    tss_base = (uintptr_t)cpu->tss;
+
+    /*
+     * XXX: The AVL (Available for use by system software)
+     *      bit is ignored by hardware and it is up to us
+     *      to decide how to use it... As of now, it is useless
+     *      to us and shall remain 0.
+     */
+    desc->p = 1;        /* Must be present to be valid! */
+    desc->g = 0;        /* Granularity -> 0 */
+    desc->avl = 0;      /* Not used */
+    desc->dpl = 0;      /* Descriptor Privilege Level -> 0 */
+    desc->type = 0x9;   /* For TSS -> 0x9 (0b1001) */
+
+    desc->base_lo16 = __SHIFTOUT(tss_base, __MASK(16));
+    desc->base_mid24 = __SHIFTOUT(tss_base, __MASK(8) << 24);
+    desc->base_mid32 = __SHIFTOUT(tss_base, __MASK(32) << 32);
+}

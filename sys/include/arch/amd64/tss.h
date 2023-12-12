@@ -27,53 +27,80 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AMD64_GDT_H_
-#define AMD64_GDT_H_
+#ifndef _AMD64_TSS_H_
+#define _AMD64_TSS_H_
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
 
-#define GDT_TSS 5
-#define KERNEL_CS 0x8
-#define KERNEL_DS 0x10
+/*
+ * cpu_info is from machine/cpu.h
+ *
+ * XXX: machine/cpu.h includes this header
+ *      so we must create this as including
+ *      machine/cpu.h will not do anything...
+ */
+struct cpu_info;
 
-struct __packed gdt_entry {
-    uint16_t limit;
-    uint16_t base_low;
-    uint8_t base_mid;
-    uint8_t access;
-    uint8_t granularity;
-    uint8_t base_hi;
+/*
+ * A TSS entry (64-bit)
+ *
+ * See Intel SDM Section 8.2.1 - Task-State Segment (TSS)
+ */
+struct __packed tss_entry {
+    uint32_t reserved1;
+    uint32_t rsp0_lo;
+    uint32_t rsp0_hi;
+    uint32_t rsp1_lo;
+    uint32_t rsp1_hi;
+    uint32_t rsp2_lo;
+    uint32_t rsp2_hi;
+    uint64_t reserved2;
+    uint32_t ist1_lo;
+    uint32_t ist1_hi;
+    uint32_t ist2_lo;
+    uint32_t ist2_hi;
+    uint32_t ist3_lo;
+    uint32_t ist3_hi;
+    uint32_t ist4_lo;
+    uint32_t ist4_hi;
+    uint32_t ist5_lo;
+    uint32_t ist5_hi;
+    uint32_t ist6_lo;
+    uint32_t ist6_hi;
+    uint32_t ist7_lo;
+    uint32_t ist7_hi;
+    uint64_t reserved3;
+    uint16_t reserved4;
+    uint16_t io_base;
 };
 
-struct __packed gdtr {
-    uint16_t limit;
-    uintptr_t offset;
+/*
+ * TSS descriptor (64-bit)
+ *
+ * The TSS descriptor describes the location
+ * of the TSS segments among other things...
+ *
+ * See Intel SDM Section 8.2.3 - TSS Descriptor in 64-bit mode
+ */
+struct __packed tss_desc {
+    uint16_t seglimit;
+    uint16_t base_lo16;
+    uint8_t base_mid24;
+    uint8_t type        : 4;
+    uint8_t zero        : 1;
+    uint8_t dpl         : 2;
+    uint8_t p           : 1;
+    uint8_t seglimit_hi : 4;
+    uint8_t avl         : 1;
+    uint8_t unused      : 2;
+    uint8_t g           : 1;
+    uint8_t base_mid32;
+    uint32_t base_hi32;
+    uint32_t reserved;
 };
 
-static inline void
-gdt_load(struct gdtr *gdtr)
-{
-        __asm("lgdt %0\n"
-              "push $8\n"               /* Push CS */
-              "lea 1f(%%rip), %%rax\n"  /* Load 1 label address into RAX */
-              "push %%rax\n"            /* Push the return address (label 1) */
-              "lretq\n"                 /* Far return to update CS */
-              "1:\n"
-              "  mov $0x10, %%eax\n"
-              "  mov %%eax, %%ds\n"
-              "  mov %%eax, %%es\n"
-              "  mov %%eax, %%fs\n"
-              "  mov %%eax, %%gs\n"
-              "  mov %%eax, %%ss\n"
-              :
-              : "m" (*gdtr)
-              : "rax", "memory"
-        );
-}
+void write_tss(struct cpu_info *cpu, struct tss_desc *desc);
+void tss_load(void);        /* In tss.S */
 
-extern struct gdt_entry g_gdt[256];
-extern struct gdt_entry *g_gdt_tss;
-extern struct gdtr g_gdtr;
-
-#endif  /* !AMD64_GDT_H_ */
+#endif  /* _!_AMD64_TSS_H_ */
