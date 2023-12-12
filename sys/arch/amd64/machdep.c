@@ -102,7 +102,7 @@ processor_init(void)
     init_tss(cur_cpu);
     CPU_INFO_UNLOCK(cur_cpu);
 
-    /* Enable spectre mitigation if enabled */
+    /* Use spectre mitigation if enabled */
     if (try_spectre_mitigate != NULL)
         try_spectre_mitigate();
 }
