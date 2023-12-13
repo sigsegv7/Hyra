@@ -46,14 +46,14 @@ static volatile struct vas kernel_vas;
  * TODO: Move this to a per CPU structure, this kinda sucks
  *       how it is right now...
  */
-static volatile struct cpu_vm_ctx bsp_vm_ctx = {0};
+static volatile struct vm_ctx bsp_vm_ctx = {0};
 
 volatile struct limine_hhdm_request g_hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,
     .revision = 0
 };
 
-struct cpu_vm_ctx
+struct vm_ctx
 vm_get_bsp_ctx(void)
 {
     return bsp_vm_ctx;

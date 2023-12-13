@@ -39,7 +39,7 @@ void *
 dynalloc(size_t sz)
 {
     /* TODO: Per CPU */
-    struct cpu_vm_ctx vm_ctx = vm_get_bsp_ctx();
+    struct vm_ctx vm_ctx = vm_get_bsp_ctx();
 
     return tlsf_malloc(vm_ctx.tlsf_ctx, sz);
 }
@@ -54,7 +54,7 @@ void *
 dynrealloc(void *old_ptr, size_t newsize)
 {
     /* TODO: Per CPU */
-    struct cpu_vm_ctx vm_ctx = vm_get_bsp_ctx();
+    struct vm_ctx vm_ctx = vm_get_bsp_ctx();
 
     return tlsf_realloc(vm_ctx.tlsf_ctx, old_ptr, newsize);
 }
@@ -68,7 +68,7 @@ void
 dynfree(void *ptr)
 {
     /* TODO: Per CPU */
-    struct cpu_vm_ctx vm_ctx = vm_get_bsp_ctx();
+    struct vm_ctx vm_ctx = vm_get_bsp_ctx();
 
     tlsf_free(vm_ctx.tlsf_ctx, ptr);
 }

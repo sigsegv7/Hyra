@@ -45,11 +45,11 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 #define VIRT_TO_PHYS(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
 
 /*
- * cpu_vm_ctx - Per core virtual memory context
+ * vm_ctx - Per core virtual memory context
  *
  * Holds per core virtual memory information.
  */
-struct cpu_vm_ctx {
+struct vm_ctx {
     uintptr_t dynalloc_pool_phys;
     size_t dynalloc_pool_sz;    /* In bytes */
     tlsf_t tlsf_ctx;
@@ -68,6 +68,6 @@ vm_get_page_size(void)
 }
 
 void vm_init(void);
-struct cpu_vm_ctx vm_get_bsp_ctx(void);
+struct vm_ctx vm_get_bsp_ctx(void);
 
 #endif      /* !_VM_H_ */
