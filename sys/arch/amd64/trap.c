@@ -93,5 +93,5 @@ trap_handler(struct trapframe *tf)
         panic("Caught NMI; bailing out\n");
     }
 
-    panic("Caught pre-sched exception\n");
+    panic("Caught pre-sched exception @0x%x\n", tf->rip);
 }
