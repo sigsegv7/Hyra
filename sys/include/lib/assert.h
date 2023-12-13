@@ -34,7 +34,7 @@
 #include <sys/types.h>
 
 #define __assert(condition)                                 \
-    if ((uintptr_t)condition == 0) {                        \
+    if ((uintptr_t)(condition) == 0) {                      \
         panic("Assert \"%s\" failed\n", #condition);        \
     }
 
