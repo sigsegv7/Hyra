@@ -100,6 +100,20 @@ struct __packed tss_desc {
     uint32_t reserved;
 };
 
+/*
+ * Holds the address of the address pointing
+ * to the top of an interrupt stack.
+ */
+union tss_stack {
+    struct {
+        uint32_t top_lo;
+        uint32_t top_hi;
+    };
+    uint64_t top;
+};
+
+int tss_alloc_stack(union tss_stack *entry_out, size_t size);
+int tss_update_ist(struct cpu_info *ci, union tss_stack stack, uint8_t istno);
 void write_tss(struct cpu_info *cpu, struct tss_desc *desc);
 void tss_load(void);        /* In tss.S */
 

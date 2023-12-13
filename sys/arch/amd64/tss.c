@@ -32,6 +32,8 @@
 #include <lib/string.h>
 #include <vm/dynalloc.h>
 #include <sys/panic.h>
+#include <sys/errno.h>
+#include <assert.h>
 
 __MODULE_NAME("TSS");
 __KERNEL_META("$Hyra$: tss.c, Ian Marco Moffett, "
@@ -53,6 +55,78 @@ alloc_resources(struct cpu_info *cpu)
         memset(tss, 0, sizeof(*tss));
         cpu->tss = tss;
     }
+}
+
+/*
+ * Update interrupt stack table entry `istno' with `stack'
+ *
+ * @stack: Interrupt stack.
+ * @istno: IST number, must be 1-based.
+ *
+ * Returns 0 on success.
+ */
+int
+tss_update_ist(struct cpu_info *ci, union tss_stack stack, uint8_t istno)
+{
+    volatile struct tss_entry *tss = ci->tss;
+
+    __assert(tss != NULL);
+
+    switch (istno) {
+    case 1:
+        tss->ist1_lo = stack.top_lo;
+        tss->ist1_hi = stack.top_hi;
+        break;
+    case 2:
+        tss->ist2_lo = stack.top_lo;
+        tss->ist2_hi = stack.top_hi;
+        break;
+    case 3:
+        tss->ist3_lo = stack.top_lo;
+        tss->ist3_hi = stack.top_hi;
+        break;
+    case 4:
+        tss->ist4_lo = stack.top_lo;
+        tss->ist4_hi = stack.top_hi;
+        break;
+    case 5:
+        tss->ist5_lo = stack.top_lo;
+        tss->ist5_hi = stack.top_hi;
+        break;
+    case 6:
+        tss->ist6_lo = stack.top_lo;
+        tss->ist6_hi = stack.top_hi;
+        break;
+    case 7:
+        tss->ist7_lo = stack.top_lo;
+        tss->ist7_hi = stack.top_hi;
+        break;
+    default:
+        return -EXIT_FAILURE;
+    };
+
+    return 0;
+}
+
+/*
+ * Allocates TSS stack.
+ *
+ * Returns 0 on success.
+ *
+ * @entry_out: Pointer to location where allocated entry
+ *             will be sent.
+ */
+int
+tss_alloc_stack(union tss_stack *entry_out, size_t size)
+{
+    uintptr_t base = (uintptr_t)dynalloc(size);
+
+    if (base == 0) {
+        return -EXIT_FAILURE;
+    }
+
+    entry_out->top = base + size;
+    return 0;
 }
 
 void
