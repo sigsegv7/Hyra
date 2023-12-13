@@ -66,10 +66,7 @@ trap_print(struct trapframe *tf)
 }
 
 /*
- * Registers a handler for
- * *fatal* traps.
- *
- * => Can block
+ * Registers a handler for *fatal* traps.
  */
 void
 register_ftrap_handler(ftrap_handler_t handler)
@@ -81,8 +78,6 @@ register_ftrap_handler(ftrap_handler_t handler)
 
 /*
  * Handles traps.
- *
- * => Can block
  */
 void
 trap_handler(struct trapframe *tf)
