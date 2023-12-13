@@ -86,8 +86,14 @@ processor_init(void)
 
     struct cpu_info *cur_cpu = NULL;
 
+    cur_cpu = this_cpu();
+
     interrupts_init();
     gdt_load(&g_gdtr);
+
+    CPU_INFO_LOCK(cur_cpu);
+    init_tss(cur_cpu);
+    CPU_INFO_UNLOCK(cur_cpu);
 
     if (!__TEST(init_flags, INIT_FLAG_IOAPIC)) {
         init_flags |= INIT_FLAG_IOAPIC;
@@ -95,14 +101,9 @@ processor_init(void)
     }
 
     lapic_init();       /* Per core */
-    cur_cpu = this_cpu();
-
-    CPU_INFO_LOCK(cur_cpu);
-    cur_cpu->tss = NULL;
-    init_tss(cur_cpu);
-    CPU_INFO_UNLOCK(cur_cpu);
 
     /* Use spectre mitigation if enabled */
     if (try_spectre_mitigate != NULL)
         try_spectre_mitigate();
+
 }
