@@ -35,17 +35,18 @@
 #include <machine/frame.h>
 #endif      /* !defined(__ASSEMBLER__) */
 
-#define TRAP_BREAKPOINT     0       /* Breakpoint */
-#define TRAP_ARITH_ERR      1       /* Arithmetic error (e.g division by 0) */
-#define TRAP_OVERFLOW       2       /* Overflow */
-#define TRAP_BOUND_RANGE    3       /* BOUND range exceeded */
-#define TRAP_INVLOP         4       /* Invalid opcode */
-#define TRAP_DOUBLE_FAULT   5       /* Double fault */
-#define TRAP_INVLTSS        6       /* Invalid TSS */
-#define TRAP_SEGNP          7       /* Segment not present */
-#define TRAP_PROTFLT        8       /* General protection */
-#define TRAP_PAGEFLT        9       /* Page fault */
-#define TRAP_NMI            10      /* Non-maskable interrupt */
+#define TRAP_NONE           0       /* Used for general interrupts */
+#define TRAP_BREAKPOINT     1       /* Breakpoint */
+#define TRAP_ARITH_ERR      2       /* Arithmetic error (e.g division by 0) */
+#define TRAP_OVERFLOW       3       /* Overflow */
+#define TRAP_BOUND_RANGE    4       /* BOUND range exceeded */
+#define TRAP_INVLOP         5       /* Invalid opcode */
+#define TRAP_DOUBLE_FAULT   6       /* Double fault */
+#define TRAP_INVLTSS        7       /* Invalid TSS */
+#define TRAP_SEGNP          8       /* Segment not present */
+#define TRAP_PROTFLT        9       /* General protection */
+#define TRAP_PAGEFLT        10      /* Page fault */
+#define TRAP_NMI            11      /* Non-maskable interrupt */
 
 /* Trap is coming from user mode */
 #define TRAP_USER           0x100
