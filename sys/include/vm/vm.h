@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/limine.h>
 #include <sys/cdefs.h>
+#include <sys/spinlock.h>
 #include <vm/page.h>
 #include <vm/pmap.h>
 #include <vm/tlsf.h>
@@ -53,6 +54,7 @@ struct vm_ctx {
     uintptr_t dynalloc_pool_phys;
     size_t dynalloc_pool_sz;    /* In bytes */
     tlsf_t tlsf_ctx;
+    struct spinlock dynalloc_lock;
 };
 
 /*
