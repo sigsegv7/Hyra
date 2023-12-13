@@ -53,8 +53,7 @@ __KERNEL_META("$Hyra$: tty.c, Ian Marco Moffett, "
 static TAILQ_HEAD(, tty) tty_list;
 
 /*
- * Renders a char onto the
- * TTY specified by `tty`.
+ * Renders a char onto the TTY specified by `tty`.
  */
 static void
 tty_draw_char(struct tty *tty, char c, uint32_t fg, uint32_t bg)
@@ -82,8 +81,7 @@ tty_draw_char(struct tty *tty, char c, uint32_t fg, uint32_t bg)
 }
 
 /*
- * Draws a cursor onto
- * the screen.
+ * Draws a cursor onto the screen.
  *
  * Call with TTY locked.
  */
@@ -250,8 +248,7 @@ tty_putch(struct tty *tty, int c)
 }
 
 /*
- * Flushes a TTY specified
- * by `tty`.
+ * Flushes a TTY specified by `tty`.
  *
  * Call with TTY locked.
  */
