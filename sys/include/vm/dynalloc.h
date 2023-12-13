@@ -33,6 +33,7 @@
 #include <sys/types.h>
 
 void *dynalloc(size_t sz);
+void *dynrealloc(void *old_ptr, size_t newsize);
 void dynfree(void *ptr);
 
 #endif  /* !_VM_DYNALLOC_H_ */

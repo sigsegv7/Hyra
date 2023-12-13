@@ -45,6 +45,21 @@ dynalloc(size_t sz)
 }
 
 /*
+ * Reallocates memory pool created by `dynalloc()'
+ *
+ * @old_ptr: Pointer to old pool.
+ * @newsize: Size of new pool.
+ */
+void *
+dynrealloc(void *old_ptr, size_t newsize)
+{
+    /* TODO: Per CPU */
+    struct cpu_vm_ctx vm_ctx = vm_get_bsp_ctx();
+
+    return tlsf_realloc(vm_ctx.tlsf_ctx, old_ptr, newsize);
+}
+
+/*
  * Free dynamically allocated memory
  *
  * @ptr: Pointer to base of memory.
