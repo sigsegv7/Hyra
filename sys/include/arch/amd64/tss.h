@@ -86,7 +86,7 @@ struct __packed tss_entry {
 struct __packed tss_desc {
     uint16_t seglimit;
     uint16_t base_lo16;
-    uint8_t base_mid24;
+    uint8_t base_mid8;
     uint8_t type        : 4;
     uint8_t zero        : 1;
     uint8_t dpl         : 2;
@@ -95,7 +95,7 @@ struct __packed tss_desc {
     uint8_t avl         : 1;
     uint8_t unused      : 2;
     uint8_t g           : 1;
-    uint8_t base_mid32;
+    uint8_t base_hi_mid8;
     uint32_t base_hi32;
     uint32_t reserved;
 };

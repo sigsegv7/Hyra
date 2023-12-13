@@ -70,13 +70,15 @@ write_tss(struct cpu_info *cpu, struct tss_desc *desc)
      *      to decide how to use it... As of now, it is useless
      *      to us and shall remain 0.
      */
+    desc->seglimit = sizeof(struct tss_entry);
     desc->p = 1;        /* Must be present to be valid! */
     desc->g = 0;        /* Granularity -> 0 */
     desc->avl = 0;      /* Not used */
     desc->dpl = 0;      /* Descriptor Privilege Level -> 0 */
     desc->type = 0x9;   /* For TSS -> 0x9 (0b1001) */
 
-    desc->base_lo16 = __SHIFTOUT(tss_base, __MASK(16));
-    desc->base_mid24 = __SHIFTOUT(tss_base, __MASK(8) << 24);
-    desc->base_mid32 = __SHIFTOUT(tss_base, __MASK(32) << 32);
+    desc->base_lo16 =       __SHIFTOUT(tss_base, __MASK(16));
+    desc->base_mid8 =       __SHIFTOUT(tss_base, __MASK(8) << 16);
+    desc->base_hi_mid8 =    __SHIFTOUT(tss_base, __MASK(8) << 24);
+    desc->base_hi32 =       __SHIFTOUT(tss_base, __MASK(32) << 32);
 }
