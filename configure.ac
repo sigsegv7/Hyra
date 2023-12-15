@@ -1,4 +1,4 @@
-AC_INIT([Hyra], [0.0.1], [ian@osmora.org])
+AC_INIT([Hyra], [1.0], [ian@osmora.org])
 
 KERN_CFLAGS_X86_64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protector -fno-pic \\
 	-Werror=implicit -Werror=implicit-function-declaration \\
