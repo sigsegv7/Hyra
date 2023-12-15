@@ -27,6 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * For documentation: See dynalloc(9)
+ */
+
 #ifndef _VM_DYNALLOC_H_
 #define _VM_DYNALLOC_H_
 

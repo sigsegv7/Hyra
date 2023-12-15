@@ -27,6 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * For documentation: See vm(9)
+ */
+
 #ifndef _VM_H_
 #define _VM_H_
 
