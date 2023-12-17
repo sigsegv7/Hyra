@@ -27,126 +27,60 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/frameasm.h>
-#include <machine/trap.h>
-#include <sys/cdefs.h>
+#ifndef _AMD64_FRAMEASM_H_
+#define _AMD64_FRAMEASM_H_
 
-__KERNEL_META "$Hyra$: trap.S, Ian Marco Moffett, \
-               Trap handling routines"
+/*
+ * XXX: Before this macro is invoked,
+ *      you should determine if an error
+ *      code will be present already on the
+ *      stack. If not, push a null qword as
+ *      padding (e.g push $0).
+ *
+ *      There *must* be a value used
+ *      as an error code whether that be
+ *      a real error code or just padding.
+ *
+ *      Failing to do so will result in
+ *      undefined behaviour.
+ *
+ */
+.macro push_trapframe trapno
+    push %r15
+    push %r14
+    push %r13
+    push %r12
+    push %r11
+    push %r10
+    push %r9
+    push %r8
+    push %rbp
+    push %rdi
+    push %rsi
+    push %rbx
+    push %rdx
+    push %rcx
+    push %rax
+    push \trapno
+.endm
 
-.text
-.globl breakpoint_handler
-breakpoint_handler:
-    push $0
-    push_trapframe $TRAP_BREAKPOINT
-
-    handle_trap
-
-    /* TODO */
-    cli
-    hlt
-
-.globl arith_err
-arith_err:
-    push $0
-    push_trapframe $TRAP_ARITH_ERR
-
-    handle_trap
-
-    /* TODO */
-    cli
-    hlt
-
-.globl overflow
-overflow:
-    push $0
-    push_trapframe $TRAP_OVERFLOW
-
-    handle_trap
-
-    /* TODO */
-    cli
-    hlt
-
-.globl bound_range
-bound_range:
-    push $0
-    push_trapframe $TRAP_BOUND_RANGE
-
-    handle_trap
-
-    /* TODO */
-    cli
-    hlt
-
-.globl invl_op
-invl_op:
-    push $0
-    push_trapframe $TRAP_INVLOP
-
-    handle_trap
-
-    /* TODO */
-    cli
-    hlt
-
-.globl double_fault
-double_fault:
-    push_trapframe $TRAP_DOUBLE_FAULT
-
-    handle_trap
-
-    /* TODO */
-    cli
-    hlt
-
-.globl invl_tss
-invl_tss:
-    push_trapframe $TRAP_INVLTSS
-
-    handle_trap
-
-    /* TODO */
-    cli
-    hlt
-
-.globl segnp
-segnp:
-    push_trapframe $TRAP_SEGNP
-
-    handle_trap
-
-    /* TODO */
-    cli
-    hlt
-
-.globl general_prot
-general_prot:
-    push_trapframe $TRAP_PROTFLT
-
-    handle_trap
-
-    /* TODO */
-    cli
-    hlt
-
-.globl page_fault
-page_fault:
-    push_trapframe $TRAP_PAGEFLT
-
-    handle_trap
-
-    /* TODO */
-    cli
-    hlt
-
-.globl nmi
-nmi:
-    push $0
-    push_trapframe $TRAP_NMI
-
-    handle_trap
-
-    /* TODO */
-    cli
-    hlt
+.macro pop_trapframe
+    add $8, %rsp        /* Trapno */
+    pop %rax
+    pop %rcx
+    pop %rdx
+    pop %rbx
+    pop %rsi
+    pop %rdi
+    pop %rbp
+    pop %r8
+    pop %r9
+    pop %r10
+    pop %r12
+    pop %r13
+    pop %r14
+    pop %r15
+    add $8, %rsp        /* Pop error code */
+    iretq
+.endm
+#endif  /* !_AMD64_FRAMEASM_H_ */
