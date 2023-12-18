@@ -37,8 +37,7 @@ __KERNEL_META "$Hyra$: trap.S, Ian Marco Moffett, \
 .text
 .globl breakpoint_handler
 breakpoint_handler:
-    push $0
-    push_trapframe $TRAP_BREAKPOINT
+    push_trapframe_ec $TRAP_BREAKPOINT
 
     handle_trap
 
@@ -48,8 +47,7 @@ breakpoint_handler:
 
 .globl arith_err
 arith_err:
-    push $0
-    push_trapframe $TRAP_ARITH_ERR
+    push_trapframe_ec $TRAP_ARITH_ERR
 
     handle_trap
 
@@ -59,8 +57,7 @@ arith_err:
 
 .globl overflow
 overflow:
-    push $0
-    push_trapframe $TRAP_OVERFLOW
+    push_trapframe_ec $TRAP_OVERFLOW
 
     handle_trap
 
@@ -70,8 +67,7 @@ overflow:
 
 .globl bound_range
 bound_range:
-    push $0
-    push_trapframe $TRAP_BOUND_RANGE
+    push_trapframe_ec $TRAP_BOUND_RANGE
 
     handle_trap
 
@@ -81,8 +77,7 @@ bound_range:
 
 .globl invl_op
 invl_op:
-    push $0
-    push_trapframe $TRAP_INVLOP
+    push_trapframe_ec $TRAP_INVLOP
 
     handle_trap
 
@@ -142,8 +137,7 @@ page_fault:
 
 .globl nmi
 nmi:
-    push $0
-    push_trapframe $TRAP_NMI
+    push_trapframe_ec $TRAP_NMI
 
     handle_trap
 

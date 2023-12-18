@@ -31,21 +31,13 @@
 #define _AMD64_FRAMEASM_H_
 
 /*
- * XXX: Before this macro is invoked,
- *      you should determine if an error
- *      code will be present already on the
- *      stack. If not, push a null qword as
- *      padding (e.g push $0).
+ * If the interrupt has an error code, this macro shall
+ * be used to create the trapframe.
  *
- *      There *must* be a value used
- *      as an error code whether that be
- *      a real error code or just padding.
- *
- *      Failing to do so will result in
- *      undefined behaviour.
- *
+ * XXX: A trapframe created with this must be popped with
+ *      pop_trapframe_ec
  */
-.macro push_trapframe trapno
+.macro push_trapframe_ec trapno
     push %r15
     push %r14
     push %r13
@@ -64,7 +56,11 @@
     push \trapno
 .endm
 
-.macro pop_trapframe
+/*
+ * If the interrupt has an error code, this macro shall
+ * be used to cleanup the trapframe.
+ */
+.macro pop_trapframe_ec
     add $8, %rsp        /* Trapno */
     pop %rax
     pop %rcx
@@ -80,7 +76,27 @@
     pop %r13
     pop %r14
     pop %r15
+.endm
+
+/*
+ * If the interrupt has no error code, this macro
+ * shall be used to create the trapframe.
+ *
+ * XXX: A trapframe created with this must be popped
+ *      with pop_trapframe
+ */
+.macro push_trapframe trapno
+    push $0
+    push_trapframe_ec \trapno
+.endm
+
+
+/*
+ * If the interrupt has no error code, this macro shall
+ * be used to cleanup the trapframe.
+ */
+.macro pop_trapframe
+    pop_trapframe_ec
     add $8, %rsp        /* Pop error code */
-    iretq
 .endm
 #endif  /* !_AMD64_FRAMEASM_H_ */
