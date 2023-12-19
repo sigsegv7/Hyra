@@ -238,7 +238,7 @@ lapic_set_base(void *mmio_base)
 void
 lapic_init(void)
 {
-    struct cpu_info *cur_cpu;
+    struct cpu_info *ci;
     uint64_t tmp;
     size_t tmr_freq;
 
@@ -277,16 +277,16 @@ lapic_init(void)
     register_timer(TIMER_SCHED, &lapic_timer);
 
     /* Get the current processor, and lock its structure */
-    cur_cpu = this_cpu();
-    CPU_INFO_LOCK(cur_cpu);
+    ci = this_cpu();
+    CPU_INFO_LOCK(ci);
 
     /* Calibrate timer */
     lapic_timer_init(&tmr_freq);
-    cur_cpu->lapic_tmr_freq = tmr_freq;
+    ci->lapic_tmr_freq = tmr_freq;
 
     /* Set the Local APIC ID */
-    cur_cpu->id = lapic_get_id();
+    ci->id = lapic_get_id();
 
-    BSP_KINFO("BSP Local APIC ID: %d\n", cur_cpu->id);
-    CPU_INFO_UNLOCK(cur_cpu);
+    BSP_KINFO("BSP Local APIC ID: %d\n", ci->id);
+    CPU_INFO_UNLOCK(ci);
 }
