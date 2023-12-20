@@ -115,6 +115,15 @@
 /* Computes 2^x i.e 2 to the power of 'x' */
 #define __POW2(x) (1ULL << x)
 
+/* Combine two 8-bit values into a 16-bit value */
+#define __COMBINE8(HI, LO) ((uint16_t)((uint8_t)HI << 8) | LO)
+
+/* Combine two 16-bit values into a 32-bit value */
+#define __COMBINE16(HI, LO) ((uint32_t)((uint16_t)HI << 16) | LO)
+
+/* Combine two 32-bit values into a 64-bit value */
+#define __COMBINE32(HI, LO) ((uint64_t)((uint16_t)HI << 32) | LO)
+
 /*
  * Used to give metadata to
  * a specific module. Example
