@@ -55,9 +55,7 @@ __KERNEL_META("$Hyra$: lapic.c, Ian Marco Moffett, "
         }                                       \
     } while (0);
 
-static void *lapic_base = NULL;
 static struct timer lapic_timer = { 0 };
-static bool has_x2apic = false;
 
 /*
  * Returns true if LAPIC is supported.
@@ -83,9 +81,10 @@ static inline uint32_t
 lapic_readl(uint32_t reg)
 {
     void *addr;
+    const struct cpu_info *ci = this_cpu();
 
-    if (!has_x2apic) {
-        addr = (void *)((uintptr_t)lapic_base + reg);
+    if (!ci->has_x2apic) {
+        addr = (void *)((uintptr_t)ci->lapic_base + reg);
         return mmio_read32(addr);
     } else {
         reg >>= 4;
@@ -103,9 +102,10 @@ static inline void
 lapic_writel(uint32_t reg, uint32_t val)
 {
     void *addr;
+    const struct cpu_info *ci = this_cpu();
 
-    if (!has_x2apic) {
-        addr = (void *)((uintptr_t)lapic_base + reg);
+    if (!ci->has_x2apic) {
+        addr = (void *)((uintptr_t)ci->lapic_base + reg);
         mmio_write32(addr, val);
     } else {
         reg >>= 4;
@@ -172,9 +172,9 @@ lapic_reg_clear(uint32_t reg, uint32_t value)
  * current processor.
  */
 static inline uint32_t
-lapic_get_id(void)
+lapic_get_id(const struct cpu_info *ci)
 {
-    if (!has_x2apic) {
+    if (!ci->has_x2apic) {
         return (lapic_readl(LAPIC_ID) >> 24) & 0xF;
     } else {
         return lapic_readl(LAPIC_ID);
@@ -186,7 +186,7 @@ lapic_get_id(void)
  * mode. Returns true if so.
  */
 static inline bool
-lapic_has_x2apic(void)
+has_x2apic(void)
 {
     uint32_t ecx, tmp;
 
@@ -202,9 +202,9 @@ lapic_has_x2apic(void)
  *      is readonly.
  */
 static inline void
-lapic_set_ldr(void)
+lapic_set_ldr(struct cpu_info *ci)
 {
-    if (!has_x2apic)
+    if (!ci->has_x2apic)
         lapic_writel(LAPIC_LDR, LAPIC_STARTUP_LID);
 }
 
@@ -229,23 +229,11 @@ lapic_timer_init(size_t *freq_out)
 }
 
 void
-lapic_set_base(void *mmio_base)
-{
-    if (lapic_base == NULL)
-        lapic_base = mmio_base;
-}
-
-void
 lapic_init(void)
 {
     struct cpu_info *ci;
     uint64_t tmp;
     size_t tmr_freq;
-
-    /* Sanity check */
-    if (lapic_base == NULL) {
-        panic("LAPIC base not set!\n");
-    }
 
     if (!lapic_check_support()) {
         /*
@@ -255,18 +243,27 @@ lapic_init(void)
         panic("This machine does not support LAPIC!\n");
     }
 
-    has_x2apic = lapic_has_x2apic();
+    /* Get the current processor, and lock its structure */
+    ci = this_cpu();
+    CPU_INFO_LOCK(ci);
+
+    ci->has_x2apic = has_x2apic();
+
+    /* Sanity check */
+    if (ci->lapic_base == NULL) {
+        panic("LAPIC base not set!\n");
+    }
 
     /* Hardware enable the Local APIC */
     tmp = rdmsr(IA32_APIC_BASE_MSR);
-    tmp |= has_x2apic << x2APIC_ENABLE_SHIFT;
+    tmp |= ci->has_x2apic << x2APIC_ENABLE_SHIFT;
     wrmsr(IA32_APIC_BASE_MSR, tmp | LAPIC_HW_ENABLE);
 
     /* Software enable the Local APIC via SVR */
     lapic_reg_set(LAPIC_SVR, LAPIC_SW_ENABLE);
 
     BSP_KINFO("Enabled Local APIC for BSP\n");
-    lapic_set_ldr();
+    lapic_set_ldr(ci);
 
     /* Setup the timer descriptor */
     lapic_timer.name = "LAPIC_INTEGRATED_TIMER";
@@ -276,16 +273,12 @@ lapic_init(void)
     /* Register the timer for scheduler usage */
     register_timer(TIMER_SCHED, &lapic_timer);
 
-    /* Get the current processor, and lock its structure */
-    ci = this_cpu();
-    CPU_INFO_LOCK(ci);
-
     /* Calibrate timer */
     lapic_timer_init(&tmr_freq);
     ci->lapic_tmr_freq = tmr_freq;
 
     /* Set the Local APIC ID */
-    ci->id = lapic_get_id();
+    ci->id = lapic_get_id(ci);
 
     BSP_KINFO("BSP Local APIC ID: %d\n", ci->id);
     CPU_INFO_UNLOCK(ci);

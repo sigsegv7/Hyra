@@ -31,6 +31,7 @@
 #include <firmware/acpi/tables.h>
 #include <machine/ioapic.h>
 #include <machine/lapic.h>
+#include <machine/cpu.h>
 #include <sys/cdefs.h>
 #include <sys/panic.h>
 #include <sys/syslog.h>
@@ -46,7 +47,7 @@ __KERNEL_META("$Hyra$: acpi_madt.c, Ian Marco Moffett, "
 static struct acpi_madt *madt = NULL;
 
 static void
-do_parse(void)
+do_parse(struct cpu_info *ci)
 {
     uint8_t *cur = NULL;
     uint8_t *end = NULL;
@@ -62,7 +63,7 @@ do_parse(void)
 
     /* Init the Local APIC */
     lapic_mmio_base = (void *)(uintptr_t)madt->lapic_addr;
-    lapic_set_base(lapic_mmio_base);
+    ci->lapic_base = lapic_mmio_base;
 
     /* Parse the rest of the MADT */
     while (cur < end) {
@@ -127,7 +128,7 @@ irq_to_gsi(uint8_t irq)
 }
 
 void
-acpi_parse_madt(void)
+acpi_parse_madt(struct cpu_info *ci)
 {
     /* Prevent this function from running twice */
     if (madt != NULL) {
@@ -139,5 +140,5 @@ acpi_parse_madt(void)
         panic("Failed to query for ACPI MADT\n");
     }
 
-    do_parse();
+    do_parse(ci);
 }

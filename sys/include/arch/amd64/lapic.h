@@ -36,7 +36,6 @@
 #define LAPIC_TMR_PERIODIC  0x01
 
 void lapic_timer_init(size_t *freq_out);
-void lapic_set_base(void *mmio_base);
 void lapic_init(void);
 
 #endif  /* !_AMD64_LAPIC_H_ */

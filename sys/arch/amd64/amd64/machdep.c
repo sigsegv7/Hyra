@@ -37,6 +37,7 @@
 #include <machine/tss.h>
 #include <machine/spectre.h>
 #include <machine/cpu.h>
+#include <firmware/acpi/acpi.h>
 
 __MODULE_NAME("machdep");
 __KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
@@ -44,6 +45,7 @@ __KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
 
 #define ISR(func) ((uintptr_t)func)
 #define INIT_FLAG_IOAPIC 0x00000001U
+#define INIT_FLAG_ACPI   0x00000002U
 
 static inline void
 init_tss(struct cpu_info *cur_cpu)
@@ -93,12 +95,21 @@ processor_init(void)
 
     CPU_INFO_LOCK(cur_cpu);
     init_tss(cur_cpu);
-    CPU_INFO_UNLOCK(cur_cpu);
 
+    if (!__TEST(init_flags, INIT_FLAG_ACPI)) {
+        /*
+         * Parse the MADT... This is needed to fetch required information
+         * to set up the Local APIC(s) and I/O APIC(s)...
+         */
+        init_flags |= INIT_FLAG_ACPI;
+        acpi_parse_madt(cur_cpu);
+    }
     if (!__TEST(init_flags, INIT_FLAG_IOAPIC)) {
         init_flags |= INIT_FLAG_IOAPIC;
         ioapic_init();
     }
+
+    CPU_INFO_UNLOCK(cur_cpu);
 
     lapic_init();       /* Per core */
 

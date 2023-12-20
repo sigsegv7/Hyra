@@ -54,6 +54,8 @@ struct cpu_info {
 
     /* AMD64 */
     volatile size_t lapic_tmr_freq;
+    volatile void *lapic_base;
+    volatile bool has_x2apic;
     volatile struct tss_entry *tss;
 };
 
