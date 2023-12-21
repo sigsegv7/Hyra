@@ -33,7 +33,7 @@
 #define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the Osmora Team."
 
 #define PRINT_LOGO()                                    \
-        kprintf("%s v%s\n\n", g_logo, VEGA_VERSION);    \
+        kprintf("%s v%s\n\n", g_logo, HYRA_VERSION);    \
         kprintf("\t%s\n\n", COPYRIGHT);
 
 extern uint8_t g_logo[];

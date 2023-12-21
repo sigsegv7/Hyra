@@ -78,8 +78,8 @@ main(void)
     PRINT_LOGO();
 
     kprintf("Hyra/%s v%s: %s (%s)\n",
-            VEGA_ARCH, VEGA_VERSION, VEGA_BUILDDATE,
-            VEGA_BUILDBRANCH);
+            HYRA_ARCH, HYRA_VERSION, HYRA_BUILDDATE,
+            HYRA_BUILDBRANCH);
 
     acpi_init();
 
