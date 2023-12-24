@@ -31,11 +31,13 @@
 #define _AMD64_CPU_H_
 
 #include <sys/types.h>
+#include <sys/cdefs.h>
 #include <sys/spinlock.h>
 #include <machine/tss.h>
 
-#define this_cpu() amd64_this_cpu()
-#define get_bsp()  amd64_get_bsp()
+#define this_cpu()      amd64_this_cpu()
+#define get_bsp()       amd64_get_bsp()
+#define is_intr_mask()  amd64_is_intr_mask()
 #define CPU_INFO_LOCK(info) spinlock_acquire(&(info->lock))
 #define CPU_INFO_UNLOCK(info) spinlock_release(&(info->lock))
 
@@ -58,6 +60,20 @@ struct cpu_info {
     volatile bool has_x2apic;
     volatile struct tss_entry *tss;
 };
+
+/*
+ * Returns true for this core if maskable
+ * interrupts are masked (CLI) and false if
+ * they aren't (STI).
+ */
+static inline bool
+amd64_is_intr_mask(void)
+{
+    uint64_t flags;
+
+    __ASMV("pushfq; pop %0" : "=rm" (flags) :: "memory");
+    return __TEST(flags, 1 << 9);
+}
 
 struct cpu_info *amd64_this_cpu(void);
 struct cpu_info *amd64_get_bsp(void);
