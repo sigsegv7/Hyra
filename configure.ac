@@ -13,8 +13,8 @@ QEMU_FLAGS_X86_64="--enable-kvm -monitor stdio 	\\
 		          -M q35 -m 1G -smp 4 -cpu host  \\
 			      -cdrom Hyra.iso"
 
-VEGA_BUILDDATE=`export LANG=en_US.UTF-8 ; date`
-VEGA_BUILDBRANCH="`basename $PWD`"
+HYRA_BUILDDATE=`export LANG=en_US.UTF-8 ; date`
+HYRA_BUILDBRANCH="`basename $PWD`"
 
 # Enable Spectre mitigation option
 AC_ARG_ENABLE([spectre-mitigation],
@@ -28,8 +28,8 @@ else
     AC_SUBST(SPECTRE_MITIGATION, [0])
 fi
 
-AC_SUBST(VEGA_BUILDDATE, [$VEGA_BUILDDATE])
-AC_SUBST(VEGA_BUILDBRANCH, [$VEGA_BUILDBRANCH])
+AC_SUBST(HYRA_BUILDDATE, [$HYRA_BUILDDATE])
+AC_SUBST(HYRA_BUILDBRANCH, [$HYRA_BUILDBRANCH])
 
 AC_SUBST(KERNEL_CFLAGS, [$KERN_CFLAGS_X86_64])
 AC_SUBST(QEMU_FLAGS, [$QEMU_FLAGS_X86_64])
