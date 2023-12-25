@@ -76,7 +76,9 @@ struct timer {
     int(*usleep)(size_t us);
     int(*nsleep)(size_t ns);
     void(*periodic_ms)(size_t ms);
+    void(*periodic_us)(size_t ms);
     void(*oneshot_ms)(size_t ms);
+    void(*oneshot_us)(size_t ms);
     void(*stop)(void);
 };
 
