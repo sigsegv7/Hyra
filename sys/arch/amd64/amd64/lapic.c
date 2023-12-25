@@ -373,7 +373,7 @@ lapic_init(void)
     lapic_timer_init(NULL);
 
     /* Setup LAPIC Timer ISR */
-    idt_set_desc(SYSVEC_LAPIC_TIMER, IDT_INT_GATE_USER,
+    idt_set_desc(SYSVEC_LAPIC_TIMER, IDT_INT_GATE_FLAGS,
                  (uintptr_t)lapic_tmr_isr, IST_SCHED);
 
     BSP_KINFO("LAPIC Timer on Interrupt Stack %d (IST_SCHED) with vector 0x%x\n",
