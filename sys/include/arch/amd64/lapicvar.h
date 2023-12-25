@@ -90,18 +90,11 @@
 
 /* LVT bits */
 #define LAPIC_LVT_MASK            __BIT(16)
+#define LVT_TMR_ONESHOT           0x00
+#define LVT_TMR_PERIODIC          0x01
+#define LVT_TMR_TSC_DEADLINE      0x02
 
-/*
- * Local APIC Interrupt stack [IST VALUE].
- *
- * This value should be non-zero and reserved
- * for only 1 interrupt vector to prevent clobbering
- * of the interrupt stacks.
- *
- * XXX TODO: The value is currently 0, however, this needs
- *           to be updated to a non-zero value as soon as
- *           possible.
- */
-#define LAPIC_TMR_INTSTACK  0
+/* LAPIC timer interrupt stack size in bytes */
+#define LAPIC_TMR_STACKSZ 4096
 
 #endif  /* !_AMD64_LAPICVAR_H_ */

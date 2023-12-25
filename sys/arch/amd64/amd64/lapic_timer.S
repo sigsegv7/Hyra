@@ -27,17 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _AMD64_LAPIC_H_
-#define _AMD64_LAPIC_H_
+.text
+ .globl lapic_tmr_isr
 
-#include <sys/types.h>
+lapic_tmr_isr:
+    lea stub_msg(%rip), %rdi
+    call kprintf
+    cli
+    hlt
 
-#define LAPIC_TMR_ONESHOT   0x00
-#define LAPIC_TMR_PERIODIC  0x01
-
-void lapic_timer_init(size_t *freq_out);
-void lapic_timer_oneshot(bool mask, uint32_t count);
-void lapic_timer_oneshot_us(uint32_t us);
-void lapic_init(void);
-
-#endif  /* !_AMD64_LAPIC_H_ */
+.section .rodata
+stub_msg: .ascii "**LAPIC TIMER ISR IS A STUB; HALTING**\n\0"

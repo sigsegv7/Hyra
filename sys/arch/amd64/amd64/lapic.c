@@ -32,6 +32,12 @@
 #include <machine/cpuid.h>
 #include <machine/msr.h>
 #include <machine/cpu.h>
+#include <machine/idt.h>
+#include <machine/intr.h>
+#include <vm/vm.h>
+#include <machine/sysvec.h>
+#include <machine/tss.h>
+#include <machine/isa/i8254.h>
 #include <sys/cdefs.h>
 #include <sys/timer.h>
 #include <sys/syslog.h>
@@ -56,6 +62,8 @@ __KERNEL_META("$Hyra$: lapic.c, Ian Marco Moffett, "
     } while (0);
 
 static struct timer lapic_timer = { 0 };
+
+__naked void lapic_tmr_isr(void);
 
 /*
  * Returns true if LAPIC is supported.
@@ -208,32 +216,109 @@ lapic_set_ldr(struct cpu_info *ci)
         lapic_writel(LAPIC_LDR, LAPIC_STARTUP_LID);
 }
 
+/*
+ * Starts the Local APIC countdown timer...
+ *
+ * @mask: True to mask timer.
+ * @mode: Timer mode.
+ * @count: Count to start at.
+ */
+static inline void
+lapic_timer_start(bool mask, uint8_t mode, uint32_t count)
+{
+    uint32_t tmp;
+
+    tmp = (mode << 17) | (mask << 16) | SYSVEC_LAPIC_TIMER;
+    lapic_writel(LAPIC_LVT_TMR, tmp);
+    lapic_writel(LAPIC_DCR, 0);
+    lapic_writel(LAPIC_INIT_CNT, count);
+}
+
+/*
+ * Start Local APIC timer oneshot with number
+ * of ticks to count down from.
+ *
+ * @mask: If `true', timer will be masked, `count' should be 0.
+ * @count: Number of ticks.
+ */
+void
+lapic_timer_oneshot(bool mask, uint32_t count)
+{
+    lapic_timer_start(mask, LVT_TMR_ONESHOT, count);
+}
+
+/*
+ * Start Local APIC timer oneshot in microseconds.
+ *
+ * @us: Microseconds.
+ */
+
+void
+lapic_timer_oneshot_us(uint32_t us)
+{
+    uint64_t ticks;
+    struct cpu_info *ci = this_cpu();
+
+    ticks = us * (ci->lapic_tmr_freq / 1000000);
+    lapic_timer_oneshot(false, ticks);
+}
+
+/*
+ * Calibrates the Local APIC timer
+ *
+ * TODO: Disable interrupts and put them back in
+ *       old state.
+ *
+ * XXX: Will unmask IRQs if masked; will restore
+ *      IRQ mask state after.
+ */
 void
 lapic_timer_init(size_t *freq_out)
 {
-    uint32_t ticks_per_10ms;
-    const uint32_t MAX_SAMPLES = 0xFFFFFFFF;
+    struct cpu_info *ci;
+    bool irq_mask = is_intr_mask();
+    uint16_t init_tick, final_tick;
+    size_t total_ticks;
+    const uint16_t SAMPLES = 0xFFFF;
 
-    lapic_writel(LAPIC_DCR, 3);                     /* Use divider 16 */
-    lapic_writel(LAPIC_INIT_CNT, MAX_SAMPLES);      /* Set the initial count */
+    ci = this_cpu();
 
-    hpet_msleep(10);                                /* Wait 10ms (10000 usec) */
-    lapic_writel(LAPIC_LVT_TMR, LAPIC_LVT_MASK);    /* Stop the timer w/ LVT mask bit */
+    if (irq_mask) {
+        __ASMV("sti");
+    }
 
-    /* Sanity check */
-    if (freq_out == NULL)
-        panic("lapic_timer_init() freq_out NULL\n");
+    /* Stop the timer */
+    lapic_timer_oneshot(true, 0);
 
-    ticks_per_10ms = MAX_SAMPLES - lapic_readl(LAPIC_CUR_CNT);
-    *freq_out = ticks_per_10ms;
+    i8254_set_reload(SAMPLES);
+    init_tick = i8254_get_count();
+
+    lapic_writel(LAPIC_INIT_CNT, SAMPLES);
+    while (lapic_readl(LAPIC_CUR_CNT) != 0);
+
+    final_tick = i8254_get_count();
+    total_ticks = init_tick - final_tick;
+
+    /* Calculate the frequency */
+    CPU_INFO_LOCK(ci);
+    ci->lapic_tmr_freq = (SAMPLES / total_ticks) * i8254_DIVIDEND;
+    if (freq_out != NULL) *freq_out = ci->lapic_tmr_freq;
+    CPU_INFO_UNLOCK(ci);
+
+    /* Stop timer again */
+    lapic_timer_oneshot(true, 0);
+
+    if (irq_mask) {
+        __ASMV("cli");
+    }
 }
 
 void
 lapic_init(void)
 {
     struct cpu_info *ci;
+    union tss_stack tmr_stack;
     uint64_t tmp;
-    size_t tmr_freq;
 
     if (!lapic_check_support()) {
         /*
@@ -273,13 +358,24 @@ lapic_init(void)
     /* Register the timer for scheduler usage */
     register_timer(TIMER_SCHED, &lapic_timer);
 
-    /* Calibrate timer */
-    lapic_timer_init(&tmr_freq);
-    ci->lapic_tmr_freq = tmr_freq;
-
     /* Set the Local APIC ID */
     ci->id = lapic_get_id(ci);
-
     BSP_KINFO("BSP Local APIC ID: %d\n", ci->id);
+
+    /* Setup LAPIC Timer TSS stack */
+    if (tss_alloc_stack(&tmr_stack, vm_get_page_size()) != 0) {
+        panic("Failed to allocate LAPIC TMR stack! (1 page of mem)\n");
+    }
+    tss_update_ist(ci, tmr_stack, IST_SCHED);
     CPU_INFO_UNLOCK(ci);
+
+    /* Calibrate timer */
+    lapic_timer_init(NULL);
+
+    /* Setup LAPIC Timer ISR */
+    idt_set_desc(SYSVEC_LAPIC_TIMER, IDT_INT_GATE_USER,
+                 (uintptr_t)lapic_tmr_isr, IST_SCHED);
+
+    BSP_KINFO("LAPIC Timer on Interrupt Stack %d (IST_SCHED) with vector 0x%x\n",
+              IST_SCHED, SYSVEC_LAPIC_TIMER);
 }
