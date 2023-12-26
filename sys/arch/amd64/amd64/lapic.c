@@ -34,10 +34,10 @@
 #include <machine/cpu.h>
 #include <machine/idt.h>
 #include <machine/intr.h>
-#include <vm/vm.h>
 #include <machine/sysvec.h>
 #include <machine/tss.h>
 #include <machine/isa/i8254.h>
+#include <vm/vm.h>
 #include <sys/cdefs.h>
 #include <sys/timer.h>
 #include <sys/syslog.h>
