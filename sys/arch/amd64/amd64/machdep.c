@@ -86,9 +86,7 @@ processor_init(void)
     /* Indicates what doesn't need to be init anymore */
     static uint8_t init_flags = 0;
 
-    struct cpu_info *cur_cpu = NULL;
-
-    cur_cpu = this_cpu();
+    struct cpu_info *cur_cpu = this_cpu();
 
     interrupts_init();
     gdt_load(&g_gdtr);
