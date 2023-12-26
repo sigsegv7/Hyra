@@ -1,0 +1,134 @@
+==============================
+Hyra Contribution Guidelines
+==============================
+
+!! C PROGRAMMING STYLE !!
+
+The .vimrc file that follows this style can be found in
+share/misc/vimrc
+
+Indent width is 4-spaces (NO TABS)
+
+The typename must go above the function name like so:
+
+static inline bool
+is_power_of_two(uint8_t n)
+{
+    if (g_foo) {
+        ...
+    }
+
+    return ((n & 0x01) == 0);
+}
+
+When checking if an integer is 0 or not, *be explicit* unless it is a bool!
+Do not do this:
+
+#define BLAH 1
+
+if (!BLAH) {
+    ...
+}
+
+Do this instead:
+
+if (BLAH == 0) {
+    ...
+}
+
+-- or if it is a bool:
+
+#define BLAH true
+
+if (!blah) {
+    ...
+}
+
+--
+
+Now, only use predefined integer types in sys/cdefs.h like so:
+
+uint8_t a;
+uint16_t b;
+uint32_t c;
+--
+
+All includes must be done with '< >':
+
+#include <sys/cdefs.h>
+--
+
+
+When including architecture specific things, it would be stupid
+to include for another architecture. Only include from machine/ which
+points to the architecture specific files for the current architecture.
+For example:
+
+/* AMD64-specific, in sys/include/arch/amd64/lapic.h */
+#include <machine/lapic.h>
+--
+
+Avoid initializing variables to e.g. 0 unless it seems wise to do so.
+Try to avoid this:
+
+uint8_t foo = 0;
+...
+
+It is best to do this instead:
+
+uint8_t foo;
+...
+
+foo = some_calculation();
+--
+
+One of the only times it is best to do that is when you have
+a pointer, like, for example:
+
+uint8_t *ptr = NULL;
+...
+
+-- or if you have for example, some sort of counter value
+   that must have a start:
+
+uint8_t countdown = COUNTDOWN_START;
+--
+
+!! COMMIT STYLE !!
+
+Keep commits small if possible. Follow commit good practices.
+
+- Commit examples -
+1) Some manpage update:
+    docs: man: Describe foo in foobar(9)
+
+2) Adding a tool in tools/
+   build: tools: Create foo
+
+   This commit adds a new script in tools/
+   that does x and y  ...
+
+- Kernel commits -
+An example of a commit title for a non architecture-specific commit:
+  kernel: foo: Fix bar in foobar
+
+An example of an architecture specific commit e.g. for AMD64:
+kernel/amd64: foo: Add foo in bar
+
+- Ready to commit -
+
+(BE SURE TO TEST IT!! IDEALLY ON REAL HW TOO IF POSSIBLE!)
+
+* Commit with `git commit -sv`
+* Create patch with `git format-patch -1 HEAD`
+* Email patch to ian@osmora.org and for better response times,
+  optionally CC to blazt@osmora.org and bion@osmora.org
+
+Done!
+
+------------------------------------------------
+NOTE TO MAINTAINERS
+
+For those who maintain the Hyra repo, when testing a patch, apply it like so:
+`git am -s patchfile.patch`. If all good, create a new patch and email it to
+ian@osmora.org

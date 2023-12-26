@@ -29,6 +29,7 @@ After the cross compiler is done building you can build and run the project in a
 Documentation:
 --------------
 Documentation will be in the form of comments throughout the codebase and can also be found in the share/ directory within the project root.
+For information on contributing, please check: share/misc/contrib
 
 License:
 --------
