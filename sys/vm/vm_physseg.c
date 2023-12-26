@@ -184,16 +184,16 @@ vm_alloc_pageframe_internal(size_t count)
     uintptr_t frame_idx = 0;    /* The base index of first free frame */
 
     for (size_t i = last_used_idx; i < bitmap_size*8; ++i) {
+        if (free_count == count) {
+            can_alloc = true;
+            break;
+        }
+
         is_free = !bitmap_test_bit(bitmap, i);
 
         if (!is_free) {
             free_count = 0;
             continue;
-        }
-
-        if (free_count == count) {
-            can_alloc = true;
-            break;
         }
 
         /* Assume free here */
