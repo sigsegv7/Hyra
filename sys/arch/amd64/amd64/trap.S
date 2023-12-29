@@ -87,7 +87,7 @@ invl_op:
 
 .globl double_fault
 double_fault:
-    push_trapframe $TRAP_DOUBLE_FAULT
+    push_trapframe_ec $TRAP_DOUBLE_FAULT
 
     handle_trap
 
@@ -97,7 +97,7 @@ double_fault:
 
 .globl invl_tss
 invl_tss:
-    push_trapframe $TRAP_INVLTSS
+    push_trapframe_ec $TRAP_INVLTSS
 
     handle_trap
 
@@ -107,7 +107,7 @@ invl_tss:
 
 .globl segnp
 segnp:
-    push_trapframe $TRAP_SEGNP
+    push_trapframe_ec $TRAP_SEGNP
 
     handle_trap
 
@@ -117,7 +117,7 @@ segnp:
 
 .globl general_prot
 general_prot:
-    push_trapframe $TRAP_PROTFLT
+    push_trapframe_ec $TRAP_PROTFLT
 
     handle_trap
 
@@ -127,7 +127,7 @@ general_prot:
 
 .globl page_fault
 page_fault:
-    push_trapframe $TRAP_PAGEFLT
+    push_trapframe_ec $TRAP_PAGEFLT
 
     handle_trap
 
