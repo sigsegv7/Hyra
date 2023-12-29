@@ -33,7 +33,8 @@
 __KERNEL_META("$Hyra$: cpu.c, Ian Marco Moffett, "
               "AMD64 CPU abstraction module");
 
-static struct cpu_info bsp_info;
+/* XXX: Must be zero'd!! */
+static struct cpu_info bsp_info = {0};
 
 struct cpu_info *
 amd64_get_bsp(void)
