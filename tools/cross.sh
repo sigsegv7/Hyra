@@ -69,8 +69,8 @@ PREFIX="$(pwd)/cross"
 export PATH="$PREFIX/bin:$PATH"
 
 # Create build directory
-mkdir -p $PREFIX/build
-cd $PREFIX/build
+mkdir -p "$PREFIX/build"
+cd "$PREFIX/build"
 
 ################################################################
 # Download and extract sources
@@ -124,9 +124,9 @@ mkdir build-gcc
 cd build-gcc
 ../$GCC_NAME/configure --target="$TARGET" --prefix="$PREFIX" --disable-nls --enable-languages=c --without-headers
 echo "Building all-gcc..."
-$MAKE all-gcc -j$CORES
+$MAKE all-gcc -j"$CORES"
 echo "Building all-target-libgcc..."
-$MAKE all-target-libgcc -j$CORES
+$MAKE all-target-libgcc -j"$CORES"
 echo "Installing $GCC_NAME..."
 $MAKE install-gcc
 echo "Installing target-libgcc..."
@@ -140,7 +140,7 @@ rm -rf $GCC_NAME build-gcc
 ################################################################
 
 clear
-$TARGET-ld -v
-$TARGET-gcc --version | head -n1
+"$TARGET"-ld -v
+"$TARGET"-gcc --version | head -n1
 echo "Build complete, binaries are in $PREFIX"
 echo "Finished in $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds"
