@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Ian Marco Moffett and the Osmora Team.
+ * Copyright (c) 2024 Ian Marco Moffett and the Osmora Team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

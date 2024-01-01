@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Ian Marco Moffett and the Osmora Team.
+ * Copyright (c) 2024 Ian Marco Moffett and the Osmora Team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,7 @@
 #include <sys/types.h>
 #include <sys/syslog.h>
 
-#define COPYRIGHT "Copyright (c) 2023 Ian Marco Moffett and the Osmora Team."
+#define COPYRIGHT "Copyright (c) 2024 Ian Marco Moffett and the Osmora Team."
 
 #define PRINT_LOGO()                                    \
         kprintf("%s v%s\n\n", g_logo, HYRA_VERSION);    \
