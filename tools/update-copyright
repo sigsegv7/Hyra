@@ -7,5 +7,5 @@ current_year=$(date +"%Y")
 find . -type f -print0 | while read -d $'\0' file
 do
   # Replace the old copyright notice with the new one
-  sed -i "s/\(Copyright (c) \)[0-9]\{4\}\(.*\)/\1${current_year}\2/g" "${file}"
+  sed -i "s/\(Copyright (c) \)2023-[0-9]\{4\}\(.*\)/\12023-${current_year}\2/g" "${file}"
 done
