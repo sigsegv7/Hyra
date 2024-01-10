@@ -80,6 +80,20 @@ processor_halt(void)
     __ASMV("cli; hlt");
 }
 
+/*
+ * Things set up before processor_init() call...
+ */
+void
+pre_init(void)
+{
+    /*
+     * These are critical things that need to be set up as soon as possible
+     * way before the processor_init() call.
+     */
+    interrupts_init();
+    gdt_load(&g_gdtr);
+}
+
 void
 processor_init(void)
 {
@@ -87,9 +101,6 @@ processor_init(void)
     static uint8_t init_flags = 0;
 
     struct cpu_info *cur_cpu = this_cpu();
-
-    interrupts_init();
-    gdt_load(&g_gdtr);
 
     CPU_INFO_LOCK(cur_cpu);
     init_tss(cur_cpu);
@@ -114,5 +125,4 @@ processor_init(void)
     /* Use spectre mitigation if enabled */
     if (try_spectre_mitigate != NULL)
         try_spectre_mitigate();
-
 }

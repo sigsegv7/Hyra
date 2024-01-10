@@ -36,6 +36,7 @@
 #if defined(_KERNEL)
 
 __weak void processor_init(void);
+__weak void pre_init(void);
 __weak void processor_halt(void);
 
 #endif  /* defined(_KERNEL) */

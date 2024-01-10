@@ -73,6 +73,7 @@ list_timers(void)
 void
 main(void)
 {
+    pre_init();
     tty_init();
     syslog_init();
     PRINT_LOGO();
