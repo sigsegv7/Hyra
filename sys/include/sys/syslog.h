@@ -42,6 +42,10 @@
     kprintf("%s[info]: ", __THIS_MODULE);       \
     kprintf(__VA_ARGS__);
 
+#define KWARN(...)                              \
+    kprintf("%s[WARN]: ", __THIS_MODULE);       \
+    kprintf(__VA_ARGS__);
+
 #define KDEBUG(...)                             \
     kprintf("%s[debug]: ", __THIS_MODULE);      \
     kprintf(__VA_ARGS__);
