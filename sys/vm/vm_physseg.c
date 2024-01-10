@@ -174,68 +174,30 @@ vm_physseg_bitmap_init(void)
     vm_physseg_bitmap_populate();
 }
 
-static uintptr_t
-vm_alloc_pageframe_internal(size_t count)
-{
-    bool can_alloc = false;
-
-    bool is_free;               /* True if we found a free frame */
-    size_t free_count = 0;      /* How many we found that are free? */
-    uintptr_t frame_idx = 0;    /* The base index of first free frame */
-
-    for (size_t i = last_used_idx; i < bitmap_size*8; ++i) {
-        if (free_count == count) {
-            can_alloc = true;
-            break;
-        }
-
-        is_free = !bitmap_test_bit(bitmap, i);
-
-        if (!is_free) {
-            free_count = 0;
-            continue;
-        }
-
-        /* Assume free here */
-        if (frame_idx == 0)
-            frame_idx = i;
-
-        ++free_count;
-    }
-
-    if (!can_alloc) {
-        /* No free memory! */
-        last_used_idx = 0;
-        return 0;
-    }
-
-    /* Mark the memory as allocated */
-    for (size_t i = frame_idx; i < frame_idx+count; ++i) {
-        bitmap_set_bit(bitmap, i);
-    }
-
-    /* Return the physical address */
-    last_used_idx = frame_idx;
-    return frame_idx*vm_get_page_size();
-}
-
-/*
- * Allocates physical pageframes.
- *
- * @count: Number of pageframes to allocate.
- */
 uintptr_t
 vm_alloc_pageframe(size_t count)
 {
-    uintptr_t phys;
+    size_t pages = 0;
+    size_t tmp;
 
-    phys = vm_alloc_pageframe_internal(count);
+    while (last_used_idx < highest_frame_idx) {
+        if (!bitmap_test_bit(bitmap, last_used_idx++)) {
+            /* We have a free page */
+            if (++pages != count)
+                continue;
 
-    if (phys == 0)
-        return 0;
+            tmp = last_used_idx - count;
 
-    vm_zero_page(PHYS_TO_VIRT(phys), count);
-    return phys;
+            for (size_t i = tmp; i < last_used_idx; ++i)
+                bitmap_set_bit(bitmap, i);
+
+            return tmp * vm_get_page_size();
+        } else {
+            pages = 0;
+        }
+    }
+
+    return 0;
 }
 
 /*
