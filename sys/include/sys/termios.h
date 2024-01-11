@@ -38,10 +38,10 @@
  * Output flags - software output processing
  */
 #define OPOST       0x00000001U         /* Enable output processing */
-#if defined(_KERNEL) || defined(_VEGA_SOURCE)
+#if defined(_KERNEL) || defined(_HYRA_SOURCE)
 #define OCRNL       0x00000002U         /* Map NL to CR-NL */
 #define ORBUF       0x00000004U         /* Buffer bytes */
-#endif      /* defined(_KERNEL) || defined(_VEGA_SOURCE) */
+#endif      /* defined(_KERNEL) || defined(_HYRA_SOURCE) */
 
 typedef uint32_t tcflag_t;
 typedef uint32_t speed_t;
