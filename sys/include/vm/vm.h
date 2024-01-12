@@ -60,6 +60,6 @@ vm_get_page_size(void)
 }
 
 void vm_init(void);
-struct vm_ctx vm_get_bsp_ctx(void);
+struct vm_ctx *vm_get_bsp_ctx(void);
 
 #endif      /* !_VM_H_ */
