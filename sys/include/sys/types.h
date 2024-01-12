@@ -66,4 +66,10 @@ typedef _Bool bool;
 typedef ssize_t off_t;
 typedef size_t uintptr_t;
 
+#if defined(_KERNEL)
+typedef uintptr_t vaddr_t;      /* Virtual address */
+typedef uintptr_t paddr_t;      /* Physical address */
+typedef uint32_t vm_prot_t;     /* Access flags */
+#endif  /* defined(_KERNEL) */
+
 #endif      /* !_SYS_TYPES_H_ */
