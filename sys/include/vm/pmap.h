@@ -45,6 +45,20 @@
  */
 #include <machine/vas.h>
 
+#include <vm/tlsf.h>
+#include <sys/types.h>
+#include <sys/spinlock.h>
+
+/*
+ * vm_ctx - Per core virtual memory context
+ */
+struct vm_ctx {
+    uintptr_t dynalloc_pool_phys;
+    size_t dynalloc_pool_sz;    /* In bytes */
+    tlsf_t tlsf_ctx;
+    struct spinlock dynalloc_lock;
+};
+
 /*
  * Read virtual address space descriptor
  * and return it.

@@ -37,10 +37,8 @@
 #include <sys/types.h>
 #include <sys/limine.h>
 #include <sys/cdefs.h>
-#include <sys/spinlock.h>
 #include <vm/page.h>
 #include <vm/pmap.h>
-#include <vm/tlsf.h>
 
 extern volatile struct limine_hhdm_request g_hhdm_request;
 
@@ -48,18 +46,6 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 
 #define PHYS_TO_VIRT(phys) (void *)((uintptr_t)phys + VM_HIGHER_HALF)
 #define VIRT_TO_PHYS(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
-
-/*
- * vm_ctx - Per core virtual memory context
- *
- * Holds per core virtual memory information.
- */
-struct vm_ctx {
-    uintptr_t dynalloc_pool_phys;
-    size_t dynalloc_pool_sz;    /* In bytes */
-    tlsf_t tlsf_ctx;
-    struct spinlock dynalloc_lock;
-};
 
 /*
  * Returns the machine's pagesize:
