@@ -33,6 +33,17 @@
 #include <sys/types.h>
 #include <sys/spinlock.h>
 
+/*
+ * VAS structure - describes a virtual address space
+ *
+ * XXX: This structure shall exist per-process.
+ *
+ * TODO: As of now, VAS operations are *not* serialized!!!
+ *       This must change once Hyra becomes multi-threaded
+ *       or things will go wrong *very* quickly. Ensure of
+ *       this or you will suffer the consequences of undefined
+ *       behavior and you will not like it!
+ */
 struct vas {
     size_t cr3_flags;       /* CR3 flags */
     uintptr_t top_level;    /* PML5 if `use_l5_paging' true, otherwise PML4 */
