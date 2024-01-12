@@ -33,6 +33,11 @@
 #include <machine/asm/tlb.h>
 #include <assert.h>
 
+/*
+ * Page-Table Entry (PTE) flags
+ *
+ * See Intel SDM Vol 3A, Section 4.5, Table 4-19
+ */
 #define PTE_ADDR_MASK   0x000FFFFFFFFFF000
 #define PTE_P           __BIT(0)        /* Present */
 #define PTE_RW          __BIT(1)        /* Writable */
