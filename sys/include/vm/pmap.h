@@ -49,6 +49,10 @@
 #include <sys/types.h>
 #include <sys/spinlock.h>
 
+/* prot flags for mappings */
+#define PMAP_WRITABLE __BIT(0)      /* Writable */
+#define PMAP_EXEC     __BIT(1)      /* Executable */
+
 /*
  * vm_ctx - Per core virtual memory context
  */
@@ -64,5 +68,10 @@ struct vm_ctx {
  * and return it.
  */
 struct vas pmap_read_vas(void);
+
+/*
+ * Map a physical address to a virtual address.
+ */
+int pmap_map(struct vm_ctx *, vaddr_t, paddr_t, vm_prot_t);
 
 #endif  /* _VM_PMAP_H_ */

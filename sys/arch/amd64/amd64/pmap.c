@@ -28,10 +28,115 @@
  */
 
 #include <vm/pmap.h>
+#include <vm/vm.h>
 #include <sys/cdefs.h>
+#include <machine/asm/tlb.h>
+#include <assert.h>
 
-#define PTE_ADDR_MASK 0x000FFFFFFFFFF000
+#define PTE_ADDR_MASK   0x000FFFFFFFFFF000
+#define PTE_P           __BIT(0)        /* Present */
+#define PTE_RW          __BIT(1)        /* Writable */
+#define PTE_US          __BIT(2)        /* User r/w allowed */
+#define PTE_PWT         __BIT(3)        /* Page-level write-through */
+#define PTE_PCD         __BIT(4)        /* Page-level cache disable */
+#define PTE_ACC         __BIT(5)        /* Accessed */
+#define PTE_DIRTY       __BIT(6)        /* Dirty (written-to page) */
+#define PTE_PAT         __BIT(7)
+#define PTE_GLOBAL      __BIT(8)
+#define PTE_NX          __BIT(63)       /* Execute-disable */
 
+/*
+ * Convert pmap prot flags to PTE flags.
+ */
+static uint64_t
+pmap_prot_to_pte(vm_prot_t prot)
+{
+    uint64_t pte_flags = PTE_P | PTE_NX;
+
+    if (__TEST(prot, PMAP_WRITABLE))
+        pte_flags |= PTE_RW;
+    if (__TEST(prot, PMAP_EXEC))
+        pte_flags &= ~(PTE_NX);
+
+    return pte_flags;
+}
+
+/*
+ * Returns index for a specific pagemap level.
+ *
+ * @level: Requested level.
+ * @va: Virtual address.
+ */
+static size_t
+pmap_get_level_index(uint8_t level, vaddr_t va)
+{
+    /* TODO: Make this bullshit assertion better */
+    __assert(level <= 4 && level != 0);
+
+    switch (level) {
+    case 4:
+        return (va >> 39) & 0x1FF;
+    case 3:
+        return (va >> 30) & 0x1FF;
+    case 2:
+        return (va >> 29) & 0x1FF;
+    case 1:
+        return (va >> 20) & 0x1FF;
+    default:        /* Should not be reachable */
+        return 0;
+    }
+}
+
+static inline volatile uintptr_t *
+pmap_extract(uint8_t level, vaddr_t va, volatile uintptr_t *pmap)
+{
+    uintptr_t *next;
+    size_t idx;
+
+    idx = pmap_get_level_index(level, va);
+    next = PHYS_TO_VIRT(pmap[idx] & PTE_ADDR_MASK);
+    return next;
+}
+
+/*
+ * TODO: Ensure operations here are serialized.
+ *
+ * TODO: Create pmap if they don't exist
+ *       i.e., them being null.
+ */
+int
+pmap_map(struct vm_ctx *ctx, vaddr_t va, paddr_t pa, vm_prot_t prot)
+{
+    struct vas vas = pmap_read_vas();
+    volatile uintptr_t *pml4 = PHYS_TO_VIRT(vas.top_level);
+    volatile uintptr_t *pdpt, *pd, *tbl;
+    uint32_t flags = pmap_prot_to_pte(prot);
+    int status = 0;
+
+    pdpt = pmap_extract(4, va, pml4);
+    if (pdpt == NULL) {
+        status = 1;
+        goto done;
+    }
+
+    pd = pmap_extract(3, va, pdpt);
+    if (pd == NULL) {
+        status = 1;
+        goto done;
+    }
+
+    tbl = pmap_extract(2, va, pd);
+    if (tbl == NULL) {
+        status = 1;
+        goto done;
+    }
+
+    /* Map our page */
+    tbl[pmap_get_level_index(1, va)] = pa | flags;
+    tlb_flush(va);
+done:
+    return status;
+}
 struct vas
 pmap_read_vas(void)
 {
