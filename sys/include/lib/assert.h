@@ -33,9 +33,10 @@
 #include <sys/panic.h>
 #include <sys/types.h>
 
-#define __assert(condition)                                 \
-    if ((uintptr_t)(condition) == 0) {                      \
-        panic("Assert \"%s\" failed\n", #condition);        \
+#define __assert(condition)                                         \
+    if ((uintptr_t)(condition) == 0) {                              \
+        panic("Assert \"%s\" failed (%s() at %s:%d)\n", #condition, \
+              __func__, __FILE__, __LINE__);                        \
     }
 
 #endif  /* !_LIB_ASSERT_H_ */
