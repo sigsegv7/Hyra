@@ -104,18 +104,19 @@ pmap_extract(uint8_t level, vaddr_t va, volatile uintptr_t *pmap)
 }
 
 /*
+ * Modify a page table by writing `val' to it.
+ *
  * TODO: Ensure operations here are serialized.
  *
  * TODO: Create pmap if they don't exist
  *       i.e., them being null.
  */
-int
-pmap_map(struct vm_ctx *ctx, vaddr_t va, paddr_t pa, vm_prot_t prot)
+static int
+pmap_modify_tbl(struct vm_ctx *ctx, vaddr_t va, size_t val)
 {
     struct vas vas = pmap_read_vas();
     volatile uintptr_t *pml4 = PHYS_TO_VIRT(vas.top_level);
     volatile uintptr_t *pdpt, *pd, *tbl;
-    uint32_t flags = pmap_prot_to_pte(prot);
     int status = 0;
 
     pdpt = pmap_extract(4, va, pml4);
@@ -137,11 +138,26 @@ pmap_map(struct vm_ctx *ctx, vaddr_t va, paddr_t pa, vm_prot_t prot)
     }
 
     /* Map our page */
-    tbl[pmap_get_level_index(1, va)] = pa | flags;
+    tbl[pmap_get_level_index(1, va)] = val;
     tlb_flush(va);
 done:
     return status;
 }
+
+int
+pmap_map(struct vm_ctx *ctx, vaddr_t va, paddr_t pa, vm_prot_t prot)
+{
+    uint32_t flags = pmap_prot_to_pte(prot);
+
+    return pmap_modify_tbl(ctx, va, (pa | flags));
+}
+
+int
+pmap_unmap(struct vm_ctx *ctx, vaddr_t va)
+{
+    return pmap_modify_tbl(ctx, va, 0);
+}
+
 struct vas
 pmap_read_vas(void)
 {

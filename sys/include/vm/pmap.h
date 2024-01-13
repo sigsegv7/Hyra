@@ -74,4 +74,8 @@ struct vas pmap_read_vas(void);
  */
 int pmap_map(struct vm_ctx *, vaddr_t, paddr_t, vm_prot_t);
 
+/*
+ * Unmap a page.
+ */
+int pmap_unmap(struct vm_ctx *, vaddr_t);
 #endif  /* _VM_PMAP_H_ */
