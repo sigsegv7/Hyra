@@ -33,6 +33,7 @@
 .In vm/pmap.h
 
 .Ft pmap_map(struct vm_ctx *, vaddr_t, paddr_t, vm_prot_t);
+.Ft pmap_unmap(struct vm_ctx *, vaddr_t);
 .Sh DESCRIPTION
 The machine dependent virtual memory layer contains a standard set of
 functions that shall be implemented per architecture and left alone
@@ -58,6 +59,11 @@ bit tells pmap_map() to allow this page to be
 executable. On platforms like AMD64, execution of pages
 without this bit will result in an exception from the
 instruction fetch, for AMD64, a #PF will occur.
+
+The
+.Ft pmap_unmap()
+function is used to unmap a virtual address which
+leaves the address invalid.
 
 .Sh AUTHORS
 .An Ian Moffett Aq Mt ian@osmora.org
