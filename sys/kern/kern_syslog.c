@@ -33,6 +33,17 @@
 
 static struct tty syslog_tty;
 
+/* False if we don't log to a console */
+static bool is_conlog_init = false;
+
+static void
+syslog_write(const char *s, size_t len)
+{
+    if (is_conlog_init) {
+        tty_write(&syslog_tty, s, len);
+    }
+}
+
 static void
 syslog_handle_fmt(va_list *ap, char fmt_spec)
 {
@@ -44,21 +55,21 @@ syslog_handle_fmt(va_list *ap, char fmt_spec)
     switch (fmt_spec) {
     case 'c':
         tmp_ch = va_arg(*ap, int);
-        tty_write(&syslog_tty, &tmp_ch, 1);
+        syslog_write(&tmp_ch, 1);
         break;
     case 's':
         tmp_str = va_arg(*ap, const char *);
-        tty_write(&syslog_tty, tmp_str, strlen(tmp_str));
+        syslog_write(tmp_str, strlen(tmp_str));
         break;
     case 'd':
         tmp_int = va_arg(*ap, int64_t);
         itoa(tmp_int, tmp_buf, 10);
-        tty_write(&syslog_tty, tmp_buf, strlen(tmp_buf));
+        syslog_write(tmp_buf, strlen(tmp_buf));
         break;
     case 'x':
         tmp_int = va_arg(*ap, uint64_t);
         itoa(tmp_int, tmp_buf, 16);
-        tty_write(&syslog_tty, tmp_buf + 2, strlen(tmp_buf) - 2);
+        syslog_write(tmp_buf + 2, strlen(tmp_buf) - 2);
         break;
     }
 }
@@ -71,7 +82,7 @@ vkprintf(const char *fmt, va_list *ap)
             ++fmt;
             syslog_handle_fmt(ap, *fmt++);
         } else {
-            tty_write(&syslog_tty, fmt++, 1);
+            syslog_write(fmt++, 1);
         }
     }
 }
@@ -89,6 +100,8 @@ kprintf(const char *fmt, ...)
 void
 syslog_init(void)
 {
+    is_conlog_init = true;
+
     tty_set_defaults(&syslog_tty);
     tty_attach(&syslog_tty);
 }
