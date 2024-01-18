@@ -37,6 +37,7 @@
 #include <machine/tss.h>
 #include <machine/spectre.h>
 #include <machine/cpu.h>
+#include <machine/uart.h>
 #include <firmware/acpi/acpi.h>
 
 __MODULE_NAME("machdep");
@@ -80,6 +81,16 @@ processor_halt(void)
     __ASMV("cli; hlt");
 }
 
+
+/*
+ * Send char to serial for debugging purposes.
+ */
+void
+serial_dbgch(char c)
+{
+    uart8250_write(c);
+}
+
 /*
  * Things set up before processor_init() call...
  */
@@ -90,6 +101,7 @@ pre_init(void)
      * These are critical things that need to be set up as soon as possible
      * way before the processor_init() call.
      */
+    uart8250_try_init();
     interrupts_init();
     gdt_load(&g_gdtr);
 }

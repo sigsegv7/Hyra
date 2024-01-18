@@ -27,18 +27,72 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
-
 #include <sys/types.h>
 #include <sys/cdefs.h>
+#include <machine/uart.h>
+#include <machine/io.h>
 
-#if defined(_KERNEL)
+#define UART_COM1 0x3F8
 
-__weak void processor_init(void);
-__weak void pre_init(void);
-__weak void processor_halt(void);
-__weak void serial_dbgch(char c);
+#define UART_PORTNO(OFFSET) (UART_COM1 + 1)
 
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+static bool
+uart8250_transmit_empty(void)
+{
+    return __TEST(UART_PORTNO(5), __BIT(5));
+}
+
+void
+uart8250_write(char byte)
+{
+    while (!uart8250_transmit_empty());
+    outb(UART_COM1, byte);
+}
+
+int
+uart8250_try_init(void)
+{
+    /* Disable interrutps */
+    outb(UART_PORTNO(1), 0x00);
+
+    /* Enable DLAB to set divisor latches */
+    outb(UART_PORTNO(3), 0x80);
+
+    /* Set to 38400 baud via divisor latches (DLL and DLH)*/
+    outb(UART_PORTNO(0), 0x03);
+    outb(UART_PORTNO(1), 0x00);
+
+    /*
+     * Set Data Word Length to 8 bits...
+     *
+     * XXX: Our write does not preserve the DLAB bit...
+     *      We want to clear it to make the baud latches
+     *      readonly
+     */
+    outb(UART_PORTNO(3), 0x03);
+
+    /*
+     * We want FIFO to be enabled, and want to clear the
+     * TX/RX queues. We also want to set the interrupt
+     * watermark at 14 bytes.
+     */
+    outb(UART_PORTNO(2), 0xC7);
+
+    /*
+     * Enable auxiliary output 2 (used as interrupt line) and
+     * mark data terminal ready.
+     */
+    outb(UART_PORTNO(4), 0x0B);
+
+    /* Enable interrupts */
+    outb(UART_PORTNO(1), 0x01);
+
+    /* Put chip in loopback mode... test chip w/ test byte */
+    outb(UART_PORTNO(4), 0x1E);
+    outb(UART_PORTNO(0), 0xAE);
+    if (inb(UART_PORTNO(0) != 0xAE)) {
+        /* Not the same byte, something is wrong */
+        return 1;
+    }
+    return 0;
+}

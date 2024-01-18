@@ -21,11 +21,22 @@ AC_ARG_ENABLE([spectre-mitigation],
     [AS_HELP_STRING([--enable-spectre-mitigation], [Enable Spectre mitigation (IBRS or similar)])],,
     [enable_spectre_mitigation=$enableval])
 
+# Enable serial debug
+AC_ARG_ENABLE([serial-debug],
+    [AS_HELP_STRING([--enable-serial-debug], [Allow serial debugging])],,
+    [enable_serial_debug=$enableval])
+
 
 if test "x$enable_spectre_mitigation" = "xyes"; then
     AC_SUBST(SPECTRE_MITIGATION, [1])
 else
     AC_SUBST(SPECTRE_MITIGATION, [0])
+fi
+
+if test "x$enable_serial_debug" = "xyes"; then
+    AC_SUBST(SERIAL_DEBUG, [1])
+else
+    AC_SUBST(SERIAL_DEBUG, [0])
 fi
 
 AC_SUBST(HYRA_BUILDDATE, [$HYRA_BUILDDATE])

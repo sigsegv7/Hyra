@@ -29,6 +29,7 @@
 
 #include <sys/syslog.h>
 #include <sys/tty.h>
+#include <sys/machdep.h>
 #include <string.h>
 
 static struct tty syslog_tty;
@@ -39,6 +40,15 @@ static bool is_conlog_init = false;
 static void
 syslog_write(const char *s, size_t len)
 {
+#if defined(__SERIAL_DEBUG)
+    size_t tmp_len = len;
+    const char *tmp_s = s;
+
+    while (tmp_len--) {
+        serial_dbgch(*tmp_s++);
+    }
+#endif  /* defined(__SERIAL_DEBUG) */
+
     if (is_conlog_init) {
         tty_write(&syslog_tty, s, len);
     }

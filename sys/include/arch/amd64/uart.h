@@ -27,18 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
+/* UART 8250 init logic */
+
+#ifndef _UART_H_
+#define _UART_H_
 
 #include <sys/types.h>
-#include <sys/cdefs.h>
 
-#if defined(_KERNEL)
+int uart8250_try_init(void);
+void uart8250_write(char byte);
 
-__weak void processor_init(void);
-__weak void pre_init(void);
-__weak void processor_halt(void);
-__weak void serial_dbgch(char c);
-
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+#endif
