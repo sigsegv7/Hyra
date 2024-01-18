@@ -34,7 +34,6 @@
 #include <sys/timer.h>
 #include <firmware/acpi/acpi.h>
 #include <vm/physseg.h>
-#include <vm/vm.h>
 #include <logo.h>
 
 __MODULE_NAME("init_main");
@@ -83,18 +82,6 @@ main(void)
             HYRA_BUILDBRANCH);
 
     acpi_init();
-
-    /*
-     * TODO: Move these calls to machdep.c whenever
-     *       possible. It must be documented that
-     *       this will only be called by processor_init()
-     *       as the pmap subsystem may rely on architecture
-     *       specifics that haven't been set up yet... Putting
-     *       these calls in processor_init() makes things more
-     *       flexible.
-     */
-    vm_physseg_init();
-    vm_init();
 
     processor_init();
     list_timers();

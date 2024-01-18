@@ -38,6 +38,8 @@
 #include <machine/spectre.h>
 #include <machine/cpu.h>
 #include <machine/uart.h>
+#include <vm/vm.h>
+#include <vm/physseg.h>
 #include <firmware/acpi/acpi.h>
 
 __MODULE_NAME("machdep");
@@ -104,6 +106,9 @@ pre_init(void)
     uart8250_try_init();
     interrupts_init();
     gdt_load(&g_gdtr);
+
+    vm_physseg_init();
+    vm_init();
 }
 
 void
