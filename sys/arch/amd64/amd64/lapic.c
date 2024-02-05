@@ -252,7 +252,6 @@ lapic_timer_oneshot(bool mask, uint32_t count)
  *
  * @us: Microseconds.
  */
-
 void
 lapic_timer_oneshot_us(uint32_t us)
 {
