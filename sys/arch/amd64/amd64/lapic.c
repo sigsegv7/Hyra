@@ -263,6 +263,52 @@ lapic_timer_oneshot_us(uint32_t us)
 }
 
 /*
+ * Send an Interprocessor interrupt.
+ *
+ * @id: Target LAPIC ID
+ * @shorthand: Dest shorthand
+ * @vector: Interrupt vector
+ */
+void lapic_send_ipi(uint8_t id, uint8_t shorthand, uint8_t vector)
+{
+    const uint32_t x2APIC_IPI_SELF = 0x3F0;
+    uint8_t icr_lo = vector | IPI_DEST_PHYSICAL;
+    bool x2apic_supported = has_x2apic();
+
+    if (x2apic_supported && shorthand == IPI_SHORTHAND_SELF) {
+        lapic_writel(x2APIC_IPI_SELF, vector);
+        return;
+    }
+
+    switch (shorthand) {
+    case IPI_SHORTHAND_SELF:
+        icr_lo |= (1 << 18);
+        break;
+    case IPI_SHORTHAND_ALL:
+        icr_lo |= (2 << 18);
+        break;
+    case IPI_SHORTHAND_OTHERS:
+        icr_lo |= (3 << 18);
+        break;
+    }
+
+    /*
+     * In contrast to xAPICs two 32-bit ICR registers, the x2APIC
+     * ICR register is one big 64-bit register, thus requiring only
+     * a single write. In xAPIC mode, the Delivery Status bit (bit 12)
+     * must be polled until clear. However, in x2APIC mode, this bit
+     * does not exist meaning we do not need to worry about it.
+     */
+    if (x2apic_supported) {
+        lapic_writel(LAPIC_ICRLO, ((uint64_t)id << 32) | icr_lo);
+    } else {
+        lapic_writel(LAPIC_ICRHI, ((uint32_t)id << 24));
+        lapic_writel(LAPIC_ICRLO, icr_lo);
+        while (__TEST(lapic_readl(LAPIC_ICRLO), __BIT(12)));
+    }
+}
+
+/*
  * Calibrates the Local APIC timer
  *
  * TODO: Disable interrupts and put them back in

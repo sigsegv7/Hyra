@@ -35,9 +35,23 @@
 #define LAPIC_TMR_ONESHOT   0x00
 #define LAPIC_TMR_PERIODIC  0x01
 
+/* IPI Destination Shorthands */
+enum {
+    IPI_SHORTHAND_SELF,
+    IPI_SHORTHAND_ALL,
+    IPI_SHORTHAND_OTHERS
+};
+
+/* IPI Destination Modes */
+enum {
+    IPI_DEST_PHYSICAL,
+    IPI_DEST_LOGICAL
+};
+
 void lapic_timer_init(size_t *freq_out);
 void lapic_timer_oneshot(bool mask, uint32_t count);
 void lapic_timer_oneshot_us(uint32_t us);
+void lapic_send_ipi(uint8_t id, uint8_t shorthand, uint8_t vector);
 void lapic_init(void);
 
 #endif  /* !_AMD64_LAPIC_H_ */

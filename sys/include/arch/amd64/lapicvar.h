@@ -47,6 +47,8 @@
 #define LAPIC_TMR           0x0180U     /* Trigger Mode Register (max=0x0220) */
 #define LAPIC_IRR           0x0200U     /* Interrupt Request Register (max=0x0270) */
 #define LAPIC_ERR           0x0280U     /* Error Status Register */
+#define LAPIC_ICRLO         0x0300U     /* Interrupt Command Low Register */
+#define LAPIC_ICRHI         0x0310U     /* Interrupt Command High Register */
 #define LAPIC_LVT_TMR       0x0320U     /* LVT Timer Register */
 #define LAPIC_DCR           0x03E0U     /* Divide Configuration Register (for timer) */
 #define LAPIC_INIT_CNT      0x0380U     /* Initial Count Register (for timer) */
