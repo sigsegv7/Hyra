@@ -85,7 +85,7 @@ lapic_check_support(void)
  *
  * @reg: Register to read from.
  */
-static inline uint32_t
+static inline uint64_t
 lapic_readl(uint32_t reg)
 {
     void *addr;
@@ -107,7 +107,7 @@ lapic_readl(uint32_t reg)
  * @reg: Register to write to.
  */
 static inline void
-lapic_writel(uint32_t reg, uint32_t val)
+lapic_writel(uint32_t reg, uint64_t val)
 {
     void *addr;
     const struct cpu_info *ci = this_cpu();
