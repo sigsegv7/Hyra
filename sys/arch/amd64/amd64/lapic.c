@@ -269,7 +269,8 @@ lapic_timer_oneshot_us(uint32_t us)
  * @shorthand: Dest shorthand
  * @vector: Interrupt vector
  */
-void lapic_send_ipi(uint8_t id, uint8_t shorthand, uint8_t vector)
+void
+lapic_send_ipi(uint8_t id, uint8_t shorthand, uint8_t vector)
 {
     const uint32_t x2APIC_IPI_SELF = 0x3F0;
     uint8_t icr_lo = vector | IPI_DEST_PHYSICAL;
