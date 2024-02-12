@@ -37,6 +37,7 @@
 #define __weak      __attr(weak)
 #define __used      __attr(used)
 #define __naked     __attr(naked)
+#define __noreturn  __attr(noreturn)
 
 /* Wrapper for inline asm */
 #define __ASMV __asm__ __volatile__
