@@ -41,5 +41,6 @@ bool acpi_is_checksum_valid(struct acpi_header *hdr);
 struct acpi_root_sdt *acpi_get_root_sdt(void);
 size_t acpi_get_root_sdt_len(void);
 void acpi_parse_madt(struct cpu_info *ci);
+void *acpi_get_lapic_base(void);
 
 #endif      /* !_ACPI_ACPI_H_ */

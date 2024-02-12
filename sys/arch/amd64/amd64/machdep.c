@@ -41,6 +41,7 @@
 #include <vm/vm.h>
 #include <vm/physseg.h>
 #include <firmware/acpi/acpi.h>
+#include <sys/syslog.h>
 
 __MODULE_NAME("machdep");
 __KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
@@ -135,6 +136,7 @@ processor_init(void)
         ioapic_init();
     }
 
+    cur_cpu->lapic_base = acpi_get_lapic_base();
     CPU_INFO_UNLOCK(cur_cpu);
 
     lapic_init();       /* Per core */

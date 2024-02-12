@@ -46,6 +46,14 @@ __KERNEL_META("$Hyra$: acpi_madt.c, Ian Marco Moffett, "
 
 static struct acpi_madt *madt = NULL;
 
+void *
+acpi_get_lapic_base(void)
+{
+    if (madt == NULL)
+        return NULL;
+    return (void *)(uint64_t)madt->lapic_addr;
+}
+
 static void
 do_parse(struct cpu_info *ci)
 {
@@ -53,17 +61,12 @@ do_parse(struct cpu_info *ci)
     uint8_t *end = NULL;
 
     void *ioapic_mmio_base = NULL;
-    void *lapic_mmio_base = NULL;
 
     struct apic_header *hdr = NULL;
     struct ioapic *ioapic = NULL;
 
     cur = (uint8_t *)(madt + 1);
     end = (uint8_t *)madt + madt->hdr.length;
-
-    /* Init the Local APIC */
-    lapic_mmio_base = (void *)(uintptr_t)madt->lapic_addr;
-    ci->lapic_base = lapic_mmio_base;
 
     /* Parse the rest of the MADT */
     while (cur < end) {
