@@ -27,20 +27,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
-
+#include <sys/cpu.h>
 #include <sys/types.h>
-#include <sys/cdefs.h>
+#include <sys/panic.h>
+#include <sys/machdep.h>
+#include <vm/dynalloc.h>
+#include <assert.h>
 
-#if defined(_KERNEL)
+__MODULE_NAME("kern_cpu");
+__KERNEL_META("$Hyra$: kern_cpu.c, Ian Marco Moffett, "
+              "Machine independent CPU interface");
 
-#define MAXCPUS 32
+#define CI_LIST_SZ \
+    sizeof(struct cpu_info *) * (MAXCPUS + 1)
 
-__weak void processor_init(void);
-__weak void pre_init(void);
-__weak void processor_halt(void);
-__weak void serial_dbgch(char c);
+static size_t ncpu = 0;
+static struct cpu_info **ci_list = NULL;
 
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+void
+cpu_attach(struct cpu_info *ci)
+{
+    if ((ci->idx = ncpu++) >= (MAXCPUS + 1)) {
+        panic("Machine core count exceeds MAXCPUS!\n");
+    }
+
+    if (ci_list == NULL) {
+        ci_list = dynalloc(CI_LIST_SZ);
+        __assert(ci_list != NULL);
+    }
+
+    ci_list[cpu_index(ci)] = ci;
+}
+
+struct cpu_info *
+cpu_get(size_t i)
+{
+    if (i >= ncpu || ci_list == NULL) {
+        return NULL;
+    }
+
+    return ci_list[i];
+}

@@ -27,20 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
+#ifndef _SYS_CPU_H_
+#define _SYS_CPU_H_
 
-#include <sys/types.h>
-#include <sys/cdefs.h>
+#include <machine/cpu.h>
 
-#if defined(_KERNEL)
+#define cpu_index(ci) ci->idx
 
-#define MAXCPUS 32
+void cpu_attach(struct cpu_info *ci);
+struct cpu_info *cpu_get(size_t i);
 
-__weak void processor_init(void);
-__weak void pre_init(void);
-__weak void processor_halt(void);
-__weak void serial_dbgch(char c);
-
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+#endif  /* !_SYS_CPU_H_ */
