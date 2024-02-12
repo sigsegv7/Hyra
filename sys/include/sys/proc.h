@@ -27,34 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/cpu_mp.h>
-#include <sys/cdefs.h>
+#ifndef _SYS_PROC_H_
+#define _SYS_PROC_H_
 
-__KERNEL_META("$Hyra$: cpu.c, Ian Marco Moffett, "
-              "AMD64 CPU abstraction module");
-
-/* XXX: Must be zero'd!! */
-static struct cpu_info bsp_info = {0};
-
-struct cpu_info *
-amd64_get_bsp(void)
-{
-    return &bsp_info;
-}
+#include <sys/types.h>
+#include <sys/queue.h>
+#include <machine/cpu.h>
 
 /*
- * TODO: Update this when adding SMP
- *       support.
+ * A task running on the CPU e.g., a process or
+ * a thread.
  */
-struct cpu_info *
-amd64_this_cpu(void)
-{
-    struct cpu_ctx *cctx;
+struct proc {
+    pid_t pid;
+    struct cpu_info *cpu;
+    TAILQ_ENTRY(tailq_entry) entries;
+};
 
-    if (!mp_supported()) {
-        return amd64_get_bsp();
-    }
-
-    cctx = (void *)read_gs_base();
-    return cctx->ci;
-}
+#endif  /* !_SYS_PROC_H_ */

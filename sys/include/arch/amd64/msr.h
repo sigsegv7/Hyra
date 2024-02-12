@@ -33,7 +33,8 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 
-#define IA32_SPEC_CTL   0x00000048
+#define IA32_SPEC_CTL       0x00000048
+#define IA32_KERNEL_GS_BASE 0xC0000102
 
 static inline uint64_t
 rdmsr(uint32_t msr_addr)

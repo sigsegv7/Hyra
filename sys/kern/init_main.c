@@ -32,6 +32,8 @@
 #include <sys/syslog.h>
 #include <sys/machdep.h>
 #include <sys/timer.h>
+#include <sys/sched.h>
+#include <machine/cpu_mp.h>
 #include <firmware/acpi/acpi.h>
 #include <vm/physseg.h>
 #include <logo.h>
@@ -72,6 +74,8 @@ list_timers(void)
 void
 main(void)
 {
+    struct cpu_info *ci;
+
     pre_init();
     tty_init();
     syslog_init();
@@ -86,6 +90,11 @@ main(void)
     processor_init();
     list_timers();
 
-    /* We're done here, halt the processor */
-    __ASMV("cli; hlt");
+    ci = this_cpu();
+    if (ap_bootstrap != NULL) {
+        ap_bootstrap(ci);
+    }
+
+    sched_init_processor(ci);
+    __builtin_unreachable();
 }

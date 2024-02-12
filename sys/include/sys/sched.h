@@ -27,34 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/cpu_mp.h>
-#include <sys/cdefs.h>
+#ifndef _SYS_SCHED_H_
+#define _SYS_SCHED_H_
 
-__KERNEL_META("$Hyra$: cpu.c, Ian Marco Moffett, "
-              "AMD64 CPU abstraction module");
+#include <sys/proc.h>
+#include <sys/queue.h>
+#include <sys/types.h>
+#include <sys/spinlock.h>
+#include <machine/cpu.h>
 
-/* XXX: Must be zero'd!! */
-static struct cpu_info bsp_info = {0};
+__noreturn
+void sched_init_processor(struct cpu_info *ci);
 
-struct cpu_info *
-amd64_get_bsp(void)
-{
-    return &bsp_info;
-}
-
-/*
- * TODO: Update this when adding SMP
- *       support.
- */
-struct cpu_info *
-amd64_this_cpu(void)
-{
-    struct cpu_ctx *cctx;
-
-    if (!mp_supported()) {
-        return amd64_get_bsp();
-    }
-
-    cctx = (void *)read_gs_base();
-    return cctx->ci;
-}
+#endif  /* !_SYS_SCHED_H_ */

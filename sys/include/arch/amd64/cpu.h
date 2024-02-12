@@ -33,7 +33,10 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/spinlock.h>
+#include <sys/sched_state.h>
+#include <sys/queue.h>
 #include <machine/tss.h>
+#include <machine/msr.h>
 
 #define this_cpu()      amd64_this_cpu()
 #define get_bsp()       amd64_get_bsp()
@@ -52,13 +55,26 @@ struct cpu_info {
     /* Per-arch fields  */
     void *pmap;                         /* Current pmap */
     uint32_t id;
+    uint32_t idx;
     struct spinlock lock;
+    struct sched_state sched_state;
+    TAILQ_ENTRY(cpu_info) link;
 
     /* AMD64 */
     volatile size_t lapic_tmr_freq;
     volatile void *lapic_base;
     volatile bool has_x2apic;
     volatile struct tss_entry *tss;
+};
+
+/*
+ * Contains information for the current
+ * core. Stored in %GS.
+ *
+ * MUST REMAIN IN ORDER!!!
+ */
+struct cpu_ctx {
+    struct cpu_info *ci;
 };
 
 /*
@@ -73,6 +89,18 @@ amd64_is_intr_mask(void)
 
     __ASMV("pushfq; pop %0" : "=rm" (flags) :: "memory");
     return __TEST(flags, 1 << 9);
+}
+
+static inline void
+write_gs_base(uintptr_t val)
+{
+    wrmsr(IA32_KERNEL_GS_BASE, val);
+}
+
+static inline uintptr_t
+read_gs_base(void)
+{
+    return rdmsr(IA32_KERNEL_GS_BASE);
 }
 
 struct cpu_info *amd64_this_cpu(void);

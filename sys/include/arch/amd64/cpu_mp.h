@@ -27,34 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/cpu_mp.h>
+#ifndef _SYS_CPU_AP_H_
+#define _SYS_CPU_AP_H_
+
+#include <machine/cpu.h>
 #include <sys/cdefs.h>
+#include <sys/types.h>
 
-__KERNEL_META("$Hyra$: cpu.c, Ian Marco Moffett, "
-              "AMD64 CPU abstraction module");
+__weak void ap_bootstrap(struct cpu_info *ci);
+__weak bool mp_supported(void);
 
-/* XXX: Must be zero'd!! */
-static struct cpu_info bsp_info = {0};
-
-struct cpu_info *
-amd64_get_bsp(void)
-{
-    return &bsp_info;
-}
-
-/*
- * TODO: Update this when adding SMP
- *       support.
- */
-struct cpu_info *
-amd64_this_cpu(void)
-{
-    struct cpu_ctx *cctx;
-
-    if (!mp_supported()) {
-        return amd64_get_bsp();
-    }
-
-    cctx = (void *)read_gs_base();
-    return cctx->ci;
-}
+#endif  /* !_SYS_CPU_AP_H_ */

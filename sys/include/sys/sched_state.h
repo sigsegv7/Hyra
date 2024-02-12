@@ -27,34 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/cpu_mp.h>
-#include <sys/cdefs.h>
+#ifndef _SYS_SCHED_STATE_H_
+#define _SYS_SCHED_STATE_H_
 
-__KERNEL_META("$Hyra$: cpu.c, Ian Marco Moffett, "
-              "AMD64 CPU abstraction module");
-
-/* XXX: Must be zero'd!! */
-static struct cpu_info bsp_info = {0};
-
-struct cpu_info *
-amd64_get_bsp(void)
-{
-    return &bsp_info;
-}
+#include <sys/types.h>
+#include <sys/queue.h>
 
 /*
- * TODO: Update this when adding SMP
- *       support.
+ * Scheduler state, per CPU.
  */
-struct cpu_info *
-amd64_this_cpu(void)
-{
-    struct cpu_ctx *cctx;
+struct sched_state {
+    TAILQ_HEAD(, proc) queue;
+    size_t queue_nrun;          /* Number of processes in the run queue */
+};
 
-    if (!mp_supported()) {
-        return amd64_get_bsp();
-    }
-
-    cctx = (void *)read_gs_base();
-    return cctx->ci;
-}
+#endif /* !_SYS_SCHED_STATE_H_ */

@@ -27,34 +27,71 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/cpu_mp.h>
+#include <sys/sched.h>
+#include <sys/sched_state.h>
+#include <sys/types.h>
 #include <sys/cdefs.h>
+#include <sys/spinlock.h>
+#include <assert.h>
 
-__KERNEL_META("$Hyra$: cpu.c, Ian Marco Moffett, "
-              "AMD64 CPU abstraction module");
+/*
+ * This is the processor ready list, processors
+ * (cores) that have no task assigned live here.
+ *
+ * Assigning a task to a core is done by popping from
+ * this list. However, it must be done carefully and
+ * must be serialized. You *must* acquire ci_ready_lock
+ * before performing *any* operations on ci_ready_list!!!
+ */
+static TAILQ_HEAD(, cpu_info) ci_ready_list;
+static struct spinlock ci_ready_lock = {0};
 
-/* XXX: Must be zero'd!! */
-static struct cpu_info bsp_info = {0};
-
-struct cpu_info *
-amd64_get_bsp(void)
+/*
+ * Push a processor into the ready list.
+ */
+static void
+sched_enqueue_ci(struct cpu_info *ci)
 {
-    return &bsp_info;
+    spinlock_acquire(&ci_ready_lock);
+    TAILQ_INSERT_TAIL(&ci_ready_list, ci, link);
+    spinlock_release(&ci_ready_lock);
 }
 
 /*
- * TODO: Update this when adding SMP
- *       support.
+ * Processor awaiting tasks to be assigned will be here spinning.
+ *
+ * XXX: We are not using the PAUSE instruction for the sake of
+ *      ensuring compatibility... PAUSE is F3 90, REP NOP is
+ *      F3 90... REP NOP will be read as a PAUSE on processors
+ *      that support it.
  */
-struct cpu_info *
-amd64_this_cpu(void)
+__noreturn static void
+sched_enter(void)
 {
-    struct cpu_ctx *cctx;
+    for (;;) {
+        __ASMV("rep; nop");
+    }
+}
 
-    if (!mp_supported()) {
-        return amd64_get_bsp();
+/*
+ * Setup scheduler related things and enqueue AP.
+ */
+void
+sched_init_processor(struct cpu_info *ci)
+{
+    struct sched_state *sched_state = &ci->sched_state;
+    static bool is_init = true;
+
+    if (is_init) {
+        /* Setup ready list if first call */
+        TAILQ_INIT(&ci_ready_list);
+        is_init = false;
     }
 
-    cctx = (void *)read_gs_base();
-    return cctx->ci;
+    TAILQ_INIT(&sched_state->queue);
+    sched_enqueue_ci(ci);
+
+    sched_enter();
+
+    __builtin_unreachable();
 }

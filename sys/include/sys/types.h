@@ -65,6 +65,7 @@ typedef int32_t     ssize_t;        /* Byte count or error */
 typedef _Bool bool;
 typedef ssize_t off_t;
 typedef size_t uintptr_t;
+typedef int pid_t;
 
 #if defined(_KERNEL)
 typedef uintptr_t vaddr_t;      /* Virtual address */
