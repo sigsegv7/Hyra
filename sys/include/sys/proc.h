@@ -41,7 +41,7 @@
 struct proc {
     pid_t pid;
     struct cpu_info *cpu;
-    TAILQ_ENTRY(tailq_entry) entries;
+    TAILQ_ENTRY(proc) link;
 };
 
 #endif  /* !_SYS_PROC_H_ */
