@@ -10,4 +10,5 @@
 /stand
 /base
 /sys/include/machine
+ovmf-riscv64
 autom4te.cache
