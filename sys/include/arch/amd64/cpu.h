@@ -37,6 +37,13 @@
 #include <sys/queue.h>
 #include <machine/tss.h>
 #include <machine/msr.h>
+/*
+ * XXX: We are not using the PAUSE instruction for the sake of
+ *      ensuring compatibility... PAUSE is F3 90, REP NOP is
+ *      F3 90... REP NOP will be read as a PAUSE on processors
+ *      that support it.
+ */
+#define hint_spinwait() __ASMV("rep; nop")
 
 #define this_cpu()      amd64_this_cpu()
 #define get_bsp()       amd64_get_bsp()

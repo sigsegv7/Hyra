@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/spinlock.h>
+#include <machine/cpu.h>
 #include <assert.h>
 
 /*
@@ -59,17 +60,12 @@ sched_enqueue_ci(struct cpu_info *ci)
 
 /*
  * Processor awaiting tasks to be assigned will be here spinning.
- *
- * XXX: We are not using the PAUSE instruction for the sake of
- *      ensuring compatibility... PAUSE is F3 90, REP NOP is
- *      F3 90... REP NOP will be read as a PAUSE on processors
- *      that support it.
  */
 __noreturn static void
 sched_enter(void)
 {
     for (;;) {
-        __ASMV("rep; nop");
+        hint_spinwait();
     }
 }
 

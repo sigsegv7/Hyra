@@ -95,6 +95,13 @@ The macro
 calls an internal function that fetches the
 cpu_info structure for the BSP.
 
+The macro
+.Ft hint_spinwait()
+hints the processor that it is currently
+in a spin-wait loop. This greatly reduces the
+processor’s power consumption and improves
+the performance of the spin-wait loop.
+
 The function these macros call must return a pointer
 to a
 .Ft cpu_info
