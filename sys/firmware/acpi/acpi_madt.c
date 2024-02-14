@@ -29,16 +29,20 @@
 
 #include <firmware/acpi/acpi.h>
 #include <firmware/acpi/tables.h>
+#if defined(__x86_64__)
 #include <machine/ioapic.h>
 #include <machine/lapic.h>
+#endif  /* defined(__x86_64__) */
 #include <machine/cpu.h>
 #include <sys/cdefs.h>
 #include <sys/panic.h>
 #include <sys/syslog.h>
 
+#if defined(__x86_64__)
 #define APIC_TYPE_LOCAL_APIC            0
 #define APIC_TYPE_IO_APIC               1
 #define APIC_TYPE_INTERRUPT_OVERRIDE    2
+#endif  /* defined(__x86_64__) */
 
 __MODULE_NAME("acpi");
 __KERNEL_META("$Hyra$: acpi_madt.c, Ian Marco Moffett, "
@@ -46,6 +50,7 @@ __KERNEL_META("$Hyra$: acpi_madt.c, Ian Marco Moffett, "
 
 static struct acpi_madt *madt = NULL;
 
+#if defined(__x86_64__)
 void *
 acpi_get_lapic_base(void)
 {
@@ -55,7 +60,7 @@ acpi_get_lapic_base(void)
 }
 
 static void
-do_parse(struct cpu_info *ci)
+do_parse_x86(struct cpu_info *ci)
 {
     uint8_t *cur = NULL;
     uint8_t *end = NULL;
@@ -129,6 +134,7 @@ irq_to_gsi(uint8_t irq)
 
     return irq;
 }
+#endif  /* defined(__x86_64__) */
 
 void
 acpi_parse_madt(struct cpu_info *ci)
@@ -143,5 +149,7 @@ acpi_parse_madt(struct cpu_info *ci)
         panic("Failed to query for ACPI MADT\n");
     }
 
-    do_parse(ci);
+#if defined(__x86_64__)
+    do_parse_x86(ci);
+#endif  /* defined(__x86_64__) */
 }

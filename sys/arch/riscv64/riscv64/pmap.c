@@ -27,20 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
+#include <vm/pmap.h>
 
-#include <sys/types.h>
-#include <sys/cdefs.h>
+/* TODO */
+int
+pmap_unmap(struct vm_ctx *ctx, vaddr_t va)
+{
+    return 0;
+}
 
-#if defined(_KERNEL)
+/* TODO */
+int
+pmap_map(struct vm_ctx *ctx, vaddr_t va, paddr_t pa, vm_prot_t prot)
+{
+    return 0;
+}
 
-#define MAXCPUS 32
-
-void processor_init(void);
-void pre_init(void);
-void processor_halt(void);
-__weak void serial_dbgch(char c);
-
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+struct vas
+pmap_read_vas(void)
+{
+    struct vas vas;
+    return vas;
+}

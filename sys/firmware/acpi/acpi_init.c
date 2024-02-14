@@ -103,6 +103,7 @@ acpi_init(void)
         root_sdt = PHYS_TO_VIRT(rsdp->rsdt_addr);
         KINFO("Using RSDT as root SDT\n");
     }
+
     if (!acpi_is_checksum_valid(&root_sdt->hdr)) {
         panic("Root SDT has an invalid checksum!\n");
     }
@@ -112,7 +113,6 @@ acpi_init(void)
     /* Hyra requires HPET on x86_64 */
     if (hpet_init() != 0)
         panic("Machine does not support HPET!\n");
-#else
     hpet_init();
 #endif  /* defined(__x86_64__) */
 }

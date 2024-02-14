@@ -27,20 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
+#ifndef _RISCV64_PMAP_H_
+#define _RISCV64_PMAP_H_
 
 #include <sys/types.h>
-#include <sys/cdefs.h>
+#include <sys/spinlock.h>
 
-#if defined(_KERNEL)
+/*
+ * VAS structure - describes a virtual address space
+ *
+ * XXX: This structure shall exist per-process.
+ *
+ * TODO: IMPLEMENT.
+ */
+struct vas {
+    int dummy;
+};
 
-#define MAXCPUS 32
-
-void processor_init(void);
-void pre_init(void);
-void processor_halt(void);
-__weak void serial_dbgch(char c);
-
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+#endif  /* !_RISCV64_PMAP_H_ */

@@ -69,7 +69,6 @@ __noreturn static void
 sched_enter(void)
 {
     for (;;) {
-        __ASMV("rep; nop");
     }
 }
 

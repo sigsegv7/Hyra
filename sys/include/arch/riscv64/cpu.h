@@ -27,20 +27,39 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
+#ifndef _RISCV64_CPU_H_
+#define _RISCV64_CPU_H_
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
+#include <sys/spinlock.h>
+#include <sys/sched_state.h>
+#include <sys/queue.h>
 
-#if defined(_KERNEL)
+#define this_cpu()      amd64_this_cpu()
+#define get_bsp()       amd64_get_bsp()
+#define is_intr_mask()  amd64_is_intr_mask()
+#define CPU_INFO_LOCK(info) spinlock_acquire(&(info->lock))
+#define CPU_INFO_UNLOCK(info) spinlock_release(&(info->lock))
 
-#define MAXCPUS 32
+/*
+ * Info about a specific processor.
+ *
+ * XXX: Spinlock must be acquired outside of this module!
+ *      None of these module's internal functions should
+ *      acquire the spinlock themselves!
+ */
+struct cpu_info {
+    /* Per-arch fields  */
+    void *pmap;                         /* Current pmap */
+    uint32_t id;
+    uint32_t idx;
+    struct spinlock lock;
+    struct sched_state sched_state;
+    TAILQ_ENTRY(cpu_info) link;
+};
 
-void processor_init(void);
-void pre_init(void);
-void processor_halt(void);
-__weak void serial_dbgch(char c);
+struct cpu_info *amd64_this_cpu(void);
+struct cpu_info *amd64_get_bsp(void);
 
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+#endif  /* !_RISCV64_CPU_H_ */

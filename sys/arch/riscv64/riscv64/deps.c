@@ -27,20 +27,53 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
-
 #include <sys/types.h>
-#include <sys/cdefs.h>
 
-#if defined(_KERNEL)
+typedef      int si_int;
+typedef unsigned su_int;
+typedef          long long di_int;
+typedef unsigned long long du_int;
 
-#define MAXCPUS 32
+int ffs(int i);
+int __clzdi2(di_int a);
 
-void processor_init(void);
-void pre_init(void);
-void processor_halt(void);
-__weak void serial_dbgch(char c);
+typedef union
+{
+    di_int all;
+    struct
+    {
+#if _YUGA_LITTLE_ENDIAN
+        su_int low;
+        si_int high;
+#else
+        si_int high;
+        su_int low;
+#endif /* _YUGA_LITTLE_ENDIAN */
+    }s;
+} dwords;
 
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+si_int
+__clzdi2(di_int a)
+{
+    dwords x;
+    x.all = a;
+    const si_int f = -(x.s.high == 0);
+    return __builtin_clz((x.s.high & ~f) | (x.s.low & f)) +
+           (f & ((si_int)(sizeof(si_int) * 8)));
+}
+
+static inline
+int a_ctz_l(unsigned long x)
+{
+    static const char debruijn32[32] = {
+        0, 1, 23, 2, 29, 24, 19, 3, 30, 27, 25, 11, 20, 8, 4, 13,
+        31, 22, 28, 18, 26, 10, 7, 12, 21, 17, 9, 6, 16, 5, 15, 14
+    };
+    return debruijn32[(x&-x)*0x076be629 >> 27];
+}
+
+int
+ffs(int i)
+{
+    return i ? a_ctz_l(i)+1 : 0;
+}

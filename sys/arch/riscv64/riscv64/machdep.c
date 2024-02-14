@@ -27,20 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
-
-#include <sys/types.h>
+#include <sys/machdep.h>
 #include <sys/cdefs.h>
 
-#if defined(_KERNEL)
+__MODULE_NAME("machdep");
+__KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
+              "Core machine dependent code");
 
-#define MAXCPUS 32
 
-void processor_init(void);
-void pre_init(void);
-void processor_halt(void);
-__weak void serial_dbgch(char c);
+void pre_init(void)
+{
+    /* TODO */
+}
 
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+void
+processor_init(void)
+{
+    /* TODO */
+}
+
+void
+processor_halt(void)
+{
+    /* TODO: Disable interrupts here */
+    __ASMV("wfi");
+}

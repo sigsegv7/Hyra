@@ -27,20 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
-
-#include <sys/types.h>
+#include <machine/cpu.h>
+#include <machine/cpu_mp.h>
 #include <sys/cdefs.h>
 
-#if defined(_KERNEL)
+__KERNEL_META("$Hyra$: cpu.c, Ian Marco Moffett, "
+              "RISCV64 CPU abstraction module");
 
-#define MAXCPUS 32
+/* XXX: Must be zero'd!! */
+static struct cpu_info bsp_info = {0};
 
-void processor_init(void);
-void pre_init(void);
-void processor_halt(void);
-__weak void serial_dbgch(char c);
+struct cpu_info *
+amd64_get_bsp(void)
+{
+    return &bsp_info;
+}
 
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+/*
+ * TODO: Update this when adding SMP
+ *       support.
+ */
+struct cpu_info *
+amd64_this_cpu(void)
+{
+    return amd64_get_bsp();
+}

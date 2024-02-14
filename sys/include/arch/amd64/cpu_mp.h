@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_CPU_AP_H_
-#define _SYS_CPU_AP_H_
+#ifndef _AMD64_CPU_AP_H_
+#define _AMD64_CPU_AP_H_
 
 #include <machine/cpu.h>
 #include <sys/cdefs.h>
@@ -37,4 +37,4 @@
 __weak void ap_bootstrap(struct cpu_info *ci);
 __weak bool mp_supported(void);
 
-#endif  /* !_SYS_CPU_AP_H_ */
+#endif  /* !_AMD64_CPU_AP_H_ */

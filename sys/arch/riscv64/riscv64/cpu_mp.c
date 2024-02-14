@@ -27,20 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
+#include <machine/cpu_mp.h>
+#include <assert.h>
 
-#include <sys/types.h>
-#include <sys/cdefs.h>
-
-#if defined(_KERNEL)
-
-#define MAXCPUS 32
-
-void processor_init(void);
-void pre_init(void);
-void processor_halt(void);
-__weak void serial_dbgch(char c);
-
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+void
+ap_bootstrap(struct cpu_info *ci)
+{
+    for (;;);
+}
