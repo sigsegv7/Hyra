@@ -29,10 +29,12 @@
 
 #include <sys/machdep.h>
 #include <sys/cdefs.h>
+#include <sys/panic.h>
 #include <machine/trap.h>
 #include <machine/idt.h>
 #include <machine/gdt.h>
 #include <machine/ioapic.h>
+#include <machine/hpet.h>
 #include <machine/lapic.h>
 #include <machine/tss.h>
 #include <machine/spectre.h>
@@ -92,6 +94,16 @@ void
 serial_dbgch(char c)
 {
     uart8250_write(c);
+}
+
+void
+chips_init(void)
+{
+    /* Hyra requires HPET on x86_64 */
+    if (hpet_init() != 0)
+        panic("Machine does not support HPET!\n");
+
+    hpet_init();
 }
 
 /*

@@ -37,6 +37,7 @@
 
 #define MAXCPUS 32
 
+__weak void chips_init(void);
 __weak void processor_init(void);
 __weak void pre_init(void);
 __weak void processor_halt(void);

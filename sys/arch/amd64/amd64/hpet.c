@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dev/timer/hpet.h>
+#include <machine/hpet.h>
 #include <firmware/acpi/acpi.h>
 #include <sys/panic.h>
 #include <sys/cdefs.h>

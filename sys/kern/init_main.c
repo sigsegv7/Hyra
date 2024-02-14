@@ -87,6 +87,10 @@ main(void)
 
     acpi_init();
 
+    if (chips_init == NULL) {
+        chips_init();
+    }
+
     processor_init();
     list_timers();
 

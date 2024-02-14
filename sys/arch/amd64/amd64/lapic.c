@@ -37,13 +37,13 @@
 #include <machine/sysvec.h>
 #include <machine/tss.h>
 #include <machine/isa/i8254.h>
+#include <machine/hpet.h>
 #include <vm/vm.h>
 #include <sys/cdefs.h>
 #include <sys/timer.h>
 #include <sys/syslog.h>
 #include <sys/panic.h>
 #include <sys/mmio.h>
-#include <dev/timer/hpet.h>
 
 __MODULE_NAME("lapic");
 __KERNEL_META("$Hyra$: lapic.c, Ian Marco Moffett, "
