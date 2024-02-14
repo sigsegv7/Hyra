@@ -76,7 +76,7 @@ main(void)
 {
     struct cpu_info *ci;
 
-    pre_init();
+    __TRY_CALL(pre_init);
     tty_init();
     syslog_init();
     PRINT_LOGO();
@@ -86,18 +86,13 @@ main(void)
             HYRA_BUILDBRANCH);
 
     acpi_init();
-
-    if (chips_init == NULL) {
-        chips_init();
-    }
+    __TRY_CALL(chips_init);
 
     processor_init();
     list_timers();
 
     ci = this_cpu();
-    if (ap_bootstrap != NULL) {
-        ap_bootstrap(ci);
-    }
+    __TRY_CALL(ap_bootstrap, ci);
 
     sched_init_processor(ci);
     __builtin_unreachable();

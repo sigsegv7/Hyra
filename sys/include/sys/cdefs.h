@@ -154,6 +154,13 @@
 #define __MODULE_NAME(name) \
     __used static const char *__THIS_MODULE = name
 
+/*
+ * Attempts to call a __weak function. Does nothing
+ * if routine not implemented.
+ */
+#define __TRY_CALL(routine, ...) \
+    if (routine != NULL) routine(__VA_ARGS__)
+
 #else
 
 /*
