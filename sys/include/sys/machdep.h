@@ -37,10 +37,10 @@
 
 #define MAXCPUS 32
 
+void processor_init(void);
+void processor_halt(void);
 __weak void chips_init(void);
-__weak void processor_init(void);
 __weak void pre_init(void);
-__weak void processor_halt(void);
 __weak void serial_dbgch(char c);
 
 #endif  /* defined(_KERNEL) */
