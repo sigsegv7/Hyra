@@ -99,13 +99,13 @@ amd64_is_intr_mask(void)
 }
 
 static inline void
-write_gs_base(uintptr_t val)
+amd64_write_gs_base(uintptr_t val)
 {
     wrmsr(IA32_KERNEL_GS_BASE, val);
 }
 
 static inline uintptr_t
-read_gs_base(void)
+amd64_read_gs_base(void)
 {
     return rdmsr(IA32_KERNEL_GS_BASE);
 }

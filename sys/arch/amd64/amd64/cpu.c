@@ -55,6 +55,6 @@ amd64_this_cpu(void)
         return amd64_get_bsp();
     }
 
-    cctx = (void *)read_gs_base();
+    cctx = (void *)amd64_read_gs_base();
     return cctx->ci;
 }
