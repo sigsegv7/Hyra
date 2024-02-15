@@ -27,6 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/types.h>
+
 #define _Q_INVALIDATE(a)
 
 /*
@@ -36,6 +38,7 @@
 struct name {								\
 	struct type *tqh_first;	/* first element */			\
 	struct type **tqh_last;	/* addr of last next element */		\
+    size_t nelem;           /* Number of elements */            \
 }
 
 #define TAILQ_HEAD_INITIALIZER(head)					\
@@ -50,6 +53,7 @@ struct {								\
 /*
  * Tail queue access methods.
  */
+#define TAILQ_NELEM(head)       ((head)->nelem)
 #define	TAILQ_FIRST(head)		((head)->tqh_first)
 #define	TAILQ_END(head)			NULL
 #define	TAILQ_NEXT(elm, field)		((elm)->field.tqe_next)
@@ -90,6 +94,7 @@ struct {								\
 #define	TAILQ_INIT(head) do {						\
 	(head)->tqh_first = NULL;					\
 	(head)->tqh_last = &(head)->tqh_first;				\
+    (head)->nelem = 0;                          \
 } while (0)
 
 #define TAILQ_INSERT_HEAD(head, elm, field) do {			\
@@ -100,6 +105,7 @@ struct {								\
 		(head)->tqh_last = &(elm)->field.tqe_next;		\
 	(head)->tqh_first = (elm);					\
 	(elm)->field.tqe_prev = &(head)->tqh_first;			\
+    ++(head)->nelem;                                    \
 } while (0)
 
 #define TAILQ_INSERT_TAIL(head, elm, field) do {			\
@@ -107,6 +113,7 @@ struct {								\
 	(elm)->field.tqe_prev = (head)->tqh_last;			\
 	*(head)->tqh_last = (elm);					\
 	(head)->tqh_last = &(elm)->field.tqe_next;			\
+    ++(head)->nelem;                                    \
 } while (0)
 
 #define TAILQ_INSERT_AFTER(head, listelm, elm, field) do {		\
@@ -117,6 +124,7 @@ struct {								\
 		(head)->tqh_last = &(elm)->field.tqe_next;		\
 	(listelm)->field.tqe_next = (elm);				\
 	(elm)->field.tqe_prev = &(listelm)->field.tqe_next;		\
+    ++(head)->nelem;                                        \
 } while (0)
 
 #define	TAILQ_INSERT_BEFORE(listelm, elm, field) do {			\
@@ -124,6 +132,7 @@ struct {								\
 	(elm)->field.tqe_next = (listelm);				\
 	*(listelm)->field.tqe_prev = (elm);				\
 	(listelm)->field.tqe_prev = &(elm)->field.tqe_next;		\
+    ++(head)->nelem;                                        \
 } while (0)
 
 #define TAILQ_REMOVE(head, elm, field) do {				\
@@ -135,6 +144,7 @@ struct {								\
 	*(elm)->field.tqe_prev = (elm)->field.tqe_next;			\
 	_Q_INVALIDATE((elm)->field.tqe_prev);				\
 	_Q_INVALIDATE((elm)->field.tqe_next);				\
+    --(head)->nelem;                                    \
 } while (0)
 
 #define TAILQ_REPLACE(head, elm, elm2, field) do {			\
