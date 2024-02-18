@@ -102,8 +102,6 @@ chips_init(void)
     /* Hyra requires HPET on x86_64 */
     if (hpet_init() != 0)
         panic("Machine does not support HPET!\n");
-
-    hpet_init();
 }
 
 /*
