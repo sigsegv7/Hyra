@@ -28,6 +28,7 @@
  */
 
 #include <machine/hpet.h>
+#include <machine/cpu.h>
 #include <firmware/acpi/acpi.h>
 #include <sys/panic.h>
 #include <sys/cdefs.h>
@@ -50,19 +51,6 @@ __KERNEL_META("$Hyra$: hpet.c, Ian Marco Moffett, "
 #define CAP_VENDOR_ID(caps)         __SHIFTOUT(caps, 0xFFFF << 16)
 #define CAP_CLK_PERIOD(caps)        (caps >> 32)
 
-/*
- * TODO: Use some sort of helper function that
- *       uses PAUSE or some similar instruction
- *       for the current architecture. It is
- *       *not* a good idea to spin for a prolonged
- *       amount of time without it. For now we'll
- *       just use PAUSE on x86_64 like this.
- */
-#if defined(__x86_64__)
-#define spinwait_hint()   __ASMV("pause")
-#else
-#define spinwait_hint()   __nothing
-#endif  /* defined(__x86_64__) */
 
 static struct timer timer = { 0 };
 static struct hpet *acpi_hpet = NULL;
@@ -118,7 +106,7 @@ hpet_sleep(uint64_t n, uint64_t units)
     ticks = counter_val + (n * (units / period));
 
     while (hpet_read(HPET_REG_MAIN_COUNTER) < ticks) {
-        spinwait_hint();
+        hint_spinwait();
     }
 
     return EXIT_SUCCESS;
