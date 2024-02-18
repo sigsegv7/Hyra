@@ -51,7 +51,6 @@ __KERNEL_META("$Hyra$: hpet.c, Ian Marco Moffett, "
 #define CAP_VENDOR_ID(caps)         __SHIFTOUT(caps, 0xFFFF << 16)
 #define CAP_CLK_PERIOD(caps)        (caps >> 32)
 
-
 static struct timer timer = { 0 };
 static struct hpet *acpi_hpet = NULL;
 static void *hpet_base = NULL;
