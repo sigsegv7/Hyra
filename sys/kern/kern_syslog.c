@@ -54,6 +54,9 @@ syslog_write(const char *s, size_t len)
     }
 }
 
+/*
+ * TODO: Replace with vsnprintf()
+ */
 static void
 syslog_handle_fmt(va_list *ap, char fmt_spec)
 {
