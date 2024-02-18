@@ -65,6 +65,8 @@ syslog_handle_fmt(va_list *ap, char fmt_spec)
     const char *tmp_str;
     char tmp_buf[256] = { 0 };
 
+    size_t tmp_len;
+
     switch (fmt_spec) {
     case 'c':
         tmp_ch = va_arg(*ap, int);
@@ -79,10 +81,26 @@ syslog_handle_fmt(va_list *ap, char fmt_spec)
         itoa(tmp_int, tmp_buf, 10);
         syslog_write(tmp_buf, strlen(tmp_buf));
         break;
+    case 'p':
+        tmp_int = va_arg(*ap, uint64_t);
+        itoa(tmp_int, tmp_buf, 16);
+        tmp_len = strlen(tmp_buf);
+        /*
+         * Now we pad this.
+         *
+         * XXX TODO: This assumes 64-bits, should be
+         *           cleaned up.
+         */
+        for (size_t i = 0; i < 18 - tmp_len; ++i) {
+            syslog_write("0", 1);
+        }
+        syslog_write(tmp_buf + 2, tmp_len - 2);
+        break;
     case 'x':
         tmp_int = va_arg(*ap, uint64_t);
         itoa(tmp_int, tmp_buf, 16);
-        syslog_write(tmp_buf + 2, strlen(tmp_buf) - 2);
+        tmp_len = strlen(tmp_buf);
+        syslog_write(tmp_buf + 2, tmp_len - 2);
         break;
     }
 }
