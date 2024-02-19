@@ -48,8 +48,6 @@ static const char *trap_type[] = {
 };
 
 static const int TRAP_COUNT = __ARRAY_COUNT(trap_type);
-static ftrap_handler_t ftrap_handler = NULL;
-static struct spinlock ftrap_handler_lock = { 0 };
 
 static void
 trap_print(struct trapframe *tf)
@@ -63,17 +61,6 @@ trap_print(struct trapframe *tf)
     }
     mode = __TEST(tf->trapno, TRAP_USER) ? "user" : "supervisor";
     kprintf(" in %s mode **\n", mode);
-}
-
-/*
- * Registers a handler for *fatal* traps.
- */
-void
-register_ftrap_handler(ftrap_handler_t handler)
-{
-    spinlock_acquire(&ftrap_handler_lock);
-    ftrap_handler = handler;
-    spinlock_release(&ftrap_handler_lock);
 }
 
 /*

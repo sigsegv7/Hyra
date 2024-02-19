@@ -65,7 +65,6 @@ void segnp(void *sf);
 void general_prot(void *sf);
 void page_fault(void *sf);
 void nmi(void *sf);
-void register_ftrap_handler(ftrap_handler_t handler);
 void trap_handler(struct trapframe *tf);
 #else
 .macro handle_trap
