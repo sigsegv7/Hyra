@@ -63,6 +63,28 @@ trap_print(struct trapframe *tf)
     kprintf(" in %s mode **\n", mode);
 }
 
+static void
+regdump(struct trapframe *tf)
+{
+    uintptr_t cr3, cr2;
+
+    __ASMV("mov %%cr2, %0\n"
+           "mov %%cr3, %1\n"
+           : "=r" (cr2), "=r" (cr3)
+           :
+           : "memory"
+    );
+
+    kprintf("RAX=%p RCX=%p RDX=%p\n"
+            "RBX=%p RSI=%p RDI=%p\n"
+            "RFL=%p CR2=%p CR3=%p\n"
+            "RBP=%p RSP=%p RIP=%p\n",
+            tf->rax, tf->rcx, tf->rdx,
+            tf->rbx, tf->rsi, tf->rdi,
+            tf->rflags, cr2, cr3,
+            tf->rbp, tf->rsp, tf->rip);
+}
+
 /*
  * Handles traps.
  */
@@ -80,5 +102,6 @@ trap_handler(struct trapframe *tf)
         panic("Caught NMI; bailing out\n");
     }
 
-    panic("Caught pre-sched exception @0x%x\n", tf->rip);
+    regdump(tf);
+    panic("Caught pre-sched exception\n");
 }
