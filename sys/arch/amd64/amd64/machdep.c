@@ -114,7 +114,6 @@ chips_init(void)
 void
 pre_init(void)
 {
-    struct cpu_info *ci;
     static bool is_bsp = true;
 
     /*
