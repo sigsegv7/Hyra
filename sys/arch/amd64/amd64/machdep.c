@@ -105,21 +105,29 @@ chips_init(void)
 }
 
 /*
- * Things set up before processor_init() call...
+ * These are critical things that need to be set up as soon as possible
+ * way before the processor_init() call.
  */
 void
 pre_init(void)
 {
+    struct cpu_info *ci;
+    static bool is_bsp = true;
+
     /*
-     * These are critical things that need to be set up as soon as possible
-     * way before the processor_init() call.
+     * Certain things like serial ports, virtual memory,
+     * etc, need to be set up only once! These things
+     * are to be done on the BSP only...
      */
-    uart8250_try_init();
+    if (is_bsp) {
+        is_bsp = false;
+
+        uart8250_try_init();
+        vm_physseg_init();
+        vm_init();
+    }
     interrupts_init();
     gdt_load(&g_gdtr);
-
-    vm_physseg_init();
-    vm_init();
 }
 
 void
