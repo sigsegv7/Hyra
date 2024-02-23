@@ -50,7 +50,7 @@ enum {
 
 void lapic_timer_init(size_t *freq_out);
 void lapic_timer_oneshot(bool mask, uint32_t count);
-void lapic_timer_oneshot_us(uint32_t us);
+void lapic_timer_oneshot_us(size_t us);
 void lapic_send_ipi(uint8_t id, uint8_t shorthand, uint8_t vector);
 void lapic_init(void);
 

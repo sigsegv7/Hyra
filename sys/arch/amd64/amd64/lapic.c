@@ -253,7 +253,7 @@ lapic_timer_oneshot(bool mask, uint32_t count)
  * @us: Microseconds.
  */
 void
-lapic_timer_oneshot_us(uint32_t us)
+lapic_timer_oneshot_us(size_t us)
 {
     uint64_t ticks;
     struct cpu_info *ci = this_cpu();
