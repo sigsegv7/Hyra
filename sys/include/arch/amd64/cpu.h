@@ -111,6 +111,5 @@ amd64_read_gs_base(void)
 }
 
 struct cpu_info *amd64_this_cpu(void);
-struct cpu_info *amd64_get_bsp(void);
 
 #endif  /* !_AMD64_CPU_H_ */

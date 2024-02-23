@@ -33,28 +33,8 @@
 __KERNEL_META("$Hyra$: cpu.c, Ian Marco Moffett, "
               "AMD64 CPU abstraction module");
 
-/* XXX: Must be zero'd!! */
-static struct cpu_info bsp_info = {0};
-
-struct cpu_info *
-amd64_get_bsp(void)
-{
-    return &bsp_info;
-}
-
-/*
- * TODO: Update this when adding SMP
- *       support.
- */
 struct cpu_info *
 amd64_this_cpu(void)
 {
-    struct cpu_ctx *cctx;
-
-    if (!mp_supported()) {
-        return amd64_get_bsp();
-    }
-
-    cctx = (void *)amd64_read_gs_base();
-    return cctx->ci;
+    return (void *)amd64_read_gs_base();
 }

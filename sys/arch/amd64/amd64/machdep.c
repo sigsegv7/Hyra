@@ -41,9 +41,12 @@
 #include <machine/cpu.h>
 #include <machine/uart.h>
 #include <vm/vm.h>
+#include <vm/dynalloc.h>
 #include <vm/physseg.h>
 #include <firmware/acpi/acpi.h>
 #include <sys/syslog.h>
+#include <assert.h>
+#include <string.h>
 
 __MODULE_NAME("machdep");
 __KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
@@ -135,8 +138,15 @@ processor_init(void)
 {
     /* Indicates what doesn't need to be init anymore */
     static uint8_t init_flags = 0;
+    struct cpu_info *cur_cpu;
 
-    struct cpu_info *cur_cpu = this_cpu();
+    /* Create our cpu_info structure */
+    cur_cpu = dynalloc(sizeof(struct cpu_info));
+    __assert(cur_cpu != NULL);
+    memset(cur_cpu, 0, sizeof(struct cpu_info));
+
+    /* Set %GS to cpu_info */
+    amd64_write_gs_base((uintptr_t)cur_cpu);
 
     CPU_INFO_LOCK(cur_cpu);
     init_tss(cur_cpu);

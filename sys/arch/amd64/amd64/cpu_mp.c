@@ -49,33 +49,18 @@ static volatile struct limine_smp_request g_smp_req = {
 static bool is_mp_supported = false;
 
 static void
-ap_create_cctx(struct cpu_info *ci)
-{
-    struct cpu_ctx *cctx;
-
-    cctx = dynalloc(sizeof(struct cpu_ctx));
-    __assert(cctx != NULL);
-
-    cctx->ci = ci;
-
-    /* Set *our* %GS now... */
-    wrmsr(IA32_KERNEL_GS_BASE, (uintptr_t)cctx);
-
-    if (!is_mp_supported) {
-        is_mp_supported = true;
-    }
-}
-
-static void
 ap_trampoline(struct limine_smp_info *si)
 {
     struct cpu_info *ci;
+    static struct spinlock lock = {0};
+
+    spinlock_acquire(&lock);
 
     ci = (void *)si->extra_argument;
-
     pre_init();
-    ap_create_cctx(ci);
     processor_init();
+
+    spinlock_release(&lock);
 
     sched_init_processor(ci);
 
@@ -111,9 +96,6 @@ ap_bootstrap(struct cpu_info *ci)
         /* TODO: Allow single core processing */
         panic("System only has 1 core!\n");
     }
-
-    /* Create processor context */
-    ap_create_cctx(ci);
 
     KINFO("Bootstrapping %d cores...\n", cpu_init_counter);
     for (size_t i = 0; i < resp->cpu_count; ++i) {
