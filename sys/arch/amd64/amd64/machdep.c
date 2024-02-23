@@ -162,4 +162,6 @@ processor_init(void)
     /* Use spectre mitigation if enabled */
     if (try_spectre_mitigate != NULL)
         try_spectre_mitigate();
+
+    __ASMV("sti");
 }
