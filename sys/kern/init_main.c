@@ -91,9 +91,12 @@ main(void)
     processor_init();
     list_timers();
 
+    sched_init();
     ci = this_cpu();
-    __TRY_CALL(ap_bootstrap, ci);
 
+    __TRY_CALL(ap_bootstrap, ci);
     sched_init_processor(ci);
+
+    while (1);
     __builtin_unreachable();
 }

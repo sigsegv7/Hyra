@@ -30,33 +30,84 @@
 #include <sys/sched.h>
 #include <sys/sched_state.h>
 #include <sys/types.h>
+#include <sys/timer.h>
 #include <sys/cdefs.h>
 #include <sys/spinlock.h>
-#include <machine/cpu.h>
+#include <vm/dynalloc.h>
 #include <assert.h>
+#include <string.h>
+
+#define DEFAULT_TIMESLICE_USEC 100000000
 
 /*
- * This is the processor ready list, processors
- * (cores) that have no task assigned live here.
- *
- * Assigning a task to a core is done by popping from
- * this list. However, it must be done carefully and
- * must be serialized. You *must* acquire ci_ready_lock
- * before performing *any* operations on ci_ready_list!!!
+ * Thread ready queue - all threads ready to be
+ * scheduled should be added to this queue.
  */
-static TAILQ_HEAD(, cpu_info) ci_ready_list;
-static struct spinlock ci_ready_lock = {0};
+static TAILQ_HEAD(, proc) td_queue;
 
 /*
- * Push a processor into the ready list.
+ * Thread queue lock - all operations to `td_queue'
+ * must be done with this lock acquired.
+ */
+static struct spinlock tdq_lock = {0};
+
+/* In sys/<machine>/<machine>/switch.S */
+void __sched_switch_to(struct trapframe *tf);
+
+static inline void
+sched_oneshot(void)
+{
+    struct timer timer;
+    tmrr_status_t tmr_status;
+
+    tmr_status = req_timer(TIMER_SCHED, &timer);
+    __assert(tmr_status == TMRR_SUCCESS);
+
+    timer.oneshot_us(DEFAULT_TIMESLICE_USEC);
+}
+
+/*
+ * Push a thread into the thread ready queue
+ * allowing it to be eventually dequeued
+ * and ran.
  */
 static void
-sched_enqueue_ci(struct cpu_info *ci)
+sched_enqueue_td(struct proc *td)
 {
-    spinlock_acquire(&ci_ready_lock);
-    TAILQ_INSERT_TAIL(&ci_ready_list, ci, link);
-    spinlock_release(&ci_ready_lock);
+    /* Sanity check */
+    if (td == NULL)
+        return;
+
+    spinlock_acquire(&tdq_lock);
+
+    td->pid = TAILQ_NELEM(&td_queue);
+    TAILQ_INSERT_TAIL(&td_queue, td, link);
+
+    spinlock_release(&tdq_lock);
 }
+
+/*
+ * Dequeue the first thread in the thread ready
+ * queue.
+ */
+static struct proc *
+sched_dequeue_td(void)
+{
+    struct proc *td = NULL;
+
+    spinlock_acquire(&tdq_lock);
+
+    if (TAILQ_EMPTY(&td_queue)) {
+        goto done;
+    }
+
+    td = TAILQ_FIRST(&td_queue);
+    TAILQ_REMOVE(&td_queue, td, link);
+done:
+    spinlock_release(&tdq_lock);
+    return td;
+}
+
 
 /*
  * Processor awaiting tasks to be assigned will be here spinning.
@@ -64,9 +115,114 @@ sched_enqueue_ci(struct cpu_info *ci)
 __noreturn static void
 sched_enter(void)
 {
+    struct proc *td;
+    struct cpu_info *ci = this_cpu();
+    struct sched_state *state = &ci->sched_state;
+
     for (;;) {
+        if ((td = sched_dequeue_td()) != NULL) {
+            state->td = td;
+            sched_oneshot();
+            __sched_switch_to(td->tf);
+        }
+
         hint_spinwait();
     }
+}
+
+static struct proc *
+sched_create_td(uintptr_t rip)
+{
+    const size_t STACK_SIZE = 0x100000; /* 1 MiB */
+    struct proc *td;
+    void *stack;
+    struct trapframe *tf;
+
+    tf = dynalloc(sizeof(struct trapframe));
+    if (tf == NULL) {
+        return NULL;
+    }
+
+    stack = dynalloc(STACK_SIZE);
+    if (stack == NULL) {
+        dynfree(tf);
+        return NULL;
+    }
+
+    td = dynalloc(sizeof(struct proc));
+    if (td == NULL) {
+        dynfree(tf);
+        dynfree(stack);
+        return NULL;
+    }
+
+    memset(tf, 0, sizeof(struct trapframe));
+    memset(stack, 0, STACK_SIZE);
+
+    /* Setup process itself */
+    td->pid = 0;        /* Don't assign PID until enqueued */
+    td->cpu = NULL;     /* Not yet assigned a core */
+    td->tf = tf;
+
+    /* Setup trapframe */
+    init_frame(tf, rip, (uintptr_t)stack + STACK_SIZE - 1);
+    return td;
+}
+
+/*
+ * Thread context switch routine
+ */
+void
+sched_context_switch(struct trapframe *tf)
+{
+    struct cpu_info *ci = this_cpu();
+    struct sched_state *state = &ci->sched_state;
+    struct proc *td, *next_td;
+
+    spinlock_acquire(&tdq_lock);
+    td = state->td;
+
+    /*
+     * If we have no current thread or the queue is empty,
+     * preempting would be bad because there is nothing to
+     * switch to. And if we only have one thread, there is
+     * no point in preempting.
+     */
+    if (td == NULL || TAILQ_NELEM(&td_queue) == 1) {
+        goto done;
+    } else if ((next_td = sched_dequeue_td()) == NULL) {
+        /* Empty */
+        goto done;
+    }
+
+
+    /* Save our trapframe */
+    memcpy(td->tf, tf, sizeof(struct trapframe));
+
+    if ((next_td = TAILQ_NEXT(td, link)) == NULL) {
+        /* We need to wrap to the first thread */
+        next_td = TAILQ_FIRST(&td_queue);
+    }
+
+    /* Copy to stack */
+    memcpy(tf, next_td->tf, sizeof(struct trapframe));
+    state->td = next_td;
+done:
+    spinlock_release(&tdq_lock);
+    sched_oneshot();
+}
+
+void
+sched_init(void)
+{
+    TAILQ_INIT(&td_queue);
+
+    /*
+     * TODO: Create init with sched_create_td()
+     *       and enqueue with sched_enqueue_td()
+     */
+    (void)sched_create_td;
+    (void)sched_enqueue_td;
 }
 
 /*
@@ -76,16 +232,7 @@ void
 sched_init_processor(struct cpu_info *ci)
 {
     struct sched_state *sched_state = &ci->sched_state;
-    static bool is_init = true;
-
-    if (is_init) {
-        /* Setup ready list if first call */
-        TAILQ_INIT(&ci_ready_list);
-        is_init = false;
-    }
-
-    TAILQ_INIT(&sched_state->queue);
-    sched_enqueue_ci(ci);
+    (void)sched_state;      /* TODO */
 
     sched_enter();
 

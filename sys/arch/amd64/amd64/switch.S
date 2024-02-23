@@ -27,16 +27,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SCHED_STATE_H_
-#define _SYS_SCHED_STATE_H_
+#include <sys/cdefs.h>
+#include <machine/frameasm.h>
 
-#include <sys/proc.h>
+__KERNEL_META "$Hyra$: switch.S, Ian Marco Moffett, \
+               Low level context switch code"
 
-/*
- * Scheduler state, per CPU.
- */
-struct sched_state {
-    struct proc *td;            /* Current_thread */
-};
+.text
+.globl __sched_switch_to
 
-#endif /* !_SYS_SCHED_STATE_H_ */
+/* void __sched_switch_to(struct trapframe *tf) */
+__sched_switch_to:
+    /* Sanity check */
+    or %rdi, %rdi
+    jz fail
+
+    /* Pop regs and switch */
+    mov %rdi, %rsp
+    pop_trapframe
+    iretq
+fail:
+    retq

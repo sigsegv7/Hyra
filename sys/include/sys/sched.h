@@ -35,6 +35,10 @@
 #include <sys/types.h>
 #include <sys/spinlock.h>
 #include <machine/cpu.h>
+#include <machine/frame.h>
+
+void sched_init(void);
+void sched_context_switch(struct trapframe *tf);
 
 __noreturn
 void sched_init_processor(struct cpu_info *ci);

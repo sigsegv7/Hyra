@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <machine/cpu.h>
+#include <machine/frame.h>
 
 /*
  * A task running on the CPU e.g., a process or
@@ -41,6 +42,7 @@
 struct proc {
     pid_t pid;
     struct cpu_info *cpu;
+    struct trapframe *tf;
     TAILQ_ENTRY(proc) link;
 };
 

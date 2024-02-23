@@ -27,14 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <machine/frameasm.h>
+#include <machine/trap.h>
+#include <sys/cdefs.h>
+
+__KERNEL_META "$Hyra$: local_intr.S, Ian Marco Moffett, \
+               Routines for handling Local Interrupts"
+
 .text
  .globl lapic_tmr_isr
 
 lapic_tmr_isr:
-    lea stub_msg(%rip), %rdi
-    call kprintf
-    cli
-    hlt
-
-.section .rodata
-stub_msg: .ascii "**LAPIC TIMER ISR IS A STUB; HALTING**\n\0"
+    push_trapframe $0
+    mov %rsp, %rdi
+    call sched_context_switch
+    pop_trapframe
+    iretq
