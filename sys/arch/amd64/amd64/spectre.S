@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
- #include <sys/cdefs.h>
+#include <sys/cdefs.h>
 
 __KERNEL_META "$Hyra$: spectre.S, Ian Marco Moffett, \
                Spectre mitigation detection"
