@@ -400,6 +400,7 @@ lapic_init(void)
     lapic_timer.name = "LAPIC_INTEGRATED_TIMER";
     lapic_timer.calibrate = lapic_timer_calibrate;
     lapic_timer.stop = lapic_timer_stop;
+    lapic_timer.oneshot_us = lapic_timer_oneshot_us;
 
     /* Register the timer for scheduler usage */
     register_timer(TIMER_SCHED, &lapic_timer);
