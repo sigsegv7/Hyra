@@ -95,7 +95,7 @@ amd64_is_intr_mask(void)
     uint64_t flags;
 
     __ASMV("pushfq; pop %0" : "=rm" (flags) :: "memory");
-    return __TEST(flags, 1 << 9);
+    return !__TEST(flags, 1 << 9);
 }
 
 static inline void
