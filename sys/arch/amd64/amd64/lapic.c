@@ -309,6 +309,12 @@ lapic_send_ipi(uint8_t id, uint8_t shorthand, uint8_t vector)
     }
 }
 
+void
+lapic_send_eoi(void)
+{
+    lapic_writel(LAPIC_EOI, 0);
+}
+
 /*
  * Calibrates the Local APIC timer
  *
