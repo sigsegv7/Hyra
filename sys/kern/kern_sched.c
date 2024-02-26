@@ -115,17 +115,8 @@ done:
 __noreturn static void
 sched_enter(void)
 {
-    struct proc *td;
-    struct cpu_info *ci = this_cpu();
-    struct sched_state *state = &ci->sched_state;
-
+    sched_oneshot();
     for (;;) {
-        if ((td = sched_dequeue_td()) != NULL) {
-            state->td = td;
-            sched_oneshot();
-            __sched_switch_to(td->tf);
-        }
-
         hint_spinwait();
     }
 }
@@ -179,36 +170,33 @@ sched_context_switch(struct trapframe *tf)
     struct sched_state *state = &ci->sched_state;
     struct proc *td, *next_td;
 
-    spinlock_acquire(&tdq_lock);
-    td = state->td;
-
     /*
-     * If we have no current thread or the queue is empty,
-     * preempting would be bad because there is nothing to
-     * switch to. And if we only have one thread, there is
+     * If we only have one thread or even no threads, there is
      * no point in preempting.
      */
-    if (td == NULL || TAILQ_NELEM(&td_queue) == 1) {
+    if (nthread == 1 || nthread == 0) {
         goto done;
     } else if ((next_td = sched_dequeue_td()) == NULL) {
         /* Empty */
         goto done;
     }
 
-
-    /* Save our trapframe */
-    memcpy(td->tf, tf, sizeof(struct trapframe));
-
-    if ((next_td = TAILQ_NEXT(td, link)) == NULL) {
-        /* We need to wrap to the first thread */
-        next_td = TAILQ_FIRST(&td_queue);
+    if (state->td != NULL) {
+        /* Save our trapframe */
+        td = state->td;
+        memcpy(td->tf, tf, sizeof(struct trapframe));
     }
 
     /* Copy to stack */
     memcpy(tf, next_td->tf, sizeof(struct trapframe));
+
+    td = state->td;
     state->td = next_td;
+
+    if (td != NULL) {
+        sched_enqueue_td(td);
+    }
 done:
-    spinlock_release(&tdq_lock);
     sched_oneshot();
 }
 
