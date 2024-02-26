@@ -29,9 +29,11 @@
 
 #include <vm/pmap.h>
 #include <vm/vm.h>
+#include <vm/physseg.h>
 #include <sys/cdefs.h>
 #include <machine/tlb.h>
 #include <assert.h>
+#include <string.h>
 
 /*
  * Page-Table Entry (PTE) flags
@@ -156,6 +158,43 @@ int
 pmap_unmap(struct vm_ctx *ctx, vaddr_t va)
 {
     return pmap_modify_tbl(ctx, va, 0);
+}
+
+struct vas
+pmap_create_vas(struct vm_ctx *ctx)
+{
+    struct vas current_vas = pmap_read_vas();
+    struct vas new_vas = {0};
+    uint64_t *src, *dest;
+
+    /*
+     * We want to allocate a zeroed pageframe
+     * and copy the higher half to it. The lower
+     * half can remain zero for userland.
+     */
+    new_vas.top_level = vm_alloc_pageframe(1);
+
+    if (new_vas.top_level == 0) {
+        /* Top level may remain zero to denote failure */
+        return new_vas;
+    }
+
+    src = PHYS_TO_VIRT(current_vas.top_level);
+    dest = PHYS_TO_VIRT(new_vas.top_level);
+
+    /*
+     * Copy the top half and zero the bottom
+     * half.
+     */
+    for (size_t i = 0; i < 512; ++i) {
+        if (i < 256) {
+            dest[i] = 0;
+            continue;
+        }
+        dest[i] = src[i];
+    }
+
+    return new_vas;
 }
 
 struct vas

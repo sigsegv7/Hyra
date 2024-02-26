@@ -53,6 +53,8 @@
 #define PMAP_WRITABLE __BIT(0)      /* Writable */
 #define PMAP_EXEC     __BIT(1)      /* Executable */
 
+#define is_vas_valid(vas) (vas.top_level != 0)
+
 /*
  * vm_ctx - Per core virtual memory context
  */
@@ -62,6 +64,8 @@ struct vm_ctx {
     tlsf_t tlsf_ctx;
     struct spinlock dynalloc_lock;
 };
+
+struct vas pmap_create_vas(struct vm_ctx *);
 
 /*
  * Read virtual address space descriptor
