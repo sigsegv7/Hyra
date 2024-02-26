@@ -39,10 +39,31 @@ __KERNEL_META("$Hyra$: kern_vcons.c, Ian Marco Moffett, "
               "Hyra video console code");
 
 /* Get x or y values in pixels */
-#define PIX_CPY_X(scrptr) (scr->cpy_x * FONT_WIDTH)
-#define PIX_CPY_Y(scrptr) (scr->cpy_y * FONT_HEIGHT)
+#define PIX_CPY_X(scrptr) ((scrptr)->cpy_x * FONT_WIDTH)
+#define PIX_CPY_Y(scrptr) ((scrptr)->cpy_y * FONT_HEIGHT)
 
 static struct vcons_screen *screen = NULL;
+
+static void
+vcons_draw_cursor(struct vcons_screen *scr, uint32_t color)
+{
+    struct vcons_cursor *cursor = &scr->cursor;
+    struct fbdev fbdev = scr->fbdev;
+
+    uint32_t *fbdev_mem = fbdev.mem;
+    uint32_t fbdev_idx = 0;
+    uint32_t cx, cy;
+
+    for (size_t y = VCONS_CURSOR_HEIGHT; y > 0; --y) {
+        for (size_t x = VCONS_CURSOR_WIDTH; x > 0; --x) {
+            cx = cursor->old_xpos + x;
+            cy = cursor->old_ypos + y;
+
+            fbdev_idx = fbdev_get_index(&fbdev, cx, cy);
+            fbdev_mem[fbdev_idx] = color;
+        }
+    }
+}
 
 static void
 vcons_clear_scr(struct vcons_screen *scr)
@@ -52,6 +73,7 @@ vcons_clear_scr(struct vcons_screen *scr)
     scr->cpy_x = 0, scr->cpy_y = 0;
 
     memset(scr->fbdev_mem, scr->bg, (fbdev.pitch * fbdev.height));
+    vcons_update_cursor(scr);
 }
 
 /*
@@ -80,11 +102,35 @@ vcons_draw_char(struct vcons_screen *scr, char c, uint32_t x, uint32_t y)
     }
 }
 
+void
+vcons_update_cursor(struct vcons_screen *scr)
+{
+    struct vcons_cursor *cursor = &scr->cursor;
+
+    cursor->is_drawing = true;
+
+    if (cursor->is_drawn) {
+        /* Clear old cursor */
+        vcons_draw_cursor(scr, scr->bg);
+    }
+
+    cursor->old_xpos = cursor->xpos;
+    cursor->old_ypos = cursor->ypos;
+    vcons_draw_cursor(scr, scr->fg);
+
+    cursor->is_drawn = true;
+    cursor->is_drawing = false;
+}
+
 int
 vcons_putch(struct vcons_screen *scr, char c)
 {
     uint32_t x = PIX_CPY_X(scr);
     uint32_t y = PIX_CPY_Y(scr);
+    struct vcons_cursor *cursor = &scr->cursor;
+    bool cursor_newline = false;
+
+    while (cursor->is_drawing);
 
     if (scr == NULL) {
         return 1;
@@ -95,25 +141,35 @@ vcons_putch(struct vcons_screen *scr, char c)
         return 0;
     }
 
-    /*
-     * Check text bounds
-     *
-     * We must subtract ncols,nrows by FONT_WIDTH,FONT_HEIGHT
-     * as each char is of that width,height and we need to account for
-     * that.
-     */
-    if (x >= (scr->ncols - FONT_WIDTH)) {
+    /* Check cursor bounds */
+    if (cursor->xpos >= PIX_BOUNDS_MAX_X(scr)) {
+        cursor->xpos = FONT_WIDTH;
+        cursor->ypos += FONT_HEIGHT;
+        cursor_newline = true;
+    }
+    if (cursor->ypos >= PIX_BOUNDS_MAX_Y(scr)) {
+        cursor->xpos = FONT_WIDTH;
+        cursor->ypos = 0;
+    }
+
+    /* Check text bounds */
+    if (x >= PIX_BOUNDS_MAX_X(scr)) {
         /* Wrap to the next row */
         ++scr->cpy_y, scr->cpy_x = 0;
         x = PIX_CPY_X(scr), y = PIX_CPY_Y(scr);
     }
-    if (y >= (scr->nrows - FONT_HEIGHT)) {
+    if (y >= PIX_BOUNDS_MAX_Y(scr)) {
         scr->cpy_y = 0;
         scr->cpy_x = 0;
         vcons_clear_scr(scr);
         x = PIX_CPY_X(scr), y = PIX_CPY_Y(scr);
     }
 
+    if (!cursor_newline) {
+        cursor->xpos += FONT_WIDTH;
+    }
+
+    vcons_update_cursor(scr);
     vcons_draw_char(scr, c, x, y);
     ++scr->cpy_x;
     return 0;
