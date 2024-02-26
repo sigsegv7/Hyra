@@ -27,19 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _LIB_STRING_H_
-#define _LIB_STRING_H_
+#include <string.h>
 
-#include <sys/types.h>
-
-size_t strlen(const char *s);
-char *itoa(int64_t value, char *buf, int base);
-void *memmove(void *s1, const void *s2, size_t n);
-void *memcpy(void *dest, const void *src, size_t n);
-void *memcpy32(void *dest, const void *src, size_t n);
-void *memset(void *s, int c, size_t n);
-void *memset64(void *s, int c, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
-int strcmp(const char *s1, const char *s2);
-
-#endif  /* !_LIB_STRING_H_ */
+int
+strcmp(const char *s1, const char *s2)
+{
+    while (*s1 == *s2++)
+        if (*s1++ == 0)
+            return (0);
+    return (*(unsigned char *)s1 - *(unsigned char *)--s2);
+}
