@@ -28,6 +28,7 @@
  */
 
 #include <sys/sched.h>
+#include <sys/schedvar.h>
 #include <sys/sched_state.h>
 #include <sys/types.h>
 #include <sys/timer.h>
@@ -36,8 +37,6 @@
 #include <vm/dynalloc.h>
 #include <assert.h>
 #include <string.h>
-
-#define DEFAULT_TIMESLICE_USEC 100000000
 
 /*
  * Thread ready queue - all threads ready to be
