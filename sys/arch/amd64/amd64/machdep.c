@@ -150,6 +150,10 @@ processor_init(void)
     CPU_INFO_LOCK(cur_cpu);
     init_tss(cur_cpu);
 
+    /*
+     * See if there are things that have not been set up,
+     * set them up if so...
+     */
     if (!__TEST(init_flags, INIT_FLAG_ACPI)) {
         /*
          * Parse the MADT... This is needed to fetch required information
@@ -166,7 +170,7 @@ processor_init(void)
     cur_cpu->lapic_base = acpi_get_lapic_base();
     CPU_INFO_UNLOCK(cur_cpu);
 
-    lapic_init();       /* Per core */
+    lapic_init();
 
     /* Use spectre mitigation if enabled */
     if (try_spectre_mitigate != NULL)
