@@ -42,6 +42,9 @@ __KERNEL_META("$Hyra$: kern_vcons.c, Ian Marco Moffett, "
 #define PIX_CPY_X(scrptr) ((scrptr)->cpy_x * FONT_WIDTH)
 #define PIX_CPY_Y(scrptr) ((scrptr)->cpy_y * FONT_HEIGHT)
 
+#define PIX_BOUNDS_MAX_X(scrptr) ((scrptr)->fbdev.width - FONT_WIDTH)
+#define PIX_BOUNDS_MAX_Y(scrptr) ((scrptr)->fbdev.height - FONT_HEIGHT)
+
 static struct vcons_screen *screen = NULL;
 
 /*
