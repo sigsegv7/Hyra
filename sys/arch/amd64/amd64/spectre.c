@@ -69,9 +69,11 @@ try_spectre_mitigate(void)
     }
 
     KINFO("IBRS supported; spectre mitigation enabled\n");
+
     tmp = rdmsr(IA32_SPEC_CTL);
     tmp |= __BIT(0);                /* IBRS */
     wrmsr(IA32_SPEC_CTL, tmp);
+
     return EXIT_SUCCESS;
 }
 
