@@ -99,7 +99,7 @@ vcons_putch(struct vcons_screen *scr, char c)
      * Check text bounds
      *
      * We must subtract ncols,nrows by FONT_WIDTH,FONT_HEIGHT
-     * as each char is of that width and we need to account for
+     * as each char is of that width,height and we need to account for
      * that.
      */
     if (x >= (scr->ncols - FONT_WIDTH)) {
