@@ -28,7 +28,6 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/tty.h>
 #include <sys/syslog.h>
 #include <sys/machdep.h>
 #include <sys/timer.h>
@@ -77,7 +76,6 @@ main(void)
     struct cpu_info *ci;
 
     __TRY_CALL(pre_init);
-    tty_init();
     syslog_init();
     PRINT_LOGO();
 
