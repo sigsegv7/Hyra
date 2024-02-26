@@ -27,31 +27,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/tty.h>
+#include <dev/vcons/vcons_io.h>
+#include <dev/vcons/vcons.h>
+#include <sys/cdefs.h>
+#include <sys/ascii.h>
+
+static void
+vcons_expand_tab(struct vcons_screen *scr)
+{
+    for (size_t i = 0; i < VCONS_TAB_WIDTH; ++i) {
+        vcons_putch(scr, ' ');
+    }
+}
 
 /*
- * Pushes a char to the TTY
- * ring buffer.
+ * This routine tries to process the output `c'.
  *
- * Call with TTY locked.
+ * Returns < 0 value on failure. Values >= 0
+ * is `c' which may differ from the original.
+ *
+ * This routine also may modify the screen state
+ * if `c' is a control character.
  */
-void
-tty_push_char(struct tty *tty, int c)
+int
+vcons_process_output(struct vcons_screen *scr, int c)
 {
-    struct tty_ring *ring;
+    struct termios termios = scr->termios;
 
-    ring = &tty->ring;
-
-    /*
-     * If our ring is full, it should
-     * be flushed as soon as possible.
-     *
-     * XXX: ring->len will be reset by tty_flush()
-     * so there is no need to do it here.
-     */
-    if (ring->len >= LINE_RING_SIZE) {
-        tty_flush(tty);
+    switch (c) {
+    case ASCII_LF:
+        if (__TEST(termios.c_oflag, OCRNL))
+            scr->cpy_x = 0;
+        scr->cpy_y++;
+        break;
+    case ASCII_CR:
+        scr->cpy_x = 0;
+        break;
+    case ASCII_HT:
+        vcons_expand_tab(scr);
+        break;
+    default:
+        return -1;
     }
 
-    ring->buf[ring->len++] = c;
+    return c;
 }

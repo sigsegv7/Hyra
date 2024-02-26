@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <lib/tty_font.h>
+#include <lib/sysfont.h>
 
 
 const uint8_t DEFAULT_FONT_DATA[] = {

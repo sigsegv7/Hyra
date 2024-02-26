@@ -28,29 +28,23 @@
  */
 
 #include <sys/syslog.h>
-#include <sys/tty.h>
 #include <sys/machdep.h>
+#include <dev/vcons/vcons.h>
 #include <string.h>
 
-static struct tty syslog_tty;
-
-/* False if we don't log to a console */
-static bool is_conlog_init = false;
+static struct vcons_screen syslog_screen = {0};
 
 static void
 syslog_write(const char *s, size_t len)
 {
-#if defined(__SERIAL_DEBUG)
     size_t tmp_len = len;
     const char *tmp_s = s;
 
     while (tmp_len--) {
-        serial_dbgch(*tmp_s++);
-    }
+#if defined(__SERIAL_DEBUG)
+        serial_dbgch(*tmp_s);
 #endif  /* defined(__SERIAL_DEBUG) */
-
-    if (is_conlog_init) {
-        tty_write(&syslog_tty, s, len);
+        vcons_putch(&syslog_screen, *tmp_s++);
     }
 }
 
@@ -131,8 +125,13 @@ kprintf(const char *fmt, ...)
 void
 syslog_init(void)
 {
-    is_conlog_init = true;
+    struct termios termios = {0};
 
-    tty_set_defaults(&syslog_tty);
-    tty_attach(&syslog_tty);
+    termios.c_oflag |= OCRNL;   /* Map CR to NL by default */
+
+    syslog_screen.bg = 0x000000;
+    syslog_screen.fg = 0x808080;
+    syslog_screen.termios = termios;
+
+    vcons_attach(&syslog_screen);
 }
