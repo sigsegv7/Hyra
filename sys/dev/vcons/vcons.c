@@ -44,6 +44,11 @@ __KERNEL_META("$Hyra$: kern_vcons.c, Ian Marco Moffett, "
 
 static struct vcons_screen *screen = NULL;
 
+/*
+ * Draw the console cursor.
+ *
+ * @color: Cursor color
+ */
 static void
 vcons_draw_cursor(struct vcons_screen *scr, uint32_t color)
 {
@@ -65,6 +70,9 @@ vcons_draw_cursor(struct vcons_screen *scr, uint32_t color)
     }
 }
 
+/*
+ * Clear everything out of the console.
+ */
 static void
 vcons_clear_scr(struct vcons_screen *scr)
 {
@@ -102,6 +110,12 @@ vcons_draw_char(struct vcons_screen *scr, char c, uint32_t x, uint32_t y)
     }
 }
 
+/*
+ * Update the cursor position.
+ *
+ * XXX: This function also accounts for the old cursor
+ *      and clears it before drawing the new cursor.
+ */
 void
 vcons_update_cursor(struct vcons_screen *scr)
 {
@@ -122,6 +136,11 @@ vcons_update_cursor(struct vcons_screen *scr)
     cursor->is_drawing = false;
 }
 
+/*
+ * Write out a character on the console.
+ *
+ * @c: Character to write.
+ */
 int
 vcons_putch(struct vcons_screen *scr, char c)
 {
