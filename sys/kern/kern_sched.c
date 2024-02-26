@@ -43,6 +43,7 @@
  * scheduled should be added to this queue.
  */
 static TAILQ_HEAD(, proc) td_queue;
+static size_t nthread = 0;
 
 /*
  * Thread queue lock - all operations to `td_queue'
@@ -79,7 +80,7 @@ sched_enqueue_td(struct proc *td)
 
     spinlock_acquire(&tdq_lock);
 
-    td->pid = TAILQ_NELEM(&td_queue);
+    td->pid = nthread++;
     TAILQ_INSERT_TAIL(&td_queue, td, link);
 
     spinlock_release(&tdq_lock);
