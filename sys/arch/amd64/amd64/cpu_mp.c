@@ -93,8 +93,8 @@ ap_bootstrap(struct cpu_info *ci)
     cpu_init_counter = resp->cpu_count - 1;
 
     if (resp->cpu_count == 1) {
-        /* TODO: Allow single core processing */
-        panic("System only has 1 core!\n");
+        KINFO("CPU has 1 core, no APs to bootstrap...\n");
+        return;
     }
 
     KINFO("Bootstrapping %d cores...\n", cpu_init_counter);
