@@ -30,7 +30,7 @@
 #include <vm/pmap.h>
 #include <vm/vm.h>
 #include <sys/cdefs.h>
-#include <machine/asm/tlb.h>
+#include <machine/tlb.h>
 #include <assert.h>
 
 /*
