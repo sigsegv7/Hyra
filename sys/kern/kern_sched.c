@@ -171,10 +171,10 @@ sched_context_switch(struct trapframe *tf)
     struct proc *td, *next_td;
 
     /*
-     * If we only have one thread or even no threads, there is
-     * no point in preempting.
+     * If we have no threads, we should not
+     * preempt at all.
      */
-    if (nthread == 1 || nthread == 0) {
+    if (nthread == 0) {
         goto done;
     } else if ((next_td = sched_dequeue_td()) == NULL) {
         /* Empty */
