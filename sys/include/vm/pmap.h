@@ -50,8 +50,8 @@
 #include <sys/spinlock.h>
 
 /* prot flags for mappings */
-#define PMAP_WRITABLE __BIT(0)      /* Writable */
-#define PMAP_EXEC     __BIT(1)      /* Executable */
+#define PROT_WRITE      __BIT(0)      /* Writable */
+#define PROT_EXEC       __BIT(1)      /* Executable */
 
 #define is_vas_valid(vas) (vas.top_level != 0)
 

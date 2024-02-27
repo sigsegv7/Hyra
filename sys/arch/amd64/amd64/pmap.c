@@ -60,9 +60,9 @@ pmap_prot_to_pte(vm_prot_t prot)
 {
     uint64_t pte_flags = PTE_P | PTE_NX;
 
-    if (__TEST(prot, PMAP_WRITABLE))
+    if (__TEST(prot, PROT_WRITE))
         pte_flags |= PTE_RW;
-    if (__TEST(prot, PMAP_EXEC))
+    if (__TEST(prot, PROT_EXEC))
         pte_flags &= ~(PTE_NX);
 
     return pte_flags;
