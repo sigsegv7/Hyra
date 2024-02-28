@@ -92,7 +92,8 @@ base/boot/hyra-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
 	tools/ksyms sys/kern/ksyms.c base/boot/hyra-kernel
 	# === Generating symbols ===
 	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) sys/kern/ksyms.c -o sys/kern/ksyms.o
-	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/hyra-kernel
+	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) \
+		sys/kern/ksyms.o -o base/boot/hyra-kernel
 	cd base/; tar cvf ../initramfs.tar * &> /dev/null
 	$(PROMPT) " RAMFS " $(shell pwd)/initramfs.tar
 	# === Building ISO ===
