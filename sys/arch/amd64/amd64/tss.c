@@ -43,6 +43,9 @@ static void
 alloc_resources(struct cpu_info *cpu)
 {
     struct tss_entry *tss;
+    const size_t STACK_SIZE = 0x1000;
+    static uintptr_t rsp0_base = 0, rsp0 = 0;
+
 
     /*
      * Allocate TSS entries for this CPU
@@ -50,9 +53,19 @@ alloc_resources(struct cpu_info *cpu)
     if (cpu->tss == NULL) {
         /* Allocate a TSS for this CPU */
         tss = dynalloc(sizeof(*tss));
+
         if (tss == NULL)
             panic("Failed to alloc %d bytes for TSS\n", sizeof(*tss));
+
         memset(tss, 0, sizeof(*tss));
+        rsp0_base = (uintptr_t)dynalloc(STACK_SIZE);
+
+        if (rsp0_base == 0)
+            panic("Could not allocate rsp0 base\n");
+
+        rsp0 = rsp0_base + STACK_SIZE;
+        tss->rsp0_lo = __SHIFTOUT(rsp0, __MASK(32));
+        tss->rsp0_hi = __SHIFTOUT(rsp0, __MASK(32) << 32);
         cpu->tss = tss;
     }
 }
