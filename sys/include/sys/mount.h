@@ -61,15 +61,6 @@ struct fs_info {
 #define MNT_RDONLY  0x00000001
 
 #if defined(_KERNEL)
-
-/* For caching */
-#define MOUNTLIST_SIZE 8
-
-/* Mountlist cache entry */
-struct mountlist_entry {
-    TAILQ_HEAD(, mount) buckets;
-};
-
 int vfs_mount(struct mount **mp_out, const char *path, int mnt_flags);
 #endif  /* defined(_KERNEL) */
 

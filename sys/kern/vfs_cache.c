@@ -35,6 +35,14 @@
 #include <vm/dynalloc.h>
 #include <assert.h>
 
+/* For caching */
+#define MOUNTLIST_SIZE 8
+
+/* Mountlist cache entry */
+struct mountlist_entry {
+    TAILQ_HEAD(, mount) buckets;
+};
+
 static struct mountlist_entry *mountlist = NULL;
 
 /*
