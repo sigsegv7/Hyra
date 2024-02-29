@@ -77,11 +77,13 @@ vfs_hash_path(const char *path)
         return 0;
     }
 
-    do {
+    while (name != NULL) {
         name = vfs_get_fname_at(path, i++);
-        if (name != NULL)
+        if (name != NULL) {
             hash += vfs_hash(name);
-    } while (name != NULL);
+            dynfree(name);
+        }
+    }
 
     return hash;
 }
@@ -185,6 +187,7 @@ vfs_mount(struct mount **mp_out, const char *path, int mnt_flags)
     cache_status = vfs_cache_mp(mp, path);
 
     if (cache_status != 0) {
+        dynfree(mp);
         return cache_status;
     }
 
