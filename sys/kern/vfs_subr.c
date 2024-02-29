@@ -39,7 +39,7 @@
 #define FNV_PRIME 1099511628211ULL
 
 /*
- * 32-bit FNV-1a hash function
+ * FNV-1a hash function
  * https://en.wikipedia.org/wiki/Fowler–Noll–Vo_hash_function
  */
 static size_t
