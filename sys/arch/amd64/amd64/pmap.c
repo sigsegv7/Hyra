@@ -94,46 +94,64 @@ pmap_get_level_index(uint8_t level, vaddr_t va)
     }
 }
 
-static inline volatile uintptr_t *
-pmap_extract(uint8_t level, vaddr_t va, volatile uintptr_t *pmap)
+static inline uintptr_t *
+pmap_extract(uint8_t level, vaddr_t va, uintptr_t *pmap, bool allocate)
 {
-    uintptr_t *next;
+    uintptr_t next;
+    uintptr_t level_alloc;
     size_t idx;
 
     idx = pmap_get_level_index(level, va);
-    next = PHYS_TO_VIRT(pmap[idx] & PTE_ADDR_MASK);
-    return next;
+
+    if (__TEST(pmap[idx], PTE_P)) {
+        next = pmap[idx] & PTE_ADDR_MASK;
+        return PHYS_TO_VIRT(next);
+    }
+
+    if (!allocate) {
+        return 0;
+    }
+
+    /*
+     * TODO: If we are out of pageframes here, we don't want to panic
+     *       here. We need to have some sort of clean error reporting.
+     */
+    level_alloc = vm_alloc_pageframe(1);
+    __assert(level_alloc != 0);
+
+    /* Zero the memory */
+    memset(PHYS_TO_VIRT(level_alloc), 0, vm_get_page_size());
+
+    pmap[idx] = level_alloc | (PTE_P | PTE_RW | PTE_US);
+    return PHYS_TO_VIRT(level_alloc);
 }
 
 /*
  * Modify a page table by writing `val' to it.
  *
  * TODO: Ensure operations here are serialized.
- *
- * TODO: Create pmap if they don't exist
- *       i.e., them being null.
  */
 static int
 pmap_modify_tbl(struct vm_ctx *ctx, vaddr_t va, size_t val)
 {
     struct vas vas = pmap_read_vas();
-    volatile uintptr_t *pml4 = PHYS_TO_VIRT(vas.top_level);
-    volatile uintptr_t *pdpt, *pd, *tbl;
+    uintptr_t *pml4 = PHYS_TO_VIRT(vas.top_level);
+    uintptr_t *pdpt, *pd, *tbl;
     int status = 0;
 
-    pdpt = pmap_extract(4, va, pml4);
+    pdpt = pmap_extract(4, va, pml4, true);
     if (pdpt == NULL) {
         status = 1;
         goto done;
     }
 
-    pd = pmap_extract(3, va, pdpt);
+    pd = pmap_extract(3, va, pdpt, true);
     if (pd == NULL) {
         status = 1;
         goto done;
     }
 
-    tbl = pmap_extract(2, va, pd);
+    tbl = pmap_extract(2, va, pd, true);
     if (tbl == NULL) {
         status = 1;
         goto done;
