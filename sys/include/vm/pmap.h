@@ -65,6 +65,10 @@ struct vm_ctx {
     struct spinlock dynalloc_lock;
 };
 
+/*
+ * Create a virtual address space
+ * and return the descriptor.
+ */
 struct vas pmap_create_vas(struct vm_ctx *);
 
 /*
