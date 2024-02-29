@@ -37,6 +37,15 @@
 
 static struct mountlist_entry *mountlist = NULL;
 
+/*
+ * Cache a mountpoint
+ *
+ * @mp: Mountpoint to cache
+ * @path: Path this mountpoint belongs to
+ *
+ * If this cache entry already exists, -EEXIST
+ * will be returned.
+ */
 int
 vfs_cache_mp(struct mount *mp, const char *path)
 {
@@ -59,6 +68,16 @@ vfs_cache_mp(struct mount *mp, const char *path)
     return 0;
 }
 
+/*
+ * Fetch mountpoint from cache
+ *
+ * @path: Path of target mountpoint
+ * @mp: Pointer of variable where mountpoint fetched will
+ *      be stored
+ *
+ * Returns 0 upon a cache hit, on a cache miss this
+ * function returns -ENOENT.
+ */
 int
 vfs_cache_fetch_mp(const char *path, struct mount **mp)
 {
@@ -84,6 +103,9 @@ vfs_cache_fetch_mp(const char *path, struct mount **mp)
     return -ENOENT;
 }
 
+/*
+ * Init all caches
+ */
 void
 vfs_init_cache(void)
 {
