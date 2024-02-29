@@ -81,11 +81,11 @@ vm_map_create(vaddr_t va, paddr_t pa, vm_prot_t prot, size_t bytes)
     int s;
 
     /*
-     * TODO: This needs to be changed, once vm_get_bsp_ctx()
+     * TODO: This needs to be changed, once vm_get_ctx()
      *       is no longer used, we'll need to fetch it from
      *       the current process!
      */
-    struct vm_ctx *ctx = vm_get_bsp_ctx();
+    struct vm_ctx *ctx = vm_get_ctx();
 
     /* We want bytes to be aligned by the granule */
     bytes = __ALIGN_UP(bytes, granule);

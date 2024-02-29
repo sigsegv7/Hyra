@@ -54,7 +54,7 @@ volatile struct limine_hhdm_request g_hhdm_request = {
 };
 
 struct vm_ctx *
-vm_get_bsp_ctx(void)
+vm_get_ctx(void)
 {
     return &bsp_vm_ctx;
 }

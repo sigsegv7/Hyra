@@ -39,7 +39,7 @@ void *
 dynalloc(size_t sz)
 {
     /* TODO: Per CPU */
-    struct vm_ctx *vm_ctx = vm_get_bsp_ctx();
+    struct vm_ctx *vm_ctx = vm_get_ctx();
     void *tmp;
 
     spinlock_acquire(&vm_ctx->dynalloc_lock);
@@ -58,7 +58,7 @@ void *
 dynrealloc(void *old_ptr, size_t newsize)
 {
     /* TODO: Per CPU */
-    struct vm_ctx *vm_ctx = vm_get_bsp_ctx();
+    struct vm_ctx *vm_ctx = vm_get_ctx();
     void *tmp;
 
     spinlock_acquire(&vm_ctx->dynalloc_lock);
@@ -76,7 +76,7 @@ void
 dynfree(void *ptr)
 {
     /* TODO: Per CPU */
-    struct vm_ctx *vm_ctx = vm_get_bsp_ctx();
+    struct vm_ctx *vm_ctx = vm_get_ctx();
 
     spinlock_acquire(&vm_ctx->dynalloc_lock);
     tlsf_free(vm_ctx->tlsf_ctx, ptr);
