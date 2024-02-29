@@ -117,7 +117,7 @@ vfs_cache_fetch_mp(const char *path, struct mount **mp)
 void
 vfs_init_cache(void)
 {
-    mountlist = dynalloc(sizeof(struct mount) * MOUNTLIST_SIZE);
+    mountlist = dynalloc(sizeof(struct mountlist_entry) * MOUNTLIST_SIZE);
     __assert(mountlist != NULL);
 
     for (size_t i = 0; i < MOUNTLIST_SIZE; ++i) {
