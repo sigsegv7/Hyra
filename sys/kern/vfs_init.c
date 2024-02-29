@@ -27,77 +27,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/syslog.h>
-#include <sys/machdep.h>
-#include <sys/timer.h>
-#include <sys/sched.h>
 #include <sys/vfs.h>
-#include <machine/cpu_mp.h>
-#include <firmware/acpi/acpi.h>
-#include <vm/physseg.h>
-#include <logo.h>
+#include <sys/cdefs.h>
+#include <sys/mount.h>
+#include <sys/types.h>
+#include <fs/initramfs.h>
+#include <assert.h>
+#include <string.h>
 
-__MODULE_NAME("init_main");
-__KERNEL_META("$Hyra$: init_main.c, Ian Marco Moffett, "
-              "Where the Hyra kernel first starts up");
+__MODULE_NAME("vfs");
+__KERNEL_META("$Hyra$: vfs.c, Ian Marco Moffett, "
+              "Hyra Virtual File System");
 
-static inline void
-log_timer(const char *purpose, tmrr_status_t s, const struct timer *tmr)
+struct fs_info filesystems[] = {
+    { "initramfs", &g_initramfs_ops }
+};
+
+struct fs_info *
+vfs_byname(const char *name)
 {
-    if (s == TMRR_EMPTY_ENTRY) {
-        KINFO("%s not yet registered\n", purpose);
-    } else if (tmr->name == NULL) {
-        KINFO("Nameless %s registered; unknown\n", purpose);
-    } else {
-        KINFO("%s registered: %s\n", purpose, tmr->name);
+    for (int i = 0; i < __ARRAY_COUNT(filesystems); ++i) {
+        if (strcmp(filesystems[i].name, name) == 0) {
+            return &filesystems[i];
+        }
     }
-}
 
-/*
- * Logs what timers are registered
- * on the system.
- */
-static void
-list_timers(void)
-{
-    struct timer timer_tmp;
-    tmrr_status_t status;
-
-    status = req_timer(TIMER_SCHED, &timer_tmp);
-    log_timer("SCHED_TMR", status, &timer_tmp);
-
-    status = req_timer(TIMER_GP, &timer_tmp);
-    log_timer("GENERAL_PURPOSE_TMR", status, &timer_tmp);
+    return NULL;
 }
 
 void
-main(void)
+vfs_init(void)
 {
-    struct cpu_info *ci;
+    struct fs_info *info;
+    struct vfsops *vfsops;
 
-    __TRY_CALL(pre_init);
-    syslog_init();
-    PRINT_LOGO();
+    vfs_init_cache();
 
-    kprintf("Hyra/%s v%s: %s (%s)\n",
-            HYRA_ARCH, HYRA_VERSION, HYRA_BUILDDATE,
-            HYRA_BUILDBRANCH);
+    for (int i = 0; i < __ARRAY_COUNT(filesystems); ++i) {
+        info = &filesystems[i];
+        vfsops = info->vfsops;
 
-    acpi_init();
-    __TRY_CALL(chips_init);
+        __assert(vfsops->init != NULL);
+        vfsops->init(info);
 
-    processor_init();
-    list_timers();
-
-    vfs_init();
-
-    sched_init();
-    ci = this_cpu();
-
-    __TRY_CALL(ap_bootstrap, ci);
-    sched_init_processor(ci);
-
-    while (1);
-    __builtin_unreachable();
+        if (strcmp(info->name, "initramfs") == 0) {
+            /* Initramfs must be mounted */
+            vfs_mount(&info->mp_root, "/ramdisk", MNT_RDONLY);
+        }
+    }
 }

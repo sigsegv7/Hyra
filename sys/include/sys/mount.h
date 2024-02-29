@@ -27,77 +27,50 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/syslog.h>
-#include <sys/machdep.h>
-#include <sys/timer.h>
-#include <sys/sched.h>
-#include <sys/vfs.h>
-#include <machine/cpu_mp.h>
-#include <firmware/acpi/acpi.h>
-#include <vm/physseg.h>
-#include <logo.h>
+#ifndef _SYS_MOUNT_H_
+#define _SYS_MOUNT_H_
 
-__MODULE_NAME("init_main");
-__KERNEL_META("$Hyra$: init_main.c, Ian Marco Moffett, "
-              "Where the Hyra kernel first starts up");
+#include <sys/types.h>
+#include <sys/queue.h>
 
-static inline void
-log_timer(const char *purpose, tmrr_status_t s, const struct timer *tmr)
-{
-    if (s == TMRR_EMPTY_ENTRY) {
-        KINFO("%s not yet registered\n", purpose);
-    } else if (tmr->name == NULL) {
-        KINFO("Nameless %s registered; unknown\n", purpose);
-    } else {
-        KINFO("%s registered: %s\n", purpose, tmr->name);
-    }
-}
+#define FS_NAME_MAX 16 /* Max length of FS type name including nul */
+
+struct fs_info;
+struct mount;
+
+struct vfsops {
+    int(*init)(struct fs_info *info);
+    int(*vget_name)(struct fs_info *info, const char *name);
+};
+
+struct mount {
+    int flags;
+    size_t phash;               /* Path hash */
+    TAILQ_ENTRY(mount) link;
+};
+
+struct fs_info {
+    char name[FS_NAME_MAX];     /* Filesystem type name */
+    struct vfsops *vfsops;      /* Filesystem operations */
+    struct mount *mp_root;
+};
 
 /*
- * Logs what timers are registered
- * on the system.
+ * Mount flags
  */
-static void
-list_timers(void)
-{
-    struct timer timer_tmp;
-    tmrr_status_t status;
+#define MNT_RDONLY  0x00000001
 
-    status = req_timer(TIMER_SCHED, &timer_tmp);
-    log_timer("SCHED_TMR", status, &timer_tmp);
+#if defined(_KERNEL)
 
-    status = req_timer(TIMER_GP, &timer_tmp);
-    log_timer("GENERAL_PURPOSE_TMR", status, &timer_tmp);
-}
+/* For caching */
+#define MOUNTLIST_SIZE 8
 
-void
-main(void)
-{
-    struct cpu_info *ci;
+/* Mountlist cache entry */
+struct mountlist_entry {
+    TAILQ_HEAD(, mount) buckets;
+};
 
-    __TRY_CALL(pre_init);
-    syslog_init();
-    PRINT_LOGO();
+int vfs_mount(struct mount **mp_out, const char *path, int mnt_flags);
+#endif  /* defined(_KERNEL) */
 
-    kprintf("Hyra/%s v%s: %s (%s)\n",
-            HYRA_ARCH, HYRA_VERSION, HYRA_BUILDDATE,
-            HYRA_BUILDBRANCH);
-
-    acpi_init();
-    __TRY_CALL(chips_init);
-
-    processor_init();
-    list_timers();
-
-    vfs_init();
-
-    sched_init();
-    ci = this_cpu();
-
-    __TRY_CALL(ap_bootstrap, ci);
-    sched_init_processor(ci);
-
-    while (1);
-    __builtin_unreachable();
-}
+#endif  /* !_SYS_MOUNT_H_ */

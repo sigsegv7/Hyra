@@ -27,77 +27,70 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/syslog.h>
-#include <sys/machdep.h>
-#include <sys/timer.h>
-#include <sys/sched.h>
+#include <sys/types.h>
+#include <sys/queue.h>
+#include <sys/mount.h>
 #include <sys/vfs.h>
-#include <machine/cpu_mp.h>
-#include <firmware/acpi/acpi.h>
-#include <vm/physseg.h>
-#include <logo.h>
+#include <sys/errno.h>
+#include <vm/dynalloc.h>
+#include <assert.h>
 
-__MODULE_NAME("init_main");
-__KERNEL_META("$Hyra$: init_main.c, Ian Marco Moffett, "
-              "Where the Hyra kernel first starts up");
+static struct mountlist_entry *mountlist = NULL;
 
-static inline void
-log_timer(const char *purpose, tmrr_status_t s, const struct timer *tmr)
+int
+vfs_cache_mp(struct mount *mp, const char *path)
 {
-    if (s == TMRR_EMPTY_ENTRY) {
-        KINFO("%s not yet registered\n", purpose);
-    } else if (tmr->name == NULL) {
-        KINFO("Nameless %s registered; unknown\n", purpose);
-    } else {
-        KINFO("%s registered: %s\n", purpose, tmr->name);
+    size_t hash = vfs_hash_path(path);
+    struct mountlist_entry *entry;
+
+    if (hash == 0) {
+        /* Something is wrong with the path */
+        return -EINVAL;
     }
+
+    if (vfs_cache_fetch_mp(path, NULL) == 0) {
+        /* Cache hit, do not duplicate this entry */
+        return -EEXIST;
+    }
+
+    mp->phash = hash;
+    entry = &mountlist[hash % MOUNTLIST_SIZE];
+    TAILQ_INSERT_TAIL(&entry->buckets, mp, link);
+    return 0;
 }
 
-/*
- * Logs what timers are registered
- * on the system.
- */
-static void
-list_timers(void)
+int
+vfs_cache_fetch_mp(const char *path, struct mount **mp)
 {
-    struct timer timer_tmp;
-    tmrr_status_t status;
+    size_t hash = vfs_hash_path(path);
+    struct mountlist_entry *entry;
+    struct mount *mount_iter;
 
-    status = req_timer(TIMER_SCHED, &timer_tmp);
-    log_timer("SCHED_TMR", status, &timer_tmp);
+    if (hash == 0) {
+        /* Something is wrong with the path */
+        return -EINVAL;
+    }
 
-    status = req_timer(TIMER_GP, &timer_tmp);
-    log_timer("GENERAL_PURPOSE_TMR", status, &timer_tmp);
+    entry = &mountlist[hash % MOUNTLIST_SIZE];
+    TAILQ_FOREACH(mount_iter, &entry->buckets, link) {
+        if (mount_iter->phash == hash) {
+            /* Cache hit */
+            if (mp != NULL) *mp = mount_iter;
+            return 0;
+        }
+    }
+
+    /* Cache miss */
+    return -ENOENT;
 }
 
 void
-main(void)
+vfs_init_cache(void)
 {
-    struct cpu_info *ci;
+    mountlist = dynalloc(sizeof(struct mount) * MOUNTLIST_SIZE);
+    __assert(mountlist != NULL);
 
-    __TRY_CALL(pre_init);
-    syslog_init();
-    PRINT_LOGO();
-
-    kprintf("Hyra/%s v%s: %s (%s)\n",
-            HYRA_ARCH, HYRA_VERSION, HYRA_BUILDDATE,
-            HYRA_BUILDBRANCH);
-
-    acpi_init();
-    __TRY_CALL(chips_init);
-
-    processor_init();
-    list_timers();
-
-    vfs_init();
-
-    sched_init();
-    ci = this_cpu();
-
-    __TRY_CALL(ap_bootstrap, ci);
-    sched_init_processor(ci);
-
-    while (1);
-    __builtin_unreachable();
+    for (size_t i = 0; i < MOUNTLIST_SIZE; ++i) {
+        TAILQ_INIT(&mountlist[i].buckets);
+    }
 }

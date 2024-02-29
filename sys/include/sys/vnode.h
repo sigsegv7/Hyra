@@ -27,77 +27,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <sys/syslog.h>
-#include <sys/machdep.h>
-#include <sys/timer.h>
-#include <sys/sched.h>
-#include <sys/vfs.h>
-#include <machine/cpu_mp.h>
-#include <firmware/acpi/acpi.h>
-#include <vm/physseg.h>
-#include <logo.h>
+#ifndef _SYS_VNODE_H_
+#define _SYS_VNODE_H_
 
-__MODULE_NAME("init_main");
-__KERNEL_META("$Hyra$: init_main.c, Ian Marco Moffett, "
-              "Where the Hyra kernel first starts up");
+#include <sys/types.h>
+#include <sys/queue.h>
+#include <sys/mount.h>
 
-static inline void
-log_timer(const char *purpose, tmrr_status_t s, const struct timer *tmr)
-{
-    if (s == TMRR_EMPTY_ENTRY) {
-        KINFO("%s not yet registered\n", purpose);
-    } else if (tmr->name == NULL) {
-        KINFO("Nameless %s registered; unknown\n", purpose);
-    } else {
-        KINFO("%s registered: %s\n", purpose, tmr->name);
-    }
-}
+/* Vnode cache entry */
+struct vnode_cache {
+    const char *path;
+    struct vnode *vnode;
+};
+
+struct vnode {
+    int type;
+    int flags;
+    int usecount;       /* Ref count of uses */
+    struct mount *mp;   /* Ptr to vfs vnode is in */
+    TAILQ_ENTRY(vnode) freelist;
+};
 
 /*
- * Logs what timers are registered
- * on the system.
+ * Vnode v_type flags
  */
-static void
-list_timers(void)
-{
-    struct timer timer_tmp;
-    tmrr_status_t status;
+#define VREG    0x01    /* Regular file */
+#define VDIR    0x02    /* Directory */
 
-    status = req_timer(TIMER_SCHED, &timer_tmp);
-    log_timer("SCHED_TMR", status, &timer_tmp);
+#if defined(_KERNEL)
+int vfs_alloc_vnode(struct vnode **vnode, struct mount *mp, int type);
+#endif
 
-    status = req_timer(TIMER_GP, &timer_tmp);
-    log_timer("GENERAL_PURPOSE_TMR", status, &timer_tmp);
-}
-
-void
-main(void)
-{
-    struct cpu_info *ci;
-
-    __TRY_CALL(pre_init);
-    syslog_init();
-    PRINT_LOGO();
-
-    kprintf("Hyra/%s v%s: %s (%s)\n",
-            HYRA_ARCH, HYRA_VERSION, HYRA_BUILDDATE,
-            HYRA_BUILDBRANCH);
-
-    acpi_init();
-    __TRY_CALL(chips_init);
-
-    processor_init();
-    list_timers();
-
-    vfs_init();
-
-    sched_init();
-    ci = this_cpu();
-
-    __TRY_CALL(ap_bootstrap, ci);
-    sched_init_processor(ci);
-
-    while (1);
-    __builtin_unreachable();
-}
+#endif
