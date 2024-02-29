@@ -86,9 +86,9 @@ pmap_get_level_index(uint8_t level, vaddr_t va)
     case 3:
         return (va >> 30) & 0x1FF;
     case 2:
-        return (va >> 29) & 0x1FF;
+        return (va >> 21) & 0x1FF;
     case 1:
-        return (va >> 20) & 0x1FF;
+        return (va >> 12) & 0x1FF;
     default:        /* Should not be reachable */
         return 0;
     }
