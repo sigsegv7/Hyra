@@ -77,13 +77,13 @@ vfs_hash_path(const char *path)
         return 0;
     }
 
-    while (name != NULL) {
+    do {
         name = vfs_get_fname_at(path, i++);
         if (name != NULL) {
             hash += vfs_hash(name);
             dynfree(name);
         }
-    }
+    } while (name != NULL);
 
     return hash;
 }
