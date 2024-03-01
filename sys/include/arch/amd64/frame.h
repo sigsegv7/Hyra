@@ -31,6 +31,9 @@
 #define _AMD64_FRAME_H_
 
 #if !defined(__ASSEMBLER__)
+
+#include <sys/types.h>
+
 struct trapframe {
     uint64_t trapno;
     uint64_t rax;
