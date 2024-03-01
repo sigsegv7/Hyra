@@ -52,15 +52,11 @@ static const int TRAP_COUNT = __ARRAY_COUNT(trap_type);
 static void
 trap_print(struct trapframe *tf)
 {
-    const char *mode;
-
     if (tf->trapno < TRAP_COUNT) {
-        kprintf("** Fatal %s", trap_type[tf->trapno]);
+        kprintf("** Fatal %s **\n", trap_type[tf->trapno]);
     } else {
-        kprintf("** Unknown trap %d", tf->trapno);
+        kprintf("** Unknown trap %d **\n", tf->trapno);
     }
-    mode = __TEST(tf->trapno, TRAP_USER) ? "user" : "supervisor";
-    kprintf(" in %s mode **\n", mode);
 }
 
 static void
