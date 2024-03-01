@@ -64,6 +64,8 @@ pmap_prot_to_pte(vm_prot_t prot)
         pte_flags |= PTE_RW;
     if (__TEST(prot, PROT_EXEC))
         pte_flags &= ~(PTE_NX);
+    if (__TEST(prot, PROT_USER))
+        pte_flags |= PTE_US;
 
     return pte_flags;
 }

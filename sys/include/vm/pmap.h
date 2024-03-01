@@ -52,6 +52,7 @@
 /* prot flags for mappings */
 #define PROT_WRITE      __BIT(0)      /* Writable */
 #define PROT_EXEC       __BIT(1)      /* Executable */
+#define PROT_USER       __BIT(2)      /* User accessible */
 
 #define is_vas_valid(vas) (vas.top_level != 0)
 
