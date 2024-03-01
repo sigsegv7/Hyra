@@ -158,39 +158,3 @@ vfs_alloc_vnode(struct vnode **vnode, struct mount *mp, int type)
     *vnode = new_vnode;
     return 0;
 }
-
-/*
- * This function mounts a `mount' structure
- * at a specific path.
- *
- * @mp_out: Where to store copy of new mountpoint (NULL if none)
- * @path: Path to mount on.
- * @mnt_flags: Mount flags (MNT_* from sys/mount.h)
- *
- * Returns 0 upon success, otherwise a < 0 value.
- *
- * XXX: This function assumes the mountpoint has its mount
- *      routine set in its vfsops.
- */
-int
-vfs_mount(struct mount **mp_out, const char *path, int mnt_flags)
-{
-    struct mount *mp;
-    int cache_status;
-
-    mp = dynalloc(sizeof(struct mount));
-    if (mp == NULL) {
-        return -ENOMEM;
-    }
-
-    mp->flags = mnt_flags;
-    cache_status = vfs_cache_mp(mp, path);
-
-    if (cache_status != 0) {
-        dynfree(mp);
-        return cache_status;
-    }
-
-    *mp_out = mp;
-    return 0;
-}

@@ -61,7 +61,7 @@ vfs_init(void)
     struct fs_info *info;
     struct vfsops *vfsops;
 
-    vfs_init_cache();
+    vfs_mount_init();
 
     for (int i = 0; i < __ARRAY_COUNT(filesystems); ++i) {
         info = &filesystems[i];
@@ -69,10 +69,5 @@ vfs_init(void)
 
         __assert(vfsops->init != NULL);
         vfsops->init(info);
-
-        if (strcmp(info->name, "initramfs") == 0) {
-            /* Initramfs must be mounted */
-            vfs_mount(&info->mp_root, "/ramdisk", MNT_RDONLY);
-        }
     }
 }

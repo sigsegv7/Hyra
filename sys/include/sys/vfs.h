@@ -42,10 +42,6 @@ struct vnode *vfs_path_to_node(const char *path);
 char *vfs_get_fname_at(const char *path, size_t idx);
 bool vfs_is_valid_path(const char *path);
 size_t vfs_hash_path(const char *path);
-
-void vfs_init_cache(void);
-int vfs_cache_mp(struct mount *mp, const char *path);
-int vfs_cache_fetch_mp(const char *path, struct mount **mp);
 #endif /* defined(_KERNEL) */
 
 #endif  /* !_SYS_VFS_H_ */

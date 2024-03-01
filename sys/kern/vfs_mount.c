@@ -35,38 +35,58 @@
 #include <vm/dynalloc.h>
 #include <assert.h>
 
-/* For caching */
+/* TODO: Make this more flexible */
 #define MOUNTLIST_SIZE 8
 
-/* Mountlist cache entry */
+/* Mountlist entry */
 struct mountlist_entry {
     TAILQ_HEAD(, mount) buckets;
 };
 
 static struct mountlist_entry *mountlist = NULL;
 
+static int
+vfs_create_mp(const char *path, int mntflags, struct mount **mp_out)
+{
+    struct mount *mp;
+
+    mp = dynalloc(sizeof(struct mount));
+    if (mp == NULL) {
+        return -ENOMEM;
+    }
+
+    mp->flags = mntflags;
+    *mp_out = mp;
+    return 0;
+}
+
 /*
- * Cache a mountpoint
+ * Mount a mountpoint
  *
- * @mp: Mountpoint to cache
+ * @mp: Mountpoint to mount
  * @path: Path this mountpoint belongs to
  *
- * If this cache entry already exists, -EEXIST
+ * If this mount entry already exists, -EEXIST
  * will be returned.
  */
 int
-vfs_cache_mp(struct mount *mp, const char *path)
+vfs_mount(const char *path, int mntflags)
 {
     size_t hash = vfs_hash_path(path);
+    int status;
     struct mountlist_entry *entry;
+    struct mount *mp;
 
+    if ((status = vfs_create_mp(path, mntflags, &mp)) != 0) {
+        return status;
+    }
     if (hash == 0) {
         /* Something is wrong with the path */
         return -EINVAL;
     }
 
-    if (vfs_cache_fetch_mp(path, NULL) == 0) {
-        /* Cache hit, do not duplicate this entry */
+    if (vfs_get_mp(path, NULL) == 0) {
+        /* mount hit, do not duplicate this entry */
         return -EEXIST;
     }
 
@@ -77,17 +97,17 @@ vfs_cache_mp(struct mount *mp, const char *path)
 }
 
 /*
- * Fetch mountpoint from cache
+ * Fetch mountpoint
  *
  * @path: Path of target mountpoint
  * @mp: Pointer of variable where mountpoint fetched will
  *      be stored
  *
- * Returns 0 upon a cache hit, on a cache miss this
+ * Returns 0 upon a mplist hit, on a mplist miss this
  * function returns -ENOENT.
  */
 int
-vfs_cache_fetch_mp(const char *path, struct mount **mp)
+vfs_get_mp(const char *path, struct mount **mp)
 {
     size_t hash = vfs_hash_path(path);
     struct mountlist_entry *entry;
@@ -101,21 +121,16 @@ vfs_cache_fetch_mp(const char *path, struct mount **mp)
     entry = &mountlist[hash % MOUNTLIST_SIZE];
     TAILQ_FOREACH(mount_iter, &entry->buckets, link) {
         if (mount_iter->phash == hash) {
-            /* Cache hit */
             if (mp != NULL) *mp = mount_iter;
             return 0;
         }
     }
 
-    /* Cache miss */
     return -ENOENT;
 }
 
-/*
- * Init all caches
- */
 void
-vfs_init_cache(void)
+vfs_mount_init(void)
 {
     mountlist = dynalloc(sizeof(struct mountlist_entry) * MOUNTLIST_SIZE);
     __assert(mountlist != NULL);
