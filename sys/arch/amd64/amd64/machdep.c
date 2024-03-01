@@ -133,6 +133,18 @@ pre_init(void)
 }
 
 void
+intr_mask(void)
+{
+    __ASMV("cli");
+}
+
+void
+intr_unmask(void)
+{
+    __ASMV("sti");
+}
+
+void
 processor_init(void)
 {
     /* Indicates what doesn't need to be init anymore */

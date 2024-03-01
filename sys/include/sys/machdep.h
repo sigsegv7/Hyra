@@ -39,6 +39,8 @@
 
 void processor_init(void);
 void processor_halt(void);
+void intr_mask(void);
+void intr_unmask(void);
 __weak void chips_init(void);
 __weak void pre_init(void);
 __weak void serial_dbgch(char c);
