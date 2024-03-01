@@ -72,6 +72,12 @@ struct vm_ctx {
 struct vas pmap_create_vas(struct vm_ctx *);
 
 /*
+ * Switch the current virtual address space
+ * to another.
+ */
+void pmap_switch_vas(struct vm_ctx *, struct vas);
+
+/*
  * Read virtual address space descriptor
  * and return it.
  */

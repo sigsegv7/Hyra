@@ -215,6 +215,17 @@ pmap_create_vas(struct vm_ctx *ctx)
     return new_vas;
 }
 
+void
+pmap_switch_vas(struct vm_ctx *ctx, struct vas vas)
+{
+    uintptr_t cr3_val = vas.cr3_flags | vas.top_level;
+
+    __ASMV("mov %0, %%cr3"
+           :
+           : "r" (cr3_val)
+           : "memory");
+}
+
 struct vas
 pmap_read_vas(void)
 {
