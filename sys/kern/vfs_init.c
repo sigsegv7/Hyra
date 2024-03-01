@@ -39,7 +39,7 @@ __MODULE_NAME("vfs");
 __KERNEL_META("$Hyra$: vfs.c, Ian Marco Moffett, "
               "Hyra Virtual File System");
 
-struct fs_info filesystems[] = {
+static struct fs_info filesystems[] = {
     { "initramfs", &g_initramfs_ops }
 };
 
