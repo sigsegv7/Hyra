@@ -72,7 +72,7 @@ vfs_create_mp(const char *path, int mntflags, struct mount **mp_out)
 int
 vfs_mount(const char *path, int mntflags)
 {
-    size_t hash = vfs_hash_path(path);
+    size_t hash;
     int status;
     struct mountlist_entry *entry;
     struct mount *mp;
@@ -80,7 +80,7 @@ vfs_mount(const char *path, int mntflags)
     if ((status = vfs_create_mp(path, mntflags, &mp)) != 0) {
         return status;
     }
-    if (hash == 0) {
+    if (hash == -1) {
         /* Something is wrong with the path */
         return -EINVAL;
     }

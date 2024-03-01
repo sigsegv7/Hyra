@@ -62,19 +62,19 @@ vfs_hash(const char *data)
  *
  * @path: Path to hash.
  *
- * Returns 0 on failure, non-zero return values
+ * Returns -1 on failure, >= 0 return values
  * are valid.
  */
-size_t
+ssize_t
 vfs_hash_path(const char *path)
 {
     char *name = NULL;
     size_t i = 0, hash = 0;
 
     if (strcmp(path, "/") == 0 || !vfs_is_valid_path(path)) {
-        return 0;
+        return -1;
     } else if (*path != '/') {
-        return 0;
+        return -1;
     }
 
     do {
