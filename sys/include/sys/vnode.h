@@ -34,12 +34,20 @@
 #include <sys/queue.h>
 #include <sys/mount.h>
 
+struct vnode;
+
+struct vops {
+    int(*vget)(struct vnode *parent, const char *name, struct vnode **vp);
+    int(*read)(struct vnode *vp, char *buf, size_t count);
+};
+
 struct vnode {
     int type;
     int flags;
-    int usecount;       /* Ref count of uses */
     struct mount *mp;   /* Ptr to vfs vnode is in */
-    TAILQ_ENTRY(vnode) freelist;
+    struct vops *vops;
+    struct vnode *parent;
+    void *data;         /* Filesystem specific data */
 };
 
 /*
