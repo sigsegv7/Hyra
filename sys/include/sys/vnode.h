@@ -34,12 +34,6 @@
 #include <sys/queue.h>
 #include <sys/mount.h>
 
-/* Vnode cache entry */
-struct vnode_cache {
-    const char *path;
-    struct vnode *vnode;
-};
-
 struct vnode {
     int type;
     int flags;
