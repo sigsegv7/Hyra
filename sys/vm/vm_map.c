@@ -105,3 +105,34 @@ vm_map_create(vaddr_t va, paddr_t pa, vm_prot_t prot, size_t bytes)
 
     return 0;
 }
+
+/*
+ * Destroy a virtual memory mapping in the current
+ * address space.
+ */
+int
+vm_map_destroy(vaddr_t va, size_t bytes)
+{
+    struct vm_ctx *ctx = vm_get_ctx();
+    size_t granule = vm_get_page_size();
+    int s;
+
+    /* We want bytes to be aligned by the granule */
+    bytes = __ALIGN_UP(bytes, granule);
+
+    /* Align VA by granule */
+    va = __ALIGN_DOWN(va, granule);
+
+    if (bytes == 0) {
+        return -1;
+    }
+
+    for (uintptr_t i = 0; i < bytes; i += granule) {
+        s = pmap_unmap(ctx, va + i);
+        if (s != 0) {
+            return -1;
+        }
+    }
+
+    return 0;
+}

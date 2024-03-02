@@ -35,5 +35,6 @@
 #include <vm/pmap.h>
 
 int vm_map_create(vaddr_t va, paddr_t pa, vm_prot_t prot, size_t bytes);
+int vm_map_destroy(vaddr_t va, size_t bytes);
 
 #endif  /* !_VM_MMAP_H_ */
