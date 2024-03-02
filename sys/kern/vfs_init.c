@@ -31,6 +31,7 @@
 #include <sys/cdefs.h>
 #include <sys/mount.h>
 #include <sys/types.h>
+#include <sys/vnode.h>
 #include <fs/initramfs.h>
 #include <assert.h>
 #include <string.h>
@@ -42,6 +43,8 @@ __KERNEL_META("$Hyra$: vfs.c, Ian Marco Moffett, "
 static struct fs_info filesystems[] = {
     { "initramfs", &g_initramfs_ops }
 };
+
+struct vnode *g_root_vnode = NULL;
 
 struct fs_info *
 vfs_byname(const char *name)
@@ -62,6 +65,7 @@ vfs_init(void)
     struct vfsops *vfsops;
 
     vfs_mount_init();
+    __assert(vfs_alloc_vnode(&g_root_vnode, NULL, VDIR) == 0);
 
     for (int i = 0; i < __ARRAY_COUNT(filesystems); ++i) {
         info = &filesystems[i];
@@ -70,4 +74,6 @@ vfs_init(void)
         __assert(vfsops->init != NULL);
         vfsops->init(info);
     }
+
+    g_root_vnode->vops = &g_initramfs_vops;
 }
