@@ -35,14 +35,20 @@
 #include <sys/types.h>
 
 #if defined(_KERNEL)
+
+extern struct vnode *g_root_vnode;
+
 void vfs_init(void);
 struct fs_info *vfs_byname(const char *name);
+int vfs_vget(struct vnode *parent, const char *name, struct vnode **vp);
 
 struct vnode *vfs_path_to_node(const char *path);
 char *vfs_get_fname_at(const char *path, size_t idx);
 int vfs_rootname(const char *path, char **new_path);
 bool vfs_is_valid_path(const char *path);
 ssize_t vfs_hash_path(const char *path);
+ssize_t vfs_read(struct vnode *vp, char *buf, size_t count);
+
 #endif /* defined(_KERNEL) */
 
 #endif  /* !_SYS_VFS_H_ */

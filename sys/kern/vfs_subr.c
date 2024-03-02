@@ -216,3 +216,16 @@ vfs_rootname(const char *path, char **new_path)
     *new_path = tmp;
     return 0;
 }
+
+
+int
+vfs_vget(struct vnode *parent, const char *name, struct vnode **vp)
+{
+    return parent->vops->vget(parent, name, vp);
+}
+
+ssize_t
+vfs_read(struct vnode *vp, char *buf, size_t count)
+{
+    return vp->vops->read(vp, buf, count);
+}
