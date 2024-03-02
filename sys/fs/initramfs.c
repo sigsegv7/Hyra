@@ -31,7 +31,11 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/limine.h>
+#include <sys/errno.h>
 #include <sys/panic.h>
+#include <sys/vfs.h>
+#include <sys/vnode.h>
+#include <vm/dynalloc.h>
 #include <string.h>
 
 __MODULE_NAME("initramfs");
@@ -46,6 +50,10 @@ static volatile struct limine_module_request mod_req = {
 static const char *initramfs = NULL;
 static size_t initramfs_size = 0;
 
+#define TAR_TYPEFLAG_NORMAL     '0'
+#define TAR_TYPEFLAG_HARDLINK   '1'
+#define TAR_TYPEFLAG_DIR        '5'
+
 struct tar_hdr {
     char filename[100];
     char mode[8];
@@ -53,9 +61,89 @@ struct tar_hdr {
     char gid[8];
     char size[12];
     char mtime[12];
-    char chksum[8];
-    char typeflag[1];
+    char checksum[8];
+    char type;
+    char link_name[100];
+    char magic[6];
+    char version[2];
+    char uname[32];
+    char gname[32];
+    char dev_major[8];
+    char dev_minor[8];
+    char prefix[155];
 };
+
+static struct tar_hdr *initramfs_from_path(struct tar_hdr *hdr,
+                                           const char *path);
+
+static size_t
+getsize(const char *in);
+
+static inline char *
+hdr_to_contents(struct tar_hdr *hdr)
+{
+    return ((char*)hdr) + 0x200;
+}
+
+static int
+vop_vget(struct vnode *parent, const char *name, struct vnode **vp)
+{
+    struct tar_hdr *hdr;
+    struct vnode *vnode;
+    int status;
+    int vtype = VREG;
+
+    if (initramfs == NULL) {
+        return -EIO;
+    }
+
+    hdr = initramfs_from_path((void *)initramfs, name);
+
+    if (hdr == NULL) {
+        return -ENOENT;
+    }
+
+    if (hdr->type != TAR_TYPEFLAG_DIR) {
+        vtype = VDIR;
+    }
+
+    /* Allocate vnode for this file */
+    if ((status = vfs_alloc_vnode(&vnode, NULL, vtype)) != 0) {
+        return status;
+    }
+
+    vnode->parent = parent;
+    vnode->data = hdr;
+
+    vnode->vops = &g_initramfs_vops;
+    *vp = vnode;
+    return 0;
+}
+
+static int
+vop_read(struct vnode *vp, char *buf, size_t count)
+{
+    struct tar_hdr *hdr;
+    size_t size;
+    char *contents;
+
+    if (vp->data == NULL) {
+        return -EIO;
+    }
+
+    hdr = vp->data;
+    size = getsize(hdr->size);
+    contents = hdr_to_contents(hdr);
+
+    for (size_t i = 0; i < count; ++i) {
+        if (i >= size) {
+            break;
+        }
+        buf[i] = contents[i];
+    }
+
+    return size;
+}
 
 static char *
 get_module(const char *path, uint64_t *size) {
@@ -82,7 +170,7 @@ getsize(const char *in)
 }
 
 static int
-initramfs_init(void)
+initramfs_init(struct fs_info *info)
 {
     initramfs = get_module("/boot/initramfs.tar", &initramfs_size);
 
@@ -93,33 +181,54 @@ initramfs_init(void)
     return 0;
 }
 
+static struct tar_hdr *
+initramfs_from_path(struct tar_hdr *hdr, const char *path)
+{
+
+    uintptr_t addr = (uintptr_t)hdr;
+    size_t size;
+
+    if (*path != '/') {
+        return NULL;
+    }
+    ++path;
+
+    while (strcmp(hdr->magic, "ustar") == 0) {
+        size = getsize(hdr->size);
+
+        if (strcmp(hdr->filename, path) == 0) {
+            return hdr;
+        }
+
+        addr += 512 + __ALIGN_UP(size, 512);
+        hdr = (struct tar_hdr *)addr;
+    }
+
+    return NULL;
+}
+
 const char *
 initramfs_open(const char *path)
 {
-    uintptr_t addr, size;
     struct tar_hdr *hdr;
 
     if (initramfs == NULL) {
-        initramfs_init();
+        return NULL;
     }
 
     if (strlen(path) > 99) {
         return NULL;
     }
 
-    addr = (uintptr_t)initramfs + 0x200;
-    hdr = (struct tar_hdr *)addr;
-
-    while (hdr->filename[0] != '\0') {
-        hdr = (struct tar_hdr *)addr;
-        size = getsize(hdr->size);
-
-        if (strcmp(hdr->filename, path) == 0) {
-            return ((char*)addr) + 0x200;
-        }
-
-        addr += (((size + 511) / 512) + 1) * 512;
-    }
-
-    return NULL;
+    hdr = initramfs_from_path((void *)initramfs, path);
+    return hdr_to_contents(hdr);
 }
+
+struct vfsops g_initramfs_ops = {
+    .init = initramfs_init,
+};
+
+struct vops g_initramfs_vops = {
+    .vget = vop_vget,
+    .read = vop_read
+};

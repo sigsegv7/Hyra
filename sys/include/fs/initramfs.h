@@ -31,8 +31,10 @@
 #define _FS_INITRAMFS_H_
 
 #include <sys/mount.h>
+#include <sys/vnode.h>
 
 extern struct vfsops g_initramfs_ops;
+extern struct vops g_initramfs_vops;
 
 const char *initramfs_open(const char *path);
 
