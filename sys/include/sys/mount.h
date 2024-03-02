@@ -32,6 +32,7 @@
 
 #include <sys/types.h>
 #include <sys/queue.h>
+#include <sys/vnode.h>
 
 #define FS_NAME_MAX 16 /* Max length of FS type name including nul */
 
@@ -40,12 +41,12 @@ struct mount;
 
 struct vfsops {
     int(*init)(struct fs_info *info);
-    int(*vget_name)(struct fs_info *info, const char *name);
 };
 
 struct mount {
     int flags;
     size_t phash;               /* Path hash */
+    struct vnode *vnode;
     TAILQ_ENTRY(mount) link;
 };
 
@@ -61,7 +62,9 @@ struct fs_info {
 #define MNT_RDONLY  0x00000001
 
 #if defined(_KERNEL)
-int vfs_mount(struct mount **mp_out, const char *path, int mnt_flags);
+int vfs_mount(const char *path, int mntflags);
+int vfs_get_mp(const char *path, struct mount **mp);
+void vfs_mount_init(void);
 #endif  /* defined(_KERNEL) */
 
 #endif  /* !_SYS_MOUNT_H_ */
