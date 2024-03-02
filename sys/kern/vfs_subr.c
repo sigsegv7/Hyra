@@ -159,3 +159,60 @@ vfs_alloc_vnode(struct vnode **vnode, struct mount *mp, int type)
     *vnode = new_vnode;
     return 0;
 }
+
+/*
+ * Returns the rootname of a path
+ * For example, "/foo/bar/" will be "foo" and
+ * "/foo/bar/baz" will also be "foo"
+ *
+ * There will be no slashes in the returned string
+ * unless "/" is passed.
+ *
+ * XXX: Returns memory allocated by dynalloc,
+ *      remember to free the memory with dynfree()
+ *
+ * @path: Path to get rootname of
+ * @new_path: New path will be placed here.
+ */
+int
+vfs_rootname(const char *path, char **new_path)
+{
+    char *tmp = NULL;
+    const char *ptr = path;
+    size_t len = 0;
+
+    if (!vfs_is_valid_path(path)) {
+        *new_path = NULL;
+        return -EINVAL;
+    }
+
+    if (*path == '/') {
+        /* Skip first '/' */
+        ++ptr;
+        ++path;
+    }
+
+    for (; *ptr != '\0' && *ptr != '/'; ++ptr) {
+        if (*ptr == '/') {
+            break;
+        }
+        ++len;
+    }
+
+    tmp = dynalloc(sizeof(char) * len + 1);
+    if (tmp == NULL) {
+        *new_path = NULL;
+        return -ENOMEM;
+    }
+
+    if (len == 0) {
+        /* Handle input that is just "/" */
+        tmp[0] = '/';
+        tmp[1] = '\0';
+    } else {
+        memcpy(tmp, path, len + 2);
+    }
+
+    *new_path = tmp;
+    return 0;
+}
