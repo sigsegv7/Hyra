@@ -108,6 +108,7 @@ vfs_is_valid_path(const char *path)
         case '/':
         case '-':
         case '_':
+        case '.':
             /* Valid char, can continue */
             continue;
         default:
