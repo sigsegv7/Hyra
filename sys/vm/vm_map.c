@@ -80,31 +80,14 @@ vm_map_create(vaddr_t va, paddr_t pa, vm_prot_t prot, size_t bytes)
     size_t granule = vm_get_page_size();
     int s;
 
-    /*
-     * TODO: This needs to be changed, once vm_get_ctx()
-     *       is no longer used, we'll need to fetch it from
-     *       the current process!
-     */
     struct vm_ctx *ctx = vm_get_ctx();
 
     /* We want bytes to be aligned by the granule */
     bytes = __ALIGN_UP(bytes, granule);
 
-    /*
-     * The VA and PA must be aligned by the granule as well.
-     * However, it is a terrible idea to do this ourselves
-     * as that could introduce very hard to find bugs...
-     * If one of them aren't aligned, the caller most likely
-     * screwed something up and silently continuing would be
-     * a terrible thing! The offset of the addresses should be 0,
-     * i.e., we should be at the very beginning of the page.
-     */
-    if ((va & (granule - 1)) != 0) {
-        return -1;
-    }
-    if ((pa & (granule - 1)) != 0) {
-        return -1;
-    }
+    /* Align VA/PA by granule */
+    va = __ALIGN_DOWN(va, granule);
+    pa = __ALIGN_DOWN(pa, granule);
 
     if (bytes == 0) {
         /* You can't map 0 pages, silly! */
