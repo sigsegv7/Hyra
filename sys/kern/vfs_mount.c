@@ -91,6 +91,12 @@ vfs_mount(const char *path, int mntflags)
     }
 
     mp->phash = hash;
+    status = vfs_alloc_vnode(&mp->vnode, mp, VDIR);
+
+    if (status != 0) {
+        return status;
+    }
+
     entry = &mountlist[hash % MOUNTLIST_SIZE];
     TAILQ_INSERT_TAIL(&entry->buckets, mp, link);
     return 0;
