@@ -35,7 +35,13 @@
 
 set -e
 
-TARGET="$1-elf"
+if [ "$1" == "amd64" ]
+then
+    TARGET="x86_64-hyra"
+else
+    TARGET="$1-elf"
+fi
+
 BINUTILS_VERSION=2.42
 GCC_VERSION=13.2.0
 BINUTILS_NAME="binutils-$BINUTILS_VERSION"
@@ -101,8 +107,14 @@ rm -rf build-gcc build-binutils
 
 # Binutils build
 clear
-echo "Configuring $BINUTILS_NAME..."
 mkdir build-binutils
+
+echo "Applying binutils patch"
+cp -r $BINUTILS_NAME $BINUTILS_NAME-copy
+patch -s -p0 < ../../builddeps/binutils.patch
+rm -rf $BINUTILS_NAME-copy
+
+echo "Configuring $BINUTILS_NAME..."
 cd build-binutils
 ../$BINUTILS_NAME/configure --target="$TARGET" --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror --enable-targets=all
 echo "Building $BINUTILS_NAME..."
@@ -118,11 +130,17 @@ clear
 echo "Downloading prerequisites for $GCC_NAME..."
 cd $GCC_NAME
 contrib/download_prerequisites
-echo "Configuring $GCC_NAME..."
 cd ..
+
+echo "Applying GCC patch"
+cp -r $GCC_NAME $GCC_NAME-copy
+patch -s -p0 < ../../builddeps/gcc.patch
+rm -rf $GCC_NAME-copy
+
+echo "Configuring $GCC_NAME..."
 mkdir build-gcc
 cd build-gcc
-../$GCC_NAME/configure --target="$TARGET" --prefix="$PREFIX" --disable-nls --enable-languages=c --without-headers
+../$GCC_NAME/configure --target="$TARGET" --with-sysroot=/ --prefix="$PREFIX" --disable-nls --enable-languages=c --disable-multilib
 echo "Building all-gcc..."
 $MAKE all-gcc -j"$CORES"
 echo "Building all-target-libgcc..."

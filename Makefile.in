@@ -33,14 +33,19 @@ override KERNEL_DEFINES =  -DHYRA_VERSION="\"$(HYRA_VERSION)\""\
 			   $(SPECTRE_FLAGS)\
 			   $(SERIAL_DEBUG_FLAGS)
 override KERNEL_CFLAGS = @KERNEL_CFLAGS@ $(KERNEL_DEFINES)
-override KERNEL_LDFLAGS = -nostdlib -zmax-page-size=0x1000 -static -Tconf/link-$(ARCH).ld
+override KERNEL_LDFLAGS = -nostdlib -znoexecstack -zmax-page-size=0x1000 -static -Tconf/link-$(ARCH).ld
 override QEMU_FLAGS = @QEMU_FLAGS@
 
 ######################
 # Binutils stuff
 ######################
-override CC = $(shell pwd)/cross/bin/$(ARCH)-elf-gcc
-override LD = $(shell pwd)/cross/bin/$(ARCH)-elf-ld
+ifeq ($(ARCH), amd64)
+	override CC = $(shell pwd)/cross/bin/x86_64-hyra-gcc
+	override LD = $(shell pwd)/cross/bin/x86_64-hyra-ld
+else
+	override CC = $(shell pwd)/cross/bin/$(ARCH)-hyra-gcc
+	override LD = $(shell pwd)/cross/bin/$(ARCH)-hyra-ld
+endif
 override AS = $(CC)
 
 ##########################
