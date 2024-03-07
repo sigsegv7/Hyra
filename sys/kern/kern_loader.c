@@ -58,10 +58,10 @@ int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
 {
     const Elf64_Ehdr *hdr = dataptr;
     Elf64_Phdr *phdr;
-    vm_prot_t prot = 0;
+    vm_prot_t prot = PROT_USER;
 
     uintptr_t physmem;
-    uintptr_t map_addr;
+    uintptr_t max_addr, map_addr;
     size_t misalign, page_count;
 
     int status;
@@ -93,6 +93,24 @@ int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
 
             misalign = phdr->p_vaddr & (GRANULE - 1);
             page_count = __DIV_ROUNDUP(phdr->p_memsz + misalign, GRANULE);
+            max_addr = phdr->p_vaddr + (GRANULE * page_count);
+
+            /*
+             * We are assuming this is a user program that we are loading.
+             * All user programs should be on the lower half of the address
+             * space. We will check that before we begin doing anything here.
+             *
+             * We are also going to check if the virtual address the program
+             * header refers to overflows into the higher half. If anything
+             * goes into the higher half, we won't simply drop the phdr,
+             * we'll instead assume caller error and return -EINVAL.
+             */
+            if (phdr->p_vaddr >= VM_HIGHER_HALF) {
+                return -EINVAL;
+            } else if (max_addr >= VM_HIGHER_HALF) {
+                /* Overflows into higher half */
+                return -EINVAL;
+            }
 
             physmem = vm_alloc_pageframe(page_count);
 
