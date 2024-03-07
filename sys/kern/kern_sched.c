@@ -97,13 +97,11 @@ sched_dequeue_td(void)
 
     spinlock_acquire(&tdq_lock);
 
-    if (TAILQ_EMPTY(&td_queue)) {
-        goto done;
+    if (!TAILQ_EMPTY(&td_queue)) {
+        td = TAILQ_FIRST(&td_queue);
+        TAILQ_REMOVE(&td_queue, td, link);
     }
 
-    td = TAILQ_FIRST(&td_queue);
-    TAILQ_REMOVE(&td_queue, td, link);
-done:
     spinlock_release(&tdq_lock);
     return td;
 }
@@ -174,11 +172,9 @@ sched_context_switch(struct trapframe *tf)
      * If we have no threads, we should not
      * preempt at all.
      */
-    if (nthread == 0) {
-        goto done;
-    } else if ((next_td = sched_dequeue_td()) == NULL) {
-        /* Empty */
-        goto done;
+    if (nthread == 0 || (next_td = sched_dequeue_td()) == NULL) {
+        sched_oneshot();
+        return;
     }
 
     if (state->td != NULL) {
@@ -196,7 +192,7 @@ sched_context_switch(struct trapframe *tf)
     if (td != NULL) {
         sched_enqueue_td(td);
     }
-done:
+
     sched_oneshot();
 }
 
