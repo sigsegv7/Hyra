@@ -1,0 +1,12 @@
+[binaries]
+c = '@DIRNAME@/crossbin/x86_64-hyra-gcc'
+cpp = '@DIRNAME@/crossbin/x86_64-hyra-g++'
+ar = '@DIRNAME@/crossbin/x86_64-hyra-ar'
+strip = '@DIRNAME@/crossbin/x86_64-hyra-strip'
+pkg-config = 'pkg-config'
+
+[host_machine]
+system = 'hyra'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little'

@@ -1,0 +1,6 @@
+build/
+subprojects
+!subprojects/*.wrap
+*.xbstrap
+# editor configs:
+.vscode

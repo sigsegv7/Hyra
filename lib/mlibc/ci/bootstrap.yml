@@ -1,0 +1,181 @@
+declare_options:
+  - name: arch
+    default: x86_64
+
+sources:
+  - name: mlibc
+    git: 'https://github.com/managarm/mlibc.git'
+    branch: 'master'
+
+  - name: linux
+    url: 'https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.1.8.tar.xz'
+    extract_path: 'linux-6.1.8'
+    format: 'tar.xz'
+    version: '6.1.8'
+
+tools:
+
+packages:
+  - name: mlibc
+    architecture: '@OPTION:arch@'
+    from_source: mlibc
+    pkgs_required:
+      - linux-headers
+    configure:
+      - args:
+        - 'meson'
+        - 'setup'
+        - '--prefix=/usr'
+        - '--libdir=lib'
+        - '--buildtype=debugoptimized'
+        - "-Dc_args=['-Wno-error=maybe-uninitialized']"
+        - "-Dcpp_args=['-Wno-error=maybe-uninitialized']"
+        - "-Dbuild_tests=true"
+        - "-Db_sanitize=undefined"
+        - "-Ddefault_library=both"
+        - "-Dwerror=true"
+        - '-Dlinux_kernel_headers=@BUILD_ROOT@/packages/linux-headers/usr/include'
+        - "--cross-file=@THIS_SOURCE_DIR@/ci/linux-@OPTION:arch@.cross-file"
+        - '@THIS_SOURCE_DIR@'
+        environ:
+          CFLAGS: '-Wno-error=maybe-uninitialized'
+          CXXFLAGS: '-Wno-error=maybe-uninitialized'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+
+  - name: mlibc-static
+    architecture: '@OPTION:arch@'
+    from_source: mlibc
+    pkgs_required:
+      - linux-headers
+    configure:
+      - args:
+        - 'meson'
+        - 'setup'
+        - '--prefix=/usr'
+        - '--libdir=lib'
+        - '--buildtype=debugoptimized'
+        - "-Dc_args=['-Wno-error=maybe-uninitialized']"
+        - "-Dcpp_args=['-Wno-error=maybe-uninitialized']"
+        - "-Dbuild_tests=true"
+        - "-Db_sanitize=undefined"
+        - "-Ddefault_library=static"
+        - "-Dwerror=true"
+        - '-Dlinux_kernel_headers=@BUILD_ROOT@/packages/linux-headers/usr/include'
+        - "--cross-file=@THIS_SOURCE_DIR@/ci/linux-@OPTION:arch@.cross-file"
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+
+  - name: mlibc-shared
+    from_source: mlibc
+    pkgs_required:
+      - linux-headers
+    configure:
+      - args:
+        - 'meson'
+        - 'setup'
+        - '--prefix=/usr'
+        - '--libdir=lib'
+        - '--buildtype=debugoptimized'
+        - "-Dc_args=['-Wno-error=maybe-uninitialized']"
+        - "-Dcpp_args=['-Wno-error=maybe-uninitialized']"
+        - "-Dbuild_tests=true"
+        - "-Db_sanitize=undefined"
+        - "-Ddefault_library=shared"
+        - "-Dwerror=true"
+        - '-Dlinux_kernel_headers=@BUILD_ROOT@/packages/linux-headers/usr/include'
+        - "--cross-file=@THIS_SOURCE_DIR@/ci/linux-@OPTION:arch@.cross-file"
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+
+  - name: mlibc-ansi-only
+    architecture: '@OPTION:arch@'
+    from_source: mlibc
+    pkgs_required:
+      - linux-headers
+    configure:
+      - args:
+        - 'meson'
+        - 'setup'
+        - '--prefix=/usr'
+        - '--libdir=lib'
+        - '--buildtype=debugoptimized'
+        - "-Dc_args=['-Wno-error=maybe-uninitialized']"
+        - "-Dcpp_args=['-Wno-error=maybe-uninitialized']"
+        - "-Dbuild_tests=true"
+        - "-Db_sanitize=undefined"
+        - "-Ddefault_library=both"
+        - "-Dwerror=true"
+        - "-Ddisable_posix_option=true"
+        - "-Ddisable_linux_option=true"
+        - "-Ddisable_glibc_option=true"
+        - "-Ddisable_bsd_option=true"
+        - '-Dlinux_kernel_headers=@BUILD_ROOT@/packages/linux-headers/usr/include'
+        - "--cross-file=@THIS_SOURCE_DIR@/ci/linux-@OPTION:arch@.cross-file"
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+
+  - name: mlibc-headers-only
+    architecture: '@OPTION:arch@'
+    from_source: mlibc
+    pkgs_required:
+      - linux-headers
+    configure:
+      - args:
+        - 'meson'
+        - 'setup'
+        - '--prefix=/usr'
+        - '--libdir=lib'
+        - '--buildtype=debugoptimized'
+        - "-Dc_args=['-Wno-error=maybe-uninitialized']"
+        - "-Dcpp_args=['-Wno-error=maybe-uninitialized']"
+        - "-Db_sanitize=undefined"
+        - "-Dwerror=true"
+        - "-Dheaders_only=true"
+        - '-Dlinux_kernel_headers=@BUILD_ROOT@/packages/linux-headers/usr/include'
+        - "--cross-file=@THIS_SOURCE_DIR@/ci/linux-@OPTION:arch@.cross-file"
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
+
+  - name: linux-headers
+    architecture: '@OPTION:arch@'
+    from_source: linux
+    configure:
+      # custom build system requires in tree-ish builds
+      - args: ['cp', '-Tr', '@THIS_SOURCE_DIR@/', '.']
+    build:
+      - args: |
+          LINUX_ARCH="@OPTION:arch@"
+          case "$LINUX_ARCH" in
+            "aarch64")
+              LINUX_ARCH="arm64"
+              ;;
+            "riscv64")
+              LINUX_ARCH="riscv"
+              ;;
+          esac
+          make O=@THIS_COLLECT_DIR@ ARCH="$LINUX_ARCH" headers_install
