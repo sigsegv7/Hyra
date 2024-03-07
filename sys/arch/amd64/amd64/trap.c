@@ -50,6 +50,20 @@ static const char *trap_type[] = {
 static const int TRAP_COUNT = __ARRAY_COUNT(trap_type);
 
 static void
+dbg_errcode(struct trapframe *tf)
+{
+    uint64_t ec = tf->error_code;
+
+    if (tf->trapno == TRAP_PAGEFLT) {
+        kprintf("bits (pwui): %c%c%c%c\n",
+                __TEST(ec, __BIT(0)) ? 'p' : '-',
+                __TEST(ec, __BIT(1)) ? 'w' : '-',
+                __TEST(ec, __BIT(2)) ? 'u' : '-',
+                __TEST(ec, __BIT(4)) ? 'i' : '-');
+    }
+}
+
+static void
 trap_print(struct trapframe *tf)
 {
     if (tf->trapno < TRAP_COUNT) {
@@ -57,6 +71,8 @@ trap_print(struct trapframe *tf)
     } else {
         kprintf("** Unknown trap %d **\n", tf->trapno);
     }
+
+    dbg_errcode(tf);
 }
 
 static void
