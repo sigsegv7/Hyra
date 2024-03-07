@@ -134,9 +134,8 @@ pmap_extract(uint8_t level, vaddr_t va, uintptr_t *pmap, bool allocate)
  * TODO: Ensure operations here are serialized.
  */
 static int
-pmap_modify_tbl(struct vm_ctx *ctx, vaddr_t va, size_t val)
+pmap_modify_tbl(struct vm_ctx *ctx, struct vas vas, vaddr_t va, size_t val)
 {
-    struct vas vas = pmap_read_vas();
     uintptr_t *pml4 = PHYS_TO_VIRT(vas.top_level);
     uintptr_t *pdpt, *pd, *tbl;
     int status = 0;
@@ -167,17 +166,18 @@ done:
 }
 
 int
-pmap_map(struct vm_ctx *ctx, vaddr_t va, paddr_t pa, vm_prot_t prot)
+pmap_map(struct vm_ctx *ctx, struct vas vas, vaddr_t va, paddr_t pa,
+         vm_prot_t prot)
 {
     uint32_t flags = pmap_prot_to_pte(prot);
 
-    return pmap_modify_tbl(ctx, va, (pa | flags));
+    return pmap_modify_tbl(ctx, vas, va, (pa | flags));
 }
 
 int
-pmap_unmap(struct vm_ctx *ctx, vaddr_t va)
+pmap_unmap(struct vm_ctx *ctx, struct vas vas, vaddr_t va)
 {
-    return pmap_modify_tbl(ctx, va, 0);
+    return pmap_modify_tbl(ctx, vas, va, 0);
 }
 
 struct vas

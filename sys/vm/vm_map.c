@@ -47,14 +47,14 @@
  *               be enforced via a panic.
  */
 static void
-vm_map_cleanup(struct vm_ctx *ctx, vaddr_t va, size_t bytes_aligned,
-               size_t granule)
+vm_map_cleanup(struct vas vas, struct vm_ctx *ctx, vaddr_t va,
+               size_t bytes_aligned, size_t granule)
 {
     __assert(bytes_aligned != 0);
     __assert((bytes_aligned & (granule - 1)) == 0);
 
     for (size_t i = 0; i < bytes_aligned; i += 0x1000) {
-        if (pmap_unmap(ctx, va + i) != 0) {
+        if (pmap_unmap(ctx, vas, va + i) != 0) {
             /*
              * XXX: This shouldn't happen... If it somehow does,
              *      then this should be handled.
@@ -75,7 +75,7 @@ vm_map_cleanup(struct vm_ctx *ctx, vaddr_t va, size_t bytes_aligned,
  *         machine's page granule, typically a 4k boundary.
  */
 int
-vm_map_create(vaddr_t va, paddr_t pa, vm_prot_t prot, size_t bytes)
+vm_map_create(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot, size_t bytes)
 {
     size_t granule = vm_get_page_size();
     int s;
@@ -95,10 +95,10 @@ vm_map_create(vaddr_t va, paddr_t pa, vm_prot_t prot, size_t bytes)
     }
 
     for (uintptr_t i = 0; i < bytes; i += granule) {
-        s = pmap_map(ctx, va + i, pa + i, prot);
+        s = pmap_map(ctx, vas, va + i, pa + i, prot);
         if (s != 0) {
             /* Something went a bit wrong here, cleanup */
-            vm_map_cleanup(ctx, va, i, bytes);
+            vm_map_cleanup(vas, ctx, va, i, bytes);
             return -1;
         }
     }
@@ -111,7 +111,7 @@ vm_map_create(vaddr_t va, paddr_t pa, vm_prot_t prot, size_t bytes)
  * address space.
  */
 int
-vm_map_destroy(vaddr_t va, size_t bytes)
+vm_map_destroy(struct vas vas, vaddr_t va, size_t bytes)
 {
     struct vm_ctx *ctx = vm_get_ctx();
     size_t granule = vm_get_page_size();
@@ -128,7 +128,7 @@ vm_map_destroy(vaddr_t va, size_t bytes)
     }
 
     for (uintptr_t i = 0; i < bytes; i += granule) {
-        s = pmap_unmap(ctx, va + i);
+        s = pmap_unmap(ctx, vas, va + i);
         if (s != 0) {
             return -1;
         }

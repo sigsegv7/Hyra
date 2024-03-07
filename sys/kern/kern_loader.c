@@ -32,9 +32,11 @@
 #include <sys/elf.h>
 #include <sys/types.h>
 #include <sys/syslog.h>
+#include <sys/errno.h>
 #include <vm/vm.h>
 #include <vm/map.h>
 #include <vm/physseg.h>
+#include <vm/dynalloc.h>
 #include <string.h>
 #include <assert.h>
 
@@ -51,14 +53,15 @@ __KERNEL_META("$Hyra$: kern_loader.c, Ian Marco Moffett, "
 #define PHDR(hdrptr, IDX) \
     (void *)((uintptr_t)hdr + (hdrptr)->e_phoff + (hdrptr->e_phentsize*IDX))
 
-int
-loader_load(const void *dataptr, struct auxval *auxv)
+int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
+                size_t load_base, char **ld_path)
 {
     const Elf64_Ehdr *hdr = dataptr;
     Elf64_Phdr *phdr;
     vm_prot_t prot = 0;
 
     uintptr_t physmem;
+    uintptr_t map_addr;
     size_t misalign, page_count;
 
     int status;
@@ -92,20 +95,50 @@ loader_load(const void *dataptr, struct auxval *auxv)
             page_count = __DIV_ROUNDUP(phdr->p_memsz + misalign, GRANULE);
 
             physmem = vm_alloc_pageframe(page_count);
-            __assert(physmem != 0);     /* TODO: Handle better */
 
-            status = vm_map_create(phdr->p_vaddr, physmem, prot,
-                                   page_count * GRANULE);
+            /* Do we not have enough page frames? */
+            if (physmem == 0) {
+                DBG("Failed to allocate physical memory\n");
+                vm_free_pageframe(physmem, page_count);
+                return -ENOMEM;
+            }
 
-            __assert(status == 0);  /* TODO: Handle better */
+            map_addr = phdr->p_vaddr + load_base;
+            status = vm_map_create(vas, map_addr, physmem, prot, page_count*GRANULE);
+
+            if (status != 0) {
+                DBG("Failed to map 0x%p - 0x%p\n",
+                    phdr->p_vaddr + load_base,
+                    (phdr->p_vaddr + load_base) + (page_count * GRANULE));
+
+                return status;
+            }
 
             /* Now we want to copy the data */
             tmp_ptr = (void *)((uintptr_t)hdr + phdr->p_offset);
-            memcpy((void *)phdr->p_vaddr, tmp_ptr, phdr->p_filesz);
+            memcpy(PHYS_TO_VIRT(physmem), tmp_ptr, phdr->p_filesz);
+            break;
+        case PT_INTERP:
+            if (ld_path == NULL) {
+                break;
+            }
+
+            *ld_path = dynalloc(phdr->p_filesz);
+
+            if (ld_path == NULL) {
+                DBG("Failed to allocate memory for PT_INTERP path\n");
+                return -ENOMEM;
+            }
+
+            memcpy(*ld_path, (char *)hdr + phdr->p_offset, phdr->p_filesz);
+            break;
+        case PT_PHDR:
+            auxv->at_phdr = phdr->p_vaddr + load_base;
+            break;
         }
     }
 
-    auxv->at_entry = hdr->e_entry;
+    auxv->at_entry = hdr->e_entry + load_base;
     auxv->at_phent = hdr->e_phentsize;
     auxv->at_phnum = hdr->e_phnum;
     return 0;
