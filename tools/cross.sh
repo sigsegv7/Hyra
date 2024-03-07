@@ -140,7 +140,7 @@ rm -rf $GCC_NAME-copy
 echo "Configuring $GCC_NAME..."
 mkdir build-gcc
 cd build-gcc
-../$GCC_NAME/configure --target="$TARGET" --with-sysroot=/ --prefix="$PREFIX" --disable-nls --enable-languages=c --disable-multilib
+../$GCC_NAME/configure --target="$TARGET" --with-sysroot=/ --prefix="$PREFIX" --disable-nls --enable-languages=c,c++,lto --disable-multilib
 echo "Building all-gcc..."
 $MAKE all-gcc -j"$CORES"
 echo "Building all-target-libgcc..."
