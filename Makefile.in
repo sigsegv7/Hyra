@@ -69,9 +69,18 @@ override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
 override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
 
 .PHONY: all
-all: base/boot/hyra-kernel
+all: base lib base/usr/lib/ld.so base/boot/hyra-kernel
 		rm -f sys/include/machine
 		rm -rf iso_root
+
+base:
+	mkdir -p base/usr/lib/
+
+lib: lib/mlibc base/usr/lib/ld.so
+
+lib/mlibc:
+	git clone https://github.com/sigsegv7/hyra-mlibc lib/mlibc
+	cp builddeps/cross_file.txt lib/mlibc/
 
 .PHONY: run
 run:
@@ -82,12 +91,27 @@ cross:
 	bash tools/cross.sh $(ARCH)
 
 .PHONY: clean
+distclean:
+	make clean
+	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
+	rm -f sys/include/machine
+	rm -f base/usr/lib/ld.so
+	cd lib/; make clean
+
+.PHONY: clean
 clean:
 	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
 	rm -f sys/include/machine
 
 sys/include/machine/:
 	cd sys/include/; ln -sf arch/$(ARCH) machine
+
+base/usr/lib/ld.so: lib/mlibc/
+	cd lib/; make mlibc/build/
+	$(PROMPT) " DYNLD " base/usr/lib/ld.so
+	$(PROMPT) " LIBC " base/usr/lib/libc.so
+	cp lib/mlibc/build/ld.so base/usr/lib/
+	cp lib/mlibc/build/libc.so base/usr/lib/
 
 base/boot/hyra-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
 	rm -rf iso_root

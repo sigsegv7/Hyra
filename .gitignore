@@ -10,4 +10,6 @@
 /stand
 /base
 /sys/include/machine
+/lib/*
+!/lib/Makefile
 autom4te.cache

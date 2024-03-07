@@ -1,1 +1,0 @@
-../../../../abis/hyra/auxv.h
