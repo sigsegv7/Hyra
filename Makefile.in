@@ -69,16 +69,22 @@ override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
 override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
 
 .PHONY: all
-all: base init lib base/usr/lib/ld.so base/boot/hyra-kernel
+all: base lib userland base/usr/lib/ld.so base/boot/hyra-kernel
 		rm -f sys/include/machine
 		rm -rf iso_root
 
-base/boot/init: usr.sbin/init/
+base/usr/sbin/init:
 	cd usr.sbin/; make CC=$(CC) LD=$(LD)
-	cp usr.sbin/init/init base/boot/
+	mv usr.sbin/init/init base/usr/sbin/
+
+# TODO: Make this more flexible
+.PHONY: userland
+userland: base/usr/sbin/init
 
 base:
 	mkdir -p base/usr/lib/
+	mkdir -p base/usr/sbin/
+	mkdir -p base/boot/
 
 lib: lib/mlibc base/usr/lib/ld.so
 

@@ -34,9 +34,19 @@
 #include <sys/timer.h>
 #include <sys/cdefs.h>
 #include <sys/spinlock.h>
+#include <sys/loader.h>
+#include <sys/panic.h>
+#include <fs/initramfs.h>
 #include <vm/dynalloc.h>
+#include <vm/physseg.h>
+#include <vm/pmap.h>
+#include <vm/map.h>
+#include <vm/vm.h>
 #include <assert.h>
 #include <string.h>
+
+#define STACK_PAGES 8
+#define STACK_SIZE (STACK_PAGES*vm_get_page_size())
 
 /*
  * Thread ready queue - all threads ready to be
@@ -119,12 +129,99 @@ sched_enter(void)
     }
 }
 
-static struct proc *
-sched_create_td(uintptr_t rip)
+static uintptr_t
+sched_init_stack(void *stack_top, char *argvp[], char *envp[], struct auxval auxv)
 {
-    const size_t STACK_SIZE = 0x100000; /* 1 MiB */
+    uintptr_t *sp = stack_top;
+    size_t envp_len, argv_len, len;
+    uintptr_t old_sp = 0;
+    uintptr_t ret;
+
+    for (envp_len = 0; envp[envp_len] != NULL; ++envp_len) {
+        len = strlen(envp[envp_len]);
+        sp = (void *)((uintptr_t)sp - len - 1);
+        memcpy(sp, envp[envp_len], len);
+    }
+
+    for (argv_len = 0; argvp[argv_len] != NULL; ++argv_len) {
+        len = strlen(argvp[argv_len]);
+        sp = (void *)((uintptr_t)sp - len - 1);
+        memcpy(sp, argvp[envp_len], len);
+    }
+
+    sp = (uint64_t *)(((uintptr_t)sp / 16) * 16);
+    if (((argv_len + envp_len + 1) & 1) != 0) {
+        sp--;
+    }
+
+    *--sp = 0;
+    *--sp = 0;
+    *--sp = auxv.at_entry;
+    *--sp = AT_ENTRY;
+    *--sp = auxv.at_phent;
+    *--sp = AT_PHENT;
+    *--sp = auxv.at_phnum;
+    *--sp = AT_PHNUM;
+    *--sp = auxv.at_phdr;
+    *--sp = AT_PHDR;
+
+    old_sp = (uintptr_t)sp;
+
+    /* End of envp */
+    *--sp = 0;
+    sp -= envp_len;
+    for (int i = 0; i < envp_len; ++i) {
+        old_sp -= strlen(envp[i]) + 1;
+        sp[i] = old_sp;
+    }
+
+    /* End of argvp */
+    *--sp = 0;
+    sp -= argv_len;
+    for (int i = 0; i < argv_len; ++i) {
+        old_sp -= strlen(argvp[i]) + 1;
+        sp[i] = old_sp;
+    }
+
+    /* Argc */
+    *--sp = argv_len;
+
+    ret = (uintptr_t)stack_top;
+    ret -= (ret - (uintptr_t)sp);
+    return ret;
+}
+
+static uintptr_t
+sched_create_stack(struct vas vas, bool user)
+{
+    int status;
+    uintptr_t user_stack;
+    const vm_prot_t USER_STACK_PROT = PROT_WRITE | PROT_USER;
+
+    if (!user) {
+        return (uintptr_t)dynalloc(STACK_SIZE);
+    }
+
+    user_stack = vm_alloc_pageframe(STACK_PAGES);
+
+    status = vm_map_create(vas, user_stack, user_stack, USER_STACK_PROT,
+                           STACK_SIZE);
+
+    if (status != 0) {
+        return 0;
+    }
+
+    memset(PHYS_TO_VIRT(user_stack), 0, STACK_SIZE);
+    return user_stack;
+}
+
+static struct proc *
+sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
+                struct vas vas, bool is_user)
+{
     struct proc *td;
-    void *stack;
+    uintptr_t stack, sp;
+    void *stack_virt;
     struct trapframe *tf;
 
     tf = dynalloc(sizeof(struct trapframe));
@@ -132,29 +229,37 @@ sched_create_td(uintptr_t rip)
         return NULL;
     }
 
-    stack = dynalloc(STACK_SIZE);
-    if (stack == NULL) {
+    stack = sched_create_stack(vas, is_user);
+    if (stack == 0) {
         dynfree(tf);
         return NULL;
     }
 
+    stack_virt = (is_user) ? PHYS_TO_VIRT(stack) : (void *)stack;
+
     td = dynalloc(sizeof(struct proc));
     if (td == NULL) {
+        /* TODO: Free stack */
         dynfree(tf);
-        dynfree(stack);
         return NULL;
     }
 
     memset(tf, 0, sizeof(struct trapframe));
-    memset(stack, 0, STACK_SIZE);
+    sp = sched_init_stack((void *)((uintptr_t)stack_virt + STACK_SIZE),
+                          argvp, envp, auxv);
 
     /* Setup process itself */
     td->pid = 0;        /* Don't assign PID until enqueued */
     td->cpu = NULL;     /* Not yet assigned a core */
     td->tf = tf;
+    td->addrsp = vas;
 
     /* Setup trapframe */
-    init_frame(tf, rip, (uintptr_t)stack + STACK_SIZE - 1);
+    if (!is_user) {
+        init_frame(tf, rip, sp);
+    } else {
+        init_frame_user(tf, rip, VIRT_TO_PHYS(sp));
+    }
     return td;
 }
 
@@ -193,20 +298,40 @@ sched_context_switch(struct trapframe *tf)
         sched_enqueue_td(td);
     }
 
+    pmap_switch_vas(vm_get_ctx(), next_td->addrsp);
     sched_oneshot();
 }
 
 void
 sched_init(void)
 {
+    struct proc *init;
+    struct auxval auxv = {0};
+    struct vas vas = pmap_create_vas(vm_get_ctx());
+    const char *init_bin;
+
+    int status;
+    char *ld_path;
+    char *argv[] = {"/boot/init", NULL};
+    char *envp[] = {NULL};
+
     TAILQ_INIT(&td_queue);
 
-    /*
-     * TODO: Create init with sched_create_td()
-     *       and enqueue with sched_enqueue_td()
-     */
-    (void)sched_create_td;
-    (void)sched_enqueue_td;
+    if ((init_bin = initramfs_open("/boot/init")) == NULL) {
+        panic("Could not open /boot/init\n");
+    }
+
+    status = loader_load(vas, init_bin, &auxv, 0, &ld_path);
+    if (status != 0) {
+        panic("Could not load init\n");
+    }
+
+    init = sched_create_td((uintptr_t)auxv.at_entry, argv, envp, auxv, vas, true);
+    if (init == NULL) {
+        panic("Failed to create thread for init\n");
+    }
+
+    sched_enqueue_td(init);
 }
 
 /*
