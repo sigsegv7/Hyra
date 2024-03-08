@@ -69,9 +69,13 @@ override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
 override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
 
 .PHONY: all
-all: base lib base/usr/lib/ld.so base/boot/hyra-kernel
+all: base init lib base/usr/lib/ld.so base/boot/hyra-kernel
 		rm -f sys/include/machine
 		rm -rf iso_root
+
+base/boot/init: usr.sbin/init/
+	cd usr.sbin/; make CC=$(CC) LD=$(LD)
+	cp usr.sbin/init/init base/boot/
 
 base:
 	mkdir -p base/usr/lib/
@@ -96,6 +100,7 @@ distclean:
 	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
 	rm -f sys/include/machine
 	rm -f base/usr/lib/ld.so
+	rm -f base/boot/init
 	cd lib/; make clean
 
 .PHONY: clean
@@ -115,7 +120,6 @@ base/usr/lib/ld.so: lib/mlibc/
 
 base/boot/hyra-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
 	rm -rf iso_root
-	mkdir -p base/boot/
 	$(PROMPT) " LD " $(shell pwd)/base/boot/hyra-kernel
 	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/hyra-kernel
 	tools/ksyms sys/kern/ksyms.c base/boot/hyra-kernel
