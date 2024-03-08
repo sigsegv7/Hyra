@@ -86,11 +86,7 @@ base:
 	mkdir -p base/usr/sbin/
 	mkdir -p base/boot/
 
-lib: lib/mlibc base/usr/lib/ld.so
-
-lib/mlibc:
-	git clone https://github.com/sigsegv7/hyra-mlibc lib/mlibc
-	cp builddeps/cross_file.txt lib/mlibc/
+lib: base/usr/lib/ld.so
 
 .PHONY: run
 run:
