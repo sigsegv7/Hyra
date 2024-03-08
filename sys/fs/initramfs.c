@@ -221,7 +221,7 @@ initramfs_open(const char *path)
     }
 
     hdr = initramfs_from_path((void *)initramfs, path);
-    return hdr_to_contents(hdr);
+    return (hdr == NULL) ? NULL : hdr_to_contents(hdr);
 }
 
 struct vfsops g_initramfs_ops = {
