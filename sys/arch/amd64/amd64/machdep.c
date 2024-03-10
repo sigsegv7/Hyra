@@ -78,6 +78,7 @@ interrupts_init(void)
     idt_set_desc(0x8, IDT_TRAP_GATE_FLAGS, ISR(double_fault), 0);
     idt_set_desc(0xA, IDT_TRAP_GATE_FLAGS, ISR(invl_tss), 0);
     idt_set_desc(0xB, IDT_TRAP_GATE_FLAGS, ISR(segnp), 0);
+    idt_set_desc(0xC, IDT_TRAP_GATE_FLAGS, ISR(ss_fault), 0);
     idt_set_desc(0xD, IDT_TRAP_GATE_FLAGS, ISR(general_prot), 0);
     idt_set_desc(0xE, IDT_TRAP_GATE_FLAGS, ISR(page_fault), 0);
     idt_load();

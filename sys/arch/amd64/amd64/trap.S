@@ -144,3 +144,13 @@ nmi:
     /* TODO */
     cli
     hlt
+
+.globl ss_fault
+ss_fault:
+    push_trapframe_ec $TRAP_SS
+
+    handle_trap
+
+    /* TODO */
+    cli
+    hlt
