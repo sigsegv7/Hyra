@@ -78,12 +78,13 @@ int
 vm_map_create(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot, size_t bytes)
 {
     size_t granule = vm_get_page_size();
+    size_t misalign = va & (granule - 1);
     int s;
 
     struct vm_ctx *ctx = vm_get_ctx();
 
     /* We want bytes to be aligned by the granule */
-    bytes = __ALIGN_UP(bytes, granule);
+    bytes = __ALIGN_UP(bytes + misalign, granule);
 
     /* Align VA/PA by granule */
     va = __ALIGN_DOWN(va, granule);
@@ -115,10 +116,11 @@ vm_map_destroy(struct vas vas, vaddr_t va, size_t bytes)
 {
     struct vm_ctx *ctx = vm_get_ctx();
     size_t granule = vm_get_page_size();
+    size_t misalign = va & (granule - 1);
     int s;
 
     /* We want bytes to be aligned by the granule */
-    bytes = __ALIGN_UP(bytes, granule);
+    bytes = __ALIGN_UP(bytes + misalign, granule);
 
     /* Align VA by granule */
     va = __ALIGN_DOWN(va, granule);
