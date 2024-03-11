@@ -110,6 +110,34 @@ amd64_read_gs_base(void)
     return rdmsr(IA32_KERNEL_GS_BASE);
 }
 
+static inline uint64_t
+amd64_read_cr0(void)
+{
+    uint64_t cr0;
+    __ASMV("mov %%cr0, %0" : "=r" (cr0) :: "memory");
+    return cr0;
+}
+
+static inline void
+amd64_write_cr0(uint64_t val)
+{
+    __ASMV("mov %0, %%cr0" :: "r" (val) : "memory");
+}
+
+static inline uint64_t
+amd64_read_cr4(void)
+{
+    uint64_t cr4;
+    __ASMV("mov %%cr4, %0" : "=r" (cr4) :: "memory");
+    return cr4;
+}
+
+static inline void
+amd64_write_cr4(uint64_t val)
+{
+    __ASMV("mov %0, %%cr4" :: "r" (val) : "memory");
+}
+
 struct cpu_info *amd64_this_cpu(void);
 
 #endif  /* !_AMD64_CPU_H_ */
