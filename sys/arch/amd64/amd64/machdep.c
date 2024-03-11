@@ -40,6 +40,7 @@
 #include <machine/spectre.h>
 #include <machine/cpu.h>
 #include <machine/uart.h>
+#include <machine/cpuid.h>
 #include <vm/vm.h>
 #include <vm/dynalloc.h>
 #include <vm/physseg.h>
@@ -82,6 +83,15 @@ interrupts_init(void)
     idt_set_desc(0xD, IDT_TRAP_GATE_FLAGS, ISR(general_prot), 0);
     idt_set_desc(0xE, IDT_TRAP_GATE_FLAGS, ISR(page_fault), 0);
     idt_load();
+}
+
+static bool
+is_sse_supported(void)
+{
+    uint32_t edx, unused;
+
+    __CPUID(0x00000001, unused, unused, unused, edx);
+    return __TEST(edx, __BIT(25)) && __TEST(edx, __BIT(26));
 }
 
 void
@@ -150,6 +160,7 @@ processor_init(void)
 {
     /* Indicates what doesn't need to be init anymore */
     static uint8_t init_flags = 0;
+    static uint64_t reg_tmp;
     struct cpu_info *cur_cpu;
 
     /* Create our cpu_info structure */
@@ -159,6 +170,21 @@ processor_init(void)
 
     /* Set %GS to cpu_info */
     amd64_write_gs_base((uintptr_t)cur_cpu);
+
+    if (is_sse_supported) {
+        /* Enable SSE/SSE2 */
+        reg_tmp = amd64_read_cr0();
+        reg_tmp &= ~(__BIT(2));
+        reg_tmp |= __BIT(1);
+        amd64_write_cr0(reg_tmp);
+
+        /* Enable FXSAVE/FXRSTOR */
+        reg_tmp = amd64_read_cr4();
+        reg_tmp |= 3 << 9;
+        amd64_write_cr4(reg_tmp);
+    } else {
+        panic("SSE/SSE2 not supported!\n");
+    }
 
     CPU_INFO_LOCK(cur_cpu);
     init_tss(cur_cpu);
