@@ -171,7 +171,7 @@ processor_init(void)
     /* Set %GS to cpu_info */
     amd64_write_gs_base((uintptr_t)cur_cpu);
 
-    if (is_sse_supported) {
+    if (is_sse_supported()) {
         /* Enable SSE/SSE2 */
         reg_tmp = amd64_read_cr0();
         reg_tmp &= ~(__BIT(2));
