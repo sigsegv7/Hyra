@@ -311,6 +311,10 @@ sched_context_switch(struct trapframe *tf)
         sched_enqueue_td(td);
     }
 
+    /* Do architecture specific context switch logic */
+    processor_switch_to(td, next_td);
+
+    /* Done, switch out our vas and oneshot */
     pmap_switch_vas(vm_get_ctx(), next_td->addrsp);
     sched_oneshot();
 }

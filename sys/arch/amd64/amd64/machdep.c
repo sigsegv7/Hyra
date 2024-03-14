@@ -179,6 +179,19 @@ processor_init_pcb(struct proc *proc)
     amd64_fxsave(pcb->fpu_state);
     return 0;
 }
+
+void
+processor_switch_to(struct proc *old_td, struct proc *new_td)
+{
+    struct pcb *old_pcb = (old_td != NULL) ? &old_td->pcb : NULL;
+    struct pcb *new_pcb = &new_td->pcb;
+
+    if (old_pcb != NULL) {
+        amd64_fxsave(old_pcb->fpu_state);
+    }
+    amd64_fxrstor(new_pcb->fpu_state);
+}
+
 void
 processor_init(void)
 {
