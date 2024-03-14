@@ -163,7 +163,7 @@ processor_init_pcb(struct proc *proc)
 
     /* Allocate FPU save area, aligned on a 16 byte boundary */
     pcb->fpu_state = PHYS_TO_VIRT(vm_alloc_pageframe(1));
-    if (pcb->fpu_state == 0) {
+    if (pcb->fpu_state == NULL) {
         return -1;
     }
 
