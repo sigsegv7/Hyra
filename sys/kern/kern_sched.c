@@ -49,6 +49,20 @@
 #define STACK_SIZE (STACK_PAGES*vm_get_page_size())
 
 /*
+ * The PHYS_TO_VIRT/VIRT_TO_PHYS macros convert
+ * addresses to lower and higher half addresses.
+ * Userspace addresses are on the lower half,
+ * therefore, we can just wrap over these to
+ * keep things simple.
+ *
+ * XXX: TODO: This won't work when not identity mapping
+ *            lowerhalf addresses. Once that is updated,
+ *            get rid of this.
+ */
+#define USER_TO_KERN(user) PHYS_TO_VIRT(user)
+#define KERN_TO_USER(kern) VIRT_TO_PHYS(kern)
+
+/*
  * Thread ready queue - all threads ready to be
  * scheduled should be added to this queue.
  */
@@ -133,86 +147,87 @@ static uintptr_t
 sched_init_stack(void *stack_top, char *argvp[], char *envp[], struct auxval auxv)
 {
     uintptr_t *sp = stack_top;
-    size_t envp_len, argv_len, len;
-    uintptr_t old_sp = 0;
-    uintptr_t ret;
+    void *env_ptr = NULL, *argv_ptr = NULL;
+    size_t argc, envc, len;
 
-    for (envp_len = 0; envp[envp_len] != NULL; ++envp_len) {
-        len = strlen(envp[envp_len]);
-        sp = (void *)((uintptr_t)sp - len - 1);
-        memcpy(sp, envp[envp_len], len);
+    /* Copy argument and environment strings */
+    for (envc = 0; envp[envc] != NULL; ++envc) {
+        len = strlen(envp[envc]);
+        sp -= len - 1;
+        memcpy(sp, envp[envc], len);
     }
 
-    for (argv_len = 0; argvp[argv_len] != NULL; ++argv_len) {
-        len = strlen(argvp[argv_len]);
-        sp = (void *)((uintptr_t)sp - len - 1);
-        memcpy(sp, argvp[envp_len], len);
+    __assert(envc >= 1);
+    env_ptr = sp;
+
+    for (argc = 0; argvp[argc] != NULL; ++argc) {
+        len = strlen(argvp[argc]);
+        sp -= len - 1;
+        memcpy(sp, argvp[argc], len);
     }
 
-    sp = (uint64_t *)(((uintptr_t)sp / 16) * 16);
-    if (((argv_len + envp_len + 1) & 1) != 0) {
-        sp--;
+    __assert(argc >= 1);
+    argv_ptr = sp;
+
+    /* Ensure the stack is aligned */
+    sp = (void *)__ALIGN_DOWN((uintptr_t)sp, 16);
+    if (((argc + envc + 1) & 1) != 0)
+        --sp;
+
+    AUXVAL(sp, AT_NULL, 0x0);
+    AUXVAL(sp, AT_SECURE, 0x0);
+    AUXVAL(sp, AT_ENTRY, auxv.at_entry);
+    AUXVAL(sp, AT_PHDR, auxv.at_phdr);
+    AUXVAL(sp, AT_PHNUM, auxv.at_phnum);
+    STACK_PUSH(sp, 0);
+
+    /* Push environment string pointers */
+    for (int i = 0; i < envc; ++i) {
+        len = strlen(env_ptr);
+        sp -= len;
+
+        *sp = (uintptr_t)KERN_TO_USER((uintptr_t)env_ptr);
+        env_ptr = (char *)env_ptr + len;
     }
 
-    *--sp = 0;
-    *--sp = 0;
-    *--sp = auxv.at_entry;
-    *--sp = AT_ENTRY;
-    *--sp = auxv.at_phent;
-    *--sp = AT_PHENT;
-    *--sp = auxv.at_phnum;
-    *--sp = AT_PHNUM;
-    *--sp = auxv.at_phdr;
-    *--sp = AT_PHDR;
+    /* Push argument string pointers */
+    STACK_PUSH(sp, 0);
+    for (int i = 0; i < argc; ++i) {
+        len = strlen(argv_ptr);
+        sp -= len;
 
-    old_sp = (uintptr_t)sp;
-
-    /* End of envp */
-    *--sp = 0;
-    sp -= envp_len;
-    for (int i = 0; i < envp_len; ++i) {
-        old_sp -= strlen(envp[i]) + 1;
-        sp[i] = old_sp;
+        *sp = (uintptr_t)KERN_TO_USER((uintptr_t)argv_ptr);
+        argv_ptr = (char *)argv_ptr + len;
     }
 
-    /* End of argvp */
-    *--sp = 0;
-    sp -= argv_len;
-    for (int i = 0; i < argv_len; ++i) {
-        old_sp -= strlen(argvp[i]) + 1;
-        sp[i] = old_sp;
-    }
+    STACK_PUSH(sp, argc);
 
-    /* Argc */
-    *--sp = argv_len;
-
-    ret = (uintptr_t)stack_top;
-    ret -= (ret - (uintptr_t)sp);
-    return ret;
+    return (uintptr_t)sp;
 }
 
 static uintptr_t
-sched_create_stack(struct vas vas, bool user)
+sched_create_stack(struct vas vas, bool user, char *argvp[],
+                   char *envp[], struct auxval auxv)
 {
     int status;
-    uintptr_t user_stack;
+    uintptr_t stack;
     const vm_prot_t USER_STACK_PROT = PROT_WRITE | PROT_USER;
 
     if (!user) {
-        return (uintptr_t)dynalloc(STACK_SIZE);
+        stack = (uintptr_t)dynalloc(STACK_SIZE);
+        return sched_init_stack((void *)(stack + STACK_SIZE), argvp, envp, auxv);
     }
 
-    user_stack = vm_alloc_pageframe(STACK_PAGES);
-
-    status = vm_map_create(vas, user_stack, user_stack, USER_STACK_PROT,
-                           STACK_SIZE);
+    stack = vm_alloc_pageframe(STACK_PAGES);
+    status = vm_map_create(vas, stack, stack, USER_STACK_PROT, STACK_SIZE);
 
     if (status != 0) {
         return 0;
     }
 
-    memset(PHYS_TO_VIRT(user_stack), 0, STACK_SIZE);
-    return user_stack;
+    memset(USER_TO_KERN(stack), 0, STACK_SIZE);
+    stack = sched_init_stack((void *)USER_TO_KERN(stack + STACK_SIZE), argvp, envp, auxv);
+    return stack;
 }
 
 static struct proc *
@@ -220,8 +235,7 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
                 struct vas vas, bool is_user)
 {
     struct proc *td;
-    uintptr_t stack, sp;
-    void *stack_virt;
+    uintptr_t stack;
     struct trapframe *tf;
 
     tf = dynalloc(sizeof(struct trapframe));
@@ -229,13 +243,11 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
         return NULL;
     }
 
-    stack = sched_create_stack(vas, is_user);
+    stack = sched_create_stack(vas, is_user, argvp, envp, auxv);
     if (stack == 0) {
         dynfree(tf);
         return NULL;
     }
-
-    stack_virt = (is_user) ? PHYS_TO_VIRT(stack) : (void *)stack;
 
     td = dynalloc(sizeof(struct proc));
     if (td == NULL) {
@@ -245,8 +257,7 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
     }
 
     memset(tf, 0, sizeof(struct trapframe));
-    sp = sched_init_stack((void *)((uintptr_t)stack_virt + STACK_SIZE),
-                          argvp, envp, auxv);
+    memset(td, 0, sizeof(struct proc));
 
     /* Setup process itself */
     td->pid = 0;        /* Don't assign PID until enqueued */
@@ -256,9 +267,9 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
 
     /* Setup trapframe */
     if (!is_user) {
-        init_frame(tf, rip, sp);
+        init_frame(tf, rip, (uintptr_t)stack);
     } else {
-        init_frame_user(tf, rip, VIRT_TO_PHYS(sp));
+        init_frame_user(tf, rip, KERN_TO_USER(stack));
     }
     return td;
 }

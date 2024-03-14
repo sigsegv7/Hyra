@@ -33,17 +33,22 @@
 #include <sys/types.h>
 #include <vm/pmap.h>
 
-#define AT_NULL   0
-#define AT_IGNORE 1
-#define AT_EXECFD 2
-#define AT_PHDR   3
-#define AT_PHENT  4
-#define AT_PHNUM  5
-#define AT_PAGESZ 6
-#define AT_BASE   7
-#define AT_FLAGS  8
-#define AT_ENTRY  9
-#define AT_SECURE 10
+/* DANGER!: DO NOT CHANGE THESE DEFINES */
+#define AT_NULL 0
+#define AT_ENTRY 1
+#define AT_PHDR 2
+#define AT_PHENT 3
+#define AT_PHNUM 4
+#define AT_EXECPATH 5
+#define AT_SECURE 6
+#define AT_RANDOM 7
+#define AT_EXECFN 8
+
+#define STACK_PUSH(ptr, val) *(--ptr) = val
+#define AUXVAL(ptr, tag, val) __extension__ ({  \
+    STACK_PUSH(ptr, val);                       \
+    STACK_PUSH(ptr, tag);                       \
+});
 
 /* Auxiliary Vector */
 struct auxval {
