@@ -124,5 +124,10 @@ by the machdep subsystem, specifically in the
 .Ft processor_init_pcb()
 routine.
 
+The
+.Ft processor_free_pcb()
+routine shall also be implemented per arch to deallocate
+resources when the thread is killed.
+
 .Sh AUTHORS
 .An Ian Moffett Aq Mt ian@osmora.org
