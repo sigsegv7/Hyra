@@ -180,6 +180,19 @@ processor_init_pcb(struct proc *proc)
     return 0;
 }
 
+int
+processor_free_pcb(struct proc *proc)
+{
+    struct pcb *pcb = &proc->pcb;
+
+    if (pcb->fpu_state == NULL) {
+        return -1;
+    }
+
+    vm_free_pageframe(VIRT_TO_PHYS(pcb->fpu_state), 1);
+    return 0;
+}
+
 void
 processor_switch_to(struct proc *old_td, struct proc *new_td)
 {
