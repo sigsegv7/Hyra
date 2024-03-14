@@ -62,13 +62,18 @@ __weak int
 try_spectre_mitigate(void)
 {
     uint64_t tmp;
+    static bool should_log = true;
 
     if (!__can_mitigate_spectre()) {
         KINFO("IBRS not supported; spectre mitigation NOT enabled\n");
         return EXIT_FAILURE;
     }
 
-    KINFO("IBRS supported; spectre mitigation enabled\n");
+    /* This is called per processor, only log once */
+    if (should_log) {
+        KINFO("IBRS supported; spectre mitigation enabled\n");
+        should_log = false;
+    }
 
     tmp = rdmsr(IA32_SPEC_CTL);
     tmp |= __BIT(0);                /* IBRS */
