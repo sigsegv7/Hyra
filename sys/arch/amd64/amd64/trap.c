@@ -121,5 +121,5 @@ trap_handler(struct trapframe *tf)
     }
 
     regdump(tf);
-    panic("Caught pre-sched exception\n");
+    panic("Halted\n");
 }
