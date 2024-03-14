@@ -32,8 +32,11 @@
 .Sh SYNOPSIS
 .In vm/pmap.h
 
-.Ft pmap_map(struct vm_ctx *, vaddr_t, paddr_t, vm_prot_t);
-.Ft pmap_unmap(struct vm_ctx *, vaddr_t);
+.Bd -literal
+int pmap_map(struct vm_ctx *, vaddr_t, paddr_t, vm_prot_t);
+int pmap_unmap(struct vm_ctx *, vaddr_t);
+.Ed
+
 .Sh DESCRIPTION
 The machine dependent virtual memory layer contains a standard set of
 functions that shall be implemented per architecture and left alone
