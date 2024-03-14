@@ -100,7 +100,6 @@ processor_halt(void)
     __ASMV("cli; hlt");
 }
 
-
 /*
  * Send char to serial for debugging purposes.
  */
