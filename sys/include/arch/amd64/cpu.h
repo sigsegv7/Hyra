@@ -138,6 +138,18 @@ amd64_write_cr4(uint64_t val)
     __ASMV("mov %0, %%cr4" :: "r" (val) : "memory");
 }
 
+static inline void
+amd64_fxsave(void *area)
+{
+    __ASMV("fxsave (%0)" :: "r" (area) : "memory");
+}
+
+static inline void
+amd64_fxrstor(void *area)
+{
+    __ASMV("fxrstor (%0)" :: "r" (area) : "memory");
+}
+
 struct cpu_info *amd64_this_cpu(void);
 
 #endif  /* !_AMD64_CPU_H_ */
