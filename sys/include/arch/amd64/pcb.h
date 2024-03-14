@@ -27,27 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_PROC_H_
-#define _SYS_PROC_H_
+#ifndef _AMD64_PCB_H_
+#define _AMD64_PCB_H_
 
 #include <sys/types.h>
-#include <sys/queue.h>
-#include <machine/cpu.h>
-#include <machine/frame.h>
-#include <machine/pcb.h>
-#include <vm/vm.h>
 
-/*
- * A task running on the CPU e.g., a process or
- * a thread.
- */
-struct proc {
-    pid_t pid;
-    struct cpu_info *cpu;
-    struct trapframe *tf;
-    struct pcb pcb;
-    struct vas addrsp;
-    TAILQ_ENTRY(proc) link;
+struct pcb {
+    uint8_t *fpu_state;
 };
 
-#endif  /* !_SYS_PROC_H_ */
+#endif  /* !_AMD64_PCB_H_ */
