@@ -36,6 +36,7 @@
 #include <sys/spinlock.h>
 #include <sys/loader.h>
 #include <sys/panic.h>
+#include <sys/machdep.h>
 #include <fs/initramfs.h>
 #include <vm/dynalloc.h>
 #include <vm/physseg.h>
@@ -264,6 +265,7 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
     td->cpu = NULL;     /* Not yet assigned a core */
     td->tf = tf;
     td->addrsp = vas;
+    processor_init_pcb(td);
 
     /* Setup trapframe */
     if (!is_user) {

@@ -154,6 +154,31 @@ intr_unmask(void)
     __ASMV("sti");
 }
 
+int
+processor_init_pcb(struct proc *proc)
+{
+    struct pcb *pcb = &proc->pcb;
+    const uint16_t FPU_FCW = 0x33F;
+    const uint32_t SSE_MXCSR = 0x1F80;
+
+    /* Allocate FPU save area, aligned on a 16 byte boundary */
+    pcb->fpu_state = PHYS_TO_VIRT(vm_alloc_pageframe(1));
+    if (pcb->fpu_state == 0) {
+        return -1;
+    }
+
+    /*
+     * Setup x87 FPU control word and SSE MXCSR bits
+     * as per the sysv ABI
+     */
+    __ASMV("fldcw %0\n"
+           "ldmxcsr %1"
+           :: "m" (FPU_FCW),
+              "m" (SSE_MXCSR) : "memory");
+
+    amd64_fxsave(pcb->fpu_state);
+    return 0;
+}
 void
 processor_init(void)
 {

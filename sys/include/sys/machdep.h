@@ -32,11 +32,13 @@
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
+#include <sys/proc.h>
 
 #if defined(_KERNEL)
 
 #define MAXCPUS 32
 
+int processor_init_pcb(struct proc *proc);
 void processor_init(void);
 void processor_halt(void);
 void intr_mask(void);
