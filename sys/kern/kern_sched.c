@@ -371,27 +371,30 @@ void
 sched_init(void)
 {
     struct proc *init;
-    struct auxval auxv = {0};
+    struct auxval auxv = {0}, ld_auxv = {0};
     struct vas vas = pmap_create_vas(vm_get_ctx());
-    const char *init_bin;
+    const char *init_bin, *ld_bin;
 
-    int status;
     char *ld_path;
-    char *argv[] = {"/boot/init", NULL};
-    char *envp[] = {NULL};
+    char *argv[] = {"/usr/sbin/init", NULL};
+    char *envp[] = {"", NULL};
 
     TAILQ_INIT(&td_queue);
 
-    if ((init_bin = initramfs_open("/boot/init")) == NULL) {
-        panic("Could not open /boot/init\n");
+    if ((init_bin = initramfs_open("/usr/sbin/init")) == NULL) {
+        panic("Could not open /usr/boot/init\n");
     }
-
-    status = loader_load(vas, init_bin, &auxv, 0, &ld_path);
-    if (status != 0) {
+    if (loader_load(vas, init_bin, &auxv, 0, &ld_path) != 0) {
         panic("Could not load init\n");
     }
+    if ((ld_bin = initramfs_open(ld_path)) == NULL) {
+        panic("Could not open %s\n", ld_path);
+    }
+    if (loader_load(vas, ld_bin, &ld_auxv, 0x00, NULL) != 0) {
+        panic("Could not load %s\n", ld_path);
+    }
 
-    init = sched_create_td((uintptr_t)auxv.at_entry, argv, envp, auxv, vas, true);
+    init = sched_create_td((uintptr_t)ld_auxv.at_entry, argv, envp, ld_auxv, vas, true);
     if (init == NULL) {
         panic("Failed to create thread for init\n");
     }
