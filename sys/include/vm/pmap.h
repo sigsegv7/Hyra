@@ -90,6 +90,12 @@ struct vas pmap_read_vas(void);
 int pmap_map(struct vm_ctx *, struct vas, vaddr_t, paddr_t, vm_prot_t);
 
 /*
+ * Get rid of a virtual address space and free
+ * resources.
+ */
+int pmap_free_vas(struct vm_ctx *, struct vas);
+
+/*
  * Unmap a page.
  */
 int pmap_unmap(struct vm_ctx *, struct vas, vaddr_t);

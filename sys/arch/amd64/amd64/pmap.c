@@ -228,6 +228,19 @@ pmap_switch_vas(struct vm_ctx *ctx, struct vas vas)
            : "memory");
 }
 
+/*
+ * TODO: During the mapping of a virtual address, a level
+ *       may be allocated. This function does not handle the
+ *       freeing of allocated levels. We should keep track
+ *       of levels allocated and free them here.
+ */
+int
+pmap_free_vas(struct vm_ctx *ctx, struct vas vas)
+{
+    vm_free_pageframe(vas.top_level, 1);
+    return 0;
+}
+
 struct vas
 pmap_read_vas(void)
 {
