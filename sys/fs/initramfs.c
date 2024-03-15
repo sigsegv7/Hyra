@@ -173,6 +173,7 @@ static int
 initramfs_init(struct fs_info *info)
 {
     initramfs = get_module("/boot/initramfs.tar", &initramfs_size);
+    info->caps = FSCAP_FULLPATH;
 
     if (initramfs == NULL) {
         panic("Failed to load initramfs\n");

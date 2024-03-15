@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/vnode.h>
+#include <sys/cdefs.h>
 
 #define FS_NAME_MAX 16 /* Max length of FS type name including nul */
 
@@ -54,7 +55,13 @@ struct fs_info {
     char name[FS_NAME_MAX];     /* Filesystem type name */
     struct vfsops *vfsops;      /* Filesystem operations */
     struct mount *mp_root;
+    uint16_t caps;
 };
+
+/*
+ * Filesystem capabilities
+ */
+#define FSCAP_FULLPATH __BIT(0) /* Requires full path per lookup */
 
 /*
  * Mount flags
