@@ -57,6 +57,8 @@ __KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
 #define INIT_FLAG_IOAPIC 0x00000001U
 #define INIT_FLAG_ACPI   0x00000002U
 
+void syscall_isr(void);
+
 static inline void
 init_tss(struct cpu_info *cur_cpu)
 {
@@ -82,6 +84,7 @@ interrupts_init(void)
     idt_set_desc(0xC, IDT_TRAP_GATE_FLAGS, ISR(ss_fault), 0);
     idt_set_desc(0xD, IDT_TRAP_GATE_FLAGS, ISR(general_prot), 0);
     idt_set_desc(0xE, IDT_TRAP_GATE_FLAGS, ISR(page_fault), 0);
+    idt_set_desc(0x80, IDT_INT_GATE_USER, ISR(syscall_isr), 0);
     idt_load();
 }
 
