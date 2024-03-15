@@ -47,6 +47,8 @@ else
 	override LD = $(shell pwd)/cross/bin/$(ARCH)-hyra-ld
 endif
 override AS = $(CC)
+LDSO = $(shell pwd)/base/usr/lib/ld.so
+override USER_MKFLGS = CC=$(CC) LD=$(LD) LDSO=$(LDSO)
 
 ##########################
 # Architecture specifics
@@ -74,7 +76,7 @@ all: base lib userland base/usr/lib/ld.so base/boot/hyra-kernel
 		rm -rf iso_root
 
 base/usr/sbin/init:
-	cd usr.sbin/; make CC=$(CC) LD=$(LD)
+	cd usr.sbin/; make $(USER_MKFLGS)
 	mv usr.sbin/init/init base/usr/sbin/
 
 # TODO: Make this more flexible
