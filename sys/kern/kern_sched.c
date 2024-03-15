@@ -76,9 +76,6 @@ static size_t nthread = 0;
  */
 static struct spinlock tdq_lock = {0};
 
-/* In sys/<machine>/<machine>/switch.S */
-void __sched_switch_to(struct trapframe *tf);
-
 static inline void
 sched_oneshot(void)
 {
