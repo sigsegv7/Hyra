@@ -88,7 +88,10 @@ base:
 	mkdir -p base/usr/sbin/
 	mkdir -p base/boot/
 
-lib: base/usr/lib/ld.so
+.PHONY: lib
+lib:
+	cd lib/; make $(USER_MKFLGS)
+	cp lib/libc/build/ld.so base/usr/lib/
 
 .PHONY: run
 run:
@@ -114,13 +117,6 @@ clean:
 
 sys/include/machine/:
 	cd sys/include/; ln -sf arch/$(ARCH) machine
-
-base/usr/lib/ld.so: lib/mlibc/
-	cd lib/; make mlibc/build/
-	$(PROMPT) " DYNLD " base/usr/lib/ld.so
-	$(PROMPT) " LIBC " base/usr/lib/libc.so
-	cp lib/mlibc/build/ld.so base/usr/lib/
-	cp lib/mlibc/build/libc.so base/usr/lib/
 
 base/boot/hyra-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
 	rm -rf iso_root

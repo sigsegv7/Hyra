@@ -16,20 +16,14 @@ try_fetch() {
 
 fetch() {
     try_fetch "git clone https://github.com/limine-bootloader/limine.git --branch=v5.x-branch-binary --depth=1" "stand/limine"
-    try_fetch "git clone https://github.com/sigsegv7/hyra-mlibc lib/mlibc"
 }
 
 build_limine() {
     make -C stand/limine/
 }
 
-init_mlibc() {
-	cp builddeps/cross_file.txt lib/mlibc/
-}
-
 build() {
     build_limine
-    init_mlibc
 }
 
 echo "----------------------------------"
