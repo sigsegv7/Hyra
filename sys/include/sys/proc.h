@@ -47,6 +47,8 @@ struct proc {
     struct trapframe *tf;
     struct pcb pcb;
     struct vas addrsp;
+    uintptr_t stack_base;
+    uint8_t is_user;
     TAILQ_ENTRY(proc) link;
 };
 

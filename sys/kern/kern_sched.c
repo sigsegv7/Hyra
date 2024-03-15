@@ -208,7 +208,7 @@ sched_init_stack(void *stack_top, char *argvp[], char *envp[], struct auxval aux
 
 static uintptr_t
 sched_create_stack(struct vas vas, bool user, char *argvp[],
-                   char *envp[], struct auxval auxv)
+                   char *envp[], struct auxval auxv, struct proc *td)
 {
     int status;
     uintptr_t stack;
@@ -216,10 +216,12 @@ sched_create_stack(struct vas vas, bool user, char *argvp[],
 
     if (!user) {
         stack = (uintptr_t)dynalloc(STACK_SIZE);
+        td->stack_base = (uintptr_t)stack;
         return sched_init_stack((void *)(stack + STACK_SIZE), argvp, envp, auxv);
     }
 
     stack = vm_alloc_pageframe(STACK_PAGES);
+    td->stack_base = stack;
     status = vm_map_create(vas, stack, stack, USER_STACK_PROT, STACK_SIZE);
 
     if (status != 0) {
@@ -244,16 +246,17 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
         return NULL;
     }
 
-    stack = sched_create_stack(vas, is_user, argvp, envp, auxv);
-    if (stack == 0) {
-        dynfree(tf);
-        return NULL;
-    }
-
     td = dynalloc(sizeof(struct proc));
     if (td == NULL) {
         /* TODO: Free stack */
         dynfree(tf);
+        return NULL;
+    }
+
+    stack = sched_create_stack(vas, is_user, argvp, envp, auxv, td);
+    if (stack == 0) {
+        dynfree(tf);
+        dynfree(td);
         return NULL;
     }
 
@@ -265,6 +268,7 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
     td->cpu = NULL;     /* Not yet assigned a core */
     td->tf = tf;
     td->addrsp = vas;
+    td->is_user = is_user;
     processor_init_pcb(td);
 
     /* Setup trapframe */
