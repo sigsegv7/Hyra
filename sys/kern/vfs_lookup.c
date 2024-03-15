@@ -33,7 +33,7 @@
 #include <string.h>
 
 /*
- * Fetches the filename within a past at
+ * Fetches the filename within a path at
  * the nth index denoted by `idx'
  *
  * Returns memory allocated by dynalloc()
