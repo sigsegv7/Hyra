@@ -103,7 +103,7 @@ vop_vget(struct vnode *parent, const char *name, struct vnode **vp)
         return -ENOENT;
     }
 
-    if (hdr->type != TAR_TYPEFLAG_DIR) {
+    if (hdr->type == TAR_TYPEFLAG_DIR) {
         vtype = VDIR;
     }
 
