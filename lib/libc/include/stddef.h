@@ -30,6 +30,12 @@
 #ifndef _STDDEF_H
 #define _STDDEF_H
 
+#if __cplusplus >= 201103L
+#define NULL nullptr
+#elif defined(__cplusplus)
+#define NULL 0L
+#else
 #define NULL  ((void *) 0)
+#endif
 
 #endif  /* !_STDDEF_H */
