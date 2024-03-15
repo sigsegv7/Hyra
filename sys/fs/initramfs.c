@@ -149,8 +149,8 @@ static char *
 get_module(const char *path, uint64_t *size) {
     for (uint64_t i = 0; i < mod_req.response->module_count; ++i) {
         if (strcmp(mod_req.response->modules[i]->path, path) == 0) {
-              *size = mod_req.response->modules[i]->size;
-              return mod_req.response->modules[i]->address;
+            *size = mod_req.response->modules[i]->size;
+            return mod_req.response->modules[i]->address;
         }
     }
 
