@@ -47,7 +47,7 @@ else
 	override LD = $(shell pwd)/cross/bin/$(ARCH)-hyra-ld
 endif
 override AS = $(CC)
-LDSO = $(shell pwd)/base/usr/lib/ld.so
+override LDSO = $(shell pwd)/base/usr/lib/ld.so
 override USER_MKFLGS = CC=$(CC) LD=$(LD) LDSO=$(LDSO)
 
 ##########################
