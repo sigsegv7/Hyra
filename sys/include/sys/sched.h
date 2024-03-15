@@ -37,6 +37,7 @@
 #include <machine/cpu.h>
 #include <machine/frame.h>
 
+struct proc *this_td(void);
 void sched_init(void);
 void sched_exit(void);
 void sched_context_switch(struct trapframe *tf);

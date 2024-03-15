@@ -322,6 +322,20 @@ sched_exit(void)
 }
 
 /*
+ * Get the current running thread.
+ */
+struct proc *
+this_td(void)
+{
+    struct sched_state *state;
+    struct cpu_info *ci;
+
+    ci = this_cpu();
+    state = &ci->sched_state;
+    return state->td;
+}
+
+/*
  * Thread context switch routine
  */
 void
