@@ -27,33 +27,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_PROC_H_
-#define _SYS_PROC_H_
+#ifndef _SYS_FILEDESC_H_
+#define _SYS_FILEDESC_H_
 
+#include <sys/vnode.h>
+#include <sys/spinlock.h>
 #include <sys/types.h>
-#include <sys/queue.h>
-#include <sys/filedesc.h>
-#include <machine/cpu.h>
-#include <machine/frame.h>
-#include <machine/pcb.h>
-#include <vm/vm.h>
 
-#define PROC_MAX_FDS 256
+struct proc;
 
-/*
- * A task running on the CPU e.g., a process or
- * a thread.
- */
-struct proc {
-    pid_t pid;
-    struct cpu_info *cpu;
-    struct trapframe *tf;
-    struct pcb pcb;
-    struct vas addrsp;
-    uintptr_t stack_base;
-    uint8_t is_user;
-    struct filedesc *fds[PROC_MAX_FDS];
-    TAILQ_ENTRY(proc) link;
+struct filedesc {
+    int fdno;
+    off_t offset;
+    bool is_dir;
+    struct vnode *vnode;
+    struct spinlock lock;
 };
 
-#endif  /* !_SYS_PROC_H_ */
+#if defined(_KERNEL)
+struct filedesc *fd_alloc(struct proc *td);
+struct filedesc *fd_from_fdnum(const struct proc *td, int fdno);
+void fd_close_fdnum(struct proc *td, int fdno);
+#endif
+
+#endif

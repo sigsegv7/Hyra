@@ -37,6 +37,7 @@
 #include <sys/loader.h>
 #include <sys/panic.h>
 #include <sys/machdep.h>
+#include <sys/filedesc.h>
 #include <fs/initramfs.h>
 #include <vm/dynalloc.h>
 #include <vm/physseg.h>
@@ -268,6 +269,11 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
     td->is_user = is_user;
     processor_init_pcb(td);
 
+    /* Allocate standard file descriptors */
+    __assert(fd_alloc(td) != NULL);       /* STDIN */
+    __assert(fd_alloc(td) != NULL);       /* STDOUT */
+    __assert(fd_alloc(td) != NULL);       /* STDERR */
+
     /* Setup trapframe */
     if (!is_user) {
         init_frame(tf, rip, (uintptr_t)stack);
@@ -292,6 +298,11 @@ sched_destroy_td(struct proc *td)
         vm_free_pageframe(td->stack_base, STACK_PAGES);
     } else {
         dynfree((void *)td->stack_base);
+    }
+
+    /* Close all of the file descriptors */
+    for (size_t i = 0; i < PROC_MAX_FDS; ++i) {
+        fd_close_fdnum(td, i);
     }
 
     pmap_free_vas(vm_get_ctx(), td->addrsp);
