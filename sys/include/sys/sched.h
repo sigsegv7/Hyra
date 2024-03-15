@@ -38,6 +38,7 @@
 #include <machine/frame.h>
 
 void sched_init(void);
+void sched_exit(void);
 void sched_context_switch(struct trapframe *tf);
 
 __noreturn

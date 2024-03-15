@@ -280,6 +280,50 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
     return td;
 }
 
+static void
+sched_destroy_td(struct proc *td)
+{
+    processor_free_pcb(td);
+
+    /*
+     * User stacks are allocated with vm_alloc_pageframe(),
+     * while kernel stacks are allocated with dynalloc().
+     * We want to check if we are a user program or kernel
+     * program to perform the proper deallocation method.
+     */
+    if (td->is_user) {
+        vm_free_pageframe(td->stack_base, STACK_PAGES);
+    } else {
+        dynfree((void *)td->stack_base);
+    }
+
+    pmap_free_vas(vm_get_ctx(), td->addrsp);
+    dynfree(td);
+}
+
+void
+sched_exit(void)
+{
+    struct sched_state *state;
+    struct cpu_info *ci;
+    struct proc *td;
+    struct vas kvas = vm_get_kvas();
+
+    intr_mask();
+
+    /* Get the thread running on the current processor */
+    ci = this_cpu();
+    state = &ci->sched_state;
+    td = state->td;
+
+    /* Switch back to the kernel address space and destroy ourself */
+    pmap_switch_vas(vm_get_ctx(), kvas);
+    sched_destroy_td(td);
+
+    intr_unmask();
+    sched_enter();
+}
+
 /*
  * Thread context switch routine
  */
