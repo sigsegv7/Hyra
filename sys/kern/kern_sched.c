@@ -301,17 +301,12 @@ sched_destroy_td(struct proc *td)
 void
 sched_exit(void)
 {
-    struct sched_state *state;
-    struct cpu_info *ci;
     struct proc *td;
     struct vas kvas = vm_get_kvas();
 
     intr_mask();
 
-    /* Get the thread running on the current processor */
-    ci = this_cpu();
-    state = &ci->sched_state;
-    td = state->td;
+    td = this_td();
 
     /* Switch back to the kernel address space and destroy ourself */
     pmap_switch_vas(vm_get_ctx(), kvas);
