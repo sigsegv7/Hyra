@@ -29,8 +29,7 @@
 
 #include <sys/syscall.h>
 
-__attribute__((__noreturn__))
-void
+_Noreturn void
 _exit(int status)
 {
     syscall(SYS_exit, status);

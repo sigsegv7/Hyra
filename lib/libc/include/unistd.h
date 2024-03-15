@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-__attribute__((__noreturn__)) void _exit(int status);
+_Noreturn void _exit(int status);
 
 #if defined(__cplusplus)
 }
