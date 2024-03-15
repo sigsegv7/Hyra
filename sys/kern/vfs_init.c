@@ -40,8 +40,10 @@ __MODULE_NAME("vfs");
 __KERNEL_META("$Hyra$: vfs.c, Ian Marco Moffett, "
               "Hyra Virtual File System");
 
+#define INITRAMFS_ID 0
+
 static struct fs_info filesystems[] = {
-    { "initramfs", &g_initramfs_ops }
+    [INITRAMFS_ID] = { "initramfs", &g_initramfs_ops }
 };
 
 struct vnode *g_root_vnode = NULL;
@@ -76,4 +78,5 @@ vfs_init(void)
     }
 
     g_root_vnode->vops = &g_initramfs_vops;
+    g_root_vnode->fs = &filesystems[INITRAMFS_ID];
 }
