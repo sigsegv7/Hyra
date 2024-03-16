@@ -360,18 +360,23 @@ sched_context_switch(struct trapframe *tf)
         return;
     }
 
+    /*
+     * If we have a thread currently running and we are switching
+     * to another, we shall save our current register state
+     * by copying the trapframe.
+     */
     if (state->td != NULL) {
-        /* Save our trapframe */
         td = state->td;
         memcpy(td->tf, tf, sizeof(struct trapframe));
     }
 
-    /* Copy to stack */
+    /* Copy over the next thread's register state to us */
     memcpy(tf, next_td->tf, sizeof(struct trapframe));
 
     td = state->td;
     state->td = next_td;
 
+    /* Re-enqueue the previous thread if it exists */
     if (td != NULL) {
         sched_enqueue_td(td);
     }
