@@ -30,6 +30,8 @@
 #ifndef _STDDEF_H
 #define _STDDEF_H
 
+#include <bits/_types.h>
+
 #if __cplusplus >= 201103L
 #define NULL nullptr
 #elif defined(__cplusplus)
@@ -37,5 +39,7 @@
 #else
 #define NULL  ((void *) 0)
 #endif
+
+typedef __size_t size_t;
 
 #endif  /* !_STDDEF_H */
