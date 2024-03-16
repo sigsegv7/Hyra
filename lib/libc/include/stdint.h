@@ -30,78 +30,33 @@
 #ifndef _STDINT_H
 #define _STDINT_H
 
+#include <bits/_types.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-#if defined(__GNUC__) && \
-  ( (__GNUC__ >= 4) || \
-    ( (__GNUC__ >= 3) && defined(__GNUC_MINOR__) && (__GNUC_MINOR__ > 2) ) )
-#define __STDINT_EXP(x) __##x##__
-#else
-#define __STDINT_EXP(x) x
-#include <limits.h>
-#endif
+typedef __uint8_t uint8_t;
+typedef __uint16_t uint16_t;
+typedef __uint32_t uint32_t;
+typedef __uint64_t uint64_t;
 
-#if __STDINT_EXP(SCHAR_MAX) == 0x7f
-typedef signed char int8_t ;
-typedef unsigned char uint8_t ;
-#define __int8_t_defined 1
-#endif
+typedef __int8_t int8_t;
+typedef __int16_t int16_t;
+typedef __int32_t int32_t;
+typedef __int64_t int64_t;
 
-#if __STDINT_EXP(SHRT_MAX) == 0x7fff
-typedef signed short int16_t;
-typedef unsigned short uint16_t;
-#define __int16_t_defined 1
-#elif __STDINT_EXP(INT_MAX) == 0x7fff
-typedef signed int int16_t;
-typedef unsigned int uint16_t;
-#define __int16_t_defined 1
-#elif __STDINT_EXP(SCHAR_MAX) == 0x7fff
-typedef signed char int16_t;
-typedef unsigned char uint16_t;
-#define __int16_t_defined 1
-#endif
+/* Signed fixed-width limits */
+#define INT8_MAX  __INT8_MAX
+#define INT16_MAX __INT16_MAX
+#define INT32_MAX __INT32_MAX
+#define INT64_MAX __INT64_MAX
 
-#if __have_long32
-typedef signed long int32_t;
-typedef unsigned long uint32_t;
-#define __int32_t_defined 1
-#elif __STDINT_EXP(INT_MAX) == 0x7fffffffL
-typedef signed int int32_t;
-typedef unsigned int uint32_t;
-#define __int32_t_defined 1
-#elif __STDINT_EXP(SHRT_MAX) == 0x7fffffffL
-typedef signed short int32_t;
-typedef unsigned short uint32_t;
-#define __int32_t_defined 1
-#elif __STDINT_EXP(SCHAR_MAX) == 0x7fffffffL
-typedef signed char int32_t;
-typedef unsigned char uint32_t;
-#define __int32_t_defined 1
-#endif
-
-#if __SIZEOF_SIZE_T__ == 8
-typedef unsigned long long uint64_t;
-#endif
-
-#if defined(__PTRDIFF_TYPE__)
-typedef signed __PTRDIFF_TYPE__ intptr_t;
-typedef unsigned __PTRDIFF_TYPE__ uintptr_t;
-#define INTPTR_MAX PTRDIFF_MAX
-#define INTPTR_MIN PTRDIFF_MIN
-#ifdef __UINTPTR_MAX__
-#define UINTPTR_MAX __UINTPTR_MAX__
-#else
-#define UINTPTR_MAX (2UL * PTRDIFF_MAX + 1)
-#endif
-#else
-typedef signed long intptr_t;
-typedef unsigned long uintptr_t;
-#define INTPTR_MAX __STDINT_EXP(LONG_MAX)
-#define INTPTR_MIN (-__STDINT_EXP(LONG_MAX) - 1)
-#define UINTPTR_MAX (__STDINT_EXP(LONG_MAX) * 2UL + 1)
-#endif
+/* Unsigned fixed-width limits */
+#define UINT8_MAX  __UINT8_MAX
+#define UINT16_MAX __UINT16_MAX
+#define UINT32_MAX __UINT32_MAX
+#define UINT64_MAX __UINT64_MAX
 
 #if defined(__cplusplus)
 }
