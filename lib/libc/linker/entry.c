@@ -28,10 +28,10 @@
  */
 
 #include <sys/syscall.h>
+#include <sys/auxv.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <elf.h>
-#include <auxv.h>
 
 #if !defined(__hyra__)
 #error "Hyra supported only"
