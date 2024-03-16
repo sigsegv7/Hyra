@@ -39,13 +39,10 @@ __syscall(struct trapframe *tf)
         .arg2 = tf->rcx,
         .arg3 = tf->r8,
         .arg4 = tf->r9,
-        .sp = tf->rsp,
-        .ret = tf->rax,
+        .sp = tf->rsp
     };
 
     if (args.code < __MAX_SYSCALLS) {
-        g_syscall_table[tf->rax](&args);
+        tf->rax = g_syscall_table[tf->rax](&args);
     }
-
-    tf->rax = args.ret;
 }

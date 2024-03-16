@@ -47,11 +47,10 @@ struct syscall_args {
     uint64_t arg0, arg1, arg2, arg3, arg4;
     uint64_t ip;
     uint64_t sp;
-    uint64_t ret;
 };
 
 #if defined(_KERNEL)
-extern void(*g_syscall_table[__MAX_SYSCALLS])(struct syscall_args *args);
+extern uint64_t(*g_syscall_table[__MAX_SYSCALLS])(struct syscall_args *args);
 void __syscall(struct trapframe *tf);
 #endif
 
