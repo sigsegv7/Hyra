@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _AUXV_H
-#define _AUXV_H
+#ifndef _SYS_AUXV_H
+#define _SYS_AUXV_H
 
 #include <stdint.h>
 
@@ -52,4 +52,4 @@ struct auxv_entry {
     };
 };
 
-#endif  /* _AUXV_H */
+#endif  /* _SYS_AUXV_H */
