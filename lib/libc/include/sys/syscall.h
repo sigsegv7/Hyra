@@ -34,7 +34,6 @@
 #include <stdint.h>
 #endif
 
-#define SYS_debug 0
 #define SYS_exit  1
 
 #if !defined(__ASSEMBLER__)

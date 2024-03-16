@@ -42,7 +42,8 @@ __syscall(struct trapframe *tf)
         .sp = tf->rsp
     };
 
-    if (args.code < __MAX_SYSCALLS) {
-        tf->rax = g_syscall_table[tf->rax](&args);
+    if (args.code < __MAX_SYSCALLS && args.code > 0) {
+        args.code -= 1;
+        tf->rax = g_syscall_table[args.code](&args);
     }
 }

@@ -37,8 +37,7 @@
 
 /* Do not reorder */
 enum {
-    SYS_debug = 0,
-    SYS_exit,
+    SYS_exit = 1,
     __MAX_SYSCALLS
 };
 

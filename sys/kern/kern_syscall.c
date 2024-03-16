@@ -32,13 +32,6 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
-static uint64_t
-sys_debug(struct syscall_args *args)
-{
-    /* TODO */
-    return 0;
-}
-
 __noreturn static uint64_t
 sys_exit(struct syscall_args *args)
 {
@@ -47,6 +40,5 @@ sys_exit(struct syscall_args *args)
 }
 
 uint64_t(*g_syscall_table[__MAX_SYSCALLS])(struct syscall_args *args) = {
-    sys_debug,
     sys_exit,
 };
