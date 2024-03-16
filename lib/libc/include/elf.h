@@ -30,7 +30,7 @@
 #ifndef _SYS_ELF_H_
 #define _SYS_ELF_H_
 
-#include <sys/types.h>
+#include <stdint.h>
 
 /* Type for a 16-bit quantity.  */
 typedef uint16_t Elf32_Half;
