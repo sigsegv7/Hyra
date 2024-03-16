@@ -30,6 +30,8 @@
 #ifndef _AUXV_H
 #define _AUXV_H
 
+#include <stdint.h>
+
 #define AT_NULL 0
 #define AT_ENTRY 1
 #define AT_PHDR 2
