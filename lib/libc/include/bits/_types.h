@@ -44,14 +44,4 @@ typedef __INT16_TYPE__ __int16_t;
 typedef __INT32_TYPE__ __int32_t;
 typedef __INT64_TYPE__ __int64_t;
 
-#define __INT8_MAX  __INT8_MAX__
-#define __INT16_MAX __INT16_MAX__
-#define __INT32_MAX __INT32_MAX__
-#define __INT64_MAX __INT64_MAX__
-
-#define __UINT8_MAX  __UINT8_MAX__
-#define __UINT16_MAX __UINT16_MAX__
-#define __UINT32_MAX __UINT32_MAX__
-#define __UINT64_MAX __UINT64_MAX__
-
 #endif  /* !_BITS__TYPES_H */
