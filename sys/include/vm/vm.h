@@ -47,6 +47,11 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 #define PHYS_TO_VIRT(phys) (void *)((uintptr_t)phys + VM_HIGHER_HALF)
 #define VIRT_TO_PHYS(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
 
+struct vm_range {
+    uintptr_t start;
+    uintptr_t end;
+};
+
 /*
  * Returns the machine's pagesize:
  *
