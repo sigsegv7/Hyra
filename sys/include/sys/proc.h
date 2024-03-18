@@ -32,8 +32,13 @@
 
 #include <sys/types.h>
 #include <sys/queue.h>
+#include <sys/filedesc.h>
 #include <machine/cpu.h>
 #include <machine/frame.h>
+#include <machine/pcb.h>
+#include <vm/vm.h>
+
+#define PROC_MAX_FDS 256
 
 /*
  * A task running on the CPU e.g., a process or
@@ -43,6 +48,11 @@ struct proc {
     pid_t pid;
     struct cpu_info *cpu;
     struct trapframe *tf;
+    struct pcb pcb;
+    struct vas addrsp;
+    uintptr_t stack_base;
+    uint8_t is_user;
+    struct filedesc *fds[PROC_MAX_FDS];
     TAILQ_ENTRY(proc) link;
 };
 

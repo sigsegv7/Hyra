@@ -24,7 +24,7 @@
 .\" CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 .\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 .\" POSSIBILITY OF SUCH DAMAGE.
-.Dd Jan 12 2024
+.Dd Mar 13 2024
 .Dt ARCH 9
 .Os Hyra
 .Sh NAME
@@ -112,6 +112,22 @@ In the
 header, should be a struct containing information
 about the address space. This header MUST be implemented
 or compiler errors will occur.
+
+There also exists a
+.Ft pcb
+(Process Control Block) structure in the
+.Ft machine/pcb.h
+header which contains arch specific information per thread.
+
+This structure must be implemented per arch, this structure shall be set up
+by the machdep subsystem, specifically in the
+.Ft processor_init_pcb()
+routine.
+
+The
+.Ft processor_free_pcb()
+routine shall also be implemented per arch to deallocate
+resources when the thread is killed.
 
 .Sh AUTHORS
 .An Ian Moffett Aq Mt ian@osmora.org

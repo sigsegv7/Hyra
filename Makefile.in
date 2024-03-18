@@ -47,6 +47,8 @@ else
 	override LD = $(shell pwd)/cross/bin/$(ARCH)-hyra-ld
 endif
 override AS = $(CC)
+override LDSO = $(shell pwd)/base/usr/lib/ld.so
+override USER_MKFLGS = CC=$(CC) LD=$(LD) LDSO=$(LDSO)
 
 ##########################
 # Architecture specifics
@@ -69,9 +71,27 @@ override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
 override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
 
 .PHONY: all
-all: base/boot/hyra-kernel
+all: base lib userland base/usr/lib/ld.so base/boot/hyra-kernel
 		rm -f sys/include/machine
 		rm -rf iso_root
+
+base/usr/sbin/init:
+	cd usr.sbin/; make $(USER_MKFLGS)
+	mv usr.sbin/init/init base/usr/sbin/
+
+# TODO: Make this more flexible
+.PHONY: userland
+userland: base/usr/sbin/init
+
+base:
+	mkdir -p base/usr/lib/
+	mkdir -p base/usr/sbin/
+	mkdir -p base/boot/
+
+.PHONY: lib
+lib:
+	cd lib/; make $(USER_MKFLGS)
+	cp lib/libc/build/ld.so base/usr/lib/
 
 .PHONY: run
 run:
@@ -80,6 +100,15 @@ run:
 .PHONY: cross
 cross:
 	bash tools/cross.sh $(ARCH)
+
+.PHONY: clean
+distclean:
+	make clean
+	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
+	rm -f sys/include/machine
+	rm -f base/usr/lib/ld.so
+	rm -f base/boot/init
+	cd lib/; make clean
 
 .PHONY: clean
 clean:
@@ -91,7 +120,6 @@ sys/include/machine/:
 
 base/boot/hyra-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
 	rm -rf iso_root
-	mkdir -p base/boot/
 	$(PROMPT) " LD " $(shell pwd)/base/boot/hyra-kernel
 	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/hyra-kernel
 	tools/ksyms sys/kern/ksyms.c base/boot/hyra-kernel

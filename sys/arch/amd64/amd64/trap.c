@@ -44,7 +44,8 @@ static const char *trap_type[] = {
     [TRAP_SEGNP]        = "segment not present",
     [TRAP_PROTFLT]      = "general protection",
     [TRAP_PAGEFLT]      = "page fault",
-    [TRAP_NMI]          = "non-maskable interrupt"
+    [TRAP_NMI]          = "non-maskable interrupt",
+    [TRAP_SS]           = "stack-segment fault"
 };
 
 static const int TRAP_COUNT = __ARRAY_COUNT(trap_type);
@@ -54,12 +55,17 @@ dbg_errcode(struct trapframe *tf)
 {
     uint64_t ec = tf->error_code;
 
-    if (tf->trapno == TRAP_PAGEFLT) {
+    switch (tf->trapno) {
+    case TRAP_PAGEFLT:
         kprintf("bits (pwui): %c%c%c%c\n",
                 __TEST(ec, __BIT(0)) ? 'p' : '-',
                 __TEST(ec, __BIT(1)) ? 'w' : '-',
                 __TEST(ec, __BIT(2)) ? 'u' : '-',
                 __TEST(ec, __BIT(4)) ? 'i' : '-');
+        break;
+    case TRAP_SS:
+        kprintf("ss: 0x%x\n", ec);
+        break;
     }
 }
 
@@ -115,5 +121,5 @@ trap_handler(struct trapframe *tf)
     }
 
     regdump(tf);
-    panic("Caught pre-sched exception\n");
+    panic("Halted\n");
 }

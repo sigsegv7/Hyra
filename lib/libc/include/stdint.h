@@ -27,59 +27,39 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/spectre.h>
-#include <machine/cpuid.h>
-#include <machine/msr.h>
-#include <sys/syslog.h>
-#include <sys/types.h>
+#ifndef _STDINT_H
+#define _STDINT_H
 
-__MODULE_NAME("spectre");
-__KERNEL_META("$Hyra$: spectre.c, Ian Marco Moffett, "
-              "Spectre mitigation support");
+#include <bits/_types.h>
 
-#if __SPECTRE_MITIGATION == 1
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
-/*
- * Returns true if Indirect Branch Restricted Speculation (IBRS)
- * is supported.
- */
-__naked bool
-__can_mitigate_spectre(void);
+typedef __uint8_t uint8_t;
+typedef __uint16_t uint16_t;
+typedef __uint32_t uint32_t;
+typedef __uint64_t uint64_t;
 
-/*
- * Returns EXIT_FAILURE if not supported, returns
- * EXIT_SUCCESS if mitigation is now active.
- *
- * This function will be NULL if spectre mitigation isn't enabled;
- * therefore it is wise to verify to prevent access violations and
- * undefined behaviour.
- *
- * This behaviour is governed by the __SPECTRE_MITIGATION define
- *
- * TODO: Try to enable others, not just IBRS
- */
-__weak int
-try_spectre_mitigate(void)
-{
-    uint64_t tmp;
-    static bool should_log = true;
+typedef __int8_t int8_t;
+typedef __int16_t int16_t;
+typedef __int32_t int32_t;
+typedef __int64_t int64_t;
 
-    if (!__can_mitigate_spectre()) {
-        KINFO("IBRS not supported; spectre mitigation NOT enabled\n");
-        return EXIT_FAILURE;
-    }
+/* Signed fixed-width limits */
+#define INT8_MAX  __INT8_MAX
+#define INT16_MAX __INT16_MAX
+#define INT32_MAX __INT32_MAX
+#define INT64_MAX __INT64_MAX
 
-    /* This is called per processor, only log once */
-    if (should_log) {
-        KINFO("IBRS supported; spectre mitigation enabled\n");
-        should_log = false;
-    }
+/* Unsigned fixed-width limits */
+#define UINT8_MAX  __UINT8_MAX
+#define UINT16_MAX __UINT16_MAX
+#define UINT32_MAX __UINT32_MAX
+#define UINT64_MAX __UINT64_MAX
 
-    tmp = rdmsr(IA32_SPEC_CTL);
-    tmp |= __BIT(0);                /* IBRS */
-    wrmsr(IA32_SPEC_CTL, tmp);
-
-    return EXIT_SUCCESS;
+#if defined(__cplusplus)
 }
+#endif
 
-#endif      /* __SPECTRE_MITIGATION == 1 */
+#endif  /* !_STDINT_H */

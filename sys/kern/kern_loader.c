@@ -61,12 +61,10 @@ int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
     vm_prot_t prot = PROT_USER;
 
     uintptr_t physmem;
-    uintptr_t max_addr, map_addr;
-    size_t misalign, page_count;
-
+    size_t misalign, page_count, map_len;
     int status;
-    const size_t GRANULE = vm_get_page_size();
 
+    const size_t GRANULE = vm_get_page_size();
     void *tmp_ptr;
 
     if (auxv == NULL) {
@@ -93,26 +91,8 @@ int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
 
             misalign = phdr->p_vaddr & (GRANULE - 1);
             page_count = __DIV_ROUNDUP(phdr->p_memsz + misalign, GRANULE);
-            max_addr = phdr->p_vaddr + (GRANULE * page_count);
-
-            /*
-             * We are assuming this is a user program that we are loading.
-             * All user programs should be on the lower half of the address
-             * space. We will check that before we begin doing anything here.
-             *
-             * We are also going to check if the virtual address the program
-             * header refers to overflows into the higher half. If anything
-             * goes into the higher half, we won't simply drop the phdr,
-             * we'll instead assume caller error and return -EINVAL.
-             */
-            if (phdr->p_vaddr >= VM_HIGHER_HALF) {
-                return -EINVAL;
-            } else if (max_addr >= VM_HIGHER_HALF) {
-                /* Overflows into higher half */
-                return -EINVAL;
-            }
-
             physmem = vm_alloc_pageframe(page_count);
+            map_len = page_count * GRANULE;
 
             /* Do we not have enough page frames? */
             if (physmem == 0) {
@@ -121,14 +101,9 @@ int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
                 return -ENOMEM;
             }
 
-            map_addr = phdr->p_vaddr + load_base;
-            status = vm_map_create(vas, map_addr, physmem, prot, page_count*GRANULE);
+            status = vm_map_create(vas, phdr->p_vaddr + load_base, physmem, prot, map_len);
 
             if (status != 0) {
-                DBG("Failed to map 0x%p - 0x%p\n",
-                    phdr->p_vaddr + load_base,
-                    (phdr->p_vaddr + load_base) + (page_count * GRANULE));
-
                 return status;
             }
 

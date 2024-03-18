@@ -40,6 +40,7 @@
 #include <machine/spectre.h>
 #include <machine/cpu.h>
 #include <machine/uart.h>
+#include <machine/cpuid.h>
 #include <vm/vm.h>
 #include <vm/dynalloc.h>
 #include <vm/physseg.h>
@@ -55,6 +56,8 @@ __KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
 #define ISR(func) ((uintptr_t)func)
 #define INIT_FLAG_IOAPIC 0x00000001U
 #define INIT_FLAG_ACPI   0x00000002U
+
+void syscall_isr(void);
 
 static inline void
 init_tss(struct cpu_info *cur_cpu)
@@ -78,9 +81,20 @@ interrupts_init(void)
     idt_set_desc(0x8, IDT_TRAP_GATE_FLAGS, ISR(double_fault), 0);
     idt_set_desc(0xA, IDT_TRAP_GATE_FLAGS, ISR(invl_tss), 0);
     idt_set_desc(0xB, IDT_TRAP_GATE_FLAGS, ISR(segnp), 0);
+    idt_set_desc(0xC, IDT_TRAP_GATE_FLAGS, ISR(ss_fault), 0);
     idt_set_desc(0xD, IDT_TRAP_GATE_FLAGS, ISR(general_prot), 0);
     idt_set_desc(0xE, IDT_TRAP_GATE_FLAGS, ISR(page_fault), 0);
+    idt_set_desc(0x80, IDT_INT_GATE_USER, ISR(syscall_isr), 0);
     idt_load();
+}
+
+static bool
+is_sse_supported(void)
+{
+    uint32_t edx, unused;
+
+    __CPUID(0x00000001, unused, unused, unused, edx);
+    return __TEST(edx, __BIT(25)) && __TEST(edx, __BIT(26));
 }
 
 void
@@ -88,7 +102,6 @@ processor_halt(void)
 {
     __ASMV("cli; hlt");
 }
-
 
 /*
  * Send char to serial for debugging purposes.
@@ -144,11 +157,63 @@ intr_unmask(void)
     __ASMV("sti");
 }
 
+int
+processor_init_pcb(struct proc *proc)
+{
+    struct pcb *pcb = &proc->pcb;
+    const uint16_t FPU_FCW = 0x33F;
+    const uint32_t SSE_MXCSR = 0x1F80;
+
+    /* Allocate FPU save area, aligned on a 16 byte boundary */
+    pcb->fpu_state = PHYS_TO_VIRT(vm_alloc_pageframe(1));
+    if (pcb->fpu_state == NULL) {
+        return -1;
+    }
+
+    /*
+     * Setup x87 FPU control word and SSE MXCSR bits
+     * as per the sysv ABI
+     */
+    __ASMV("fldcw %0\n"
+           "ldmxcsr %1"
+           :: "m" (FPU_FCW),
+              "m" (SSE_MXCSR) : "memory");
+
+    amd64_fxsave(pcb->fpu_state);
+    return 0;
+}
+
+int
+processor_free_pcb(struct proc *proc)
+{
+    struct pcb *pcb = &proc->pcb;
+
+    if (pcb->fpu_state == NULL) {
+        return -1;
+    }
+
+    vm_free_pageframe(VIRT_TO_PHYS(pcb->fpu_state), 1);
+    return 0;
+}
+
+void
+processor_switch_to(struct proc *old_td, struct proc *new_td)
+{
+    struct pcb *old_pcb = (old_td != NULL) ? &old_td->pcb : NULL;
+    struct pcb *new_pcb = &new_td->pcb;
+
+    if (old_pcb != NULL) {
+        amd64_fxsave(old_pcb->fpu_state);
+    }
+    amd64_fxrstor(new_pcb->fpu_state);
+}
+
 void
 processor_init(void)
 {
     /* Indicates what doesn't need to be init anymore */
     static uint8_t init_flags = 0;
+    static uint64_t reg_tmp;
     struct cpu_info *cur_cpu;
 
     /* Create our cpu_info structure */
@@ -158,6 +223,21 @@ processor_init(void)
 
     /* Set %GS to cpu_info */
     amd64_write_gs_base((uintptr_t)cur_cpu);
+
+    if (is_sse_supported()) {
+        /* Enable SSE/SSE2 */
+        reg_tmp = amd64_read_cr0();
+        reg_tmp &= ~(__BIT(2));
+        reg_tmp |= __BIT(1);
+        amd64_write_cr0(reg_tmp);
+
+        /* Enable FXSAVE/FXRSTOR */
+        reg_tmp = amd64_read_cr4();
+        reg_tmp |= 3 << 9;
+        amd64_write_cr4(reg_tmp);
+    } else {
+        panic("SSE/SSE2 not supported!\n");
+    }
 
     CPU_INFO_LOCK(cur_cpu);
     init_tss(cur_cpu);

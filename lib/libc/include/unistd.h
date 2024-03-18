@@ -27,59 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/spectre.h>
-#include <machine/cpuid.h>
-#include <machine/msr.h>
-#include <sys/syslog.h>
-#include <sys/types.h>
+#ifndef _UNISTD_H
+#define _UNISTD_H
 
-__MODULE_NAME("spectre");
-__KERNEL_META("$Hyra$: spectre.c, Ian Marco Moffett, "
-              "Spectre mitigation support");
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
-#if __SPECTRE_MITIGATION == 1
+_Noreturn void _exit(int status);
 
-/*
- * Returns true if Indirect Branch Restricted Speculation (IBRS)
- * is supported.
- */
-__naked bool
-__can_mitigate_spectre(void);
-
-/*
- * Returns EXIT_FAILURE if not supported, returns
- * EXIT_SUCCESS if mitigation is now active.
- *
- * This function will be NULL if spectre mitigation isn't enabled;
- * therefore it is wise to verify to prevent access violations and
- * undefined behaviour.
- *
- * This behaviour is governed by the __SPECTRE_MITIGATION define
- *
- * TODO: Try to enable others, not just IBRS
- */
-__weak int
-try_spectre_mitigate(void)
-{
-    uint64_t tmp;
-    static bool should_log = true;
-
-    if (!__can_mitigate_spectre()) {
-        KINFO("IBRS not supported; spectre mitigation NOT enabled\n");
-        return EXIT_FAILURE;
-    }
-
-    /* This is called per processor, only log once */
-    if (should_log) {
-        KINFO("IBRS supported; spectre mitigation enabled\n");
-        should_log = false;
-    }
-
-    tmp = rdmsr(IA32_SPEC_CTL);
-    tmp |= __BIT(0);                /* IBRS */
-    wrmsr(IA32_SPEC_CTL, tmp);
-
-    return EXIT_SUCCESS;
+#if defined(__cplusplus)
 }
+#endif
 
-#endif      /* __SPECTRE_MITIGATION == 1 */
+#endif  /* !_UNISTD_H */
+

@@ -61,5 +61,6 @@ vm_get_page_size(void)
 
 void vm_init(void);
 struct vm_ctx *vm_get_ctx(void);
+struct vas vm_get_kvas(void);
 
 #endif      /* !_VM_H_ */

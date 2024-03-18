@@ -47,6 +47,7 @@ struct vnode {
     struct mount *mp;   /* Ptr to vfs vnode is in */
     struct vops *vops;
     struct vnode *parent;
+    struct fs_info *fs; /* Filesystem this vnode belongs to, can be NULL */
     void *data;         /* Filesystem specific data */
 };
 

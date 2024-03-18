@@ -103,7 +103,7 @@ vop_vget(struct vnode *parent, const char *name, struct vnode **vp)
         return -ENOENT;
     }
 
-    if (hdr->type != TAR_TYPEFLAG_DIR) {
+    if (hdr->type == TAR_TYPEFLAG_DIR) {
         vtype = VDIR;
     }
 
@@ -149,8 +149,8 @@ static char *
 get_module(const char *path, uint64_t *size) {
     for (uint64_t i = 0; i < mod_req.response->module_count; ++i) {
         if (strcmp(mod_req.response->modules[i]->path, path) == 0) {
-              *size = mod_req.response->modules[i]->size;
-              return mod_req.response->modules[i]->address;
+            *size = mod_req.response->modules[i]->size;
+            return mod_req.response->modules[i]->address;
         }
     }
 
@@ -173,6 +173,7 @@ static int
 initramfs_init(struct fs_info *info)
 {
     initramfs = get_module("/boot/initramfs.tar", &initramfs_size);
+    info->caps = FSCAP_FULLPATH;
 
     if (initramfs == NULL) {
         panic("Failed to load initramfs\n");
@@ -221,7 +222,7 @@ initramfs_open(const char *path)
     }
 
     hdr = initramfs_from_path((void *)initramfs, path);
-    return hdr_to_contents(hdr);
+    return (hdr == NULL) ? NULL : hdr_to_contents(hdr);
 }
 
 struct vfsops g_initramfs_ops = {

@@ -67,5 +67,12 @@ struct trapframe {
     (FRAME)->rsp        = SP;       \
     (FRAME)->ss         = 0x10;     \
 
+#define init_frame_user(FRAME, IP, SP)      \
+    (FRAME)->rip = IP;                      \
+    (FRAME)->cs = 0x18 | 3;                 \
+    (FRAME)->rflags = 0x202;                \
+    (FRAME)->rsp = SP;                      \
+    (FRAME)->ss = 0x20 | 3;                 \
+
 #endif      /* !defined(__ASSEMBLER__) */
 #endif  /* !_AMD64_FRAME_H_ */

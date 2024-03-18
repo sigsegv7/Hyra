@@ -59,6 +59,15 @@ vm_get_ctx(void)
     return &bsp_vm_ctx;
 }
 
+/*
+ * Return the kernel VAS.
+ */
+struct vas
+vm_get_kvas(void)
+{
+    return kernel_vas;
+}
+
 void
 vm_init(void)
 {

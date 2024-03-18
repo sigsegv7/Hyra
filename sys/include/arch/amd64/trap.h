@@ -47,6 +47,7 @@
 #define TRAP_PROTFLT        9       /* General protection */
 #define TRAP_PAGEFLT        10      /* Page fault */
 #define TRAP_NMI            11      /* Non-maskable interrupt */
+#define TRAP_SS             12      /* Stack-segment fault */
 
 /* Trap is coming from user mode */
 #define TRAP_USER           0x100
@@ -65,6 +66,7 @@ void segnp(void *sf);
 void general_prot(void *sf);
 void page_fault(void *sf);
 void nmi(void *sf);
+void ss_fault(void *sf);
 void trap_handler(struct trapframe *tf);
 #else
 .macro handle_trap

@@ -27,56 +27,97 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/vfs.h>
-#include <sys/cdefs.h>
-#include <sys/mount.h>
-#include <sys/types.h>
-#include <sys/vnode.h>
-#include <fs/initramfs.h>
+#include <sys/filedesc.h>
+#include <sys/proc.h>
+#include <sys/sched.h>
+#include <vm/dynalloc.h>
 #include <assert.h>
 #include <string.h>
 
-__MODULE_NAME("vfs");
-__KERNEL_META("$Hyra$: vfs.c, Ian Marco Moffett, "
-              "Hyra Virtual File System");
-
-#define INITRAMFS_ID 0
-
-static struct fs_info filesystems[] = {
-    [INITRAMFS_ID] = { "initramfs", &g_initramfs_ops }
-};
-
-struct vnode *g_root_vnode = NULL;
-
-struct fs_info *
-vfs_byname(const char *name)
+/*
+ * Allocate a file descriptor.
+ *
+ * @td: Thread to allocate from, NULL for current thread.
+ */
+struct filedesc *
+fd_alloc(struct proc *td)
 {
-    for (int i = 0; i < __ARRAY_COUNT(filesystems); ++i) {
-        if (strcmp(filesystems[i].name, name) == 0) {
-            return &filesystems[i];
+    struct filedesc *fd;
+
+    if (td == NULL) {
+        td = this_td();
+        __assert(td != NULL);
+    }
+
+    for (size_t i = 0; i < PROC_MAX_FDS; ++i) {
+        if (td->fds[i] != NULL) {
+            continue;
+        }
+
+        fd = dynalloc(sizeof(struct filedesc));
+        memset(fd, 0, sizeof(struct filedesc));
+
+        if (fd == NULL) {
+            return NULL;
+        }
+
+        fd->fdno = i;
+        td->fds[i] = fd;
+        return fd;
+    }
+
+    return NULL;
+}
+
+/*
+ * Fetch a file descriptor from a file descriptor
+ * number.
+ *
+ * @td: Thread to fetch from, NULL for current thread.
+ * @fdno: File descriptor to fetch
+ */
+struct filedesc *
+fd_from_fdnum(const struct proc *td, int fdno)
+{
+    if (td == NULL) {
+        td = this_td();
+        __assert(td != NULL);
+    }
+
+    if (fdno < 0 || fdno > PROC_MAX_FDS) {
+        return NULL;
+    }
+
+    for (size_t i = 0; i < PROC_MAX_FDS; ++i) {
+        if (i == fdno && td->fds[i] != NULL) {
+            return td->fds[i];
         }
     }
 
     return NULL;
 }
 
+/*
+ * Close a file descriptor from its fd number.
+ *
+ * @td: Thread to fetch from, NULL for current thread.
+ * @fdno: File descriptor number to close.
+ */
 void
-vfs_init(void)
+fd_close_fdnum(struct proc *td, int fdno)
 {
-    struct fs_info *info;
-    struct vfsops *vfsops;
+    struct filedesc *fd;
 
-    vfs_mount_init();
-    __assert(vfs_alloc_vnode(&g_root_vnode, NULL, VDIR) == 0);
-
-    for (int i = 0; i < __ARRAY_COUNT(filesystems); ++i) {
-        info = &filesystems[i];
-        vfsops = info->vfsops;
-
-        __assert(vfsops->init != NULL);
-        vfsops->init(info);
+    if (td == NULL) {
+        td = this_td();
+        __assert(td != NULL);
     }
 
-    g_root_vnode->vops = &g_initramfs_vops;
-    g_root_vnode->fs = &filesystems[INITRAMFS_ID];
+    fd = fd_from_fdnum(td, fdno);
+    if (fd == NULL) {
+        return;
+    }
+
+    dynfree(fd);
+    td->fds[fdno] = NULL;
 }

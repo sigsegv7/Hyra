@@ -29,11 +29,13 @@
 
 #include <sys/types.h>
 #include <sys/vfs.h>
+#include <sys/mount.h>
+#include <sys/errno.h>
 #include <vm/dynalloc.h>
 #include <string.h>
 
 /*
- * Fetches the filename within a past at
+ * Fetches the filename within a path at
  * the nth index denoted by `idx'
  *
  * Returns memory allocated by dynalloc()
@@ -115,9 +117,58 @@ vfs_get_fname_at(const char *path, size_t idx)
     return ret;
 }
 
-struct vnode *
-vfs_path_to_node(const char *path)
+/*
+ * Fetches a vnode from a path.
+ *
+ * @path: Path to fetch vnode from.
+ * @vp: Output var for fetched vnode.
+ *
+ * Returns 0 on success.
+ */
+int
+vfs_path_to_node(const char *path, struct vnode **vp)
 {
-    /* TODO */
-    return NULL;
+    struct vnode *vnode = g_root_vnode;
+    struct fs_info *fs;
+    char *name;
+    int s = 0, fs_caps = 0;
+
+    if (strcmp(path, "/") == 0 || !vfs_is_valid_path(path)) {
+        return -1;
+    } else if (*path != '/') {
+        return -1;
+    }
+
+    /* Fetch filesystem capabilities if we can */
+    if (vnode->fs != NULL) {
+        fs = vnode->fs;
+        fs_caps = fs->caps;
+    }
+
+    /*
+     * If the filesystem requires full-path lookups, we can try
+     * throwing the full path at the filesystem to see if
+     * it'll give us a vnode.
+     */
+    if (__TEST(fs_caps, FSCAP_FULLPATH)) {
+        s = vfs_vget(g_root_vnode, path, &vnode);
+        goto done;
+    }
+
+    for (size_t i = 0;; ++i) {
+        name = vfs_get_fname_at(path, i);
+        if (name == NULL) break;
+
+        s = vfs_vget(vnode, name, &vnode);
+        dynfree(name);
+
+        if (s != 0) break;
+    }
+
+done:
+    if (vp != NULL && s == 0) {
+        *vp = vnode;
+    }
+
+    return s;
 }
