@@ -103,7 +103,7 @@ sched_enqueue_td(struct proc *td)
 
     spinlock_acquire(&tdq_lock);
 
-    td->pid = nthread++;
+    td->pid = ++nthread;
     TAILQ_INSERT_TAIL(&td_queue, td, link);
 
     spinlock_release(&tdq_lock);
