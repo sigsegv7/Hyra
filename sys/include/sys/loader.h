@@ -32,6 +32,7 @@
 
 #include <sys/types.h>
 #include <vm/pmap.h>
+#include <vm/vm.h>
 
 /* DANGER!: DO NOT CHANGE THESE DEFINES */
 #define AT_NULL 0
@@ -61,7 +62,7 @@ struct auxval {
 #if defined(_KERNEL)
 
 int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
-                size_t load_base, char **ld_path);
+                size_t load_base, char **ld_path, struct vm_range *prog_range);
 
 #endif  /* defined(_KERNEL) */
 #endif  /* !_SYS_LOADER_H_ */

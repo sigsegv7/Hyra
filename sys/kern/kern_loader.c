@@ -54,7 +54,7 @@ __KERNEL_META("$Hyra$: kern_loader.c, Ian Marco Moffett, "
     (void *)((uintptr_t)hdr + (hdrptr)->e_phoff + (hdrptr->e_phentsize*IDX))
 
 int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
-                size_t load_base, char **ld_path)
+                size_t load_base, char **ld_path, struct vm_range *prog_range)
 {
     const Elf64_Ehdr *hdr = dataptr;
     Elf64_Phdr *phdr;
@@ -63,6 +63,9 @@ int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
     uintptr_t physmem;
     size_t misalign, page_count, map_len;
     int status;
+
+    uintptr_t start_addr = (uintptr_t)-1;
+    uintptr_t end_addr = 0;
 
     const size_t GRANULE = vm_get_page_size();
     void *tmp_ptr;
@@ -93,6 +96,16 @@ int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
             page_count = __DIV_ROUNDUP(phdr->p_memsz + misalign, GRANULE);
             physmem = vm_alloc_pageframe(page_count);
             map_len = page_count * GRANULE;
+
+            /*
+             * Now we want to compute the start address of the
+             * program and the end address.
+             */
+            if (start_addr == (uintptr_t)-1) {
+                start_addr = phdr->p_vaddr;
+            }
+
+            end_addr = __MAX(end_addr, phdr->p_vaddr + page_count*GRANULE);
 
             /* Do we not have enough page frames? */
             if (physmem == 0) {
@@ -134,5 +147,7 @@ int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
     auxv->at_entry = hdr->e_entry + load_base;
     auxv->at_phent = hdr->e_phentsize;
     auxv->at_phnum = hdr->e_phnum;
+    prog_range->start = start_addr;
+    prog_range->end = end_addr;
     return 0;
 }

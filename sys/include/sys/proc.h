@@ -39,6 +39,12 @@
 #include <vm/vm.h>
 
 #define PROC_MAX_FDS 256
+#define PROC_MAX_ADDR_RANGE 4
+
+enum {
+    ADDR_RANGE_EXEC = 0,    /* Program address range */
+    ADDR_RANGE_STACK        /* Stack address range */
+};
 
 /*
  * A task running on the CPU e.g., a process or
@@ -50,7 +56,7 @@ struct proc {
     struct trapframe *tf;
     struct pcb pcb;
     struct vas addrsp;
-    uintptr_t stack_base;
+    struct vm_range addr_range[PROC_MAX_ADDR_RANGE];
     uint8_t is_user;
     struct filedesc *fds[PROC_MAX_FDS];
     TAILQ_ENTRY(proc) link;

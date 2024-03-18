@@ -211,15 +211,19 @@ sched_create_stack(struct vas vas, bool user, char *argvp[],
     int status;
     uintptr_t stack;
     const vm_prot_t USER_STACK_PROT = PROT_WRITE | PROT_USER;
+    struct vm_range *stack_range = &td->addr_range[ADDR_RANGE_STACK];
 
     if (!user) {
         stack = (uintptr_t)dynalloc(STACK_SIZE);
-        td->stack_base = (uintptr_t)stack;
+        stack_range->start = (uintptr_t)stack;
+        stack_range->end = (uintptr_t)stack + STACK_SIZE;
         return sched_init_stack((void *)(stack + STACK_SIZE), argvp, envp, auxv);
     }
 
     stack = vm_alloc_pageframe(STACK_PAGES);
-    td->stack_base = stack;
+
+    stack_range->start = stack;
+    stack_range->end = stack + STACK_SIZE;
     status = vm_map_create(vas, stack, stack, USER_STACK_PROT, STACK_SIZE);
 
     if (status != 0) {
@@ -233,9 +237,10 @@ sched_create_stack(struct vas vas, bool user, char *argvp[],
 
 static struct proc *
 sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
-                struct vas vas, bool is_user)
+                struct vas vas, bool is_user, struct vm_range *prog_range)
 {
     struct proc *td;
+    struct vm_range *exec_range;
     uintptr_t stack;
     struct trapframe *tf;
 
@@ -251,6 +256,8 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
         return NULL;
     }
 
+
+    memset(td, 0, sizeof(struct proc));
     stack = sched_create_stack(vas, is_user, argvp, envp, auxv, td);
     if (stack == 0) {
         dynfree(tf);
@@ -259,14 +266,17 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
     }
 
     memset(tf, 0, sizeof(struct trapframe));
-    memset(td, 0, sizeof(struct proc));
 
     /* Setup process itself */
+    exec_range = &td->addr_range[ADDR_RANGE_EXEC];
     td->pid = 0;        /* Don't assign PID until enqueued */
     td->cpu = NULL;     /* Not yet assigned a core */
     td->tf = tf;
     td->addrsp = vas;
     td->is_user = is_user;
+    if (prog_range != NULL) {
+        memcpy(exec_range, prog_range, sizeof(struct vm_range));
+    }
     processor_init_pcb(td);
 
     /* Allocate standard file descriptors */
@@ -286,6 +296,8 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
 static void
 sched_destroy_td(struct proc *td)
 {
+    const struct vm_range *stack_range = &td->addr_range[ADDR_RANGE_STACK];
+
     processor_free_pcb(td);
 
     /*
@@ -295,9 +307,9 @@ sched_destroy_td(struct proc *td)
      * program to perform the proper deallocation method.
      */
     if (td->is_user) {
-        vm_free_pageframe(td->stack_base, STACK_PAGES);
+        vm_free_pageframe(stack_range->start, STACK_PAGES);
     } else {
-        dynfree((void *)td->stack_base);
+        dynfree((void *)stack_range->start);
     }
 
     /* Close all of the file descriptors */
@@ -393,6 +405,7 @@ void
 sched_init(void)
 {
     struct proc *init;
+    struct vm_range init_range;
     struct auxval auxv = {0}, ld_auxv = {0};
     struct vas vas = pmap_create_vas(vm_get_ctx());
     const char *init_bin, *ld_bin;
@@ -406,17 +419,18 @@ sched_init(void)
     if ((init_bin = initramfs_open("/usr/sbin/init")) == NULL) {
         panic("Could not open /usr/boot/init\n");
     }
-    if (loader_load(vas, init_bin, &auxv, 0, &ld_path) != 0) {
+    if (loader_load(vas, init_bin, &auxv, 0, &ld_path, &init_range) != 0) {
         panic("Could not load init\n");
     }
     if ((ld_bin = initramfs_open(ld_path)) == NULL) {
         panic("Could not open %s\n", ld_path);
     }
-    if (loader_load(vas, ld_bin, &ld_auxv, 0x00, NULL) != 0) {
+    if (loader_load(vas, ld_bin, &ld_auxv, 0x00, NULL, &init_range) != 0) {
         panic("Could not load %s\n", ld_path);
     }
 
-    init = sched_create_td((uintptr_t)ld_auxv.at_entry, argv, envp, ld_auxv, vas, true);
+    init = sched_create_td((uintptr_t)ld_auxv.at_entry, argv, envp,
+                           ld_auxv, vas, true, &init_range);
     if (init == NULL) {
         panic("Failed to create thread for init\n");
     }
