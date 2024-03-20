@@ -197,6 +197,25 @@ vcons_putch(struct vcons_screen *scr, char c)
     return 0;
 }
 
+/*
+ * Write out a string on the console.
+ *
+ * @s: String to write.
+ */
+int
+vcons_putstr(struct vcons_screen *scr, const char *s)
+{
+    int status;
+
+    while (*s != '\0') {
+        if ((status = vcons_putch(scr, *(s++))) != 0) {
+            return status;
+        }
+    }
+
+    return 0;
+}
+
 void
 vcons_attach(struct vcons_screen *scr)
 {
