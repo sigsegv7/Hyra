@@ -39,6 +39,7 @@ struct vnode;
 struct vops {
     int(*vget)(struct vnode *parent, const char *name, struct vnode **vp);
     int(*read)(struct vnode *vp, char *buf, size_t count);
+    int(*write)(struct vnode *vp, const char *buf, size_t count);
 };
 
 struct vnode {
