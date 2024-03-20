@@ -36,9 +36,10 @@ __syscall(struct trapframe *tf)
         .code = tf->rax,
         .arg0 = tf->rdi,
         .arg1 = tf->rsi,
-        .arg2 = tf->rcx,
-        .arg3 = tf->r8,
+        .arg2 = tf->rdx,
+        .arg3 = tf->r10,
         .arg4 = tf->r9,
+        .arg5 = tf->r8,
         .sp = tf->rsp
     };
 

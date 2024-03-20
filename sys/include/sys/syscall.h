@@ -43,7 +43,8 @@ enum {
 
 struct syscall_args {
     uint64_t code;
-    uint64_t arg0, arg1, arg2, arg3, arg4;
+    uint64_t arg0, arg1, arg2;
+    uint64_t arg3, arg4, arg5, arg6;
     uint64_t ip;
     uint64_t sp;
 };
