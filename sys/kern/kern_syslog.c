@@ -32,7 +32,7 @@
 #include <dev/vcons/vcons.h>
 #include <string.h>
 
-static struct vcons_screen syslog_screen = {0};
+struct vcons_screen g_syslog_screen = {0};
 
 static void
 syslog_write(const char *s, size_t len)
@@ -44,7 +44,7 @@ syslog_write(const char *s, size_t len)
 #if defined(__SERIAL_DEBUG)
         serial_dbgch(*tmp_s);
 #endif  /* defined(__SERIAL_DEBUG) */
-        vcons_putch(&syslog_screen, *tmp_s++);
+        vcons_putch(&g_syslog_screen, *tmp_s++);
     }
 }
 
@@ -129,9 +129,9 @@ syslog_init(void)
 
     termios.c_oflag |= OCRNL;   /* Map CR to NL by default */
 
-    syslog_screen.bg = 0x000000;
-    syslog_screen.fg = 0x808080;
-    syslog_screen.termios = termios;
+    g_syslog_screen.bg = 0x000000;
+    g_syslog_screen.fg = 0x808080;
+    g_syslog_screen.termios = termios;
 
-    vcons_attach(&syslog_screen);
+    vcons_attach(&g_syslog_screen);
 }

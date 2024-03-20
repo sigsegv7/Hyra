@@ -35,6 +35,7 @@
 #define _SYS_SYSLOG_H_
 
 #include <stdarg.h>
+#include <dev/vcons/vcons.h>
 
 #if defined(_KERNEL)
 
@@ -57,6 +58,8 @@
 void syslog_init(void);
 void kprintf(const char *fmt, ...);
 void vkprintf(const char *fmt, va_list *ap);
+
+extern struct vcons_screen g_syslog_screen;
 
 #endif  /* defined(_KERNEL) */
 
