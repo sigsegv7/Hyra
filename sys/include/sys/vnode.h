@@ -52,7 +52,7 @@ struct vnode {
 };
 
 /*
- * Vnode v_type flags
+ * Vnode type flags
  */
 #define VREG    0x01    /* Regular file */
 #define VDIR    0x02    /* Directory */
