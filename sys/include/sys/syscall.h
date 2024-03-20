@@ -38,6 +38,7 @@
 /* Do not reorder */
 enum {
     SYS_exit = 1,
+    SYS_write,
     __MAX_SYSCALLS
 };
 

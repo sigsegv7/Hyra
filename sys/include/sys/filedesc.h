@@ -32,6 +32,7 @@
 
 #include <sys/vnode.h>
 #include <sys/spinlock.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 
 struct proc;
@@ -48,6 +49,8 @@ struct filedesc {
 struct filedesc *fd_alloc(struct proc *td);
 struct filedesc *fd_from_fdnum(const struct proc *td, int fdno);
 void fd_close_fdnum(struct proc *td, int fdno);
+ssize_t write(int fd, const void *buf, size_t count);
+uint64_t sys_write(struct syscall_args *args);
 #endif
 
 #endif

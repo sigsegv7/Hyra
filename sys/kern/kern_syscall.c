@@ -31,6 +31,7 @@
 #include <sys/sched.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
+#include <sys/filedesc.h>
 
 __noreturn static uint64_t
 sys_exit(struct syscall_args *args)
@@ -41,4 +42,5 @@ sys_exit(struct syscall_args *args)
 
 uint64_t(*g_syscall_table[__MAX_SYSCALLS])(struct syscall_args *args) = {
     sys_exit,
+    sys_write,
 };

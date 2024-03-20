@@ -30,9 +30,82 @@
 #include <sys/filedesc.h>
 #include <sys/proc.h>
 #include <sys/sched.h>
+#include <sys/errno.h>
+#include <sys/system.h>
+#include <sys/syslog.h>
+#include <sys/vnode.h>
 #include <vm/dynalloc.h>
+#include <dev/vcons/vcons.h>
 #include <assert.h>
 #include <string.h>
+
+/*
+ * This function is a helper for write(). It creates
+ * a buffer and copies write data to it.
+ *
+ * @td: Current thread.
+ * @data: Data to copy.
+ * @buf_out: Pointer to buffer that will store data.
+ * @count: Number of bytes.
+ */
+static int
+make_write_buf(struct proc *td, const void *data, char **buf_out, size_t count)
+{
+    const size_t MAX_COUNT = 0x7FFFF000;
+    char *buf = NULL;
+
+    if (count > MAX_COUNT) {
+        return -EINVAL;
+    }
+
+    buf = dynalloc(count);
+
+    if (buf == NULL) {
+        return -ENOMEM;
+    }
+
+    __assert(buf_out != NULL);
+    *buf_out = buf;
+
+    memset(buf, 0, count);
+
+    if (td->is_user) {
+        /*
+         * A user process called us, so we want to be careful
+         * and use copyin()
+         */
+        copyin((uintptr_t)data, buf, count);
+    } else {
+        /* Can just memcpy() here */
+        memcpy(buf, (char *)data, count);
+    }
+
+    return 0;
+}
+
+/*
+ * Helper function for write()
+ */
+static ssize_t
+do_write(struct vnode *vp, const char *buf, size_t count)
+{
+    struct vops *vops = vp->vops;
+    int status;
+
+    __assert(vops != NULL);
+
+    /* Can we call the write operation? */
+    if (vops->write == NULL) {
+        return -EACCES;
+    }
+
+    /* Attempt a write */
+    if ((status = vops->write(vp, buf, count)) < 0) {
+        return status;
+    }
+
+    return count;
+}
 
 /*
  * Allocate a file descriptor.
@@ -120,4 +193,67 @@ fd_close_fdnum(struct proc *td, int fdno)
 
     dynfree(fd);
     td->fds[fdno] = NULL;
+}
+
+ssize_t
+write(int fd, const void *buf, size_t count)
+{
+    struct proc *td = this_td();
+    struct filedesc *desc = NULL;
+    struct vnode *vp = NULL;
+    char *in_buf = NULL;
+
+    ssize_t ret = count;
+    int status;
+
+    /*
+     * Create our write buffer... Memory will be allocated
+     * and data copied.
+     */
+    if ((status = make_write_buf(td, buf, &in_buf, count)) != 0) {
+        return status;
+    }
+
+    /* Is this stdout/stderr? */
+    if (fd == 1 || fd == 2) {
+        /* TODO: Update this when we have PTYs */
+        vcons_putstr(&g_syslog_screen, in_buf);
+        return count;
+    }
+
+    desc = fd_from_fdnum(td, fd);
+
+    /* Does this file descriptor exist */
+    if (desc == NULL) {
+        ret = -EBADF;
+        goto cleanup;
+    }
+
+    /* Do we have a vnode? */
+    if (desc->vnode == NULL) {
+        ret = -EACCES;
+        goto cleanup;
+    }
+
+    vp = desc->vnode;
+    status = do_write(vp, in_buf, count);
+
+    if (status < 0) {
+        ret = status;
+        goto cleanup;
+    }
+cleanup:
+    dynfree(in_buf);
+    return ret;
+}
+
+/*
+ * arg0: int fd
+ * arg1: const void *buf
+ * arg2: count
+ */
+uint64_t
+sys_write(struct syscall_args *args)
+{
+    return write(args->arg0, (void *)args->arg1, args->arg2);
 }
