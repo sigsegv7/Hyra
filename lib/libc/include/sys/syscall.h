@@ -35,6 +35,7 @@
 #endif
 
 #define SYS_exit  1
+#define SYS_write 2
 
 #if !defined(__ASSEMBLER__)
 __attribute__((__always_inline__))
