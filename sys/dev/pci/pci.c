@@ -193,7 +193,7 @@ pci_get_device(struct pci_lookup lookup, uint16_t lookup_type)
         }
 
         if (__TEST(lookup_type, PCI_SUBCLASS)) {
-            /* Check PCI class */
+            /* Check PCI subclass */
             if (lookup.pci_subclass == dev->pci_subclass)
                 lookup_matches |= PCI_SUBCLASS;
         }
