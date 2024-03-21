@@ -203,12 +203,12 @@ vcons_putch(struct vcons_screen *scr, char c)
  * @s: String to write.
  */
 int
-vcons_putstr(struct vcons_screen *scr, const char *s)
+vcons_putstr(struct vcons_screen *scr, const char *s, size_t len)
 {
     int status;
 
-    while (*s != '\0') {
-        if ((status = vcons_putch(scr, *(s++))) != 0) {
+    for (size_t i = 0; i < len; ++i) {
+        if ((status = vcons_putch(scr, s[i])) != 0) {
             return status;
         }
     }

@@ -217,7 +217,7 @@ write(int fd, const void *buf, size_t count)
     /* Is this stdout/stderr? */
     if (fd == 1 || fd == 2) {
         /* TODO: Update this when we have PTYs */
-        vcons_putstr(&g_syslog_screen, in_buf);
+        vcons_putstr(&g_syslog_screen, in_buf, count);
         return count;
     }
 

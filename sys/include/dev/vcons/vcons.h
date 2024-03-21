@@ -67,7 +67,7 @@ struct vcons_screen {
 
 void vcons_attach(struct vcons_screen *scr);
 int vcons_putch(struct vcons_screen *scr, char c);
-int vcons_putstr(struct vcons_screen *scr, const char *s);
+int vcons_putstr(struct vcons_screen *scr, const char *s, size_t len);
 void vcons_update_cursor(struct vcons_screen *scr);
 
 #endif  /* !_DEV_VCONS_H_ */
