@@ -146,27 +146,21 @@ static uintptr_t
 sched_init_stack(void *stack_top, char *argvp[], char *envp[], struct auxval auxv)
 {
     uintptr_t *sp = stack_top;
-    void *env_ptr = NULL, *argv_ptr = NULL;
+    uintptr_t old_sp = 0;
     size_t argc, envc, len;
 
-    /* Copy argument and environment strings */
-    for (envc = 0; envp[envc] != NULL; ++envc) {
-        len = strlen(envp[envc]);
-        sp -= len - 1;
-        memcpy(sp, envp[envc], len);
-    }
-
-    __assert(envc >= 1);
-    env_ptr = sp;
-
+    /* Copy strings */
+    old_sp = (uintptr_t)sp;
     for (argc = 0; argvp[argc] != NULL; ++argc) {
-        len = strlen(argvp[argc]);
-        sp -= len - 1;
-        memcpy(sp, argvp[argc], len);
+        len = strlen(argvp[argc]) + 1;
+        sp = (void *)((char *)sp - len);
+        memcpy((char *)sp, argvp[argc], len);
     }
-
-    __assert(argc >= 1);
-    argv_ptr = sp;
+    for (envc = 0; envp[envc] != NULL; ++envc) {
+        len = strlen(envp[envc]) + 1;
+        sp = (void *)((char *)sp - len);
+        memcpy((char *)sp, envp[envc], len);
+    }
 
     /* Ensure the stack is aligned */
     sp = (void *)__ALIGN_DOWN((uintptr_t)sp, 16);
@@ -180,27 +174,24 @@ sched_init_stack(void *stack_top, char *argvp[], char *envp[], struct auxval aux
     AUXVAL(sp, AT_PHNUM, auxv.at_phnum);
     STACK_PUSH(sp, 0);
 
-    /* Push environment string pointers */
+    /* Copy envp pointers */
+    sp -= envc;
     for (int i = 0; i < envc; ++i) {
-        len = strlen(env_ptr);
-        sp -= len;
-
-        *sp = (uintptr_t)KERN_TO_USER((uintptr_t)env_ptr);
-        env_ptr = (char *)env_ptr + len;
+        len = strlen(envp[i]) + 1;
+        old_sp -= len;
+        sp[i] = KERN_TO_USER(old_sp);
     }
 
-    /* Push argument string pointers */
+    /* Copy argvp pointers */
     STACK_PUSH(sp, 0);
+    sp -= argc;
     for (int i = 0; i < argc; ++i) {
-        len = strlen(argv_ptr);
-        sp -= len;
-
-        *sp = (uintptr_t)KERN_TO_USER((uintptr_t)argv_ptr);
-        argv_ptr = (char *)argv_ptr + len;
+        len = strlen(argvp[i]) + 1;
+        old_sp -= len;
+        sp[i] = KERN_TO_USER(old_sp);
     }
 
     STACK_PUSH(sp, argc);
-
     return (uintptr_t)sp;
 }
 
@@ -412,7 +403,7 @@ sched_init(void)
 
     char *ld_path;
     char *argv[] = {"/usr/sbin/init", NULL};
-    char *envp[] = {"", NULL};
+    char *envp[] = {NULL};
 
     TAILQ_INIT(&td_queue);
 
