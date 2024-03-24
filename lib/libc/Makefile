@@ -17,7 +17,7 @@ build/ld.so: build/ linker/entry.c linker/entry.S
 	$(CC) $(CFLAGS) $< -o $@
 
 %.S.o: %.S
-	gcc $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
 .PHONY:
 build/:
