@@ -32,6 +32,7 @@
 #include <sys/panic.h>
 #include <machine/trap.h>
 #include <machine/idt.h>
+#include <machine/io.h>
 #include <machine/gdt.h>
 #include <machine/ioapic.h>
 #include <machine/hpet.h>
@@ -41,6 +42,7 @@
 #include <machine/cpu.h>
 #include <machine/uart.h>
 #include <machine/cpuid.h>
+#include <dev/pci/pci.h>
 #include <vm/vm.h>
 #include <vm/dynalloc.h>
 #include <vm/physseg.h>
@@ -118,6 +120,8 @@ chips_init(void)
     /* Hyra requires HPET on x86_64 */
     if (hpet_init() != 0)
         panic("Machine does not support HPET!\n");
+
+    pci_init();
 }
 
 /*
