@@ -11,7 +11,8 @@ build/ld.so: build/ linker/entry.c linker/entry.S
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) linker/entry.S -o build/entry.S.o
 	$(CC) $(CFLAGS) linker/entry.c -o build/entry.o
-	$(LD) build/entry.o build/entry.S.o -o $(LIBC_OBJ) -o $@
+	$(LD) -znoexecstack $(LIBC_OBJ) \
+		build/entry.o build/entry.S.o -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
