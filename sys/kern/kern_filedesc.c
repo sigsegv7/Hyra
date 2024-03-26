@@ -330,3 +330,13 @@ sys_open(struct syscall_args *args)
     dynfree(pathbuf);
     return ret;
 }
+
+/*
+ * arg0: fd
+ */
+uint64_t
+sys_close(struct syscall_args *args)
+{
+    fd_close_fdnum(this_td(), args->arg0);
+    return 0;
+}

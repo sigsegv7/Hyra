@@ -58,6 +58,7 @@ int open(const char *pathname, int oflag);
 
 uint64_t sys_write(struct syscall_args *args);
 uint64_t sys_open(struct syscall_args *args);
+uint64_t sys_close(struct syscall_args *args);
 #endif
 
 #endif
