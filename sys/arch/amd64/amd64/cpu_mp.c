@@ -111,5 +111,4 @@ ap_bootstrap(struct cpu_info *ci)
         cpus[i]->extra_argument = (uintptr_t)dynalloc(sizeof(struct cpu_info));
         cpus[i]->goto_address = ap_trampoline;
     }
-    KINFO("AP bootstrap done for all cores\n");
 }
