@@ -55,10 +55,12 @@ struct filedesc *fd_from_fdnum(const struct proc *td, int fdno);
 void fd_close_fdnum(struct proc *td, int fdno);
 ssize_t write(int fd, const void *buf, size_t count);
 int open(const char *pathname, int oflag);
+int read(int fd, void *buf, size_t count);
 
 uint64_t sys_write(struct syscall_args *args);
 uint64_t sys_open(struct syscall_args *args);
 uint64_t sys_close(struct syscall_args *args);
+uint64_t sys_read(struct syscall_args *args);
 #endif
 
 #endif

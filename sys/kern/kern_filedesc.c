@@ -298,6 +298,36 @@ open(const char *pathname, int oflag)
 }
 
 /*
+ * Read file into a buffer.
+ *
+ * @fd: File descriptor number.
+ * @buf: Buffer to read to.
+ * @count: Number of bytes to read.
+ */
+int
+read(int fd, void *buf, size_t count)
+{
+    ssize_t bytes_read;
+    struct vnode *vnode;
+    struct filedesc *fd_desc;
+
+    fd_desc = fd_from_fdnum(this_td(), fd);
+
+    if (fd_desc == NULL) {
+        return -EBADF;
+    }
+
+    vnode = fd_desc->vnode;
+
+    if (count > MAX_RW_SIZE) {
+        return -EINVAL;
+    }
+
+    bytes_read = vfs_read(vnode, buf, count);
+    return bytes_read;
+}
+
+/*
  * arg0: int fd
  * arg1: const void *buf
  * arg2: count
@@ -339,4 +369,41 @@ sys_close(struct syscall_args *args)
 {
     fd_close_fdnum(this_td(), args->arg0);
     return 0;
+}
+
+/*
+ * arg0: fd
+ * arg1: char *buf
+ * arg2: size_t count
+ */
+uint64_t
+sys_read(struct syscall_args *args)
+{
+    char *kbuf;
+    ssize_t bytes_read;
+
+    if (args->arg2 > MAX_RW_SIZE || args->arg2 == 0) {
+        return -EINVAL;
+    }
+
+    kbuf = dynalloc(args->arg2);
+
+    if (kbuf == NULL) {
+        return -ENOMEM;
+    }
+
+    /*
+     * Try to read into our kernel buffer then copy out
+     * to userspace.
+     */
+    if ((bytes_read = read(args->arg0, kbuf, args->arg2)) < 0) {
+        /* Failure */
+        dynfree(kbuf);
+        return bytes_read;
+    }
+
+    if (copyout(kbuf, args->arg1, bytes_read) != 0) {
+        invalid_uaddr(args->arg1);
+    }
+    return bytes_read;
 }

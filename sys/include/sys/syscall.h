@@ -41,6 +41,7 @@ enum {
     SYS_write,
     SYS_open,
     SYS_close,
+    SYS_read,
     __MAX_SYSCALLS
 };
 

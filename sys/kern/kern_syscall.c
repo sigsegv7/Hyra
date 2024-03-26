@@ -45,4 +45,5 @@ uint64_t(*g_syscall_table[__MAX_SYSCALLS])(struct syscall_args *args) = {
     sys_write,
     sys_open,
     sys_close,
+    sys_read,
 };
