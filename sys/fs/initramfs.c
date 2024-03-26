@@ -137,12 +137,12 @@ vop_read(struct vnode *vp, char *buf, size_t count)
 
     for (size_t i = 0; i < count; ++i) {
         if (i >= size) {
-            break;
+            return i + 1;
         }
         buf[i] = contents[i];
     }
 
-    return size;
+    return count;
 }
 
 static char *
