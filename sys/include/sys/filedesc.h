@@ -46,7 +46,7 @@ struct filedesc {
 };
 
 #if defined(_KERNEL)
-struct filedesc *fd_alloc(struct proc *td);
+int fd_alloc(struct proc *td, struct filedesc **fd_out);
 struct filedesc *fd_from_fdnum(const struct proc *td, int fdno);
 void fd_close_fdnum(struct proc *td, int fdno);
 ssize_t write(int fd, const void *buf, size_t count);

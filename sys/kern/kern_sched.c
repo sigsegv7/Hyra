@@ -271,9 +271,9 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
     processor_init_pcb(td);
 
     /* Allocate standard file descriptors */
-    __assert(fd_alloc(td) != NULL);       /* STDIN */
-    __assert(fd_alloc(td) != NULL);       /* STDOUT */
-    __assert(fd_alloc(td) != NULL);       /* STDERR */
+    __assert(fd_alloc(td, NULL) == 0);       /* STDIN */
+    __assert(fd_alloc(td, NULL) == 0);       /* STDOUT */
+    __assert(fd_alloc(td, NULL) == 0);       /* STDERR */
 
     /* Setup trapframe */
     if (!is_user) {

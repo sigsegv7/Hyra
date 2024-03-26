@@ -111,9 +111,15 @@ do_write(struct vnode *vp, const char *buf, size_t count)
  * Allocate a file descriptor.
  *
  * @td: Thread to allocate from, NULL for current thread.
+ * @fd_out: Pointer to allocated file descriptor output.
+ *
+ * This routine will create a new file descriptor
+ * table entry.
+ *
+ * Returns 0 on success.
  */
-struct filedesc *
-fd_alloc(struct proc *td)
+int
+fd_alloc(struct proc *td, struct filedesc **fd_out)
 {
     struct filedesc *fd;
 
@@ -131,15 +137,19 @@ fd_alloc(struct proc *td)
         memset(fd, 0, sizeof(struct filedesc));
 
         if (fd == NULL) {
-            return NULL;
+            return -ENOMEM;
         }
 
         fd->fdno = i;
         td->fds[i] = fd;
-        return fd;
+
+        if (fd_out != NULL)
+            *fd_out = fd;
+
+        return 0;
     }
 
-    return NULL;
+    return -EMFILE;
 }
 
 /*
