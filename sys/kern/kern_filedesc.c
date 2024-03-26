@@ -238,7 +238,7 @@ write(int fd, const void *buf, size_t count)
 
     desc = fd_from_fdnum(td, fd);
 
-    /* Does this file descriptor exist */
+    /* Does this file descriptor exist? */
     if (desc == NULL) {
         ret = -EBADF;
         goto cleanup;
