@@ -39,6 +39,8 @@
 #include <assert.h>
 #include <string.h>
 
+#define MAX_RW_SIZE  0x7FFFF000
+
 /*
  * This function is a helper for write(). It creates
  * a buffer and copies write data to it.
@@ -51,10 +53,9 @@
 static int
 make_write_buf(struct proc *td, const void *data, char **buf_out, size_t count)
 {
-    const size_t MAX_COUNT = 0x7FFFF000;
     char *buf = NULL;
 
-    if (count > MAX_COUNT || count == 0) {
+    if (count > MAX_RW_SIZE || count == 0) {
         return -EINVAL;
     }
 
