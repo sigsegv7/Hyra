@@ -35,6 +35,7 @@
 #if defined(_KERNEL)
 int copyin(uintptr_t uaddr, void *kaddr, size_t len);
 int copyout(const void *kaddr, uintptr_t uaddr, size_t len);
+int copyinstr(uintptr_t uaddr, char *kaddr, size_t len);
 #endif
 
 #endif  /* !_SYS_SYSTEM_H_ */

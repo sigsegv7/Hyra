@@ -93,3 +93,42 @@ copyout(const void *kaddr, uintptr_t uaddr, size_t len)
     memcpy((void *)uaddr, kaddr, len);
     return 0;
 }
+
+/*
+ * Copy in a string from userspace
+ *
+ * Unlike the typical copyin(), this routine will
+ * copy until we've hit NUL ('\0')
+ *
+ * @uaddr: Userspace address.
+ * @kaddr: Kernelspace address.
+ * @len: Length of string.
+ *
+ * XXX: Please note that if `len' is less than the actual
+ *      string length, the returned value will not be
+ *      NUL terminated.
+ */
+int
+copyinstr(uintptr_t uaddr, char *kaddr, size_t len)
+{
+    char *dest = (char *)kaddr;
+    char *src = (char *)uaddr;
+
+    if (!check_uaddr(uaddr)) {
+        return -EFAULT;
+    }
+
+    for (size_t i = 0; i < len; ++i) {
+        if (!check_uaddr(uaddr + i)) {
+            return -EFAULT;
+        }
+
+        dest[i] = src[i];
+
+        if (src[i] == '\0') {
+            break;
+        }
+    }
+
+    return 0;
+}
