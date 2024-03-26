@@ -145,6 +145,7 @@ tss_alloc_stack(union tss_stack *entry_out, size_t size)
 void
 write_tss(struct cpu_info *cpu, struct tss_desc *desc)
 {
+    volatile struct tss_entry *tss;
     uintptr_t tss_base;
 
     alloc_resources(cpu);
@@ -168,4 +169,7 @@ write_tss(struct cpu_info *cpu, struct tss_desc *desc)
     desc->base_mid8 =       __SHIFTOUT(tss_base, __MASK(8) << 16);
     desc->base_hi_mid8 =    __SHIFTOUT(tss_base, __MASK(8) << 24);
     desc->base_hi32 =       __SHIFTOUT(tss_base, __MASK(32) << 32);
+
+    tss = cpu->tss;
+    tss->io_base = 0xFF;    /* Disallow ring 3 port I/O  */
 }
