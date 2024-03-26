@@ -34,6 +34,9 @@
 #include <sys/vnode.h>
 #include <sys/types.h>
 
+/* Max path length */
+#define PATH_MAX 1024
+
 #if defined(_KERNEL)
 
 extern struct vnode *g_root_vnode;
