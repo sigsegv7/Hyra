@@ -43,4 +43,5 @@ sys_exit(struct syscall_args *args)
 uint64_t(*g_syscall_table[__MAX_SYSCALLS])(struct syscall_args *args) = {
     sys_exit,
     sys_write,
+    sys_open,
 };

@@ -35,6 +35,10 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 
+#define O_RDONLY 0x00000
+#define O_WRONLY 0x00001
+#define O_RDWR   0x00002
+
 struct proc;
 
 struct filedesc {
@@ -50,7 +54,10 @@ int fd_alloc(struct proc *td, struct filedesc **fd_out);
 struct filedesc *fd_from_fdnum(const struct proc *td, int fdno);
 void fd_close_fdnum(struct proc *td, int fdno);
 ssize_t write(int fd, const void *buf, size_t count);
+int open(const char *pathname, int oflag);
+
 uint64_t sys_write(struct syscall_args *args);
+uint64_t sys_open(struct syscall_args *args);
 #endif
 
 #endif

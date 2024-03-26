@@ -33,6 +33,7 @@
 #include <sys/errno.h>
 #include <sys/system.h>
 #include <sys/syslog.h>
+#include <sys/vfs.h>
 #include <sys/vnode.h>
 #include <vm/dynalloc.h>
 #include <dev/vcons/vcons.h>
@@ -259,6 +260,44 @@ cleanup:
 }
 
 /*
+ * Open a file and return a file descriptor.
+ *
+ * @pathname: File path.
+ * @oflag: Flags.
+ */
+int
+open(const char *pathname, int oflag)
+{
+    struct vnode *vp;
+    struct filedesc *fd;
+    int status;
+
+    /*
+     * Attempt to create a vnode and allocate a
+     * file descriptor
+     */
+    if ((status = vfs_path_to_node(pathname, &vp)) != 0) {
+        return status;
+    }
+    if ((status = fd_alloc(this_td(), &fd)) != 0) {
+        return status;
+    }
+
+    /*
+     * TODO: Handle more flags... For now we only support
+     *       O_RDONLY, so deny other flags.
+     */
+    if ((oflag & ~O_RDONLY) != 0){
+        fd_close_fdnum(this_td(), fd->fdno);
+        return -EACCES;
+    }
+
+    fd->vnode = vp;
+    fd->is_dir = (vp->type == VDIR);
+    return fd->fdno;
+}
+
+/*
  * arg0: int fd
  * arg1: const void *buf
  * arg2: count
@@ -267,4 +306,27 @@ uint64_t
 sys_write(struct syscall_args *args)
 {
     return write(args->arg0, (void *)args->arg1, args->arg2);
+}
+
+/*
+ * arg0: const char *pathname
+ * arg1: int oflag
+ */
+uint64_t
+sys_open(struct syscall_args *args)
+{
+    char *pathbuf = dynalloc(sizeof(char) * PATH_MAX);
+    int ret;
+
+    if (pathbuf == NULL) {
+        return -ENOMEM;
+    }
+
+    if (copyinstr(args->arg0, pathbuf, PATH_MAX) != 0) {
+        invalid_uaddr(args->arg0);
+    }
+
+    ret = open(pathbuf, args->arg1);
+    dynfree(pathbuf);
+    return ret;
 }

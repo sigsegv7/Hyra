@@ -39,6 +39,7 @@
 enum {
     SYS_exit = 1,
     SYS_write,
+    SYS_open,
     __MAX_SYSCALLS
 };
 
