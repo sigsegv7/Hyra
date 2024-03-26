@@ -134,9 +134,9 @@ vfs_path_to_node(const char *path, struct vnode **vp)
     int s = 0, fs_caps = 0;
 
     if (strcmp(path, "/") == 0 || !vfs_is_valid_path(path)) {
-        return -1;
+        return -EINVAL;
     } else if (*path != '/') {
-        return -1;
+        return -EINVAL;
     }
 
     /* Fetch filesystem capabilities if we can */
