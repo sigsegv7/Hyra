@@ -32,6 +32,15 @@
 
 #include <sys/types.h>
 
+/*
+ * TODO: Get rid of this when signals are implemented,
+ *       it is best to segfault the program when this
+ *       happens.
+ */
+#define invalid_uaddr(UADDR) \
+    panic("invalid uaddr 0x%p (pid=%d)\n", \
+          UADDR, this_td()->pid);
+
 #if defined(_KERNEL)
 int copyin(uintptr_t uaddr, void *kaddr, size_t len);
 int copyout(const void *kaddr, uintptr_t uaddr, size_t len);
