@@ -56,6 +56,7 @@ make_write_buf(struct proc *td, const void *data, char **buf_out, size_t count)
 {
     char *buf = NULL;
 
+    /* Count cannot be 0 or exceed the max size */
     if (count > MAX_RW_SIZE || count == 0) {
         return -EINVAL;
     }
@@ -130,8 +131,10 @@ fd_alloc(struct proc *td, struct filedesc **fd_out)
         __assert(td != NULL);
     }
 
+    /* Find free fd table entry */
     for (size_t i = 0; i < PROC_MAX_FDS; ++i) {
         if (td->fds[i] != NULL) {
+            /* In use */
             continue;
         }
 
