@@ -36,11 +36,18 @@
 #include <sys/sio.h>
 
 struct vnode;
+struct vattr;
 
 struct vops {
     int(*vget)(struct vnode *parent, const char *name, struct vnode **vp);
     int(*read)(struct vnode *vp, struct sio_txn *sio);
     int(*write)(struct vnode *vp, struct sio_txn *sio);
+    int(*getattr)(struct vnode *vp, struct vattr *vattr);
+};
+
+struct vattr {
+    size_t size;        /* File size in bytes */
+    int type;           /* Vnode type */
 };
 
 struct vnode {

@@ -146,6 +146,28 @@ vop_read(struct vnode *vp, struct sio_txn *sio)
     return sio->len;
 }
 
+static int
+vop_getattr(struct vnode *vp, struct vattr *vattr)
+{
+    struct tar_hdr *hdr = vp->data;
+
+    if (hdr == NULL) {
+        return -EIO;
+    }
+
+    switch (hdr->type) {
+    case TAR_TYPEFLAG_NORMAL:
+        vattr->type = VREG;
+        break;
+    case TAR_TYPEFLAG_DIR:
+        vattr->type = VDIR;
+        break;
+    }
+
+    vattr->size = getsize(hdr->size);
+    return 0;
+}
+
 static char *
 get_module(const char *path, uint64_t *size) {
     for (uint64_t i = 0; i < mod_req.response->module_count; ++i) {
@@ -232,5 +254,6 @@ struct vfsops g_initramfs_ops = {
 
 struct vops g_initramfs_vops = {
     .vget = vop_vget,
-    .read = vop_read
+    .read = vop_read,
+    .getattr = vop_getattr
 };
