@@ -140,7 +140,7 @@ vop_read(struct vnode *vp, struct sio_txn *sio)
         if (i >= size) {
             return i + 1;
         }
-        buf[i] = contents[i];
+        buf[i - sio->offset] = contents[i];
     }
 
     return sio->len;
