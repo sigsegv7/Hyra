@@ -33,6 +33,7 @@
 #include <sys/mount.h>
 #include <sys/vnode.h>
 #include <sys/types.h>
+#include <sys/sio.h>
 
 /* Max path length */
 #define PATH_MAX 1024
@@ -50,7 +51,7 @@ char *vfs_get_fname_at(const char *path, size_t idx);
 int vfs_rootname(const char *path, char **new_path);
 bool vfs_is_valid_path(const char *path);
 ssize_t vfs_hash_path(const char *path);
-ssize_t vfs_read(struct vnode *vp, char *buf, size_t count);
+ssize_t vfs_read(struct vnode *vp, struct sio_txn *sio);
 
 #endif /* defined(_KERNEL) */
 

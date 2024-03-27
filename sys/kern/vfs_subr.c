@@ -225,7 +225,7 @@ vfs_vget(struct vnode *parent, const char *name, struct vnode **vp)
 }
 
 ssize_t
-vfs_read(struct vnode *vp, char *buf, size_t count)
+vfs_read(struct vnode *vp, struct sio_txn *sio)
 {
-    return vp->vops->read(vp, buf, count);
+    return vp->vops->read(vp, sio);
 }

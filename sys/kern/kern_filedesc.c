@@ -29,6 +29,7 @@
 
 #include <sys/filedesc.h>
 #include <sys/proc.h>
+#include <sys/sio.h>
 #include <sys/sched.h>
 #include <sys/errno.h>
 #include <sys/system.h>
@@ -90,8 +91,9 @@ make_write_buf(struct proc *td, const void *data, char **buf_out, size_t count)
  * Helper function for write()
  */
 static ssize_t
-do_write(struct vnode *vp, const char *buf, size_t count)
+do_write(struct vnode *vp, char *buf, size_t count)
 {
+    struct sio_txn sio = { .buf = buf, .len = count };
     struct vops *vops = vp->vops;
     int status;
 
@@ -103,7 +105,7 @@ do_write(struct vnode *vp, const char *buf, size_t count)
     }
 
     /* Attempt a write */
-    if ((status = vops->write(vp, buf, count)) < 0) {
+    if ((status = vops->write(vp, &sio)) < 0) {
         return status;
     }
 
@@ -313,8 +315,14 @@ read(int fd, void *buf, size_t count)
     ssize_t bytes_read;
     struct vnode *vnode;
     struct filedesc *fd_desc;
+    struct sio_txn sio = {
+        .buf = buf,
+        .len = count,
+        .type = SIO_NONE
+    };
 
     fd_desc = fd_from_fdnum(this_td(), fd);
+    sio.offset = fd_desc->offset;
 
     if (fd_desc == NULL) {
         return -EBADF;
@@ -326,7 +334,7 @@ read(int fd, void *buf, size_t count)
         return -EINVAL;
     }
 
-    bytes_read = vfs_read(vnode, buf, count);
+    bytes_read = vfs_read(vnode, &sio);
     return bytes_read;
 }
 

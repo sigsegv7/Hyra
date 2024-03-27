@@ -33,13 +33,14 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/mount.h>
+#include <sys/sio.h>
 
 struct vnode;
 
 struct vops {
     int(*vget)(struct vnode *parent, const char *name, struct vnode **vp);
-    int(*read)(struct vnode *vp, char *buf, size_t count);
-    int(*write)(struct vnode *vp, const char *buf, size_t count);
+    int(*read)(struct vnode *vp, struct sio_txn *sio);
+    int(*write)(struct vnode *vp, struct sio_txn *sio);
 };
 
 struct vnode {

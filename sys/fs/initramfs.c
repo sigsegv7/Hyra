@@ -121,11 +121,12 @@ vop_vget(struct vnode *parent, const char *name, struct vnode **vp)
 }
 
 static int
-vop_read(struct vnode *vp, char *buf, size_t count)
+vop_read(struct vnode *vp, struct sio_txn *sio)
 {
     struct tar_hdr *hdr;
     size_t size;
     char *contents;
+    char *buf = sio->buf;
 
     if (vp->data == NULL) {
         return -EIO;
@@ -135,14 +136,14 @@ vop_read(struct vnode *vp, char *buf, size_t count)
     size = getsize(hdr->size);
     contents = hdr_to_contents(hdr);
 
-    for (size_t i = 0; i < count; ++i) {
+    for (size_t i = sio->offset; i < sio->len; ++i) {
         if (i >= size) {
             return i + 1;
         }
         buf[i] = contents[i];
     }
 
-    return count;
+    return sio->len;
 }
 
 static char *
