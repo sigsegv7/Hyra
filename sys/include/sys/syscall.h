@@ -42,6 +42,7 @@ enum {
     SYS_open,
     SYS_close,
     SYS_read,
+    SYS_lseek,
     __MAX_SYSCALLS
 };
 

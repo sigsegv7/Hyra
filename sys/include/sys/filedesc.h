@@ -39,6 +39,10 @@
 #define O_WRONLY 0x00001
 #define O_RDWR   0x00002
 
+#define SEEK_SET    0
+#define SEEK_CUR    1
+#define SEEK_END    2
+
 struct proc;
 
 struct filedesc {
@@ -56,11 +60,12 @@ void fd_close_fdnum(struct proc *td, int fdno);
 ssize_t write(int fd, const void *buf, size_t count);
 int open(const char *pathname, int oflag);
 int read(int fd, void *buf, size_t count);
+off_t lseek(int fd, off_t offset, int whence);
 
 uint64_t sys_write(struct syscall_args *args);
 uint64_t sys_open(struct syscall_args *args);
 uint64_t sys_close(struct syscall_args *args);
 uint64_t sys_read(struct syscall_args *args);
+uint64_t sys_lseek(struct syscall_args *args);
 #endif
-
 #endif

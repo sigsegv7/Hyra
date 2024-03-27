@@ -339,6 +339,54 @@ read(int fd, void *buf, size_t count)
 }
 
 /*
+ * Reposition the file offset
+ *
+ * @fd: File descriptor.
+ * @offset: Offset for the reposition
+ * @whence: SEEK_SET, SEEK_CUR, or SEEK_END
+ *
+ * TODO: Implement SEEK_END
+ */
+off_t
+lseek(int fd, off_t offset, int whence)
+{
+    struct filedesc *fd_desc;
+    struct vattr vattr;
+
+    fd_desc = fd_from_fdnum(this_td(), fd);
+
+    if (fd_desc == NULL) {
+        return -EBADF;
+    }
+
+    if (vfs_getattr(fd_desc->vnode, &vattr) != 0) {
+        return -1;
+    }
+
+    switch (whence) {
+    case SEEK_SET:
+        if (offset > vattr.size)
+            return -ESPIPE;
+
+        fd_desc->offset = offset;
+        break;
+    case SEEK_CUR:
+        if ((fd_desc->offset + offset) > vattr.size)
+            return -ESPIPE;
+
+        fd_desc->offset += offset;
+        break;
+    case SEEK_END:
+        /* TODO */
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return fd_desc->offset;
+}
+
+/*
  * arg0: int fd
  * arg1: const void *buf
  * arg2: count
@@ -417,4 +465,15 @@ sys_read(struct syscall_args *args)
         invalid_uaddr(args->arg1);
     }
     return bytes_read;
+}
+
+/*
+ * arg0: fd
+ * arg1: offset:
+ * arg2: whence
+ */
+uint64_t
+sys_lseek(struct syscall_args *args)
+{
+    return lseek(args->arg0, args->arg1, args->arg2);
 }
