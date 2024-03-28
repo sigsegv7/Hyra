@@ -36,6 +36,10 @@
 
 #define SYS_exit  1
 #define SYS_write 2
+#define SYS_open  3
+#define SYS_close 4
+#define SYS_read  5
+#define SYS_lseek 6
 
 #if !defined(__ASSEMBLER__)
 __attribute__((__always_inline__))
