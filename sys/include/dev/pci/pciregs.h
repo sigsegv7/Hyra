@@ -27,47 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DEV_PCI_H_
-#define _DEV_PCI_H_
+#ifndef _PCIREGS_H_
+#define _PCIREGS_H_
 
-#include <sys/syscall.h>
-#include <sys/queue.h>
 #include <sys/cdefs.h>
-#include <dev/pci/pciregs.h>
 
-/* Lookup bits */
-#define PCI_DEVICE_ID   __BIT(0)
-#define PCI_VENDOR_ID   __BIT(1)
-#define PCI_CLASS       __BIT(2)
-#define PCI_SUBCLASS    __BIT(3)
+/* PCI command register bits */
+#define PCI_IO_SPACE        __BIT(0)  /* Respond to I/O space accesses */
+#define PCI_MEM_SPACE       __BIT(1)  /* Respond to mem space accesses */
+#define PCI_BUS_MASTERING   __BIT(2)  /* Enable bus mastering */
 
-/* For PCI lookups */
-struct pci_lookup {
-    uint16_t device_id;
-    uint16_t vendor_id;
-    uint8_t pci_class;
-    uint8_t pci_subclass;
-};
-
-struct pci_device {
-    uint8_t bus;
-    uint8_t slot;
-    uint8_t func;
-
-    uint16_t device_id;
-    uint16_t vendor_id;
-    uint8_t pci_class;
-    uint8_t pci_subclass;
-    uint8_t prog_if;
-    uintptr_t bar[6];
-    uint8_t irq_line;
-    TAILQ_ENTRY(pci_device) link;
-};
-
-int pci_init(void);
-uint32_t pci_readl(struct pci_device *dev, uint32_t offset);
-void pci_writel(struct pci_device *dev, uint32_t offset, uint32_t val);
-void pci_set_cmdreg(struct pci_device *dev, uint16_t bits);
-struct pci_device *pci_get_device(struct pci_lookup lookup, uint16_t lookup_type);
-
-#endif  /* !_DEV_PCI_H_ */
+#endif  /* !_PCIREGS_H_ */

@@ -212,6 +212,21 @@ pci_writel(struct pci_device *dev, uint32_t offset, uint32_t val)
     __builtin_unreachable();
 }
 
+/*
+ * Set command register bits.
+ *
+ * @dev: Device whose command register to modify.
+ * @bits: Bits to set.
+ */
+void
+pci_set_cmdreg(struct pci_device *dev, uint16_t bits)
+{
+    uint32_t tmp;
+
+    tmp = pci_readl(dev, 0x4) | bits;
+    pci_writel(dev, 0x4, tmp);
+}
+
 struct pci_device *
 pci_get_device(struct pci_lookup lookup, uint16_t lookup_type)
 {
