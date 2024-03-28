@@ -23,10 +23,10 @@ SECTIONS
         *(.rodata .rodata.*)
     } :rodata
 
-    .modules : {
-        __modules_init_start = .; 
-        *(.modules .modules)
-        __modules_init_end = .; 
+    .drivers : {
+        __drivers_init_start = .;
+        *(.drivers .drivers)
+        __drivers_init_end = .;
     } :rodata
 
     . += CONSTANT(MAXPAGESIZE);
