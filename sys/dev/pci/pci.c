@@ -74,6 +74,33 @@ pci_cam_read(const struct pci_device *dev, uint32_t offset)
 #endif
 }
 
+/*
+ * Write to device's legacy PCI CAM space
+ *
+ * @dev: Device to write to.
+ * @offset: Offset to write at.
+ *
+ * XXX: Do not use directly!
+ */
+static void
+pci_cam_write(const struct pci_device *dev, uint32_t offset, uint32_t value)
+{
+#if defined(__x86_64__)
+    uint32_t address;
+
+    address = __BIT(31)         |
+              (offset & ~3)     |
+              (dev->func << 8)  |
+              (dev->slot << 11) |
+              (dev->bus << 16);
+
+    outl(0xCF8, address);
+    outb(0xCFC, value);
+#else
+    panic("Invalid arch (%s())\n", __func__);
+#endif
+}
+
 static bool
 pci_device_exists(uint8_t bus, uint8_t slot, uint8_t func)
 {
@@ -161,6 +188,24 @@ pci_readl(struct pci_device *dev, uint32_t offset)
 {
     if (access_method == PCI_ACCESS_CAM) {
         return pci_cam_read(dev, offset);
+    }
+
+    panic("Invalid access method (%s())\n", __func__);
+    __builtin_unreachable();
+}
+
+/*
+ * Write to PCI(e) configuration space.
+ *
+ * @dev: Device to write to.
+ * @offset: Offset to write at.
+ */
+void
+pci_writel(struct pci_device *dev, uint32_t offset, uint32_t val)
+{
+    if (access_method == PCI_ACCESS_CAM) {
+        pci_cam_write(dev, offset, val);
+        return;
     }
 
     panic("Invalid access method (%s())\n", __func__);
