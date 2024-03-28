@@ -33,6 +33,7 @@
 #include <sys/timer.h>
 #include <sys/sched.h>
 #include <sys/vfs.h>
+#include <sys/driver.h>
 #include <machine/cpu_mp.h>
 #include <firmware/acpi/acpi.h>
 #include <vm/physseg.h>
@@ -91,6 +92,8 @@ main(void)
     list_timers();
 
     vfs_init();
+
+    DRIVERS_INIT();
 
     sched_init();
     ci = this_cpu();
