@@ -47,6 +47,18 @@ dynalloc(size_t sz)
     return tmp;
 }
 
+void *
+dynalloc_memalign(size_t sz, size_t align)
+{
+    struct vm_ctx *vm_ctx = vm_get_ctx();
+    void *tmp;
+
+    spinlock_acquire(&vm_ctx->dynalloc_lock);
+    tmp = tlsf_memalign(vm_ctx->tlsf_ctx, align, sz);
+    spinlock_release(&vm_ctx->dynalloc_lock);
+    return tmp;
+}
+
 /*
  * Reallocates memory pool created by `dynalloc()'
  *
