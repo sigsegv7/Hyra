@@ -205,7 +205,7 @@ nvme_poll_submit_cmd(struct nvme_queue *queue, struct nvme_cmd cmd)
 }
 
 /*
- * Issue anidentify command for the current
+ * Issue an identify command for the current
  * controller.
  *
  * XXX: `id' must be aligned on a 4k byte boundary to avoid
