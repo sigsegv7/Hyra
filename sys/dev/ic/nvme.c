@@ -228,8 +228,7 @@ nvme_identify(struct nvme_state *state, struct nvme_id *id)
     identify->cns = 1;   /* Identify controller */
     identify->prp1 = VIRT_TO_PHYS(id);
     identify->prp2 = 0;  /* No need, data address is 4k aligned */
-    nvme_poll_submit_cmd(&state->adminq, cmd);
-    return 0;
+    return nvme_poll_submit_cmd(&state->adminq, cmd);
 }
 
 static int
