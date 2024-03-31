@@ -208,6 +208,51 @@ nvme_poll_submit_cmd(struct nvme_queue *queue, struct nvme_cmd cmd)
 }
 
 /*
+ * Create an I/O queue for a specific namespace.
+ *
+ * @ns: Namespace
+ * @id: I/O queue ID
+ */
+static int
+nvme_create_ioq(struct nvme_ns *ns, size_t id)
+{
+    struct nvme_queue *ioq = &ns->ioq;
+    struct nvme_state *cntl = ns->cntl;
+
+    struct nvme_bar *bar = cntl->bar;
+    struct nvme_cmd cmd = {0};
+    size_t mqes = CAP_MQES(bar->caps);
+
+    struct nvme_create_iocq_cmd *create_iocq;
+    struct nvme_create_iosq_cmd *create_iosq;
+    int status;
+
+    if ((status = nvme_create_queue(ns->cntl, ioq, id)) != 0) {
+        return status;
+    }
+
+    create_iocq = &cmd.create_iocq;
+    create_iocq->opcode = NVME_OP_CREATE_IOCQ;
+    create_iocq->qflags |= __BIT(0);    /* Physically contiguous */
+    create_iocq->qsize = mqes;
+    create_iocq->qid = id;
+    create_iocq->prp1 = VIRT_TO_PHYS(ns->ioq.cq);
+
+    if ((status = nvme_poll_submit_cmd(&cntl->adminq, cmd)) != 0) {
+        return status;
+    }
+
+    create_iosq = &cmd.create_iosq;
+    create_iosq->opcode = NVME_OP_CREATE_IOSQ;
+    create_iosq->qflags |= __BIT(0);    /* Physically contiguous */
+    create_iosq->qsize = mqes;
+    create_iosq->cqid = id;
+    create_iosq->sqid = id;
+    create_iosq->prp1 = VIRT_TO_PHYS(ns->ioq.sq);
+    return nvme_poll_submit_cmd(&cntl->adminq, cmd);
+}
+
+/*
  * Issue an identify command for the current
  * controller.
  *
@@ -290,6 +335,8 @@ nvme_init_ns(struct nvme_state *state, uint16_t nsid)
     ns->lba_bsize = 1 << ns->lba_fmt.ds;
     ns->size = id_ns->size;
     ns->cntl = state;
+
+    nvme_create_ioq(ns, ns->nsid);
     TAILQ_INSERT_TAIL(&namespaces, ns, link);
 done:
     if (id_ns != NULL)
