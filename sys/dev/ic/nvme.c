@@ -54,6 +54,8 @@ __KERNEL_META("$Hyra$: nvme.c, Ian Marco Moffett, "
 
 #define CONFIG_EN   __BIT(0)
 #define CONFIG_CSS_SHIFT 4
+#define CONFIG_IOSQES_SHIFT 16
+#define CONFIG_IOCQES_SHIFT 20
 
 static struct pci_device *nvme_dev;
 static struct timer driver_tmr;
@@ -275,6 +277,8 @@ nvme_enable_controller(struct nvme_state *state)
     struct nvme_bar *bar = state->bar;
     struct nvme_id *id;
 
+    uint8_t max_sqes, max_cqes;
+
     if (!__TEST(bar->config, CONFIG_EN)) {
         bar->config |= CONFIG_EN;
     }
@@ -292,6 +296,17 @@ nvme_enable_controller(struct nvme_state *state)
 
     nvme_identify(state, id);
     nvme_log_ctrl_id(id);
+
+    /*
+     * Before creating any I/O queues we need to set CC.IOCQES
+     * and CC.IOSQES... Bits 3:0 is the minimum and bits 7:4
+     * is the maximum. We'll choose the maximum.
+     */
+    max_sqes = id->sqes >> 4;
+    max_cqes = id->cqes >> 4;
+    bar->config |= (max_sqes << CONFIG_IOSQES_SHIFT);
+    bar->config |= (max_cqes << CONFIG_IOCQES_SHIFT);
+
     dynfree(id);
     return 0;
 }
