@@ -420,7 +420,6 @@ nvme_init_controller(struct nvme_bar *bar)
     struct nvme_state state = { . bar = bar };
     struct nvme_queue *adminq = &state.adminq;
 
-    uint8_t cap_css = CAP_CSS(bar->caps);
     uint16_t mqes = CAP_MQES(bar->caps);
     uint16_t cmdreg_bits = PCI_BUS_MASTERING |
                            PCI_MEM_SPACE;
@@ -434,15 +433,6 @@ nvme_init_controller(struct nvme_bar *bar)
     bar->aqa = (mqes | mqes << 16);
     bar->asq = VIRT_TO_PHYS(adminq->sq);
     bar->acq = VIRT_TO_PHYS(adminq->cq);
-
-    /* Set up supported command sets */
-    if (__TEST(cap_css, __BIT(7))) {
-        /* Admin command sets only */
-        bar->config |= (7UL << CONFIG_CSS_SHIFT);
-    } else if (__TEST(cap_css, __BIT(6))) {
-        /* All supported I/O command sets */
-        bar->config |= (6UL << CONFIG_CSS_SHIFT);
-    }
 
     nvme_enable_controller(&state);
     return 0;
