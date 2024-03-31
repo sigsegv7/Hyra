@@ -378,13 +378,11 @@ nvme_enable_controller(struct nvme_state *state)
     }
 
     id = dynalloc_memalign(sizeof(struct nvme_id), 0x1000);
-
     if (id == NULL) {
         return -1;
     }
 
     nsids = dynalloc_memalign(0x1000, 0x1000);
-
     if (nsids == NULL) {
         return -1;
     }
