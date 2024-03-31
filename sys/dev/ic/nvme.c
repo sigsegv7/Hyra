@@ -106,7 +106,7 @@ nvme_poll_ready(struct nvme_bar *bar, uint8_t val)
  * Create an admin queue.
  */
 static int
-nvme_create_adminq(struct nvme_state *s, struct nvme_queue *queue)
+nvme_create_queue(struct nvme_state *s, struct nvme_queue *queue, size_t id)
 {
     struct nvme_bar *bar = s->bar;
     const size_t PAGESZ = vm_get_page_size();
@@ -130,8 +130,8 @@ nvme_create_adminq(struct nvme_state *s, struct nvme_queue *queue)
     queue->sq_head = 0;
     queue->sq_tail = 0;
     queue->size = SLOTS;
-    queue->sq_db = PHYS_TO_VIRT((uintptr_t)bar + PAGESZ);
-    queue->cq_db = PHYS_TO_VIRT((uintptr_t)bar + PAGESZ + 1 * (4 << DBSTRIDE));
+    queue->sq_db = PHYS_TO_VIRT((uintptr_t)bar + PAGESZ + (2 * id * (4 << DBSTRIDE)));
+    queue->cq_db = PHYS_TO_VIRT((uintptr_t)bar + PAGESZ + ((2 * id + 1) * (4 << DBSTRIDE)));
     queue->cq_phase = 1;
     return 0;
 }
@@ -325,7 +325,7 @@ nvme_init_controller(struct nvme_bar *bar)
     pci_set_cmdreg(nvme_dev, cmdreg_bits);
     nvme_disable_controller(&state);
 
-    nvme_create_adminq(&state, adminq);
+    nvme_create_queue(&state, adminq, 0);
 
     /* Setup admin submission and admin completion queues */
     bar->aqa = (mqes | mqes << 16);
