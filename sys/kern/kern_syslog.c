@@ -48,68 +48,13 @@ syslog_write(const char *s, size_t len)
     }
 }
 
-/*
- * TODO: Replace with vsnprintf()
- */
-static void
-syslog_handle_fmt(va_list *ap, char fmt_spec)
-{
-    char tmp_ch;
-    int64_t tmp_int;
-    const char *tmp_str;
-    char tmp_buf[256] = { 0 };
-
-    size_t tmp_len;
-
-    switch (fmt_spec) {
-    case 'c':
-        tmp_ch = va_arg(*ap, int);
-        syslog_write(&tmp_ch, 1);
-        break;
-    case 's':
-        tmp_str = va_arg(*ap, const char *);
-        syslog_write(tmp_str, strlen(tmp_str));
-        break;
-    case 'd':
-        tmp_int = va_arg(*ap, int64_t);
-        itoa(tmp_int, tmp_buf, 10);
-        syslog_write(tmp_buf, strlen(tmp_buf));
-        break;
-    case 'p':
-        tmp_int = va_arg(*ap, uint64_t);
-        itoa(tmp_int, tmp_buf, 16);
-        tmp_len = strlen(tmp_buf);
-        /*
-         * Now we pad this.
-         *
-         * XXX TODO: This assumes 64-bits, should be
-         *           cleaned up.
-         */
-        for (size_t i = 0; i < 18 - tmp_len; ++i) {
-            syslog_write("0", 1);
-        }
-        syslog_write(tmp_buf + 2, tmp_len - 2);
-        break;
-    case 'x':
-        tmp_int = va_arg(*ap, uint64_t);
-        itoa(tmp_int, tmp_buf, 16);
-        tmp_len = strlen(tmp_buf);
-        syslog_write(tmp_buf + 2, tmp_len - 2);
-        break;
-    }
-}
-
 void
 vkprintf(const char *fmt, va_list *ap)
 {
-    while (*fmt) {
-        if (*fmt == '%') {
-            ++fmt;
-            syslog_handle_fmt(ap, *fmt++);
-        } else {
-            syslog_write(fmt++, 1);
-        }
-    }
+    char buffer[1024] = {0};
+
+    vsnprintf(buffer, sizeof(buffer), fmt, *ap);
+    syslog_write(buffer, strlen(buffer));
 }
 
 void
