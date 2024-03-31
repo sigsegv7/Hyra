@@ -59,6 +59,7 @@ __KERNEL_META("$Hyra$: nvme.c, Ian Marco Moffett, "
 
 static struct pci_device *nvme_dev;
 static struct timer driver_tmr;
+static TAILQ_HEAD(,nvme_ns) namespaces;
 
 static inline int
 is_4k_aligned(void *ptr)
@@ -233,6 +234,70 @@ nvme_identify(struct nvme_state *state, struct nvme_id *id)
     return nvme_poll_submit_cmd(&state->adminq, cmd);
 }
 
+/*
+ * Get identify data for namespace
+ *
+ * @id_ns: Data will be written to this pointer via DMA.
+ * @nsid: Namespace ID.
+ *
+ * XXX: `id_ns' must be 4k aligned.
+ */
+static int
+nvme_id_ns(struct nvme_state *s, struct nvme_id_ns *id_ns, uint16_t nsid)
+{
+    struct nvme_cmd cmd = {0};
+    struct nvme_identify_cmd *identify = &cmd.identify;
+
+    if (!is_4k_aligned(id_ns)) {
+        return -1;
+    }
+
+    identify->opcode = NVME_OP_IDENTIFY;
+    identify->nsid = nsid;
+    identify->cns = 0;
+    identify->prp1 = VIRT_TO_PHYS(id_ns);
+    return nvme_poll_submit_cmd(&s->adminq, cmd);
+}
+
+/*
+ * Init a namespace.
+ *
+ * @nsid: Namespace ID
+ */
+static int
+nvme_init_ns(struct nvme_state *state, uint16_t nsid)
+{
+    struct nvme_ns *ns = NULL;
+    struct nvme_id_ns *id_ns = NULL;
+    uint8_t lba_format;
+    int status = 0;
+
+    ns = dynalloc(sizeof(struct nvme_ns));
+    if (ns == NULL) {
+        status = -1;
+        goto done;
+    }
+
+    id_ns = dynalloc_memalign(sizeof(struct nvme_id_ns), 0x1000);
+    if ((status = nvme_id_ns(state, id_ns, nsid)) != 0) {
+        dynfree(ns);
+        goto done;
+    }
+
+    lba_format = id_ns->flbas & 0xF;
+    ns->lba_fmt = id_ns->lbaf[lba_format];
+    ns->nsid = nsid;
+    ns->lba_bsize = 1 << ns->lba_fmt.ds;
+    ns->size = id_ns->size;
+    ns->cntl = state;
+    TAILQ_INSERT_TAIL(&namespaces, ns, link);
+done:
+    if (id_ns != NULL)
+        dynfree(id_ns);
+
+    return status;
+}
+
 static int
 nvme_disable_controller(struct nvme_state *state)
 {
@@ -271,12 +336,36 @@ nvme_log_ctrl_id(struct nvme_id *id)
     KDEBUG("NVMe firmware revision: %s\n", fr);
 }
 
+/*
+ * Fetch the list of namespace IDs
+ *
+ * @nsids_out: NSIDs will be written here via DMA.
+ *
+ * XXX: `nsids_out' must be 4k aligned.
+ */
+static int
+nvme_get_nsids(struct nvme_state *state, uint32_t *nsids_out)
+{
+    struct nvme_cmd cmd = {0};
+    struct nvme_identify_cmd *identify = &cmd.identify;
+
+    if (!is_4k_aligned(nsids_out)) {
+        return -1;
+    }
+
+    identify->opcode = NVME_OP_IDENTIFY;
+    identify->cns = 2;      /* Active NSID list */
+    identify->prp1 = VIRT_TO_PHYS(nsids_out);
+    return nvme_poll_submit_cmd(&state->adminq, cmd);
+}
+
 static int
 nvme_enable_controller(struct nvme_state *state)
 {
     struct nvme_bar *bar = state->bar;
     struct nvme_id *id;
 
+    uint32_t *nsids;
     uint8_t max_sqes, max_cqes;
 
     if (!__TEST(bar->config, CONFIG_EN)) {
@@ -294,8 +383,15 @@ nvme_enable_controller(struct nvme_state *state)
         return -1;
     }
 
+    nsids = dynalloc_memalign(0x1000, 0x1000);
+
+    if (nsids == NULL) {
+        return -1;
+    }
+
     nvme_identify(state, id);
     nvme_log_ctrl_id(id);
+    nvme_get_nsids(state, nsids);
 
     /*
      * Before creating any I/O queues we need to set CC.IOCQES
@@ -307,6 +403,15 @@ nvme_enable_controller(struct nvme_state *state)
     bar->config |= (max_sqes << CONFIG_IOSQES_SHIFT);
     bar->config |= (max_cqes << CONFIG_IOCQES_SHIFT);
 
+    /* Init NVMe namespaces */
+    for (size_t i = 0; i < id->nn; ++i) {
+        if (nsids[i] != 0) {
+            KINFO("Found NVMe namespace (id=%d)\n", nsids[i]);
+            nvme_init_ns(state, nsids[i]);
+        }
+    }
+
+    dynfree(nsids);
     dynfree(id);
     return 0;
 }
@@ -371,6 +476,7 @@ nvme_init(void)
 
     bar = (struct nvme_bar *)(nvme_dev->bar[0] & ~7);
     KINFO("NVMe BAR0 @ 0x%p\n", bar);
+    TAILQ_INIT(&namespaces);
 
     if (nvme_init_controller(bar) < 0) {
         return -1;

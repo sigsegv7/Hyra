@@ -215,7 +215,10 @@ struct nvme_state {
 struct nvme_ns {
     size_t nsid;                /* Namespace ID */
     size_t lba_bsize;           /* LBA block size */
+    size_t size;                /* Size in logical blocks */
+    struct nvme_lbaf lba_fmt;   /* LBA format */
     struct nvme_state *cntl;    /* NVMe controller */
+    TAILQ_ENTRY(nvme_ns) link;
 };
 
 #endif
