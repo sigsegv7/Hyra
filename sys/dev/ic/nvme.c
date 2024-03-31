@@ -104,7 +104,7 @@ nvme_poll_ready(struct nvme_bar *bar, uint8_t val)
 }
 
 /*
- * Create an admin queue.
+ * Create an NVMe queue.
  */
 static int
 nvme_create_queue(struct nvme_state *s, struct nvme_queue *queue, size_t id)
