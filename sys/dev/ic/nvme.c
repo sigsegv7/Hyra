@@ -281,6 +281,7 @@ nvme_enable_controller(struct nvme_state *state)
 
     if (nvme_poll_ready(bar, 1) < 0) {
         KERR("Failed to enable controller\n");
+        return -1;
     }
 
     id = dynalloc_memalign(sizeof(struct nvme_id), 0x1000);
