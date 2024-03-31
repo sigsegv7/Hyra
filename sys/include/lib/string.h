@@ -31,6 +31,7 @@
 #define _LIB_STRING_H_
 
 #include <sys/types.h>
+#include <stdarg.h>
 
 size_t strlen(const char *s);
 char *itoa(int64_t value, char *buf, int base);
@@ -41,5 +42,7 @@ void *memset(void *s, int c, size_t n);
 void *memset64(void *s, int c, size_t n);
 int memcmp(const void *s1, const void *s2, size_t n);
 int strcmp(const char *s1, const char *s2);
+int vsnprintf(char *s, size_t size, const char *fmt, va_list ap);
+int snprintf(char *s, size_t size, const char *fmt, ...);
 
 #endif  /* !_LIB_STRING_H_ */
