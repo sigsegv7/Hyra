@@ -32,7 +32,10 @@
 
 #include <sys/cdefs.h>
 
-#define NVME_OP_IDENTIFY 0x06
+/* Admin commands */
+#define NVME_OP_CREATE_IOSQ     0x01
+#define NVME_OP_CREATE_IOCQ     0x05
+#define NVME_OP_IDENTIFY        0x06
 
 /* I/O commands */
 #define NVME_OP_READ 0x02
@@ -81,10 +84,41 @@ struct nvme_rw_cmd {
     uint16_t appmask;
 };
 
+/* Create I/O completion queue */
+struct nvme_create_iocq_cmd {
+    uint8_t opcode;
+    uint8_t flags;
+    uint16_t cid;
+    uint32_t unused1[5];
+    uint64_t prp1;
+    uint64_t unused2;
+    uint16_t qid;
+    uint16_t qsize;
+    uint16_t qflags;
+    uint16_t irqvec;
+    uint64_t unused3[2];
+};
+
+struct nvme_create_iosq_cmd {
+    uint8_t opcode;
+    uint8_t flags;
+    uint16_t cid;
+    uint32_t unused1[5];
+    uint64_t prp1;
+    uint64_t unused2;
+    uint16_t sqid;
+    uint16_t qsize;
+    uint16_t qflags;
+    uint16_t cqid;
+    uint64_t unused3[2];
+};
+
 struct nvme_cmd {
     union {
         struct nvme_identify_cmd identify;
         struct nvme_common_cmd common;
+        struct nvme_create_iocq_cmd create_iocq;
+        struct nvme_create_iosq_cmd create_iosq;
     };
 };
 
@@ -216,6 +250,7 @@ struct nvme_ns {
     size_t nsid;                /* Namespace ID */
     size_t lba_bsize;           /* LBA block size */
     size_t size;                /* Size in logical blocks */
+    struct nvme_queue ioq;      /* I/O queue */
     struct nvme_lbaf lba_fmt;   /* LBA format */
     struct nvme_state *cntl;    /* NVMe controller */
     TAILQ_ENTRY(nvme_ns) link;
