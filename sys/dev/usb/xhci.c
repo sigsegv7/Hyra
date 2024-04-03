@@ -112,6 +112,7 @@ xhci_submit_cmd(struct xhci_hc *hc, struct xhci_trb trb)
     /* Push the TRB to the command ring */
     cmd_db = XHCI_CMD_DB(hc->base, caps->dboff);
     hc->cmd_ring[hc->cmd_ptr++] = trb;
+    hc->cycle = ~hc->cycle;
 
     /* Wrap if needed */
     if (hc->cmd_ptr >= XHCI_CMDRING_LEN) {
@@ -368,7 +369,7 @@ xhci_init_hc(struct xhci_hc *hc)
     }
 
     /* Set cmdring state */
-    hc->cycle = 0;
+    hc->cycle = 1;
     hc->cmd_ptr = 0;
 
     /* Allocate resources and tell the HC about them */
