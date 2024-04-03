@@ -289,13 +289,69 @@ xhci_reset_hc(struct xhci_hc *hc)
     return 0;
 }
 
+/*
+ * Allocate the Device Context Base Address
+ * Array.
+ *
+ * Returns the physical address and sets
+ * hc->dcbaap to the virtual address.
+ */
+static uintptr_t
+xhci_alloc_dcbaa(struct xhci_hc *hc)
+{
+    size_t dcbaa_size;
+
+    dcbaa_size = sizeof(uintptr_t) * hc->maxslots;
+    hc->dcbaap = dynalloc_memalign(dcbaa_size, 0x1000);
+    __assert(hc->dcbaap != NULL);
+
+    return VIRT_TO_PHYS(hc->dcbaap);
+}
+
+/*
+ * Allocates command ring and sets hc->cmd_ring
+ * to the virtual address.
+ *
+ * Returns the physical address.
+ */
+static uintptr_t
+xhci_alloc_cmdring(struct xhci_hc *hc)
+{
+    size_t cmdring_size;
+
+    cmdring_size = XHCI_TRB_SIZE * XHCI_CMDRING_LEN;
+
+    /* Create command ring */
+    hc->cmd_ring = dynalloc_memalign(cmdring_size, 0x1000);
+    __assert(hc->cmd_ring != NULL);
+
+    return VIRT_TO_PHYS(hc->cmd_ring);
+}
+
+/*
+ * Allocates the event ring segment
+ * and sets hc->evring_seg to the virtual address.
+ *
+ * Returns the physical address.
+ */
+static uintptr_t
+xhci_alloc_evring(struct xhci_hc *hc)
+{
+    size_t evring_segment_sz;
+
+    /* Allocate event ring segment */
+    evring_segment_sz = sizeof(struct xhci_evring_segment);
+    hc->evring_seg = dynalloc_memalign(evring_segment_sz, 0x1000);
+    xhci_init_evring_segment(hc->evring_seg);
+
+    return VIRT_TO_PHYS(hc->evring_seg);
+}
+
 static int
 xhci_init_hc(struct xhci_hc *hc)
 {
     struct xhci_caps *caps;
     struct xhci_opregs *opregs;
-    size_t dcbaa_size, cmdring_size;
-    size_t evring_segment_sz;
 
     /* Get some information from the controller */
     caps = XHCI_CAPS(hc->base);
@@ -317,28 +373,11 @@ xhci_init_hc(struct xhci_hc *hc)
     hc->cycle = 0;
     hc->cmd_ptr = 0;
 
-    /* Allocate and set DCBAA */
-    dcbaa_size = sizeof(uintptr_t) * hc->maxslots;
-    hc->dcbaap = dynalloc_memalign(dcbaa_size, 0x1000);
-    __assert(hc->dcbaap != NULL);
-    opregs->dcbaa_ptr = VIRT_TO_PHYS(hc->dcbaap);
-
+    /* Allocate resources and tell the HC about them */
+    opregs->dcbaa_ptr = xhci_alloc_dcbaa(hc);
     xhci_init_scratchpads(hc);
-    cmdring_size = XHCI_TRB_SIZE * XHCI_CMDRING_LEN;
-
-    /* Create command ring */
-    hc->cmd_ring = dynalloc_memalign(cmdring_size, 0x1000);
-    __assert(hc->cmd_ring != NULL);
-    opregs->cmd_ring = VIRT_TO_PHYS(hc->cmd_ring);
-
-    /* Allocate event ring segment */
-    evring_segment_sz = sizeof(struct xhci_evring_segment);
-    hc->evring_seg = dynalloc_memalign(evring_segment_sz, 0x1000);
-    xhci_init_evring_segment(hc->evring_seg);
-
-    /* Tell the HC about the event ring segment */
-    __assert(hc->evring_seg != NULL);
-    xhci_set_erst_base(hc, VIRT_TO_PHYS(hc->evring_seg));
+    opregs->cmd_ring = xhci_alloc_cmdring(hc);
+    xhci_set_erst_base(hc, xhci_alloc_evring(hc));
 
     /* We're ready, start up the HC and ports */
     xhci_start_hc(hc);
