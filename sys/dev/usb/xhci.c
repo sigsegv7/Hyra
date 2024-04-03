@@ -320,8 +320,6 @@ xhci_alloc_cmdring(struct xhci_hc *hc)
     size_t cmdring_size;
 
     cmdring_size = XHCI_TRB_SIZE * XHCI_CMDRING_LEN;
-
-    /* Create command ring */
     hc->cmd_ring = dynalloc_memalign(cmdring_size, 0x1000);
     __assert(hc->cmd_ring != NULL);
 
