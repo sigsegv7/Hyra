@@ -421,7 +421,7 @@ sched_init(void)
     }
 
     init = sched_create_td((uintptr_t)ld_auxv.at_entry, argv, envp,
-                           ld_auxv, vas, true, &init_range);
+                           auxv, vas, true, &init_range);
     if (init == NULL) {
         panic("Failed to create thread for init\n");
     }
