@@ -116,14 +116,24 @@ xhci_submit_cmd(struct xhci_hc *hc, struct xhci_trb trb)
     hc->cmd_ring[hc->cmd_ptr++] = trb.dword3 | hc->cycle;
     hc->cmd_count++;
 
-    if (hc->cmd_count >= XHCI_CMDRING_LEN) {
-        /* TODO: Add link TRB */
-        __assert(0 && "TODO");
-    }
-
     /* Ring the command doorbell */
     cmd_db = XHCI_CMD_DB(hc->base, caps->dboff);
     *cmd_db = 0;
+
+    if (hc->cmd_count >= XHCI_CMDRING_LEN - 1) {
+        /* Create raw link TRB and ring the doorbell */
+        hc->cmd_ring[hc->cmd_ptr++] = VIRT_TO_PHYS(hc->cmd_ring) & 0xFFFFFFFF;
+        hc->cmd_ring[hc->cmd_ptr++] = VIRT_TO_PHYS(hc->cmd_ring) >> 32;
+        hc->cmd_ring[hc->cmd_ptr++] = 0;
+        hc->cmd_ring[hc->cmd_ptr++] = hc->cycle | (XHCI_LINK << 10) | __BIT(1);
+        *cmd_db = 0;
+
+        /* Reset command state and flip cycle */
+        hc->cmd_ptr = 0;
+        hc->cmd_count = 0;
+        hc->cycle = ~hc->cycle;
+    }
+
     return 0;
 }
 
