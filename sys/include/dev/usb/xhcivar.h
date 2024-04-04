@@ -57,6 +57,12 @@ struct xhci_nop_trb {
 struct xhci_trb {
     union {
         struct xhci_nop_trb nop;
+        struct {
+            uint32_t dword0;
+            uint32_t dword1;
+            uint32_t dword2;
+            uint32_t dword3;
+        };
     };
 };
 
@@ -92,10 +98,11 @@ struct xhci_hc {
     size_t protocnt;
     uintptr_t *dcbaap;
     uint8_t cycle : 1;
-    uint16_t cmd_ptr;   /* Command ring enqueue ptr */
+    uint16_t cmd_ptr;   /* Command ring index  */
+    uint16_t cmd_count; /* Command ring entry count */
+    uint32_t *cmd_ring;
     struct xhci_opregs *opregs;
     struct xhci_proto protos[XHCI_MAX_PROTOS];
-    struct xhci_trb *cmd_ring;
     struct xhci_evring_segment *evring_seg;
 };
 

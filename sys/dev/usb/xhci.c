@@ -110,16 +110,19 @@ xhci_submit_cmd(struct xhci_hc *hc, struct xhci_trb trb)
     struct xhci_caps *caps = XHCI_CAPS(hc->base);
 
     /* Push the TRB to the command ring */
-    cmd_db = XHCI_CMD_DB(hc->base, caps->dboff);
-    hc->cmd_ring[hc->cmd_ptr++] = trb;
-    hc->cycle = ~hc->cycle;
+    hc->cmd_ring[hc->cmd_ptr++] = trb.dword0;
+    hc->cmd_ring[hc->cmd_ptr++] = trb.dword1;
+    hc->cmd_ring[hc->cmd_ptr++] = trb.dword2;
+    hc->cmd_ring[hc->cmd_ptr++] = trb.dword3 | hc->cycle;
+    hc->cmd_count++;
 
-    /* Wrap if needed */
-    if (hc->cmd_ptr >= XHCI_CMDRING_LEN) {
-        hc->cmd_ptr = 0;
+    if (hc->cmd_count >= XHCI_CMDRING_LEN) {
+        /* TODO: Add link TRB */
+        __assert(0 && "TODO");
     }
 
     /* Ring the command doorbell */
+    cmd_db = XHCI_CMD_DB(hc->base, caps->dboff);
     *cmd_db = 0;
     return 0;
 }
@@ -371,6 +374,7 @@ xhci_init_hc(struct xhci_hc *hc)
     /* Set cmdring state */
     hc->cycle = 1;
     hc->cmd_ptr = 0;
+    hc->cmd_count = 0;
 
     /* Allocate resources and tell the HC about them */
     opregs->dcbaa_ptr = xhci_alloc_dcbaa(hc);
