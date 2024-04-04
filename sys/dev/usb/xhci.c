@@ -121,7 +121,15 @@ xhci_submit_cmd(struct xhci_hc *hc, struct xhci_trb trb)
     *cmd_db = 0;
 
     if (hc->cmd_count >= XHCI_CMDRING_LEN - 1) {
-        /* Create raw link TRB and ring the doorbell */
+        /*
+         * Create raw link TRB and ring the doorbell. We want the
+         * xHC to flip its cycle bit so it doesn't confuse existing
+         * entries (that we'll overwrite) in the ring with current
+         * entries, so we set the Toggle Cycle bit.
+         *
+         * See the xHCI spec, section 6.4.4.1 for information regarding
+         * the format of link TRBs.
+         */
         hc->cmd_ring[hc->cmd_ptr++] = VIRT_TO_PHYS(hc->cmd_ring) & 0xFFFFFFFF;
         hc->cmd_ring[hc->cmd_ptr++] = VIRT_TO_PHYS(hc->cmd_ring) >> 32;
         hc->cmd_ring[hc->cmd_ptr++] = 0;
