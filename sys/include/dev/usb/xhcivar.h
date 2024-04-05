@@ -37,7 +37,7 @@
 #define XHCI_TIMEOUT 500    /* In ms */
 #define XHCI_CMDRING_LEN 16
 #define XHCI_EVRING_LEN 16
-#define XHCI_TRB_SIZE 128   /* In bytes */
+#define XHCI_TRB_SIZE 16   /* In bytes */
 #define XHCI_EVENTRING_LEN XHCI_CMDRING_LEN
 #define XHCI_MAX_PROTOS 4
 
