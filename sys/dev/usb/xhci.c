@@ -35,7 +35,6 @@
 #include <dev/usb/xhcivar.h>
 #include <vm/physseg.h>
 #include <vm/dynalloc.h>
-#include <vm/page.h>
 #include <vm/vm.h>
 #include <string.h>
 #include <assert.h>
@@ -192,7 +191,7 @@ xhci_init_scratchpads(struct xhci_hc *hc)
 {
     struct xhci_caps *caps = XHCI_CAPS(hc->base);
     uint16_t max_bufs_lo, max_bufs_hi, max_bufs;
-    uintptr_t buffer_array;
+    uintptr_t *buffer_array, tmp;
 
     max_bufs_lo = XHCI_MAX_SP_LO(caps->hcsparams2);
     max_bufs_hi = XHCI_MAX_SP_HI(caps->hcsparams2);
@@ -206,15 +205,31 @@ xhci_init_scratchpads(struct xhci_hc *hc)
         return 0;
     }
 
-    KINFO("HC requires %d max scratchpad buffers(s)\n", max_bufs);
-    buffer_array = vm_alloc_pageframe(max_bufs);
-    if (buffer_array == 0) {
-        KERR("Failed to allocate scratchpad buffer(s)\n");
+    KINFO("Need %d scratchpad buffers\n", max_bufs);
+
+    /* Allocate buffer array */
+    buffer_array = dynalloc_memalign(sizeof(uintptr_t)*max_bufs, 0x1000);
+    if (buffer_array == NULL) {
+        KERR("Failed to allocate scratchpad buffer array\n");
         return -1;
     }
 
-    vm_zero_page(PHYS_TO_VIRT(buffer_array), max_bufs);
-    hc->dcbaap[0] = buffer_array;
+    memset(buffer_array, 0, sizeof(uintptr_t)*max_bufs);
+
+    /* Fill the buffer array */
+    for (size_t i = 0; i < max_bufs; ++i) {
+        tmp = vm_alloc_pageframe(1);
+
+        if (tmp == 0) {
+            /* TODO: Shutdown, free memory */
+            KERR("Failed to fill scratchpad buffer array\n");
+            return -1;
+        }
+
+        buffer_array[i] = tmp;
+    }
+
+    hc->dcbaap[0] = VIRT_TO_PHYS(buffer_array);
     return 0;
 }
 
