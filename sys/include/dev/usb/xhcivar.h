@@ -81,10 +81,9 @@ struct xhci_proto {
  * See xHCI spec, section 6.5, table 6-40
  */
 struct __packed xhci_evring_segment {
-    uint8_t reserved : 5;
-    uint64_t base : 58;
-    uint16_t size;
-    uint32_t reserved1 : 17;
+    uint64_t base;
+    uint32_t size;
+    uint32_t reserved;
 };
 
 /*
