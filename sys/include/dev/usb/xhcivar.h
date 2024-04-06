@@ -106,4 +106,8 @@ struct xhci_hc {
     struct xhci_evring_segment *evring_seg;
 };
 
+/* TRB types */
+#define XHCI_ENABLE_SLOT    9
+#define XHCI_LINK           6
+
 #endif  /* !_USB_XHCIVAR_H_ */
