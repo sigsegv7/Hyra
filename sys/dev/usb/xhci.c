@@ -382,6 +382,43 @@ xhci_alloc_evring(struct xhci_hc *hc)
     return VIRT_TO_PHYS(hc->evring_seg);
 }
 
+/*
+ * Sets up the event ring.
+ */
+static void
+xhci_init_evring(struct xhci_hc *hc)
+{
+    struct xhci_caps *caps = XHCI_CAPS(hc->base);
+    struct xhci_evring_segment *seg;
+    uint64_t *erdp, *erstba;
+    uint32_t *erst_size;
+    void *runtime = XHCI_RTS(hc->base, caps->rtsoff);
+    size_t size;
+
+    size = XHCI_EVRING_LEN * XHCI_TRB_SIZE;
+    seg = dynalloc_memalign(size, 64);
+    memset(seg, 0, size);
+
+    /* Set the size of the event ring segment table */
+    erst_size = XHCI_BASE_OFF(runtime, 0x28);
+    *erst_size = 1;
+
+    /* Setup the event ring segment */
+    memset(seg, 0, size);
+    seg->base = VIRT_TO_PHYS(seg);
+    seg->size = XHCI_EVRING_LEN;
+
+    /* Setup the event ring dequeue pointer */
+    erdp = XHCI_BASE_OFF(runtime, 0x38);
+    *erdp = seg->base;
+
+    /* Point ERSTBA to our event ring segment */
+    erstba = XHCI_BASE_OFF(runtime, 0x30);
+    *erstba = VIRT_TO_PHYS(seg);
+
+    hc->event_ring = PHYS_TO_VIRT(seg->base);
+}
+
 static int
 xhci_init_hc(struct xhci_hc *hc)
 {
@@ -412,8 +449,8 @@ xhci_init_hc(struct xhci_hc *hc)
     /* Allocate resources and tell the HC about them */
     opregs->dcbaa_ptr = xhci_alloc_dcbaa(hc);
     xhci_init_scratchpads(hc);
+    xhci_init_evring(hc);
     opregs->cmd_ring = xhci_alloc_cmdring(hc);
-    xhci_set_erst_base(hc, xhci_alloc_evring(hc));
 
     /* We're ready, start up the HC and ports */
     xhci_start_hc(hc);

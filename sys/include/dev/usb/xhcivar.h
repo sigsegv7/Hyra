@@ -100,6 +100,7 @@ struct xhci_hc {
     uint16_t cmd_ptr;   /* Command ring index  */
     uint16_t cmd_count; /* Command ring entry count */
     uint32_t *cmd_ring;
+    uint32_t *event_ring;
     struct xhci_opregs *opregs;
     struct xhci_proto protos[XHCI_MAX_PROTOS];
     struct xhci_evring_segment *evring_seg;
