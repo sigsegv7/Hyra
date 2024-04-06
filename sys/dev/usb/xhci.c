@@ -79,23 +79,6 @@ xhci_set_erst_base(struct xhci_hc *hc, uintptr_t pa)
 }
 
 /*
- * Set up an xHCI event ring segment.
- */
-static int
-xhci_init_evring_segment(struct xhci_evring_segment *seg)
-{
-    size_t evring_size;
-    void *event_ring;
-
-    evring_size = XHCI_TRB_SIZE * XHCI_EVRING_LEN;
-    event_ring = dynalloc_memalign(evring_size, 64);
-
-    seg->base = VIRT_TO_PHYS(event_ring);
-    seg->size = XHCI_EVRING_LEN;
-    return 0;
-}
-
-/*
  * Submit a command by pushing a TRB to the
  * command ring.
  *
@@ -361,25 +344,6 @@ xhci_alloc_cmdring(struct xhci_hc *hc)
     __assert(hc->cmd_ring != NULL);
 
     return VIRT_TO_PHYS(hc->cmd_ring);
-}
-
-/*
- * Allocates the event ring segment
- * and sets hc->evring_seg to the virtual address.
- *
- * Returns the physical address.
- */
-static uintptr_t
-xhci_alloc_evring(struct xhci_hc *hc)
-{
-    size_t evring_segment_sz;
-
-    /* Allocate event ring segment */
-    evring_segment_sz = sizeof(struct xhci_evring_segment);
-    hc->evring_seg = dynalloc_memalign(evring_segment_sz, 0x1000);
-    xhci_init_evring_segment(hc->evring_seg);
-
-    return VIRT_TO_PHYS(hc->evring_seg);
 }
 
 /*
