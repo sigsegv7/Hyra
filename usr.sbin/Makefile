@@ -1,7 +1,8 @@
 CC =
 LD =
-LDSO =
+LIBC =
+USRDIR =
 
 .PHONY: all
 all:
-	cd init/; make LDSO=$(LDSO) CC=$(CC) LD=$(LD)
+	cd init/; make CC=$(CC) USRDIR=$(USRDIR) LIBC=$(LIBC)

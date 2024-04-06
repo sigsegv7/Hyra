@@ -27,34 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/syscall.h>
-#include <sys/auxv.h>
 #include <stdint.h>
-#include <stddef.h>
-#include <elf.h>
 
-#if !defined(__hyra__)
-#error "Hyra supported only"
-#endif
+int main(int argc, const char **argv, const char **envp);
 
-void
-entry(const uint64_t *ctx)
+int
+__libc_entry(uint64_t *ctx)
 {
     uint64_t argc = *ctx;
-    uint64_t auxv[AT_MAX_COUNT] = {0};
-    int envc;
-
     const char **argv = (const char **)(ctx + 1);
     const char **envp = (const char **)(argv + argc + 1);
-    struct auxv_entry *auxvp;
 
-    /* Read-in auxiliary vector */
-    auxvp = (struct auxv_entry *)(envp + envc + 1);
-    for (; auxvp->tag != AT_NULL; ++auxvp) {
-        if (auxvp->tag < AT_MAX_COUNT) {
-            auxv[auxvp->tag] = auxvp->val;
-        }
-    }
-
-    /* TODO */
+    return main(argc, argv, envp);
 }

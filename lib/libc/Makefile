@@ -5,14 +5,17 @@ LIBC_ASMFILES = $(shell find src/ -name "*.S")
 LIBC_OBJ = $(LIBC_CFILES:.c=.o)
 LIBC_ASMOBJ = $(LIBC_ASMFILES:.S=.S.o)
 
-all: $(LIBC_OBJ) build/ld.so
+all: $(LIBC_ASMOBJ) $(LIBC_OBJ) build/libc.a
 
-build/ld.so: build/ linker/entry.c linker/entry.S
-	mkdir -p $(@D)
-	$(CC) $(CFLAGS) linker/entry.S -o build/entry.S.o
-	$(CC) $(CFLAGS) linker/entry.c -o build/entry.o
-	$(LD) -znoexecstack $(LIBC_OBJ) \
-		build/entry.o build/entry.S.o -o $@
+build/libc.a: build/
+	ar rcs build/libc.a $(LIBC_OBJ) $(LIBC_ASMOBJ)
+
+#build/ld.so: build/ linker/entry.c linker/entry.S
+#	mkdir -p $(@D)
+#	$(CC) $(CFLAGS) linker/entry.S -o build/entry.S.o
+#	$(CC) $(CFLAGS) linker/entry.c -o build/entry.o
+#	$(LD) -znoexecstack $(LIBC_OBJ) \
+# 	build/entry.o build/entry.S.o -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@

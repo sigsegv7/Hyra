@@ -1,6 +1,5 @@
 int
-main(void)
+main(int argc, char **argv)
 {
-    /* Do nothing */
-    while (1);
+    return 0;
 }

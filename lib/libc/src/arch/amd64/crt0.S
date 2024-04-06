@@ -33,15 +33,15 @@
 
 #include <sys/syscall.h>
 
-.section .text, "ax", @progbits
+.text
 .globl _start
 _start:
     // Mark end of callstack
     xor %rbp, %rbp
 
-    // Load process context as per the sysv AMD64 ABI
+    // Load process context and call entry
     lea (%rsp), %rdi
-    call entry
+    call __libc_entry
 
     // We are done, now we exit
     mov $SYS_exit, %rax

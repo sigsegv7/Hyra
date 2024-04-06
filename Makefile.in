@@ -47,8 +47,9 @@ else
 	override LD = $(shell pwd)/cross/bin/$(ARCH)-hyra-ld
 endif
 override AS = $(CC)
-override LDSO = $(shell pwd)/base/usr/lib/ld.so
-override USER_MKFLGS = CC=$(CC) LD=$(LD) LDSO=$(LDSO)
+override USRDIR=$(shell pwd)/base/usr/
+override LIBC = libc.a
+override USER_MKFLGS = CC=$(CC) LD=$(LD) LIBC=$(LIBC) USRDIR=$(USRDIR)
 
 ##########################
 # Architecture specifics
@@ -71,7 +72,7 @@ override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
 override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
 
 .PHONY: all
-all: base lib userland base/usr/lib/ld.so base/boot/hyra-kernel
+all: base lib userland base/boot/hyra-kernel
 		rm -f sys/include/machine
 		rm -rf iso_root
 
@@ -87,11 +88,12 @@ base:
 	mkdir -p base/usr/lib/
 	mkdir -p base/usr/sbin/
 	mkdir -p base/boot/
+	cd base/usr/; ln -sf ../../lib/libc/include/ .
 
 .PHONY: lib
 lib:
 	cd lib/; make $(USER_MKFLGS)
-	cp lib/libc/build/ld.so base/usr/lib/
+	cp lib/libc/build/libc.a base/usr/lib/
 
 .PHONY: run
 run:
@@ -106,8 +108,7 @@ distclean:
 	make clean
 	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
 	rm -f sys/include/machine
-	rm -f base/usr/lib/ld.so
-	rm -f base/boot/init
+	rm -f base/usr/sbin/init
 	cd lib/; make clean
 
 .PHONY: clean
