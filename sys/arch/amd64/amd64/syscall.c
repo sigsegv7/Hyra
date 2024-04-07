@@ -40,7 +40,8 @@ __syscall(struct trapframe *tf)
         .arg3 = tf->r10,
         .arg4 = tf->r9,
         .arg5 = tf->r8,
-        .sp = tf->rsp
+        .sp = tf->rsp,
+        .ip = tf->rip
     };
 
     if (args.code < __MAX_SYSCALLS && args.code > 0) {
