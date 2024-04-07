@@ -35,9 +35,7 @@
 #include <machine/idt.h>
 #include <machine/intr.h>
 #include <machine/sysvec.h>
-#include <machine/tss.h>
 #include <machine/isa/i8254.h>
-#include <machine/hpet.h>
 #include <vm/vm.h>
 #include <sys/cdefs.h>
 #include <sys/timer.h>
