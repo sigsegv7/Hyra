@@ -397,11 +397,10 @@ sched_init(void)
 {
     struct proc *init;
     struct vm_range init_range;
-    struct auxval auxv = {0}, ld_auxv = {0};
+    struct auxval auxv = {0};
     struct vas vas = pmap_create_vas(vm_get_ctx());
-    const char *init_bin, *ld_bin;
+    const char *init_bin;
 
-    char *ld_path;
     char *argv[] = {"/usr/sbin/init", NULL};
     char *envp[] = {NULL};
 
@@ -410,17 +409,11 @@ sched_init(void)
     if ((init_bin = initramfs_open("/usr/sbin/init")) == NULL) {
         panic("Could not open /usr/boot/init\n");
     }
-    if (loader_load(vas, init_bin, &auxv, 0, &ld_path, &init_range) != 0) {
+    if (loader_load(vas, init_bin, &auxv, 0, NULL, &init_range) != 0) {
         panic("Could not load init\n");
     }
-    if ((ld_bin = initramfs_open(ld_path)) == NULL) {
-        panic("Could not open %s\n", ld_path);
-    }
-    if (loader_load(vas, ld_bin, &ld_auxv, 0x00, NULL, &init_range) != 0) {
-        panic("Could not load %s\n", ld_path);
-    }
 
-    init = sched_create_td((uintptr_t)ld_auxv.at_entry, argv, envp,
+    init = sched_create_td((uintptr_t)auxv.at_entry, argv, envp,
                            auxv, vas, true, &init_range);
     if (init == NULL) {
         panic("Failed to create thread for init\n");
