@@ -78,7 +78,9 @@ make_write_buf(struct proc *td, const void *data, char **buf_out, size_t count)
          * A user process called us, so we want to be careful
          * and use copyin()
          */
-        copyin((uintptr_t)data, buf, count);
+        if (copyin((uintptr_t)data, buf, count) != 0) {
+            invalid_uaddr(data);
+        }
     } else {
         /* Can just memcpy() here */
         memcpy(buf, (char *)data, count);
