@@ -27,8 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
+#include <unistd.h>
+
+#define VERSION "v0.0.1"
+
+static void
+loginfo(const char *s)
+{
+    const char *tmp = "init [*]: ";
+
+    write(STDOUT_FILENO, tmp, strlen(tmp));
+    write(STDOUT_FILENO, s, strlen(s));
+}
+
 int
 main(int argc, char **argv)
 {
+    loginfo("Hyra init " VERSION " loaded\n");
+    loginfo("Hello, World!\n");
+    loginfo("** EXITING 0 **\n");
     return 0;
 }
