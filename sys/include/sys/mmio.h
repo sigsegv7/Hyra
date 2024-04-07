@@ -53,7 +53,7 @@
  */
 #define _MMIO_WRITE_TYPE(TYPE, SUFFIX)                  \
     static inline void                                  \
-    mmio_write##SUFFIX(void *addr, TYPE val)            \
+    mmio_write##SUFFIX(volatile void *addr, TYPE val)   \
     {                                                   \
         uintptr_t tmp;                                  \
                                                         \
@@ -72,7 +72,7 @@
  */
 #define _MMIO_READ_TYPE(TYPE, SUFFIX)                   \
     static inline TYPE                                  \
-    mmio_read##SUFFIX(void *addr)                       \
+    mmio_read##SUFFIX(volatile void *addr)              \
     {                                                   \
         uintptr_t tmp;                                  \
                                                         \
