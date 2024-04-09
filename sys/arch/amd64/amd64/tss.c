@@ -46,7 +46,6 @@ alloc_resources(struct cpu_info *cpu)
     const size_t STACK_SIZE = 0x1000;
     static uintptr_t rsp0_base = 0, rsp0 = 0;
 
-
     /*
      * Allocate TSS entries for this CPU
      */
