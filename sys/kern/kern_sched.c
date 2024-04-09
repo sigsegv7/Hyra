@@ -247,7 +247,6 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
         return NULL;
     }
 
-
     memset(td, 0, sizeof(struct proc));
     stack = sched_create_stack(vas, is_user, argvp, envp, auxv, td);
     if (stack == 0) {
