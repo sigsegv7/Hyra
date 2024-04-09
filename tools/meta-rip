@@ -44,4 +44,3 @@ echo "Cookie: $cookie"
 echo "Filename: $filename"
 echo "Author: $author"
 echo "Description: $description"
-
