@@ -288,6 +288,11 @@ nvme_rw(struct nvme_ns *ns, char *buf, off_t slba, size_t count, bool write)
     return nvme_poll_submit_cmd(&ns->ioq, cmd);
 }
 
+/*
+ * Fetch a namespace from its ID
+ *
+ * @nsid: Namespace ID of namespace to fetch
+ */
 static struct nvme_ns *
 nvme_get_ns(size_t nsid)
 {
@@ -302,6 +307,9 @@ nvme_get_ns(size_t nsid)
     return NULL;
 }
 
+/*
+ * Device interface read/write helper
+ */
 static int
 nvme_dev_rw(struct device *dev, struct sio_txn *sio, bool write)
 {
@@ -319,12 +327,18 @@ nvme_dev_rw(struct device *dev, struct sio_txn *sio, bool write)
     return nvme_rw(ns, sio->buf, sio->offset, sio->len, write);
 }
 
+/*
+ * Device interface read
+ */
 static int
 nvme_dev_read(struct device *dev, struct sio_txn *sio)
 {
     return nvme_dev_rw(dev, sio, false);
 }
 
+/*
+ * Device interface write
+ */
 static int
 nvme_dev_write(struct device *dev, struct sio_txn *sio)
 {
