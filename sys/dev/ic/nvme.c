@@ -481,8 +481,7 @@ nvme_init_controller(struct nvme_bar *bar)
     bar->asq = VIRT_TO_PHYS(adminq->sq);
     bar->acq = VIRT_TO_PHYS(adminq->cq);
 
-    nvme_enable_controller(&state);
-    return 0;
+    return nvme_enable_controller(&state);
 }
 
 static int
