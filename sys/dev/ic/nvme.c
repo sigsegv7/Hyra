@@ -31,6 +31,7 @@
 #include <sys/cdefs.h>
 #include <sys/syslog.h>
 #include <sys/timer.h>
+#include <sys/device.h>
 #include <dev/pci/pci.h>
 #include <dev/ic/nvmevar.h>
 #include <vm/dynalloc.h>
@@ -280,6 +281,73 @@ nvme_identify(struct nvme_state *state, struct nvme_id *id)
 }
 
 /*
+ * Issue a read/write command for a specific
+ * namespace.
+ *
+ * `buf' must be 4k aligned.
+ */
+static int
+nvme_rw(struct nvme_ns *ns, char *buf, off_t slba, size_t count, bool write)
+{
+    struct nvme_cmd cmd = {0};
+    struct nvme_rw_cmd *rw = &cmd.rw;
+
+    if (!is_4k_aligned(buf)) {
+        return -1;
+    }
+
+    rw->opcode = write ? NVME_OP_WRITE : NVME_OP_READ;
+    rw->nsid = ns->nsid;
+    rw->slba = slba;
+    rw->len = count - 1;
+    rw->prp1 = VIRT_TO_PHYS(buf);
+    return nvme_poll_submit_cmd(&ns->ioq, cmd);
+}
+
+static struct nvme_ns *
+nvme_get_ns(size_t nsid)
+{
+    struct nvme_ns *ns;
+
+    TAILQ_FOREACH(ns, &namespaces, link) {
+        if (ns->nsid == nsid) {
+            return ns;
+        }
+    }
+
+    return NULL;
+}
+
+static int
+nvme_dev_rw(struct device *dev, struct sio_txn *sio, bool write)
+{
+    struct nvme_ns *ns;
+
+    if (sio == NULL) {
+        return -1;
+    }
+
+    ns = nvme_get_ns(dev->minor);
+    if (ns == NULL || sio->buf == NULL) {
+        return -1;
+    }
+
+    return nvme_rw(ns, sio->buf, sio->offset, sio->len, write);
+}
+
+static int
+nvme_dev_read(struct device *dev, struct sio_txn *sio)
+{
+    return nvme_dev_rw(dev, sio, false);
+}
+
+static int
+nvme_dev_write(struct device *dev, struct sio_txn *sio)
+{
+    return nvme_dev_rw(dev, sio, true);
+}
+
+/*
  * Get identify data for namespace
  *
  * @id_ns: Data will be written to this pointer via DMA.
@@ -314,6 +382,7 @@ nvme_init_ns(struct nvme_state *state, uint16_t nsid)
 {
     struct nvme_ns *ns = NULL;
     struct nvme_id_ns *id_ns = NULL;
+    struct device *dev;
     uint8_t lba_format;
     int status = 0;
 
@@ -335,8 +404,13 @@ nvme_init_ns(struct nvme_state *state, uint16_t nsid)
     ns->lba_bsize = 1 << ns->lba_fmt.ds;
     ns->size = id_ns->size;
     ns->cntl = state;
-
     nvme_create_ioq(ns, ns->nsid);
+
+    dev = DEVICE_ALLOC();
+    dev->read = nvme_dev_read;
+    dev->write = nvme_dev_write;
+    ns->dev_id = create_dev(dev, state->major, nsid);
+
     TAILQ_INSERT_TAIL(&namespaces, ns, link);
 done:
     if (id_ns != NULL)
@@ -481,6 +555,7 @@ nvme_init_controller(struct nvme_bar *bar)
     bar->asq = VIRT_TO_PHYS(adminq->sq);
     bar->acq = VIRT_TO_PHYS(adminq->cq);
 
+    state.major = device_alloc_major();
     return nvme_enable_controller(&state);
 }
 

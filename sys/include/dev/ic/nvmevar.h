@@ -38,6 +38,7 @@
 #define NVME_OP_IDENTIFY        0x06
 
 /* I/O commands */
+#define NVME_OP_WRITE 0x01
 #define NVME_OP_READ 0x02
 
 struct nvme_common_cmd {
@@ -119,6 +120,7 @@ struct nvme_cmd {
         struct nvme_common_cmd common;
         struct nvme_create_iocq_cmd create_iocq;
         struct nvme_create_iosq_cmd create_iosq;
+        struct nvme_rw_cmd rw;
     };
 };
 
@@ -243,6 +245,7 @@ struct nvme_queue {
 struct nvme_state {
     struct nvme_queue adminq;
     struct nvme_bar *bar;
+    dev_t major;
 };
 
 /* NVMe namespace */
@@ -253,6 +256,7 @@ struct nvme_ns {
     struct nvme_queue ioq;      /* I/O queue */
     struct nvme_lbaf lba_fmt;   /* LBA format */
     struct nvme_state *cntl;    /* NVMe controller */
+    dev_t dev_id;
     TAILQ_ENTRY(nvme_ns) link;
 };
 
