@@ -41,6 +41,23 @@
 #define NVME_OP_WRITE 0x01
 #define NVME_OP_READ 0x02
 
+/* Controller Capabilities */
+#define CAP_MPSMIN(caps) ((caps >> 48) & 0xF)
+#define CAP_MPSMAX(caps) ((caps >> 52) & 0xF)
+#define CAP_TIMEOUT(caps) ((caps >> 24) & 0xFF)
+#define CAP_STRIDE(caps) ((caps >> 32) & 0xF)
+#define CAP_MQES(caps) (caps & 0xFFFF)
+#define CAP_CSS(caps) (caps & 0xFF)
+
+/* Controller Configuration */
+#define CONFIG_EN   __BIT(0)
+#define CONFIG_CSS_SHIFT 4
+#define CONFIG_IOSQES_SHIFT 16
+#define CONFIG_IOCQES_SHIFT 20
+
+#define COMMAND_SIZE 64     /* In bytes (defined by spec) */
+#define STATUS_READY(status) (status & 1)
+
 struct nvme_common_cmd {
     uint8_t opcode;
     uint8_t flags;
