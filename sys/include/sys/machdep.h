@@ -48,6 +48,7 @@ void intr_unmask(void);
 __weak void chips_init(void);
 __weak void pre_init(void);
 __weak void serial_dbgch(char c);
+__weak void backtrace(void);
 
 #endif  /* defined(_KERNEL) */
 #endif  /* !_SYS_MACHDEP_H_ */

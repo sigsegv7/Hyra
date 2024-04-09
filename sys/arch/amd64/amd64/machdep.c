@@ -30,6 +30,7 @@
 #include <sys/machdep.h>
 #include <sys/cdefs.h>
 #include <sys/panic.h>
+#include <sys/ksyms.h>
 #include <machine/trap.h>
 #include <machine/idt.h>
 #include <machine/io.h>
@@ -159,6 +160,53 @@ void
 intr_unmask(void)
 {
     __ASMV("sti");
+}
+
+static const char*
+backtrace_addr_to_name(uintptr_t addr, off_t *off)
+{
+    uintptr_t prev_addr = 0;
+    const char *name = NULL;
+
+    for (size_t i = 0;;) {
+        if (g_ksym_table[i].addr > addr) {
+            *off = addr - prev_addr;
+            return name;
+        }
+
+        prev_addr = g_ksym_table[i].addr;
+        name = g_ksym_table[i].name;
+        if (g_ksym_table[i++].addr == (uint64_t)-1)
+            break;
+    }
+
+    return NULL;
+}
+
+void
+backtrace(void)
+{
+    uintptr_t *rbp;
+    uintptr_t rip;
+
+    off_t off;
+    const char *name;
+
+    kprintf("** Backtrace **\n");
+    __ASMV("mov %%rbp, %0" : "=r" (rbp) :: "memory");
+
+    while (1) {
+        rip = rbp[1];
+        rbp = (uintptr_t *)rbp[0];
+        name = backtrace_addr_to_name(rip, &off);
+
+        if (rbp == NULL)
+            break;
+        if (name == NULL)
+            name = "???";
+
+        kprintf("[0x%p] <%s+0x%x>\n", rip, name, off);
+    }
 }
 
 int
