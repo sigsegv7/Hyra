@@ -448,7 +448,6 @@ sys_read(struct syscall_args *args)
     }
 
     kbuf = dynalloc(args->arg2);
-
     if (kbuf == NULL) {
         return -ENOMEM;
     }
@@ -462,10 +461,10 @@ sys_read(struct syscall_args *args)
         dynfree(kbuf);
         return bytes_read;
     }
-
     if (copyout(kbuf, args->arg1, bytes_read) != 0) {
         invalid_uaddr(args->arg1);
     }
+
     dynfree(kbuf);
     return bytes_read;
 }
