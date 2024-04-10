@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/filedesc.h>
+#include <sys/spinlock.h>
 #include <machine/cpu.h>
 #include <machine/frame.h>
 #include <machine/pcb.h>
@@ -57,6 +58,7 @@ struct proc {
     struct pcb pcb;
     struct vas addrsp;
     struct vm_range addr_range[PROC_MAX_ADDR_RANGE];
+    struct spinlock lock;
     uint8_t is_user;
     struct filedesc *fds[PROC_MAX_FDS];
     TAILQ_ENTRY(proc) link;
