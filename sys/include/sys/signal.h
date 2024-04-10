@@ -27,42 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_PROC_H_
-#define _SYS_PROC_H_
+#ifndef _SYS_SIGNAL_H_
+#define _SYS_SIGNAL_H_
 
-#include <sys/types.h>
-#include <sys/queue.h>
-#include <sys/filedesc.h>
-#include <sys/spinlock.h>
-#include <machine/cpu.h>
-#include <machine/frame.h>
-#include <machine/pcb.h>
-#include <vm/vm.h>
+#include <sys/proc.h>
 
-#define PROC_MAX_FDS 256
-#define PROC_MAX_ADDR_RANGE 4
+#define SIGFPE 8    /* Floating point exception */
+#define SIGKILL 9   /* Kill */
+#define SIGSEGV 11  /* Segmentation violation */
 
-enum {
-    ADDR_RANGE_EXEC = 0,    /* Program address range */
-    ADDR_RANGE_STACK        /* Stack address range */
-};
+#if defined(_KERNEL)
+void signal_handle(struct proc *curtd);
+void signal_raise(struct proc *to, int signal);
+#endif  /* defined(_KERNEL) */
 
-/*
- * A task running on the CPU e.g., a process or
- * a thread.
- */
-struct proc {
-    pid_t pid;
-    struct cpu_info *cpu;
-    struct trapframe *tf;
-    struct pcb pcb;
-    struct vas addrsp;
-    struct vm_range addr_range[PROC_MAX_ADDR_RANGE];
-    struct spinlock lock;
-    uint8_t is_user;
-    uint32_t signal;
-    struct filedesc *fds[PROC_MAX_FDS];
-    TAILQ_ENTRY(proc) link;
-};
-
-#endif  /* !_SYS_PROC_H_ */
+#endif  /* !_SYS_SIGNAL_H_ */

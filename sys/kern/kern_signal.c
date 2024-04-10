@@ -27,42 +27,75 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_PROC_H_
-#define _SYS_PROC_H_
+#include <sys/proc.h>
+#include <sys/sched.h>
+#include <sys/cdefs.h>
+#include <sys/syslog.h>
+#include <sys/signal.h>
+#include <dev/vcons/vcons.h>
+#include <string.h>
 
-#include <sys/types.h>
-#include <sys/queue.h>
-#include <sys/filedesc.h>
-#include <sys/spinlock.h>
-#include <machine/cpu.h>
-#include <machine/frame.h>
-#include <machine/pcb.h>
-#include <vm/vm.h>
+__MODULE_NAME("kern_signal");
+__KERNEL_META("$Hyra$: kern_signal.c, Ian Marco Moffett, "
+              "Signal handling code");
 
-#define PROC_MAX_FDS 256
-#define PROC_MAX_ADDR_RANGE 4
-
-enum {
-    ADDR_RANGE_EXEC = 0,    /* Program address range */
-    ADDR_RANGE_STACK        /* Stack address range */
-};
+static void
+signal_log(const char *s)
+{
+    vcons_putstr(&g_syslog_screen, s, strlen(s));
+}
 
 /*
- * A task running on the CPU e.g., a process or
- * a thread.
+ * Handle any signals within the current thread
+ *
+ * TODO: Add sigaction support, default action
+ *       for all currently is killing the process.
  */
-struct proc {
-    pid_t pid;
-    struct cpu_info *cpu;
-    struct trapframe *tf;
-    struct pcb pcb;
-    struct vas addrsp;
-    struct vm_range addr_range[PROC_MAX_ADDR_RANGE];
-    struct spinlock lock;
-    uint8_t is_user;
-    uint32_t signal;
-    struct filedesc *fds[PROC_MAX_FDS];
-    TAILQ_ENTRY(proc) link;
-};
+void
+signal_handle(struct proc *curtd)
+{
+    int signo = curtd->signal;
 
-#endif  /* !_SYS_PROC_H_ */
+    spinlock_acquire(&curtd->lock);
+    if (signo == 0) {
+        return;
+    }
+
+    curtd->signal = 0;
+    switch (signo) {
+    case SIGFPE:
+        signal_log("Arithmetic error\n");
+        break;
+    case SIGSEGV:
+        signal_log("Segmentation fault\n");
+        break;
+    case SIGKILL:
+        signal_log("Killed\n");
+        break;
+    }
+
+    spinlock_release(&curtd->lock);
+    sched_exit();
+}
+
+/*
+ * Raise a signal for a process
+ *
+ * @to: Can be NULL to mean the current process
+ * @signal: Signal to send
+ *
+ * TODO: Add more functionality.
+ */
+void
+signal_raise(struct proc *to, int signal)
+{
+    if (to == NULL) {
+        to = this_td();
+    }
+
+    to->signal = signal;
+    if (to == this_td()) {
+        /* Current process, just preempt */
+        sched_context_switch(to->tf);
+    }
+}

@@ -38,6 +38,7 @@
 #include <sys/panic.h>
 #include <sys/machdep.h>
 #include <sys/filedesc.h>
+#include <sys/signal.h>
 #include <fs/initramfs.h>
 #include <vm/dynalloc.h>
 #include <vm/physseg.h>
@@ -352,6 +353,10 @@ sched_context_switch(struct trapframe *tf)
     struct cpu_info *ci = this_cpu();
     struct sched_state *state = &ci->sched_state;
     struct proc *td, *next_td;
+
+    if (state->td != NULL) {
+        signal_handle(state->td);
+    }
 
     /*
      * If we have no threads, we should not
