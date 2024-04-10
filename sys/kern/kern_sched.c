@@ -318,8 +318,8 @@ sched_exit(void)
     struct vas kvas = vm_get_kvas();
 
     intr_mask();
-
     td = this_td();
+    spinlock_acquire(&td->lock);    /* Never release */
 
     /* Switch back to the kernel address space and destroy ourself */
     pmap_switch_vas(vm_get_ctx(), kvas);
