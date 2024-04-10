@@ -27,25 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UNISTD_H
-#define _UNISTD_H
+#include <unistd.h>
+#include <sys/syscall.h>
 
-#include <sys/types.h>
-#include <stddef.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-#define STDOUT_FILENO 1
-
-_Noreturn void _exit(int status);
-ssize_t write(int fd, const void *buf, size_t count);
-ssize_t read(int fd, void *buf, size_t count);
-
-#if defined(__cplusplus)
+ssize_t
+read(int fd, void *buf, size_t count)
+{
+    return syscall(SYS_read, fd, (uintptr_t)buf, count);
 }
-#endif
-
-#endif  /* !_UNISTD_H */
-
