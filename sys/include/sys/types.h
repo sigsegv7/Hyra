@@ -66,6 +66,7 @@ typedef _Bool bool;
 typedef ssize_t off_t;
 typedef size_t uintptr_t;
 typedef int pid_t;
+typedef int dev_t;
 
 #if defined(_KERNEL)
 typedef uintptr_t vaddr_t;      /* Virtual address */
