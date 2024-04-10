@@ -73,8 +73,6 @@ vfs_hash_path(const char *path)
 
     if (strcmp(path, "/") == 0 || !vfs_is_valid_path(path)) {
         return -1;
-    } else if (*path != '/') {
-        return -1;
     }
 
     do {
