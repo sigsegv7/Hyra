@@ -35,6 +35,7 @@
 #include <sys/system.h>
 #include <sys/syslog.h>
 #include <sys/vfs.h>
+#include <sys/signal.h>
 #include <sys/vnode.h>
 #include <vm/dynalloc.h>
 #include <dev/vcons/vcons.h>
@@ -79,7 +80,7 @@ make_write_buf(struct proc *td, const void *data, char **buf_out, size_t count)
          * and use copyin()
          */
         if (copyin((uintptr_t)data, buf, count) != 0) {
-            invalid_uaddr(data);
+            signal_raise(NULL, SIGSEGV);
         }
     } else {
         /* Can just memcpy() here */
@@ -413,7 +414,7 @@ sys_open(struct syscall_args *args)
     }
 
     if (copyinstr(args->arg0, pathbuf, PATH_MAX) != 0) {
-        invalid_uaddr(args->arg0);
+        signal_raise(NULL, SIGSEGV);
     }
 
     ret = open(pathbuf, args->arg1);
@@ -461,7 +462,7 @@ sys_read(struct syscall_args *args)
         return bytes_read;
     }
     if (copyout(kbuf, args->arg1, bytes_read) != 0) {
-        invalid_uaddr(args->arg1);
+        signal_raise(NULL, SIGSEGV);
     }
 
     dynfree(kbuf);
