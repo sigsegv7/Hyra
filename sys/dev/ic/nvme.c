@@ -36,6 +36,7 @@
 #include <dev/ic/nvmevar.h>
 #include <vm/dynalloc.h>
 #include <vm/vm.h>
+#include <fs/devfs.h>
 #include <string.h>
 
 __MODULE_NAME("nvme");
@@ -378,6 +379,7 @@ nvme_id_ns(struct nvme_state *s, struct nvme_id_ns *id_ns, uint16_t nsid)
 static int
 nvme_init_ns(struct nvme_state *state, uint16_t nsid)
 {
+    char devname[128];
     struct nvme_ns *ns = NULL;
     struct nvme_id_ns *id_ns = NULL;
     struct device *dev;
@@ -407,7 +409,13 @@ nvme_init_ns(struct nvme_state *state, uint16_t nsid)
     dev = DEVICE_ALLOC();
     dev->read = nvme_dev_read;
     dev->write = nvme_dev_write;
-    ns->dev_id = create_dev(dev, state->major, nsid);
+    dev->blocksize = ns->lba_bsize;
+    ns->dev_id = device_create(dev, state->major, nsid);
+
+    snprintf(devname, sizeof(devname), "nvme0n%d", nsid);
+    if (devfs_add_blkdev(devname, dev) != 0) {
+        KERR("Failed to create /dev/%s\n", devname);
+    }
 
     TAILQ_INSERT_TAIL(&namespaces, ns, link);
 done:
