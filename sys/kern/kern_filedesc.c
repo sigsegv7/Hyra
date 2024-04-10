@@ -466,6 +466,7 @@ sys_read(struct syscall_args *args)
     if (copyout(kbuf, args->arg1, bytes_read) != 0) {
         invalid_uaddr(args->arg1);
     }
+    dynfree(kbuf);
     return bytes_read;
 }
 
