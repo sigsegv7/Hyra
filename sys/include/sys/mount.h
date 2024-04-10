@@ -47,13 +47,15 @@ struct vfsops {
 struct mount {
     int flags;
     size_t phash;               /* Path hash */
-    struct vnode *vnode;
+    struct fs_info *fs;
     TAILQ_ENTRY(mount) link;
 };
 
 struct fs_info {
     char name[FS_NAME_MAX];     /* Filesystem type name */
     struct vfsops *vfsops;      /* Filesystem operations */
+    struct vops *vops;          /* Vops for our vnode */
+    struct vnode *vnode;        /* Vnode for this filesystem */
     struct mount *mp_root;
     uint16_t caps;
 };
@@ -69,7 +71,7 @@ struct fs_info {
 #define MNT_RDONLY  0x00000001
 
 #if defined(_KERNEL)
-int vfs_mount(const char *path, int mntflags);
+int vfs_mount(const char *path, int mntflags, struct fs_info *fs);
 int vfs_get_mp(const char *path, struct mount **mp);
 void vfs_mount_init(void);
 #endif  /* defined(_KERNEL) */

@@ -63,23 +63,32 @@ vfs_create_mp(const char *path, int mntflags, struct mount **mp_out)
 /*
  * Mount a mountpoint
  *
- * @mp: Mountpoint to mount
  * @path: Path this mountpoint belongs to
+ * @mntflags: Flags to mount with
+ * @fs: Filesystem to mount
  *
  * If this mount entry already exists, -EEXIST
  * will be returned.
  */
 int
-vfs_mount(const char *path, int mntflags)
+vfs_mount(const char *path, int mntflags, struct fs_info *fs)
 {
     size_t hash;
     int status;
     struct mountlist_entry *entry;
     struct mount *mp;
 
+    /* Exclude leading slash */
+    if (*path == '/') {
+        ++path;
+    }
+
+    hash = vfs_hash_path(path);
+
     if ((status = vfs_create_mp(path, mntflags, &mp)) != 0) {
         return status;
     }
+
     if (hash == -1) {
         /* Something is wrong with the path */
         return -EINVAL;
@@ -90,12 +99,13 @@ vfs_mount(const char *path, int mntflags)
         return -EEXIST;
     }
 
-    mp->phash = hash;
-    status = vfs_alloc_vnode(&mp->vnode, mp, VDIR);
-
-    if (status != 0) {
+    if ((status = vfs_alloc_vnode(&fs->vnode, mp, VDIR)) != 0) {
         return status;
     }
+
+    mp->phash = hash;
+    mp->fs = fs;
+    fs->vnode->vops = fs->vops;
 
     entry = &mountlist[hash % MOUNTLIST_SIZE];
     TAILQ_INSERT_TAIL(&entry->buckets, mp, link);
@@ -115,9 +125,16 @@ vfs_mount(const char *path, int mntflags)
 int
 vfs_get_mp(const char *path, struct mount **mp)
 {
-    size_t hash = vfs_hash_path(path);
+    size_t hash;
     struct mountlist_entry *entry;
     struct mount *mount_iter;
+
+    /* Exclude leading slash */
+    if (*path == '/') {
+        ++path;
+    }
+
+    hash = vfs_hash_path(path);
 
     if (hash == 0) {
         /* Something is wrong with the path */

@@ -43,7 +43,7 @@ __KERNEL_META("$Hyra$: vfs.c, Ian Marco Moffett, "
 #define INITRAMFS_ID 0
 
 static struct fs_info filesystems[] = {
-    [INITRAMFS_ID] = { "initramfs", &g_initramfs_ops }
+    [INITRAMFS_ID] = { "initramfs", &g_initramfs_ops, NULL},
 };
 
 struct vnode *g_root_vnode = NULL;
@@ -74,6 +74,7 @@ vfs_init(void)
         vfsops = info->vfsops;
 
         __assert(vfsops->init != NULL);
+        __assert(vfs_mount(info->name, 0, info) == 0);
         vfsops->init(info);
     }
 
