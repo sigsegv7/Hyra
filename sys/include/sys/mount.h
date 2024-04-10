@@ -66,7 +66,7 @@ struct fs_info {
 /*
  * Mount flags
  */
-#define MNT_RDONLY  0x00000000
+#define MNT_RDONLY  0x00000001
 
 #if defined(_KERNEL)
 int vfs_mount(const char *path, int mntflags);
