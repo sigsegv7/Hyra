@@ -65,6 +65,8 @@ struct vnode {
  */
 #define VREG    0x01    /* Regular file */
 #define VDIR    0x02    /* Directory */
+#define VCHR    0x03    /* Character device */
+#define VBLK    0x04    /* Block device */
 
 #if defined(_KERNEL)
 int vfs_alloc_vnode(struct vnode **vnode, struct mount *mp, int type);

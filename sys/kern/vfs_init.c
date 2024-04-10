@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/vnode.h>
 #include <fs/initramfs.h>
+#include <fs/devfs.h>
 #include <assert.h>
 #include <string.h>
 
@@ -41,9 +42,11 @@ __KERNEL_META("$Hyra$: vfs.c, Ian Marco Moffett, "
               "Hyra Virtual File System");
 
 #define INITRAMFS_ID 0
+#define DEVFS_ID 1
 
 static struct fs_info filesystems[] = {
     [INITRAMFS_ID] = { "initramfs", &g_initramfs_ops, NULL},
+    [DEVFS_ID]     = { "dev", &g_devfs_ops, &g_devfs_vops }
 };
 
 struct vnode *g_root_vnode = NULL;

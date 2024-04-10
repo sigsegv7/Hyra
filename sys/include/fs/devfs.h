@@ -27,25 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_DEVICE_H_
-#define _SYS_DEVICE_H_
+#ifndef _FS_DEVFS_H_
+#define _FS_DEVFS_H_
 
-#include <sys/sio.h>
-#include <sys/queue.h>
-#include <vm/dynalloc.h>
+#include <sys/vnode.h>
+#include <sys/device.h>
 
-#define DEVICE_ALLOC() dynalloc(sizeof(struct device))
+extern struct vfsops g_devfs_ops;
+extern struct vops g_devfs_vops;
 
-struct device {
-    dev_t major, minor;
-    size_t blocksize;
-    int(*write)(struct device *dev, struct sio_txn *sio);
-    int(*read)(struct device *dev, struct sio_txn *sio);
-    TAILQ_ENTRY(device) link;
-};
-
-struct device *device_fetch(dev_t major, dev_t minor);
-dev_t device_alloc_major(void);
-dev_t create_dev(struct device *dev, dev_t major, dev_t minor);
+int devfs_add_blkdev(const char *name, const struct device *blkdev);
 
 #endif
