@@ -129,6 +129,7 @@ int
 vfs_path_to_node(const char *path, struct vnode **vp)
 {
     struct vnode *vnode = g_root_vnode;
+    struct mount *mp;
     struct fs_info *fs;
     char *name;
     int s = 0, fs_caps = 0;
@@ -137,6 +138,13 @@ vfs_path_to_node(const char *path, struct vnode **vp)
         return -EINVAL;
     } else if (*path != '/') {
         return -EINVAL;
+    }
+
+    /* See if we have a mountpoint with this name */
+    name = vfs_get_fname_at(path, 0);
+    if (vfs_get_mp(name, &mp) == 0) {
+        fs = mp->fs;
+        vnode = fs->vnode;
     }
 
     /* Fetch filesystem capabilities if we can */
@@ -151,7 +159,7 @@ vfs_path_to_node(const char *path, struct vnode **vp)
      * it'll give us a vnode.
      */
     if (__TEST(fs_caps, FSCAP_FULLPATH)) {
-        s = vfs_vget(g_root_vnode, path, &vnode);
+        s = vfs_vget(vnode, path, &vnode);
         goto done;
     }
 
