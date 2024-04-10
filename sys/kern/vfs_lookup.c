@@ -155,7 +155,7 @@ vfs_path_to_node(const char *path, struct vnode **vp)
         goto done;
     }
 
-    for (size_t i = 0;; ++i) {
+    for (size_t i = 1;; ++i) {
         name = vfs_get_fname_at(path, i);
         if (name == NULL) break;
 
