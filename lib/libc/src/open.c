@@ -27,20 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FCNTL_H
-#define _FCNTL_H
+#include <fcntl.h>
+#include <sys/syscall.h>
 
-#undef SEEK_SET
-#undef SEEK_CUR
-#undef SEEK_END
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
-
-#define O_RDONLY 0x00000
-#define O_WRONLY 0x00001
-#define O_RDWR   0x00002
-
-int open(const char *pathname, int flags, ...);
-
-#endif  /* !_FCNTL_H */
+int
+open(const char *pathname, int flags, ...)
+{
+    return syscall(SYS_open, (uintptr_t)pathname, flags);
+}
