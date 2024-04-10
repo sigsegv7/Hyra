@@ -324,12 +324,11 @@ read(int fd, void *buf, size_t count)
     };
 
     fd_desc = fd_from_fdnum(this_td(), fd);
-    sio.offset = fd_desc->offset;
-
     if (fd_desc == NULL) {
         return -EBADF;
     }
 
+    sio.offset = fd_desc->offset;
     vnode = fd_desc->vnode;
 
     if (count > MAX_RW_SIZE) {
