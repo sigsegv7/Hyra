@@ -32,6 +32,9 @@
 #include <sys/spinlock.h>
 #include <sys/syslog.h>
 #include <sys/panic.h>
+#include <sys/signal.h>
+#include <sys/proc.h>
+#include <sys/sched.h>
 
 static const char *trap_type[] = {
     [TRAP_BREAKPOINT]   = "breakpoint",
@@ -103,23 +106,44 @@ regdump(struct trapframe *tf)
             tf->rbp, tf->rsp, tf->rip);
 }
 
+static inline void
+handle_fatal(struct trapframe *tf)
+{
+    trap_print(tf);
+    regdump(tf);
+    panic("Halted\n");
+}
+
 /*
  * Handles traps.
  */
 void
 trap_handler(struct trapframe *tf)
 {
-    trap_print(tf);
+    struct proc *curtd = this_td();
 
     /*
      * XXX: Handle NMIs better. For now we just
      *      panic.
      */
     if (tf->trapno == TRAP_NMI) {
+        trap_print(tf);
         kprintf("Possible hardware failure?\n");
         panic("Caught NMI; bailing out\n");
     }
 
-    regdump(tf);
-    panic("Halted\n");
+    if (curtd == NULL) {
+        handle_fatal(tf);
+    } else if (!curtd->is_user) {
+        handle_fatal(tf);
+    }
+
+    switch (tf->trapno) {
+    case TRAP_ARITH_ERR:
+        signal_raise(curtd, SIGFPE);
+        break;
+    default:
+        signal_raise(curtd, SIGSEGV);
+        break;
+    }
 }
