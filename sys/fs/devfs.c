@@ -77,6 +77,7 @@ blkdev_read(struct device *dev, struct device_node *node, struct sio_txn *sio)
 
     spinlock_acquire(&node->lock);
     buf = dynalloc_memalign(buf_size, 0x1000);
+
     if (buf == NULL) {
         spinlock_release(&node->lock);
         return -ENOMEM;
@@ -157,7 +158,8 @@ devfs_make_devicenode(const char *name, struct device_node **node_out)
     /*
      * Only one filename, no paths.
      *
-     * TODO: Do something better here... */
+     * TODO: Do something better here...
+     */
     for (; *p; ++p, ++name_len) {
         if (*p == '/')
             return -EINVAL;
