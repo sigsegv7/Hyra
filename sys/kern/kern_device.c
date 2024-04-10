@@ -59,7 +59,7 @@ device_fetch(dev_t major, dev_t minor)
 }
 
 dev_t
-create_dev(struct device *dev, dev_t major, dev_t minor)
+device_create(struct device *dev, dev_t major, dev_t minor)
 {
     if (dev == NULL || minor == 0) {
         return -EINVAL;

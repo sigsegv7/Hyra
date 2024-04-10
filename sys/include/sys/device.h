@@ -46,6 +46,6 @@ struct device {
 
 struct device *device_fetch(dev_t major, dev_t minor);
 dev_t device_alloc_major(void);
-dev_t create_dev(struct device *dev, dev_t major, dev_t minor);
+dev_t device_create(struct device *dev, dev_t major, dev_t minor);
 
 #endif
