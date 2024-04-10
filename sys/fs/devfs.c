@@ -97,7 +97,6 @@ blkdev_read(struct device *dev, struct device_node *node, struct sio_txn *sio)
     return sio->len;
 }
 
-
 static int
 vop_vget(struct vnode *parent, const char *name, struct vnode **vp)
 {
