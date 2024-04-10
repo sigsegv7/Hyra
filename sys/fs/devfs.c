@@ -83,7 +83,7 @@ blkdev_read(struct device *dev, struct device_node *node, struct sio_txn *sio)
         return -ENOMEM;
     }
 
-    dev_txn.len = __DIV_ROUNDUP(sio->len, 512);
+    dev_txn.len = __DIV_ROUNDUP(sio->len, dev->blocksize);
     dev_txn.buf = buf;
     dev_txn.offset = sio->offset;
     dev->read(dev, &dev_txn);
