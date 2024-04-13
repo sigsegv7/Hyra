@@ -337,6 +337,7 @@ read(int fd, void *buf, size_t count)
     }
 
     bytes_read = vfs_read(vnode, &sio);
+    fd_desc->offset += bytes_read;
     return bytes_read;
 }
 
