@@ -56,12 +56,13 @@ signal_handle(struct proc *curtd)
 {
     int signo = curtd->signal;
 
-    spinlock_acquire(&curtd->lock);
     if (signo == 0) {
         return;
     }
 
+    spinlock_acquire(&curtd->lock);
     curtd->signal = 0;
+
     switch (signo) {
     case SIGFPE:
         signal_log("Arithmetic error\n");
