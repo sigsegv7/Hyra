@@ -142,7 +142,7 @@ pci_set_device_info(struct pci_device *dev)
     dev->bar[2] = pci_readl(dev, 0x18);
     dev->bar[3] = pci_readl(dev, 0x1C);
     dev->bar[4] = pci_readl(dev, 0x20);
-    dev->bar[6] = pci_readl(dev, 0x24);
+    dev->bar[5] = pci_readl(dev, 0x24);
 
     dev->irq_line = pci_readl(dev, 0x3C) & 0xFF;
 }
