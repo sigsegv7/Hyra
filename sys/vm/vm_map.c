@@ -83,7 +83,10 @@ vm_map_create(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot, size_t byt
 
     struct vm_ctx *ctx = vm_get_ctx();
 
-    /* We want bytes to be aligned by the granule */
+    /*
+     * The amount of bytes to be mapped should fully span pages,
+     * so we ensure it is aligned by the page granularity.
+     */
     bytes = __ALIGN_UP(bytes + misalign, granule);
 
     /* Align VA/PA by granule */
