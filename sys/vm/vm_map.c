@@ -187,11 +187,6 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
         /* Invalid prot */
         return MAP_FAILED;
 
-    /* Allocate the physical memory */
-    physmem = vm_alloc_pageframe(len / GRANULE);
-    if (physmem == 0)
-        return MAP_FAILED;
-
     /*
      * Handle address being NULL.
      *
@@ -204,6 +199,11 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 
     /* Handle an anonymous map request */
     if (__TEST(flags, MAP_ANONYMOUS)) {
+        /* Allocate the physical memory */
+        physmem = vm_alloc_pageframe(len / GRANULE);
+        if (physmem == 0)
+            return MAP_FAILED;
+
         /*
          * XXX: There is no need to worry about alignment yet
          *      as vm_map_create() handles that internally.
