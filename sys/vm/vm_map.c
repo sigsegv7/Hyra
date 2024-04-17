@@ -83,6 +83,7 @@ vm_mapspace_remove(struct vm_mapspace *ms, struct vm_mapping *mapping)
     vhash = vm_hash_vaddr(mapping->range.start);
     mapq = &ms->mtab[vhash % MTAB_ENTRIES];
     TAILQ_REMOVE(mapq, mapping, link);
+    --ms->map_count;
 }
 
 /*
@@ -133,6 +134,7 @@ vm_mapspace_insert(struct vm_mapspace *ms, struct vm_mapping *mapping)
 
     q = &ms->mtab[vhash % MTAB_ENTRIES];
     TAILQ_INSERT_HEAD(q, mapping, link);
+    ++ms->map_count;
 }
 
 /*
