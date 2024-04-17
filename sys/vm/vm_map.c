@@ -135,6 +135,42 @@ vm_mapspace_insert(struct vm_mapspace *ms, struct vm_mapping *mapping)
     TAILQ_INSERT_HEAD(q, mapping, link);
 }
 
+/*
+ * Create an anonymous mapping.
+ *
+ * @addr: Address to map.
+ * @prot: Protection flags.
+ *
+ * Returns zero on failure.
+ */
+static paddr_t
+vm_anon_map(void *addr, vm_prot_t prot, size_t len)
+{
+    struct proc *td = this_td();
+    const size_t GRANULE = vm_get_page_size();
+
+    paddr_t physmem;
+    int status;
+
+    /* Allocate the physical memory */
+    physmem = vm_alloc_pageframe(len / GRANULE);
+    if (physmem == 0)
+        return 0;
+
+    /*
+     * XXX: There is no need to worry about alignment yet
+     *      as vm_map_create() handles that internally.
+     */
+    prot |= PROT_USER;
+    status = vm_map_create(td->addrsp, (vaddr_t)addr, physmem, prot, len);
+    if (status != 0) {
+        vm_free_pageframe(physmem, len / GRANULE);
+        return 0;
+    }
+
+    return physmem;
+}
+
 static int
 munmap(void *addr, size_t len)
 {
@@ -180,11 +216,10 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     struct vm_mapping *mapping = ALLOC_MAPPING();
 
     size_t misalign = ((vaddr_t)addr) & (GRANULE - 1);
-    int status;
-    paddr_t physmem;
+    paddr_t physmem = 0;
 
+    /* Ensure of valid prot flags */
     if ((prot & ~PROT_MASK) != 0)
-        /* Invalid prot */
         return MAP_FAILED;
 
     /*
@@ -197,24 +232,16 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
         addr = (void *)physmem;
     }
 
-    /* Handle an anonymous map request */
+    /*
+     * Now we check what type of map request
+     * this is.
+     */
     if (__TEST(flags, MAP_ANONYMOUS)) {
-        /* Allocate the physical memory */
-        physmem = vm_alloc_pageframe(len / GRANULE);
-        if (physmem == 0)
-            return MAP_FAILED;
+        /* Handle an anonymous map request */
+        physmem = vm_anon_map(addr, prot, len);
+    }
 
-        /*
-         * XXX: There is no need to worry about alignment yet
-         *      as vm_map_create() handles that internally.
-         */
-        prot |= PROT_USER;
-        status = vm_map_create(td->addrsp, (vaddr_t)addr, physmem, prot, len);
-        if (status != 0) {
-            vm_free_pageframe(physmem, len / GRANULE);
-            return MAP_FAILED;
-        }
-    } else {
+    if (physmem == 0) {
         return MAP_FAILED;
     }
 
