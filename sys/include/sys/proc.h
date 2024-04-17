@@ -38,6 +38,7 @@
 #include <machine/frame.h>
 #include <machine/pcb.h>
 #include <vm/vm.h>
+#include <vm/map.h>
 
 #define PROC_MAX_FDS 256
 #define PROC_MAX_ADDR_RANGE 4
@@ -62,6 +63,8 @@ struct proc {
     uint8_t is_user;
     uint32_t signal;
     struct filedesc *fds[PROC_MAX_FDS];
+    struct spinlock mapspace_lock;
+    struct vm_mapspace mapspace;
     TAILQ_ENTRY(proc) link;
 };
 

@@ -43,6 +43,8 @@ enum {
     SYS_close,
     SYS_read,
     SYS_lseek,
+    SYS_mmap,
+    SYS_munmap,
     __MAX_SYSCALLS
 };
 

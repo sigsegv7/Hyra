@@ -40,6 +40,8 @@
 #define SYS_close 4
 #define SYS_read  5
 #define SYS_lseek 6
+#define SYS_mmap  7
+#define SYS_munmap 8
 
 #if !defined(__ASSEMBLER__)
 __attribute__((__always_inline__))

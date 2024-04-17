@@ -265,6 +265,10 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
     td->tf = tf;
     td->addrsp = vas;
     td->is_user = is_user;
+    for (size_t i = 0; i < MTAB_ENTRIES; ++i) {
+        /* Init the memory mapping table */
+        TAILQ_INIT(&td->mapspace.mtab[i]);
+    }
     if (prog_range != NULL) {
         memcpy(exec_range, prog_range, sizeof(struct vm_range));
     }
@@ -288,6 +292,7 @@ static void
 sched_destroy_td(struct proc *td)
 {
     const struct vm_range *stack_range = &td->addr_range[ADDR_RANGE_STACK];
+    vm_mapq_t *mapq;
 
     processor_free_pcb(td);
 
@@ -306,6 +311,11 @@ sched_destroy_td(struct proc *td)
     /* Close all of the file descriptors */
     for (size_t i = 0; i < PROC_MAX_FDS; ++i) {
         fd_close_fdnum(td, i);
+    }
+
+    for (size_t i = 0; i < MTAB_ENTRIES; ++i) {
+        mapq = &td->mapspace.mtab[i];
+        vm_free_mapq(mapq);
     }
 
     pmap_free_vas(vm_get_ctx(), td->addrsp);

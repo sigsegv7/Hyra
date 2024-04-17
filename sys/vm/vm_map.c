@@ -30,10 +30,207 @@
 #include <vm/map.h>
 #include <vm/vm.h>
 #include <vm/pmap.h>
+#include <vm/physseg.h>
+#include <vm/dynalloc.h>
 #include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/panic.h>
+#include <sys/sched.h>
 #include <lib/assert.h>
+
+#define ALLOC_MAPPING() dynalloc(sizeof(struct vm_mapping))
+
+static size_t
+vm_hash_vaddr(vaddr_t va) {
+    va = (va ^ (va >> 30)) * (size_t)0xBF58476D1CE4E5B9;
+    va = (va ^ (va >> 27)) * (size_t)0x94D049BB133111EB;
+    va = va ^ (va >> 31);
+    return va;
+}
+
+/*
+ * Destroy a map queue.
+ */
+void
+vm_free_mapq(vm_mapq_t *mapq)
+{
+    struct vm_mapping *map;
+    size_t map_pages, granule;
+
+    granule = vm_get_page_size();
+    TAILQ_FOREACH(map, mapq, link) {
+        map_pages = (map->range.end - map->range.start) / granule;
+        vm_free_pageframe(map->range.start, map_pages);
+    }
+    dynfree(map);
+}
+
+/*
+ * Remove a mapping from a mapspace.
+ *
+ * @ms: Mapspace.
+ * @mapping: Mapping to remove.
+ */
+void
+vm_mapspace_remove(struct vm_mapspace *ms, struct vm_mapping *mapping)
+{
+    size_t vhash;
+    vm_mapq_t *mapq;
+
+    if (ms == NULL)
+        return;
+
+    vhash = vm_hash_vaddr(mapping->range.start);
+    mapq = &ms->mtab[vhash % MTAB_ENTRIES];
+    TAILQ_REMOVE(mapq, mapping, link);
+}
+
+/*
+ * Fetch a mapping from a mapspace.
+ *
+ * @ms: Mapspace.
+ * @va: Virtual address.
+ */
+struct vm_mapping *
+vm_mapping_fetch(struct vm_mapspace *ms, vaddr_t va)
+{
+    size_t vhash;
+    const vm_mapq_t *mapq;
+    struct vm_mapping *map;
+
+    if (ms == NULL)
+        return NULL;
+
+    vhash = vm_hash_vaddr(va);
+    mapq = &ms->mtab[vhash % MTAB_ENTRIES];
+
+    TAILQ_FOREACH(map, mapq, link) {
+        if (map->vhash == vhash) {
+            return map;
+        }
+    }
+
+    return NULL;
+}
+
+/*
+ * Insert a mapping into a mapspace.
+ *
+ * @ms: Target mapspace.
+ * @mapping: Mapping to insert.
+ */
+void
+vm_mapspace_insert(struct vm_mapspace *ms, struct vm_mapping *mapping)
+{
+    size_t vhash;
+    vm_mapq_t *q;
+
+    if (mapping == NULL || ms == NULL)
+        return;
+
+    vhash = vm_hash_vaddr(mapping->range.start);
+    mapping->vhash = vhash;
+
+    q = &ms->mtab[vhash % MTAB_ENTRIES];
+    TAILQ_INSERT_HEAD(q, mapping, link);
+}
+
+static int
+munmap(void *addr, size_t len)
+{
+    struct proc *td = this_td();
+    struct vm_mapping *mapping;
+
+    struct vm_mapspace *ms;
+    size_t map_len, granule;
+    vaddr_t map_start, map_end;
+
+    spinlock_acquire(&td->mapspace_lock);
+    ms = &td->mapspace;
+
+    granule = vm_get_page_size();
+    mapping = vm_mapping_fetch(ms, (vaddr_t)addr);
+    if (mapping == NULL) {
+        return -1;
+    }
+
+    map_start = mapping->range.start;
+    map_end = mapping->range.end;
+    map_len = map_end - map_start;
+
+    /* Release the mapping */
+    vm_map_destroy(td->addrsp, map_start, map_len);
+    vm_free_pageframe(mapping->range.start, map_len / granule);
+
+    /* Destroy the mapping descriptor */
+    vm_mapspace_remove(ms, mapping);
+    dynfree(mapping);
+    spinlock_release(&td->mapspace_lock);
+    return 0;
+}
+
+static void *
+mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
+{
+    const int PROT_MASK = PROT_WRITE | PROT_EXEC;
+    const size_t GRANULE = vm_get_page_size();
+    uintptr_t map_end, map_start;
+
+    struct proc *td = this_td();
+    struct vm_mapping *mapping = ALLOC_MAPPING();
+
+    size_t misalign = ((vaddr_t)addr) & (GRANULE - 1);
+    int status;
+    paddr_t physmem;
+
+    if ((prot & ~PROT_MASK) != 0)
+        /* Invalid prot */
+        return MAP_FAILED;
+
+    /* Allocate the physical memory */
+    physmem = vm_alloc_pageframe(len / GRANULE);
+    if (physmem == 0)
+        return MAP_FAILED;
+
+    /*
+     * Handle address being NULL.
+     *
+     * FIXME: XXX: We currently identity map physmem which
+     *             is probably not ideal.
+     */
+    if (addr == NULL) {
+        addr = (void *)physmem;
+    }
+
+    /* Handle an anonymous map request */
+    if (__TEST(flags, MAP_ANONYMOUS)) {
+        /*
+         * XXX: There is no need to worry about alignment yet
+         *      as vm_map_create() handles that internally.
+         */
+        prot |= PROT_USER;
+        status = vm_map_create(td->addrsp, (vaddr_t)addr, physmem, prot, len);
+        if (status != 0) {
+            vm_free_pageframe(physmem, len / GRANULE);
+            return MAP_FAILED;
+        }
+    } else {
+        return MAP_FAILED;
+    }
+
+    map_start = __ALIGN_DOWN((vaddr_t)addr, GRANULE);
+    map_end = map_start + __ALIGN_UP(len + misalign, GRANULE);
+
+    mapping->range.start = map_start;
+    mapping->range.end = map_end;
+    mapping->physmem_base = physmem;
+
+    /* Add to mapspace */
+    spinlock_acquire(&td->mapspace_lock);
+    vm_mapspace_insert(&td->mapspace, mapping);
+    spinlock_release(&td->mapspace_lock);
+    return (void *)addr;
+}
 
 /*
  * Internal routine for cleaning up.
@@ -140,4 +337,17 @@ vm_map_destroy(struct vas vas, vaddr_t va, size_t bytes)
     }
 
     return 0;
+}
+
+uint64_t
+sys_mmap(struct syscall_args *args)
+{
+    return (uintptr_t)mmap((void *)args->arg0, args->arg1, args->arg2,
+                           args->arg3, args->arg4, args->arg5);
+}
+
+uint64_t
+sys_munmap(struct syscall_args *args)
+{
+    return munmap((void *)args->arg0, args->arg1);
 }

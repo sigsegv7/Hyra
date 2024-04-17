@@ -32,6 +32,7 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/filedesc.h>
+#include <vm/map.h>
 
 __noreturn static uint64_t
 sys_exit(struct syscall_args *args)
@@ -47,4 +48,6 @@ uint64_t(*g_syscall_table[__MAX_SYSCALLS])(struct syscall_args *args) = {
     sys_close,
     sys_read,
     sys_lseek,
+    sys_mmap,
+    sys_munmap
 };

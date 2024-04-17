@@ -32,11 +32,49 @@
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
+#include <sys/queue.h>
+#include <sys/syscall.h>
+#include <sys/spinlock.h>
 #include <vm/pmap.h>
+#include <vm/vm.h>
+
+#define MAP_SHARED      0x0001
+#define MAP_PRIVATE     0x0002
+#define MAP_ANONYMOUS   0x0010
+#define MAP_FAILED      ((void *)-1)
+
+/* Memory map table entry count */
+#define MTAB_ENTRIES 32
+
+struct vm_mapping {
+    TAILQ_ENTRY(vm_mapping) link;
+    struct vm_range range;
+    paddr_t physmem_base;
+
+    /* Private */
+    size_t vhash;           /* Virtual address hash */
+};
+
+typedef TAILQ_HEAD(, vm_mapping) vm_mapq_t;
+
+struct vm_mapspace {
+    vm_mapq_t mtab[MTAB_ENTRIES];   /* Map table */
+    size_t map_count;
+};
+
 
 int vm_map_create(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot,
                   size_t bytes);
 
 int vm_map_destroy(struct vas vas, vaddr_t va, size_t bytes);
+
+uint64_t sys_mmap(struct syscall_args *args);
+uint64_t sys_munmap(struct syscall_args *args);
+
+/* Mapespace operations */
+void vm_mapspace_insert(struct vm_mapspace *ms, struct vm_mapping *mapping);
+void vm_mapspace_remove(struct vm_mapspace *ms, struct vm_mapping *mapping);
+struct vm_mapping *vm_mapping_fetch(struct vm_mapspace *ms, vaddr_t va);
+void vm_free_mapq(vm_mapq_t *mapq);
 
 #endif  /* !_VM_MMAP_H_ */
