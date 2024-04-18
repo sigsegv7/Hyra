@@ -199,6 +199,29 @@ devfs_add_dev(const char *name, const struct device *dev)
     return 0;
 }
 
+/*
+ * Fetch a device descriptor from a vnode.
+ */
+int
+devfs_get_dev(struct vnode *vp, struct device **res)
+{
+    struct device_node *n;
+    struct device *dev;
+
+    /* Is this really a device? */
+    if (vp->type != VBLK && vp->type != VCHR) {
+        return -ENODEV;
+    }
+
+    n = vp->data;
+    if ((dev = device_fetch(n->major, n->minor)) == NULL) {
+        return -ENODEV;
+    }
+
+    *res = dev;
+    return 0;
+}
+
 struct vfsops g_devfs_ops = {
     .init = devfs_init
 };

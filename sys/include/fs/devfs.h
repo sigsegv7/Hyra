@@ -37,5 +37,6 @@ extern struct vfsops g_devfs_ops;
 extern struct vops g_devfs_vops;
 
 int devfs_add_dev(const char *name, const struct device *dev);
+int devfs_get_dev(struct vnode *vp, struct device **res);
 
 #endif
