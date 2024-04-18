@@ -29,7 +29,11 @@
 
 #include <sys/types.h>
 #include <sys/limine.h>
+#include <sys/device.h>
+#include <sys/driver.h>
 #include <dev/video/fbdev.h>
+#include <vm/vm.h>
+#include <fs/devfs.h>
 
 #define FRAMEBUFFER \
         framebuffer_req.response->framebuffers[0]
@@ -38,6 +42,23 @@ static volatile struct limine_framebuffer_request framebuffer_req = {
     .id = LIMINE_FRAMEBUFFER_REQUEST,
     .revision = 0
 };
+
+static struct device *dev;
+
+static paddr_t
+fbdev_mmap(struct device *dev, off_t off, vm_prot_t prot)
+{
+    struct fbdev fbdev = fbdev_get_front();
+    paddr_t len = fbdev.width * fbdev.pitch;
+    paddr_t base = VIRT_TO_PHYS(fbdev.mem);
+    paddr_t max_paddr = base + len;
+
+    if (base + off > max_paddr) {
+        return 0;
+    }
+
+    return base + off;
+}
 
 struct fbdev
 fbdev_get_front(void)
@@ -49,5 +70,20 @@ fbdev_get_front(void)
     ret.height = FRAMEBUFFER->height;
     ret.pitch = FRAMEBUFFER->pitch;
     return ret;
-
 }
+
+static int
+fbdev_init(void)
+{
+    dev = DEVICE_ALLOC();
+    dev->blocksize = 1;
+    dev->read = NULL;
+    dev->write = NULL;
+    dev->mmap = fbdev_mmap;
+
+    device_create(dev, device_alloc_major(), 1);
+    devfs_add_dev("fb", dev);
+    return 0;
+}
+
+DRIVER_EXPORT(fbdev_init);
