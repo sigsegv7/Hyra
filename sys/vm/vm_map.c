@@ -191,6 +191,7 @@ vm_fd_map(void *addr, vm_prot_t prot, size_t len, off_t off, int fd)
 {
     paddr_t physmem = 0;
 
+    int oflag;
     struct filedesc *filedes;
     struct vnode *vp;
 
@@ -202,6 +203,13 @@ vm_fd_map(void *addr, vm_prot_t prot, size_t len, off_t off, int fd)
     if (filedes == NULL)
         return 0;
     if ((vp = filedes->vnode) == NULL)
+        return 0;
+
+    /* Check the perms of the filedes */
+    oflag = filedes->oflag;
+    if (__TEST(prot, PROT_WRITE) && oflag == O_RDONLY)
+        return 0;
+    if (!__TEST(prot, PROT_WRITE) && oflag == O_WRONLY)
         return 0;
 
     /* Try to create the virtual memory object */
