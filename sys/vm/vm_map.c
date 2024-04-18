@@ -213,7 +213,10 @@ vm_fd_map(void *addr, vm_prot_t prot, size_t len, off_t off, int fd)
     }
 
     pg.physaddr = physmem;
-    vm_pager_get(vp->vmobj, off, len, &pg);
+
+    if (vm_pager_get(vp->vmobj, off, len, &pg) != 0)
+        return 0;
+
     return physmem;
 }
 
