@@ -228,6 +228,12 @@ vfs_read(struct vnode *vp, struct sio_txn *sio)
     return vp->vops->read(vp, sio);
 }
 
+ssize_t
+vfs_write(struct vnode *vp, struct sio_txn *sio)
+{
+    return vp->vops->write(vp, sio);
+}
+
 int
 vfs_getattr(struct vnode *vp, struct vattr *vattr)
 {

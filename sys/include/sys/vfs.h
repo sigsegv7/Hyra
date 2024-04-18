@@ -52,6 +52,7 @@ int vfs_rootname(const char *path, char **new_path);
 bool vfs_is_valid_path(const char *path);
 ssize_t vfs_hash_path(const char *path);
 ssize_t vfs_read(struct vnode *vp, struct sio_txn *sio);
+ssize_t vfs_write(struct vnode *vp, struct sio_txn *sio);
 int vfs_getattr(struct vnode *vp, struct vattr *vattr);
 
 #endif /* defined(_KERNEL) */
