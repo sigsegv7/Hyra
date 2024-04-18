@@ -32,6 +32,10 @@
 
 #include <sys/types.h>
 
+struct vm_page {
+    paddr_t physaddr;
+};
+
 void vm_zero_page(void *page, size_t page_count);
 
 #endif  /* !_VM_PAGE_H_ */

@@ -27,51 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_VNODE_H_
-#define _SYS_VNODE_H_
+#ifndef _VM_PAGER_H_
+#define _VM_PAGER_H_
 
 #include <sys/types.h>
-#include <sys/queue.h>
-#include <sys/mount.h>
-#include <vm/obj.h>
-#include <sys/sio.h>
+#include <vm/page.h>
 
-struct vnode;
-struct vattr;
+struct vm_object;
 
-struct vops {
-    int(*vget)(struct vnode *parent, const char *name, struct vnode **vp);
-    int(*read)(struct vnode *vp, struct sio_txn *sio);
-    int(*write)(struct vnode *vp, struct sio_txn *sio);
-    int(*getattr)(struct vnode *vp, struct vattr *vattr);
+struct vm_pagerops {
+    int(*get)(struct vm_object *obj, off_t off, size_t len, struct vm_page *pg);
+    int(*store)(struct vm_object *obj, off_t off, size_t len, struct vm_page *pg);
 };
 
-struct vattr {
-    size_t size;        /* File size in bytes */
-    int type;           /* Vnode type */
-};
+extern struct vm_pagerops g_vnode_pagerops;
 
-struct vnode {
-    int type;
-    int flags;
-    struct vm_object *vmobj;
-    struct mount *mp;   /* Ptr to vfs vnode is in */
-    struct vops *vops;
-    struct vnode *parent;
-    struct fs_info *fs; /* Filesystem this vnode belongs to, can be NULL */
-    void *data;         /* Filesystem specific data */
-};
+int vm_pager_get(struct vm_object *obj, off_t off, size_t len, struct vm_page *pg);
 
-/*
- * Vnode type flags
- */
-#define VREG    0x01    /* Regular file */
-#define VDIR    0x02    /* Directory */
-#define VCHR    0x03    /* Character device */
-#define VBLK    0x04    /* Block device */
-
-#if defined(_KERNEL)
-int vfs_alloc_vnode(struct vnode **vnode, struct mount *mp, int type);
-#endif
-
-#endif
+#endif  /* !_VM_PAGER_H_ */

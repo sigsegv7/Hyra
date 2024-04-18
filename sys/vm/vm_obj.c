@@ -27,51 +27,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_VNODE_H_
-#define _SYS_VNODE_H_
-
-#include <sys/types.h>
-#include <sys/queue.h>
-#include <sys/mount.h>
 #include <vm/obj.h>
-#include <sys/sio.h>
+#include <vm/dynalloc.h>
+#include <sys/errno.h>
+#include <string.h>
 
-struct vnode;
-struct vattr;
+int
+vm_obj_init(struct vm_object **res, struct vnode *vnode)
+{
+    struct vm_object *obj = dynalloc(sizeof(struct vm_object));
 
-struct vops {
-    int(*vget)(struct vnode *parent, const char *name, struct vnode **vp);
-    int(*read)(struct vnode *vp, struct sio_txn *sio);
-    int(*write)(struct vnode *vp, struct sio_txn *sio);
-    int(*getattr)(struct vnode *vp, struct vattr *vattr);
-};
+    if (obj == NULL) {
+        return -ENOMEM;
+    }
 
-struct vattr {
-    size_t size;        /* File size in bytes */
-    int type;           /* Vnode type */
-};
+    memset(obj, 0, sizeof(struct vm_object));
+    obj->vnode = vnode;
+    obj->pgops = &g_vnode_pagerops;
+    *res = obj;
+    return 0;
+}
 
-struct vnode {
-    int type;
-    int flags;
-    struct vm_object *vmobj;
-    struct mount *mp;   /* Ptr to vfs vnode is in */
-    struct vops *vops;
-    struct vnode *parent;
-    struct fs_info *fs; /* Filesystem this vnode belongs to, can be NULL */
-    void *data;         /* Filesystem specific data */
-};
+int
+vm_obj_destroy(struct vm_object *obj)
+{
+    struct vnode *vp = obj->vnode;
 
-/*
- * Vnode type flags
- */
-#define VREG    0x01    /* Regular file */
-#define VDIR    0x02    /* Directory */
-#define VCHR    0x03    /* Character device */
-#define VBLK    0x04    /* Block device */
+    if (vp->vmobj != NULL)
+        vp->vmobj = NULL;
 
-#if defined(_KERNEL)
-int vfs_alloc_vnode(struct vnode **vnode, struct mount *mp, int type);
-#endif
-
-#endif
+    dynfree(obj);
+    return 0;
+}

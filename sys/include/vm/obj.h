@@ -27,51 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_VNODE_H_
-#define _SYS_VNODE_H_
+#ifndef _VM_OBJ_H_
+#define _VM_OBJ_H_
 
+#include <sys/spinlock.h>
 #include <sys/types.h>
-#include <sys/queue.h>
-#include <sys/mount.h>
-#include <vm/obj.h>
-#include <sys/sio.h>
+#include <sys/vnode.h>
+#include <vm/map.h>
+#include <vm/pager.h>
 
-struct vnode;
-struct vattr;
+struct vm_object {
+    struct spinlock lock;           /* Protects this object */
+    struct vm_mapspace mapspace;    /* Mapspace this object points to */
+    struct vm_pagerops *pgops;      /* Pager operations */
 
-struct vops {
-    int(*vget)(struct vnode *parent, const char *name, struct vnode **vp);
-    int(*read)(struct vnode *vp, struct sio_txn *sio);
-    int(*write)(struct vnode *vp, struct sio_txn *sio);
-    int(*getattr)(struct vnode *vp, struct vattr *vattr);
+    uint8_t is_anon : 1;
+    struct vnode *vnode;
 };
 
-struct vattr {
-    size_t size;        /* File size in bytes */
-    int type;           /* Vnode type */
-};
+int vm_obj_init(struct vm_object **res, struct vnode *vnode);
+int vm_obj_destroy(struct vm_object *obj);
 
-struct vnode {
-    int type;
-    int flags;
-    struct vm_object *vmobj;
-    struct mount *mp;   /* Ptr to vfs vnode is in */
-    struct vops *vops;
-    struct vnode *parent;
-    struct fs_info *fs; /* Filesystem this vnode belongs to, can be NULL */
-    void *data;         /* Filesystem specific data */
-};
-
-/*
- * Vnode type flags
- */
-#define VREG    0x01    /* Regular file */
-#define VDIR    0x02    /* Directory */
-#define VCHR    0x03    /* Character device */
-#define VBLK    0x04    /* Block device */
-
-#if defined(_KERNEL)
-int vfs_alloc_vnode(struct vnode **vnode, struct mount *mp, int type);
-#endif
-
-#endif
+#endif  /* !_VM_OBJ_H_ */
