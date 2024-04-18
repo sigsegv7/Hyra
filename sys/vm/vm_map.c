@@ -143,21 +143,23 @@ vm_mapspace_insert(struct vm_mapspace *ms, struct vm_mapping *mapping)
  * Create an anonymous mapping.
  *
  * @addr: Address to map.
+ * @physmem: Physical address, set to 0 to alloc one here
  * @prot: Protection flags.
  *
  * Returns zero on failure.
  */
 static paddr_t
-vm_anon_map(void *addr, vm_prot_t prot, size_t len)
+vm_anon_map(void *addr, paddr_t physmem, vm_prot_t prot, size_t len)
 {
     struct proc *td = this_td();
     const size_t GRANULE = vm_get_page_size();
 
-    paddr_t physmem;
     int status;
 
-    /* Allocate the physical memory */
-    physmem = vm_alloc_pageframe(len / GRANULE);
+    /* Allocate the physical memory if needed */
+    if (physmem == 0)
+        physmem = vm_alloc_pageframe(len / GRANULE);
+
     if (physmem == 0)
         return 0;
 
@@ -187,7 +189,8 @@ vm_anon_map(void *addr, vm_prot_t prot, size_t len)
 static paddr_t
 vm_fd_map(void *addr, vm_prot_t prot, size_t len, off_t off, int fd)
 {
-    paddr_t physmem;
+    paddr_t physmem = 0;
+
     struct filedesc *filedes;
     struct vnode *vp;
 
@@ -205,17 +208,35 @@ vm_fd_map(void *addr, vm_prot_t prot, size_t len, off_t off, int fd)
     if (vm_obj_init(&vp->vmobj, vp) != 0)
         return 0;
 
-    /* Start with a regular anonymous mapping */
-    physmem = vm_anon_map(addr, prot, len);
-    if (physmem == 0) {
+    /* Try to fetch a physical address */
+    if (vm_pager_paddr(vp->vmobj, &physmem, prot) != 0) {
         vm_obj_destroy(vp->vmobj);
         return 0;
     }
 
+    /*
+     * If the pager found a physical address for the object to
+     * be mapped to, then we start off with an anonymous mapping
+     * then connect it to the physical address (creates a shared mapping)
+     */
+    if (physmem != 0) {
+        vm_anon_map(addr, physmem, prot, len);
+        return physmem;
+    }
+
+    /*
+     * If the pager could not find a physical address for
+     * the object to be mapped to, start of with just a plain
+     * anonymous mapping then page-in from whatever filesystem
+     * (creates a shared mapping)
+     */
+    physmem = vm_anon_map(addr, 0, prot, len);
     pg.physaddr = physmem;
 
-    if (vm_pager_get(vp->vmobj, off, len, &pg) != 0)
+    if (vm_pager_get(vp->vmobj, off, len, &pg) != 0) {
+        vm_obj_destroy(vp->vmobj);
         return 0;
+    }
 
     return physmem;
 }
@@ -287,7 +308,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
      */
     if (__TEST(flags, MAP_ANONYMOUS)) {
         /* Handle an anonymous map request */
-        physmem = vm_anon_map(addr, prot, len);
+        physmem = vm_anon_map(addr, 0, prot, len);
     } else if (__TEST(flags, MAP_SHARED)) {
         physmem = vm_fd_map(addr, prot, len, off, fildes);
     }
