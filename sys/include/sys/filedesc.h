@@ -47,6 +47,7 @@ struct proc;
 
 struct filedesc {
     int fdno;
+    int oflag;
     off_t offset;
     bool is_dir;
     struct vnode *vnode;

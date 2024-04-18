@@ -242,6 +242,10 @@ write(int fd, const void *buf, size_t count)
     }
 
     desc = fd_from_fdnum(td, fd);
+    if (desc->oflag != O_WRONLY && desc->oflag != O_WRONLY) {
+        ret = -EACCES;
+        goto cleanup;
+    }
 
     /* Does this file descriptor exist? */
     if (desc == NULL) {
@@ -291,15 +295,7 @@ open(const char *pathname, int oflag)
         return status;
     }
 
-    /*
-     * TODO: Handle more flags... For now we only support
-     *       O_RDONLY, so deny other flags.
-     */
-    if ((oflag & ~O_RDONLY) != 0){
-        fd_close_fdnum(this_td(), fd->fdno);
-        return -EACCES;
-    }
-
+    fd->oflag = oflag;
     fd->vnode = vp;
     fd->is_dir = (vp->type == VDIR);
     return fd->fdno;
@@ -327,6 +323,10 @@ read(int fd, void *buf, size_t count)
     fd_desc = fd_from_fdnum(this_td(), fd);
     if (fd_desc == NULL) {
         return -EBADF;
+    }
+
+    if (fd_desc->oflag == O_WRONLY) {
+        return -EACCES;
     }
 
     sio.offset = fd_desc->offset;
