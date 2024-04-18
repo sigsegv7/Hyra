@@ -410,6 +410,7 @@ nvme_init_ns(struct nvme_state *state, uint16_t nsid)
     dev->read = nvme_dev_read;
     dev->write = nvme_dev_write;
     dev->blocksize = ns->lba_bsize;
+    dev->mmap = NULL;
     ns->dev_id = device_create(dev, state->major, nsid);
 
     snprintf(devname, sizeof(devname), "nvme0n%d", nsid);

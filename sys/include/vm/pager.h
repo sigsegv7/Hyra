@@ -38,10 +38,14 @@ struct vm_object;
 struct vm_pagerops {
     int(*get)(struct vm_object *obj, off_t off, size_t len, struct vm_page *pg);
     int(*store)(struct vm_object *obj, off_t off, size_t len, struct vm_page *pg);
+    /* TODO: Remove this and add demand paging */
+    int(*get_paddr)(struct vm_object *obj, paddr_t *paddr, vm_prot_t prot);
 };
 
 extern struct vm_pagerops g_vnode_pagerops;
+extern struct vm_pagerops g_dev_pagerops;
 
 int vm_pager_get(struct vm_object *obj, off_t off, size_t len, struct vm_page *pg);
+int vm_pager_paddr(struct vm_object *obj, paddr_t *paddr, vm_prot_t prot);
 
 #endif  /* !_VM_PAGER_H_ */

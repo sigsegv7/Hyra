@@ -45,3 +45,24 @@ vm_pager_get(struct vm_object *obj, off_t off, size_t len, struct vm_page *pg)
 
     return pgops->get(obj, off, len, pg);
 }
+
+/*
+ * Get physical address.
+ *
+ * TODO: Remove this and add demanding paging.
+ */
+int
+vm_pager_paddr(struct vm_object *obj, paddr_t *paddr, vm_prot_t prot)
+{
+    struct vm_pagerops *pgops = obj->pgops;
+
+    if (obj->is_anon) {
+        return -1;
+    }
+
+    if (pgops->get_paddr == NULL) {
+        return 0;
+    }
+
+    return pgops->get_paddr(obj, paddr, prot);
+}

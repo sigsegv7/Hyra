@@ -32,6 +32,7 @@
 
 #include <sys/sio.h>
 #include <sys/queue.h>
+#include <sys/types.h>
 #include <vm/dynalloc.h>
 
 #define DEVICE_ALLOC() dynalloc(sizeof(struct device))
@@ -41,6 +42,7 @@ struct device {
     size_t blocksize;
     int(*write)(struct device *dev, struct sio_txn *sio);
     int(*read)(struct device *dev, struct sio_txn *sio);
+    paddr_t(*mmap)(struct device *dev, off_t off, vm_prot_t prot);
     TAILQ_ENTRY(device) link;
 };
 

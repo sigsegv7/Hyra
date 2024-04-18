@@ -32,6 +32,22 @@
 #include <sys/errno.h>
 #include <string.h>
 
+static void
+vm_set_pgops(struct vm_object *obj, struct vnode *vnode)
+{
+    if (vnode == NULL) {
+        obj->vnode = NULL;
+        return;
+    }
+
+    /* Is this a device? */
+    if (vnode->type == VCHR || vnode->type == VBLK) {
+        obj->pgops = &g_dev_pagerops;
+    } else {
+        obj->pgops = &g_vnode_pagerops;
+    }
+}
+
 int
 vm_obj_init(struct vm_object **res, struct vnode *vnode)
 {
@@ -43,7 +59,8 @@ vm_obj_init(struct vm_object **res, struct vnode *vnode)
 
     memset(obj, 0, sizeof(struct vm_object));
     obj->vnode = vnode;
-    obj->pgops = &g_vnode_pagerops;
+
+    vm_set_pgops(obj, vnode);
     *res = obj;
     return 0;
 }
