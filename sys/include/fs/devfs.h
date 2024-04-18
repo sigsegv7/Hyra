@@ -36,6 +36,6 @@
 extern struct vfsops g_devfs_ops;
 extern struct vops g_devfs_vops;
 
-int devfs_add_blkdev(const char *name, const struct device *blkdev);
+int devfs_add_dev(const char *name, const struct device *dev);
 
 #endif

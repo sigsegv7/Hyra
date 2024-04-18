@@ -413,7 +413,7 @@ nvme_init_ns(struct nvme_state *state, uint16_t nsid)
     ns->dev_id = device_create(dev, state->major, nsid);
 
     snprintf(devname, sizeof(devname), "nvme0n%d", nsid);
-    if (devfs_add_blkdev(devname, dev) != 0) {
+    if (devfs_add_dev(devname, dev) != 0) {
         KERR("Failed to create /dev/%s\n", devname);
     }
 

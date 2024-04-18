@@ -183,7 +183,7 @@ devfs_make_devicenode(const char *name, struct device_node **node_out)
 }
 
 int
-devfs_add_blkdev(const char *name, const struct device *blkdev)
+devfs_add_dev(const char *name, const struct device *dev)
 {
     struct device_node *node;
     int status;
@@ -192,9 +192,9 @@ devfs_add_blkdev(const char *name, const struct device *blkdev)
         return status;
     }
 
-    node->major = blkdev->major;
-    node->minor = blkdev->minor;
-    node->is_block = 1;
+    node->major = dev->major;
+    node->minor = dev->minor;
+    node->is_block = dev->blocksize > 1;
     TAILQ_INSERT_HEAD(&nodes, node, link);
     return 0;
 }
