@@ -32,7 +32,9 @@
 #include <vm/pmap.h>
 #include <vm/physseg.h>
 #include <vm/dynalloc.h>
+#include <vm/pager.h>
 #include <sys/types.h>
+#include <sys/filedesc.h>
 #include <sys/cdefs.h>
 #include <sys/panic.h>
 #include <sys/sched.h>
@@ -173,6 +175,48 @@ vm_anon_map(void *addr, vm_prot_t prot, size_t len)
     return physmem;
 }
 
+/*
+ * Create a mapping backed by a file.
+ *
+ * @addr: Address to map.
+ * @prot: Protection flags.
+ * @len: Length of mapping.
+ * @off: Offset.
+ * @fd: File descriptor.
+ */
+static paddr_t
+vm_fd_map(void *addr, vm_prot_t prot, size_t len, off_t off, int fd)
+{
+    paddr_t physmem;
+    struct filedesc *filedes;
+    struct vnode *vp;
+
+    struct proc *td = this_td();
+    struct vm_page pg = {0};
+
+    /* Attempt to get the vnode */
+    filedes = fd_from_fdnum(td, fd);
+    if (filedes == NULL)
+        return 0;
+    if ((vp = filedes->vnode) == NULL)
+        return 0;
+
+    /* Try to create the virtual memory object */
+    if (vm_obj_init(&vp->vmobj, vp) != 0)
+        return 0;
+
+    /* Start with a regular anonymous mapping */
+    physmem = vm_anon_map(addr, prot, len);
+    if (physmem == 0) {
+        vm_obj_destroy(vp->vmobj);
+        return 0;
+    }
+
+    pg.physaddr = physmem;
+    vm_pager_get(vp->vmobj, off, len, &pg);
+    return physmem;
+}
+
 static int
 munmap(void *addr, size_t len)
 {
@@ -241,6 +285,8 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     if (__TEST(flags, MAP_ANONYMOUS)) {
         /* Handle an anonymous map request */
         physmem = vm_anon_map(addr, prot, len);
+    } else if (__TEST(flags, MAP_SHARED)) {
+        physmem = vm_fd_map(addr, prot, len, off, fildes);
     }
 
     if (physmem == 0) {
