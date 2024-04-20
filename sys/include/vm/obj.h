@@ -41,8 +41,8 @@ struct vm_object {
     struct vm_mapspace mapspace;    /* Mapspace this object points to */
     struct vm_pagerops *pgops;      /* Pager operations */
 
-    uint8_t is_anon : 1;
-    struct vnode *vnode;
+    uint8_t is_anon : 1;            /* Is an anonymous mapping */
+    struct vnode *vnode;            /* Only used if `is_anon` is 0 */
 };
 
 int vm_obj_init(struct vm_object **res, struct vnode *vnode);
