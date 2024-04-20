@@ -140,7 +140,7 @@ vm_mapspace_insert(struct vm_mapspace *ms, struct vm_mapping *mapping)
 }
 
 /*
- * Create an anonymous mapping.
+ * Create a mapping (internal helper)
  *
  * @addr: Address to map.
  * @physmem: Physical address, set to 0 to alloc one here
@@ -149,7 +149,7 @@ vm_mapspace_insert(struct vm_mapspace *ms, struct vm_mapping *mapping)
  * Returns zero on failure.
  */
 static paddr_t
-vm_anon_map(void *addr, paddr_t physmem, vm_prot_t prot, size_t len)
+vm_map(void *addr, paddr_t physmem, vm_prot_t prot, size_t len)
 {
     struct proc *td = this_td();
     const size_t GRANULE = vm_get_page_size();
@@ -187,7 +187,8 @@ vm_anon_map(void *addr, paddr_t physmem, vm_prot_t prot, size_t len)
  * @fd: File descriptor.
  */
 static paddr_t
-vm_fd_map(void *addr, vm_prot_t prot, size_t len, off_t off, int fd)
+vm_fd_map(void *addr, vm_prot_t prot, size_t len, off_t off, int fd,
+          struct vm_mapping *mapping)
 {
     paddr_t physmem = 0;
 
@@ -216,6 +217,9 @@ vm_fd_map(void *addr, vm_prot_t prot, size_t len, off_t off, int fd)
     if (vm_obj_init(&vp->vmobj, vp) != 0)
         return 0;
 
+    mapping->vmobj = vp->vmobj;
+    vm_object_ref(vp->vmobj);
+
     /* Try to fetch a physical address */
     if (vm_pager_paddr(vp->vmobj, &physmem, prot) != 0) {
         vm_obj_destroy(vp->vmobj);
@@ -228,7 +232,7 @@ vm_fd_map(void *addr, vm_prot_t prot, size_t len, off_t off, int fd)
      * then connect it to the physical address (creates a shared mapping)
      */
     if (physmem != 0) {
-        vm_anon_map(addr, physmem, prot, len);
+        vm_map(addr, physmem, prot, len);
         return physmem;
     }
 
@@ -238,7 +242,7 @@ vm_fd_map(void *addr, vm_prot_t prot, size_t len, off_t off, int fd)
      * anonymous mapping then page-in from whatever filesystem
      * (creates a shared mapping)
      */
-    physmem = vm_anon_map(addr, 0, prot, len);
+    physmem = vm_map(addr, 0, prot, len);
     pg.physaddr = physmem;
 
     if (vm_pager_get(vp->vmobj, off, len, &pg) != 0) {
@@ -254,6 +258,9 @@ munmap(void *addr, size_t len)
 {
     struct proc *td = this_td();
     struct vm_mapping *mapping;
+
+    struct vm_object *obj;
+    struct vnode *vp;
 
     struct vm_mapspace *ms;
     size_t map_len, granule;
@@ -271,6 +278,23 @@ munmap(void *addr, size_t len)
     map_start = mapping->range.start;
     map_end = mapping->range.end;
     map_len = map_end - map_start;
+
+    /* Try to release any virtual memory objects */
+    if ((obj = mapping->vmobj) != NULL) {
+        spinlock_acquire(&obj->lock);
+        /*
+         * Drop our ref and try to cleanup. If the refcount
+         * is > 1, something is still holding it and we can't
+         * do much.
+         */
+        vm_object_unref(obj);
+        vp = obj->vnode;
+        if (vp != NULL && obj->ref == 1) {
+            vp->vmobj = NULL;
+            vm_obj_destroy(obj);
+        }
+        spinlock_release(&obj->lock);
+    }
 
     /* Release the mapping */
     vm_map_destroy(td->addrsp, map_start, map_len);
@@ -292,9 +316,12 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 
     struct proc *td = this_td();
     struct vm_mapping *mapping = ALLOC_MAPPING();
+    struct vm_object *vmobj;
 
     size_t misalign = ((vaddr_t)addr) & (GRANULE - 1);
     paddr_t physmem = 0;
+
+    mapping->prot = prot | PROT_USER;
 
     /* Ensure of valid prot flags */
     if ((prot & ~PROT_MASK) != 0)
@@ -315,15 +342,33 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
      * this is.
      */
     if (__TEST(flags, MAP_ANONYMOUS)) {
-        /* Handle an anonymous map request */
-        physmem = vm_anon_map(addr, 0, prot, len);
+        /* Try to create a virtual memory object */
+        if (vm_obj_init(&vmobj, NULL) != 0)
+            return 0;
+
+        /*
+         * Enable demand paging for this object if
+         * `addr` is not NULL.
+         */
+        if (addr != NULL) {
+            vmobj->is_anon = 1;
+            vmobj->demand = 1;
+
+            mapping->vmobj = vmobj;
+            mapping->physmem_base = 0;
+        } else {
+            physmem = vm_map(addr, 0, prot, len);
+        }
+
+        /* Did this work? */
+        if (physmem == 0 && addr == NULL)
+            return MAP_FAILED;
     } else if (__TEST(flags, MAP_SHARED)) {
-        physmem = vm_fd_map(addr, prot, len, off, fildes);
+        physmem = vm_fd_map(addr, prot, len, off, fildes, mapping);
+        if (physmem == 0)
+            return MAP_FAILED;
     }
 
-    if (physmem == 0) {
-        return MAP_FAILED;
-    }
 
     map_start = __ALIGN_DOWN((vaddr_t)addr, GRANULE);
     map_end = map_start + __ALIGN_UP(len + misalign, GRANULE);

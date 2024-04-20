@@ -42,6 +42,7 @@ struct vm_object {
     struct vm_pagerops *pgops;      /* Pager operations */
 
     uint8_t is_anon : 1;            /* Is an anonymous mapping */
+    uint8_t demand  : 1;            /* Only mapped upon access */
     int ref;                        /* Ref count */
     struct vnode *vnode;            /* Only used if `is_anon` is 0 */
 };

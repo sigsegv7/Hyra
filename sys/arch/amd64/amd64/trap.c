@@ -35,6 +35,7 @@
 #include <sys/signal.h>
 #include <sys/proc.h>
 #include <sys/sched.h>
+#include <vm/fault.h>
 
 static const char *trap_type[] = {
     [TRAP_BREAKPOINT]   = "breakpoint",
@@ -52,6 +53,31 @@ static const char *trap_type[] = {
 };
 
 static const int TRAP_COUNT = __ARRAY_COUNT(trap_type);
+
+
+static inline vaddr_t
+pf_faultaddr(void)
+{
+    uintptr_t cr2;
+    __ASMV("mov %%cr2, %0\n" : "=r" (cr2) :: "memory");
+    return cr2;
+}
+
+static inline vm_prot_t
+pf_accesstype(struct trapframe *tf)
+{
+    vm_prot_t prot = 0;
+    uint64_t ec = tf->error_code;
+
+    if (__TEST(ec, __BIT(1)))
+        prot |= PROT_WRITE;
+    if (__TEST(ec, __BIT(2)))
+        prot |= PROT_USER;
+    if (__TEST(ec, __BIT(4)))
+        prot |= PROT_EXEC;
+
+    return prot;
+}
 
 static void
 dbg_errcode(struct trapframe *tf)
@@ -87,11 +113,10 @@ trap_print(struct trapframe *tf)
 static void
 regdump(struct trapframe *tf)
 {
-    uintptr_t cr3, cr2;
+    uintptr_t cr3, cr2 = pf_faultaddr();
 
-    __ASMV("mov %%cr2, %0\n"
-           "mov %%cr3, %1\n"
-           : "=r" (cr2), "=r" (cr3)
+    __ASMV("mov %%cr3, %0\n"
+           : "=r" (cr3)
            :
            : "memory"
     );
@@ -121,6 +146,7 @@ void
 trap_handler(struct trapframe *tf)
 {
     struct proc *curtd = this_td();
+    int s;
 
     /*
      * XXX: Handle NMIs better. For now we just
@@ -141,6 +167,11 @@ trap_handler(struct trapframe *tf)
     switch (tf->trapno) {
     case TRAP_ARITH_ERR:
         signal_raise(curtd, SIGFPE);
+        break;
+    case TRAP_PAGEFLT:
+        s = vm_fault(pf_faultaddr(), pf_accesstype(tf));
+        if (s != 0)
+            signal_raise(curtd, SIGSEGV);
         break;
     default:
         signal_raise(curtd, SIGSEGV);

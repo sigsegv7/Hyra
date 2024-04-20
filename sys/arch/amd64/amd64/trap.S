@@ -131,9 +131,8 @@ page_fault:
 
     handle_trap
 
-    /* TODO */
-    cli
-    hlt
+    pop_trapframe
+    iretq
 
 .globl nmi
 nmi:
