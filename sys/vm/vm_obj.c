@@ -59,6 +59,7 @@ vm_obj_init(struct vm_object **res, struct vnode *vnode)
 
     memset(obj, 0, sizeof(struct vm_object));
     obj->vnode = vnode;
+    obj->ref = 1;
 
     vm_set_pgops(obj, vnode);
     *res = obj;
@@ -72,6 +73,10 @@ vm_obj_destroy(struct vm_object *obj)
 
     if (vp->vmobj != NULL)
         vp->vmobj = NULL;
+
+    /* Check the ref count */
+    if (obj->ref > 1)
+        return -EBUSY;
 
     dynfree(obj);
     return 0;

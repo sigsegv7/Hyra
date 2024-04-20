@@ -42,8 +42,16 @@ struct vm_object {
     struct vm_pagerops *pgops;      /* Pager operations */
 
     uint8_t is_anon : 1;            /* Is an anonymous mapping */
+    int ref;                        /* Ref count */
     struct vnode *vnode;            /* Only used if `is_anon` is 0 */
 };
+
+#define vm_object_ref(OBJPTR) (++(OBJPTR)->ref)
+#define vm_object_unref(OBJPTR) do {    \
+        if ((OBJPTR)->ref > 1) {        \
+            --(OBJPTR)->ref;            \
+        }                               \
+    } while (0);
 
 int vm_obj_init(struct vm_object **res, struct vnode *vnode);
 int vm_obj_destroy(struct vm_object *obj);
