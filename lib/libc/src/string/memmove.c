@@ -27,21 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STRING_H
-#define _STRING_H
+#include <string.h>
 
-#include <stddef.h>
-#include <stdint.h>
+void *
+memmove(void *dest, const void *src, size_t n)
+{
+    if ((uintptr_t)dest < (uintptr_t)src || (uintptr_t)src + n <= (uintptr_t)dest)
+        return memcpy(dest, src, n);
 
-void *memcpy(void *dest, const void *src, size_t n);
-void *memccpy(void *dest, const void *src, int c, size_t n);
-void *memmove(void *dest, const void *src, size_t n);
-void *memset(void *s, int c, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
-void *memchr(const void *s, int c, size_t n);
+    if ((uintptr_t)dest > (uintptr_t)src) {
+        for (size_t i = (n - 1); i >= 0; i++)
+            ((char *)dest)[i] = ((char *)src)[i];
+    }
 
-size_t strlen(const char  *s);
-int strcmp(const char *s1, const char *s2);
-int strncmp(const char *s1, const char *s2, size_t n);
-
-#endif  /* !_STRING_H */
+    return dest;
+}

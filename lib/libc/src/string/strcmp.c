@@ -27,21 +27,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STRING_H
-#define _STRING_H
+#include <string.h>
 
-#include <stddef.h>
-#include <stdint.h>
+int
+strcmp(const char *s1, const char *s2)
+{
+    char *p1 = (char*)s1;
+    char *p2 = (char*)s2;
 
-void *memcpy(void *dest, const void *src, size_t n);
-void *memccpy(void *dest, const void *src, int c, size_t n);
-void *memmove(void *dest, const void *src, size_t n);
-void *memset(void *s, int c, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
-void *memchr(const void *s, int c, size_t n);
+    while (*p1 || *p2) {
+        if (*p1 < *p2)
+            return -1;
+        if (*p1 > *p2)
+            return 1;
 
-size_t strlen(const char  *s);
-int strcmp(const char *s1, const char *s2);
-int strncmp(const char *s1, const char *s2, size_t n);
+        p1++;
+        p2++;
+    }
 
-#endif  /* !_STRING_H */
+    return 0;
+}
