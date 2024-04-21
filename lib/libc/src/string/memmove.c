@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdint.h>
 #include <string.h>
 
 void *

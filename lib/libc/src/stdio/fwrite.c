@@ -28,22 +28,46 @@
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
-#define VERSION "v0.0.1"
-
-static void
-loginfo(const char *s)
+size_t
+fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
-    fputs("init [*]: ", stdout);
-    fputs(s, stdout);
-    fflush(stdout);
-}
+    const char *pos;
+    size_t n_remaining;
 
-int
-main(int argc, char **argv)
-{
-    loginfo("Hyra init " VERSION " loaded\n");
-    loginfo("Hello, World!\n");
-    loginfo("** EXITING 0 **\n");
-    return 0;
+    if (ptr == NULL || stream == NULL)
+        return 0;
+    if (size == 0 || nmemb == 0)
+        return 0;
+    if (!(stream->flags & FILE_WRITE))
+        return 0;
+
+    /* Write data to buffer, flushing as needed */
+    pos = ptr;
+    n_remaining = size * nmemb;
+    while (n_remaining > 0) {
+        size_t n_free = stream->write_end - stream->write_pos;
+
+        /* If enough buffer space is available, finish writing */
+        if (n_remaining < n_free) {
+            memcpy(stream->write_pos, pos, n_remaining);
+            stream->write_pos += n_remaining;
+            break;
+        }
+
+        /* Otherwise, write as much as possible now */
+        memcpy(stream->write_pos, pos, n_free);
+        stream->write_pos += n_free;
+
+        /* Return if flushing fails */
+        if (fflush(stream) == EOF)
+            return nmemb - (n_remaining / size);
+
+        pos += n_free;
+        n_remaining -= n_free;
+    }
+
+    return nmemb;
 }

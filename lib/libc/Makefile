@@ -29,4 +29,5 @@ build/:
 
 .PHONY: clean
 clean:
+	rm -f $(LIBC_OBJ) $(LIBC_ASMOBJ)
 	rm -rf build/

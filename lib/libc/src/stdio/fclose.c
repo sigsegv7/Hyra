@@ -28,22 +28,16 @@
  */
 
 #include <stdio.h>
-
-#define VERSION "v0.0.1"
-
-static void
-loginfo(const char *s)
-{
-    fputs("init [*]: ", stdout);
-    fputs(s, stdout);
-    fflush(stdout);
-}
+#include <unistd.h>
 
 int
-main(int argc, char **argv)
+fclose(FILE *stream)
 {
-    loginfo("Hyra init " VERSION " loaded\n");
-    loginfo("Hello, World!\n");
-    loginfo("** EXITING 0 **\n");
+    if (stream == NULL)
+        return EOF;
+
+    if (close(stream->fd) != 0)
+        return EOF;
+
     return 0;
 }

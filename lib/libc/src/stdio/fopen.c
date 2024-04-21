@@ -27,23 +27,46 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <fcntl.h>
 #include <stdio.h>
+#include <unistd.h>
 
-#define VERSION "v0.0.1"
-
-static void
-loginfo(const char *s)
+FILE*
+fopen(const char *pathname, const char *mode)
 {
-    fputs("init [*]: ", stdout);
-    fputs(s, stdout);
-    fflush(stdout);
-}
+    int open_flags;
+    int fd;
 
-int
-main(int argc, char **argv)
-{
-    loginfo("Hyra init " VERSION " loaded\n");
-    loginfo("Hello, World!\n");
-    loginfo("** EXITING 0 **\n");
-    return 0;
+    if (mode == NULL)
+        return NULL;
+
+    /* Determine open flags */
+    switch (mode[0]) {
+    case 'r':
+        if (mode[1] == '+') {
+            open_flags = O_RDWR;
+        } else {
+            open_flags = O_RDONLY;
+        }
+        break;
+    case 'w':
+    case 'a':
+    /* TODO: Change this once O_CREAT, O_TRUNC, and O_APPEND are added */
+        if (mode[1] == '+') {
+            open_flags = O_RDWR;
+        } else {
+            open_flags = O_WRONLY;
+        }
+        break;
+    default:
+        return NULL;
+    }
+
+    /* Try to open file */
+    fd = open(pathname, open_flags);
+    if (fd == -1)
+        return NULL;
+
+    /* Create stream with fdopen */
+    return fdopen(fd, mode);
 }

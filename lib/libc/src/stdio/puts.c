@@ -29,21 +29,14 @@
 
 #include <stdio.h>
 
-#define VERSION "v0.0.1"
-
-static void
-loginfo(const char *s)
-{
-    fputs("init [*]: ", stdout);
-    fputs(s, stdout);
-    fflush(stdout);
-}
-
 int
-main(int argc, char **argv)
+puts(const char *s)
 {
-    loginfo("Hyra init " VERSION " loaded\n");
-    loginfo("Hello, World!\n");
-    loginfo("** EXITING 0 **\n");
+    if (fputs(s, stdout) == EOF)
+        return EOF;
+
+    if (putchar('\n') == EOF)
+        return EOF;
+
     return 0;
 }

@@ -29,21 +29,21 @@
 
 #include <stdio.h>
 
-#define VERSION "v0.0.1"
-
-static void
-loginfo(const char *s)
-{
-    fputs("init [*]: ", stdout);
-    fputs(s, stdout);
-    fflush(stdout);
-}
-
 int
-main(int argc, char **argv)
+fputc(int c, FILE *stream)
 {
-    loginfo("Hyra init " VERSION " loaded\n");
-    loginfo("Hello, World!\n");
-    loginfo("** EXITING 0 **\n");
-    return 0;
+    unsigned char ch;
+
+    if (stream == NULL || !(stream->flags & FILE_WRITE))
+        return EOF;
+
+    /* Try to flush stream if needed */
+    ch = (unsigned char)c;
+    if ((stream->write_end - stream->write_pos) < 1) {
+        if (fflush(stream) == EOF)
+            return EOF;
+    }
+    *stream->write_pos++ = ch;
+
+    return (int)ch;
 }

@@ -28,22 +28,13 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 
-#define VERSION "v0.0.1"
-
-static void
-loginfo(const char *s)
+size_t
+fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
-    fputs("init [*]: ", stdout);
-    fputs(s, stdout);
-    fflush(stdout);
-}
+    if (stream == NULL || !(stream->flags & FILE_READ))
+        return 0;
 
-int
-main(int argc, char **argv)
-{
-    loginfo("Hyra init " VERSION " loaded\n");
-    loginfo("Hello, World!\n");
-    loginfo("** EXITING 0 **\n");
-    return 0;
+    return (size_t)read(stream->fd, ptr, size * nmemb) / size;
 }

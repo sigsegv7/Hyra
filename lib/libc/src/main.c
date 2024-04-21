@@ -28,8 +28,12 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
+#include <unistd.h>
 
 int main(int argc, const char **argv, const char **envp);
+
+FILE *stdout;
 
 int
 __libc_entry(uint64_t *ctx)
@@ -37,6 +41,8 @@ __libc_entry(uint64_t *ctx)
     uint64_t argc = *ctx;
     const char **argv = (const char **)(ctx + 1);
     const char **envp = (const char **)(argv + argc + 1);
+
+    stdout = fdopen(STDOUT_FILENO, "a");
 
     return main(argc, argv, envp);
 }

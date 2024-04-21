@@ -32,8 +32,8 @@
 int
 strncmp(const char *s1, const char *s2, size_t n)
 {
-    char *p1 = (char*)s1;
-    char *p2 = (char*)s2;
+    char *p1 = (char *)s1;
+    char *p2 = (char *)s2;
 
     for (size_t i = 0; i < n; i++) {
         if (!*p1 && !*p2)

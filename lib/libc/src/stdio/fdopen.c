@@ -29,21 +29,54 @@
 
 #include <stdio.h>
 
-#define VERSION "v0.0.1"
+#include <unistd.h>
 
-static void
-loginfo(const char *s)
-{
-    fputs("init [*]: ", stdout);
-    fputs(s, stdout);
-    fflush(stdout);
-}
+#define WRITE_BUF_SIZE 128
 
-int
-main(int argc, char **argv)
+/* TODO: Allocate these once malloc() is implemented */
+static FILE default_stream;
+static char default_write_buf[WRITE_BUF_SIZE];
+
+FILE*
+fdopen(int fd, const char *mode)
 {
-    loginfo("Hyra init " VERSION " loaded\n");
-    loginfo("Hello, World!\n");
-    loginfo("** EXITING 0 **\n");
-    return 0;
+    FILE *stream;
+    int flags;
+
+    if (mode == NULL)
+        return NULL;
+
+    /* Determine stream flags */
+    flags = 0;
+    switch (mode[0]) {
+    case 'r':
+        flags |= FILE_READ;
+        if (mode[1] == '+') {
+            flags |= FILE_WRITE;
+        }
+        break;
+    case 'w':
+    case 'a':
+        flags |= FILE_WRITE;
+        if (mode[1] == '+') {
+            flags |= FILE_READ;
+        }
+        break;
+    default:
+        return NULL;
+    }
+
+    /* Create stream */
+    stream = &default_stream;
+    stream->fd = fd;
+    stream->flags = flags;
+
+    /* Create write buffer if needed */
+    if (flags & FILE_WRITE) {
+        stream->write_buf = default_write_buf;
+        stream->write_pos = stream->write_buf;
+        stream->write_end = stream->write_buf + WRITE_BUF_SIZE;
+    }
+
+    return stream;
 }

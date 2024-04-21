@@ -28,22 +28,25 @@
  */
 
 #include <stdio.h>
-
-#define VERSION "v0.0.1"
-
-static void
-loginfo(const char *s)
-{
-    fputs("init [*]: ", stdout);
-    fputs(s, stdout);
-    fflush(stdout);
-}
+#include <unistd.h>
 
 int
-main(int argc, char **argv)
+fflush(FILE *stream)
 {
-    loginfo("Hyra init " VERSION " loaded\n");
-    loginfo("Hello, World!\n");
-    loginfo("** EXITING 0 **\n");
+    size_t size;
+
+    if (stream == NULL || !(stream->flags & FILE_WRITE))
+        return EOF;
+
+    /* Check if write buffer is empty */
+    if (stream->write_pos == stream->write_buf)
+        return 0;
+
+    /* Write buffer to file */
+    size = stream->write_pos - stream->write_buf;
+    if ((size_t)write(stream->fd, stream->write_buf, size) != size)
+        return EOF;
+
+    stream->write_pos = stream->write_buf;
     return 0;
 }

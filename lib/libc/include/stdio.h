@@ -27,23 +27,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
+#ifndef _STDIO_H
+#define _STDIO_H
 
-#define VERSION "v0.0.1"
+#include <stddef.h>
 
-static void
-loginfo(const char *s)
-{
-    fputs("init [*]: ", stdout);
-    fputs(s, stdout);
-    fflush(stdout);
-}
+#define EOF (int)-1
 
-int
-main(int argc, char **argv)
-{
-    loginfo("Hyra init " VERSION " loaded\n");
-    loginfo("Hello, World!\n");
-    loginfo("** EXITING 0 **\n");
-    return 0;
-}
+#define FILE_READ  (1 << 0)
+#define FILE_WRITE (1 << 1)
+
+typedef struct {
+    int fd;
+    int flags;
+
+    char *write_buf;
+    char *write_pos;
+    char *write_end;
+} FILE;
+
+extern FILE *stdout;
+
+FILE *fopen(const char *pathname, const char *mode);
+FILE *fdopen(int fd, const char *mode);
+
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+
+int fputc(int c, FILE *stream);
+#define putc fputc
+int putchar(int c);
+
+int fputs(const char *s, FILE *stream);
+int puts(const char *s);
+
+int fflush(FILE *stream);
+int fclose(FILE *stream);
+
+#endif  /* !_STDIO_H */
