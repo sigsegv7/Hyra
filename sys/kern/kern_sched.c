@@ -104,7 +104,7 @@ sched_enqueue_td(struct proc *td)
 
     spinlock_acquire(&tdq_lock);
 
-    td->pid = ++nthread;
+    td->pid = nthread++;
     TAILQ_INSERT_TAIL(&td_queue, td, link);
 
     spinlock_release(&tdq_lock);
@@ -130,6 +130,13 @@ sched_dequeue_td(void)
     return td;
 }
 
+__noreturn static void
+sched_idle(void)
+{
+    for (;;) {
+        hint_spinwait();
+    }
+}
 
 /*
  * Processor awaiting tasks to be assigned will be here spinning.
@@ -138,9 +145,8 @@ __noreturn static void
 sched_enter(void)
 {
     sched_oneshot();
-    for (;;) {
-        hint_spinwait();
-    }
+    sched_idle();
+    __builtin_unreachable();
 }
 
 static uintptr_t
@@ -322,6 +328,24 @@ sched_destroy_td(struct proc *td)
     dynfree(td);
 }
 
+/*
+ * Create the idle thread.
+ */
+static void
+sched_make_idletd(void)
+{
+    char *argv[] = {NULL};
+    char *envp[] = {NULL};
+    struct auxval auxv = {0};
+    struct vm_range range;
+    struct proc *td;
+
+    td = sched_create_td((uintptr_t)sched_idle, argv, envp,
+                         auxv, pmap_read_vas(), false, &range);
+
+    sched_enqueue_td(td);
+}
+
 void
 sched_exit(void)
 {
@@ -419,6 +443,7 @@ sched_init(void)
     char *envp[] = {NULL};
 
     TAILQ_INIT(&td_queue);
+    sched_make_idletd();
 
     if ((init_bin = initramfs_open("/usr/sbin/init")) == NULL) {
         panic("Could not open /usr/boot/init\n");
