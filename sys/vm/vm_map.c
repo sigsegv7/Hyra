@@ -328,16 +328,6 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
         return MAP_FAILED;
 
     /*
-     * Handle address being NULL.
-     *
-     * FIXME: XXX: We currently identity map physmem which
-     *             is probably not ideal.
-     */
-    if (addr == NULL) {
-        addr = (void *)physmem;
-    }
-
-    /*
      * Now we check what type of map request
      * this is.
      */
@@ -345,6 +335,13 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
         /* Try to create a virtual memory object */
         if (vm_obj_init(&vmobj, NULL) != 0)
             return 0;
+
+        /*
+         * If 'addr' is NULL, we'll just allocate physical
+         * memory right away.
+         */
+        if (addr == NULL)
+            physmem = vm_alloc_pageframe(len / GRANULE);
 
         /*
          * Enable demand paging for this object if
@@ -356,8 +353,14 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 
             mapping->vmobj = vmobj;
             mapping->physmem_base = 0;
-        } else {
-            physmem = vm_map(addr, 0, prot, len);
+        } else if (physmem != 0) {
+            vm_map((void *)physmem, physmem, prot, len);
+            addr = (void *)physmem;
+
+            vmobj->is_anon = 1;
+            vmobj->demand = 0;
+            mapping->vmobj = vmobj;
+            mapping->physmem_base = physmem;
         }
 
         /* Did this work? */
