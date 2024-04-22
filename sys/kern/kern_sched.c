@@ -358,6 +358,7 @@ sched_exit(void)
 
     /* Switch back to the kernel address space and destroy ourself */
     pmap_switch_vas(vm_get_ctx(), kvas);
+    TAILQ_REMOVE(&td_queue, td, link);
     sched_destroy_td(td);
 
     intr_unmask();
