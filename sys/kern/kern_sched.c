@@ -179,6 +179,7 @@ sched_init_stack(void *stack_top, char *argvp[], char *envp[], struct auxval aux
     AUXVAL(sp, AT_ENTRY, auxv.at_entry);
     AUXVAL(sp, AT_PHDR, auxv.at_phdr);
     AUXVAL(sp, AT_PHNUM, auxv.at_phnum);
+    AUXVAL(sp, AT_PAGESIZE, vm_get_page_size());
     STACK_PUSH(sp, 0);
 
     /* Copy envp pointers */

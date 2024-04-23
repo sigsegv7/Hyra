@@ -44,6 +44,7 @@
 #define AT_SECURE 6
 #define AT_RANDOM 7
 #define AT_EXECFN 8
+#define AT_PAGESIZE 9
 
 #define STACK_PUSH(ptr, val) *(--ptr) = val
 #define AUXVAL(ptr, tag, val) __extension__ ({  \

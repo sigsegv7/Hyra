@@ -41,8 +41,9 @@
 #define AT_SECURE 6
 #define AT_RANDOM 7
 #define AT_EXECFN 8
+#define AT_PAGESIZE 9
 
-#define AT_MAX_COUNT 9
+#define AT_MAX_COUNT 10
 
 struct auxv_entry {
     uint64_t tag;
