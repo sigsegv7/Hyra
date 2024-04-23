@@ -1,4 +1,4 @@
-CFLAGS = -c -fno-stack-protector -nostdlib -static -Iinclude/ -Iimpl/
+CFLAGS = -c -fno-stack-protector -nostdlib -static -Iinclude/
 LIBC_CFILES = $(shell find src/ -name "*.c")
 LIBC_ASMFILES = $(shell find src/ -name "*.S")
 
