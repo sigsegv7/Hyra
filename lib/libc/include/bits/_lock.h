@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _LIBC_LOCK_H
-#define _LIBC_LOCK_H
+#ifndef _BITS__LOCK_H
+#define _BITS__LOCK_H
 
 #include <bits/_types.h>
 
@@ -59,4 +59,4 @@ __test_and_set(__libc_spinlock_t *lock)
 #define __spinlock_acquire(LOCKPTR) while (__test_and_set(LOCKPTR))
 #define __spinlock_release(LOCKPTR) ((LOCKPTR)->lock = 0)
 
-#endif  /* _LIBC_LOCK_H */
+#endif  /* _BITS__LOCK_H */
