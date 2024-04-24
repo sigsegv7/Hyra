@@ -42,6 +42,7 @@
 #define SYS_lseek 6
 #define SYS_mmap  7
 #define SYS_munmap 8
+#define SYS_ioctl  9
 
 #if !defined(__ASSEMBLER__)
 __attribute__((__always_inline__))

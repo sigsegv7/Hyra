@@ -41,6 +41,7 @@ struct device {
     size_t blocksize;
     int(*write)(struct device *dev, struct sio_txn *sio);
     int(*read)(struct device *dev, struct sio_txn *sio);
+    int(*ioctl)(struct device *dev, uint32_t cmd, uintptr_t arg);
     paddr_t(*mmap)(struct device *dev, off_t off, vm_prot_t prot);
     TAILQ_ENTRY(device) link;
 };

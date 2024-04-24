@@ -27,17 +27,46 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SYSTEM_H_
-#define _SYS_SYSTEM_H_
-
-#include <sys/types.h>
+#include <sys/system.h>
+#include <sys/vnode.h>
+#include <sys/filedesc.h>
 #include <sys/syscall.h>
+#include <sys/errno.h>
+#include <sys/sched.h>
+#include <fs/devfs.h>
 
-#if defined(_KERNEL)
-int copyin(uintptr_t uaddr, void *kaddr, size_t len);
-int copyout(const void *kaddr, uintptr_t uaddr, size_t len);
-int copyinstr(uintptr_t uaddr, char *kaddr, size_t len);
-uint64_t sys_ioctl(struct syscall_args *args);
-#endif
+static int
+do_ioctl(int fd, uint32_t cmd, uintptr_t arg)
+{
+    struct proc *td = this_td();
+    struct filedesc *filedes;
+    struct vnode *vp;
+    struct device *dev;
+    int status;
 
-#endif  /* !_SYS_SYSTEM_H_ */
+    filedes = fd_from_fdnum(td, fd);
+
+    /* Fetch the vnode */
+    if (filedes == NULL)
+        return -EBADF;
+    if ((vp = filedes->vnode) == NULL)
+        return -EIO;
+
+    if ((status = devfs_get_dev(vp, &dev)) != 0)
+        return status;
+    if (dev->ioctl == NULL)
+        return -EIO;
+
+    return dev->ioctl(dev, cmd, arg);
+}
+
+/*
+ * Arg0: Fd.
+ * Arg1: Cmd.
+ * Arg2: Arg.
+ */
+uint64_t
+sys_ioctl(struct syscall_args *args)
+{
+    return do_ioctl(args->arg0, args->arg1, args->arg2);
+}

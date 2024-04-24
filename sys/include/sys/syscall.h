@@ -45,6 +45,7 @@ enum {
     SYS_lseek,
     SYS_mmap,
     SYS_munmap,
+    SYS_ioctl,
     __MAX_SYSCALLS
 };
 
