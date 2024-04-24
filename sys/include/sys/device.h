@@ -33,9 +33,8 @@
 #include <sys/sio.h>
 #include <sys/queue.h>
 #include <sys/types.h>
+#include <string.h>
 #include <vm/dynalloc.h>
-
-#define DEVICE_ALLOC() dynalloc(sizeof(struct device))
 
 struct device {
     dev_t major, minor;
@@ -45,6 +44,19 @@ struct device {
     paddr_t(*mmap)(struct device *dev, off_t off, vm_prot_t prot);
     TAILQ_ENTRY(device) link;
 };
+
+static inline struct device *
+device_alloc(void)
+{
+    struct device *dev;
+
+    dev = dynalloc(sizeof(struct device));
+    if (dev == NULL)
+        return dev;
+
+    memset(dev, 0, sizeof(struct device));
+    return dev;
+}
 
 struct device *device_fetch(dev_t major, dev_t minor);
 dev_t device_alloc_major(void);

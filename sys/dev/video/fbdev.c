@@ -75,7 +75,7 @@ fbdev_get_front(void)
 static int
 fbdev_init(void)
 {
-    dev = DEVICE_ALLOC();
+    dev = device_alloc();
     dev->blocksize = 1;
     dev->read = NULL;
     dev->write = NULL;

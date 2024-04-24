@@ -406,7 +406,7 @@ nvme_init_ns(struct nvme_state *state, uint16_t nsid)
     ns->cntl = state;
     nvme_create_ioq(ns, ns->nsid);
 
-    dev = DEVICE_ALLOC();
+    dev = device_alloc();
     dev->read = nvme_dev_read;
     dev->write = nvme_dev_write;
     dev->blocksize = ns->lba_bsize;
