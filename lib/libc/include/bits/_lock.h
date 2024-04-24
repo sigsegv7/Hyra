@@ -37,7 +37,7 @@ typedef struct {
 } __libc_spinlock_t;
 
 #if defined(__x86_64__)
-__attribute__((__always_inline__, __weak__)) inline int
+__attribute__((__always_inline__)) inline int
 __test_and_set(__libc_spinlock_t *lock)
 {
     int tmp = 0;
