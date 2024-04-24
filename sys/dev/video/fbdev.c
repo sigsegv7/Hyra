@@ -31,6 +31,8 @@
 #include <sys/limine.h>
 #include <sys/device.h>
 #include <sys/driver.h>
+#include <sys/system.h>
+#include <sys/errno.h>
 #include <dev/video/fbdev.h>
 #include <vm/vm.h>
 #include <fs/devfs.h>
@@ -44,6 +46,27 @@ static volatile struct limine_framebuffer_request framebuffer_req = {
 };
 
 static struct device *dev;
+
+static int
+fbdev_ioctl(struct device *dev, uint32_t cmd, uintptr_t arg)
+{
+    struct fbdev_info info = {
+        .width = FRAMEBUFFER->width,
+        .height = FRAMEBUFFER->height,
+        .pitch = FRAMEBUFFER->pitch,
+        .bits_per_pixel = FRAMEBUFFER->bpp
+    };
+
+    switch (cmd) {
+    case FBIOCTL_INFO:
+        copyout(&info, arg, sizeof(info));
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
+}
 
 static paddr_t
 fbdev_mmap(struct device *dev, off_t off, vm_prot_t prot)
@@ -80,6 +103,7 @@ fbdev_init(void)
     dev->read = NULL;
     dev->write = NULL;
     dev->mmap = fbdev_mmap;
+    dev->ioctl = fbdev_ioctl;
 
     device_create(dev, device_alloc_major(), 1);
     devfs_add_dev("fb", dev);

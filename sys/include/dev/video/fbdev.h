@@ -32,6 +32,15 @@
 
 #include <sys/types.h>
 
+#define FBIOCTL_INFO 0x00000000
+
+struct fbdev_info {
+    uint32_t width;
+    uint32_t height;
+    uint32_t pitch;
+    uint32_t bits_per_pixel;
+};
+
 struct fbdev {
     void *mem;
     uint32_t width;
