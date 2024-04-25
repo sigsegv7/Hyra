@@ -340,7 +340,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     if (__TEST(flags, MAP_ANONYMOUS)) {
         /* Try to create a virtual memory object */
         if (vm_obj_init(&vmobj, NULL) != 0)
-            return 0;
+            goto fail;
 
         /*
          * If 'addr' is NULL, we'll just allocate physical
@@ -371,15 +371,14 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 
         /* Did this work? */
         if (physmem == 0 && addr == NULL) {
-            return MAP_FAILED;
+            goto fail;
         }
     } else if (__TEST(flags, MAP_SHARED)) {
         physmem = vm_fd_map(addr, prot, len, off, fildes, mapping);
         if (physmem == 0) {
-            return MAP_FAILED;
+            goto fail;
         }
     }
-
 
     map_start = __ALIGN_DOWN((vaddr_t)addr, GRANULE);
     map_end = map_start + __ALIGN_UP(len + misalign, GRANULE);
@@ -393,6 +392,9 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     vm_mapspace_insert(&td->mapspace, mapping);
     spinlock_release(&td->mapspace_lock);
     return (void *)addr;
+fail:
+    DESTROY_MAPPING(mapping);
+    return MAP_FAILED;
 }
 
 /*
