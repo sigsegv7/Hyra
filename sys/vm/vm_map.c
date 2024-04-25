@@ -41,6 +41,7 @@
 #include <lib/assert.h>
 
 #define ALLOC_MAPPING() dynalloc(sizeof(struct vm_mapping))
+#define DESTROY_MAPPING(MAPPING) dynfree(MAPPING)
 
 static size_t
 vm_hash_vaddr(vaddr_t va) {
@@ -315,7 +316,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     uintptr_t map_end, map_start;
 
     struct proc *td = this_td();
-    struct vm_mapping *mapping = ALLOC_MAPPING();
+    struct vm_mapping *mapping;
     struct vm_object *vmobj;
 
     size_t misalign = ((vaddr_t)addr) & (GRANULE - 1);
@@ -323,6 +324,11 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 
     /* Ensure of valid prot flags */
     if ((prot & ~PROT_MASK) != 0)
+        return MAP_FAILED;
+
+    /* Try to allocate a mapping */
+    mapping = ALLOC_MAPPING();
+    if (mapping == NULL)
         return MAP_FAILED;
 
     mapping->prot = prot | PROT_USER;
