@@ -333,7 +333,6 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 {
     const int PROT_MASK = PROT_WRITE | PROT_EXEC;
     const size_t GRANULE = vm_get_page_size();
-
     uintptr_t map_end, map_start;
 
     struct proc *td = this_td();
@@ -355,9 +354,8 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     if (mapping == NULL)
         return MAP_FAILED;
 
+    /* Setup prot and mapping start */
     mapping->prot = prot | PROT_USER;
-
-    /* Setup mapping start */
     map_start = __ALIGN_DOWN(va, GRANULE);
 
     /*
@@ -386,7 +384,9 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 
             mapping->vmobj = vmobj;
             mapping->physmem_base = 0;
-        } else if (physmem != 0) {
+        }
+
+        if (addr == NULL && physmem != 0) {
             map_start = physmem + mapoff;
             vm_map((void *)map_start, physmem, prot, len);
             addr = (void *)physmem;
