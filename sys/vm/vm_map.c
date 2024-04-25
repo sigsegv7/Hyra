@@ -321,11 +321,11 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     size_t misalign = ((vaddr_t)addr) & (GRANULE - 1);
     paddr_t physmem = 0;
 
-    mapping->prot = prot | PROT_USER;
-
     /* Ensure of valid prot flags */
     if ((prot & ~PROT_MASK) != 0)
         return MAP_FAILED;
+
+    mapping->prot = prot | PROT_USER;
 
     /*
      * Now we check what type of map request
@@ -364,12 +364,14 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
         }
 
         /* Did this work? */
-        if (physmem == 0 && addr == NULL)
+        if (physmem == 0 && addr == NULL) {
             return MAP_FAILED;
+        }
     } else if (__TEST(flags, MAP_SHARED)) {
         physmem = vm_fd_map(addr, prot, len, off, fildes, mapping);
-        if (physmem == 0)
+        if (physmem == 0) {
             return MAP_FAILED;
+        }
     }
 
 
