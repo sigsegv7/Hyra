@@ -30,7 +30,9 @@
 #ifndef _SYS_SIGNAL_H_
 #define _SYS_SIGNAL_H_
 
+#if defined(_KERNEL)
 #include <sys/proc.h>
+#endif
 
 #define SIGFPE 8    /* Floating point exception */
 #define SIGKILL 9   /* Kill */
