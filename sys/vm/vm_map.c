@@ -42,6 +42,7 @@
 
 #define ALLOC_MAPPING() dynalloc(sizeof(struct vm_mapping))
 #define DESTROY_MAPPING(MAPPING) dynfree(MAPPING)
+#define MMAP_DEFAULT_OFF 0x3000000
 
 static size_t
 vm_hash_vaddr(vaddr_t va) {
@@ -49,6 +50,25 @@ vm_hash_vaddr(vaddr_t va) {
     va = (va ^ (va >> 27)) * (size_t)0x94D049BB133111EB;
     va = va ^ (va >> 31);
     return va;
+}
+
+/*
+ * Fetches a suitable offset to be added to an
+ * address that will be mapped with mmap() to
+ * avoid clobbering the address space.
+ */
+static uintptr_t
+vm_get_mapoff(struct proc *td)
+{
+    /*
+     * FIXME: For now we are adding a fixed offset to the
+     *        address to be mapped.
+     *
+     *        It would be best to ensure that it isn't in
+     *        range of the process *just in case*.
+     */
+    (void)td;
+    return MMAP_DEFAULT_OFF;
 }
 
 /*
@@ -313,6 +333,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 {
     const int PROT_MASK = PROT_WRITE | PROT_EXEC;
     const size_t GRANULE = vm_get_page_size();
+
     uintptr_t map_end, map_start;
 
     struct proc *td = this_td();
@@ -320,7 +341,10 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     struct vm_object *vmobj;
 
     size_t misalign = ((vaddr_t)addr) & (GRANULE - 1);
+    off_t mapoff = vm_get_mapoff(td);
+
     paddr_t physmem = 0;
+    vaddr_t va = (vaddr_t)addr + mapoff;
 
     /* Ensure of valid prot flags */
     if ((prot & ~PROT_MASK) != 0)
@@ -332,6 +356,9 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
         return MAP_FAILED;
 
     mapping->prot = prot | PROT_USER;
+
+    /* Setup mapping start */
+    map_start = __ALIGN_DOWN(va, GRANULE);
 
     /*
      * Now we check what type of map request
@@ -360,7 +387,8 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
             mapping->vmobj = vmobj;
             mapping->physmem_base = 0;
         } else if (physmem != 0) {
-            vm_map((void *)physmem, physmem, prot, len);
+            map_start = physmem + mapoff;
+            vm_map((void *)map_start, physmem, prot, len);
             addr = (void *)physmem;
 
             vmobj->is_anon = 1;
@@ -374,15 +402,14 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
             goto fail;
         }
     } else if (__TEST(flags, MAP_SHARED)) {
-        physmem = vm_fd_map(addr, prot, len, off, fildes, mapping);
+        physmem = vm_fd_map((void *)map_start, prot, len, off, fildes, mapping);
         if (physmem == 0) {
             goto fail;
         }
     }
 
-    map_start = __ALIGN_DOWN((vaddr_t)addr, GRANULE);
+    /* Setup map_end and map ranges */
     map_end = map_start + __ALIGN_UP(len + misalign, GRANULE);
-
     mapping->range.start = map_start;
     mapping->range.end = map_end;
     mapping->physmem_base = physmem;
@@ -391,7 +418,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     spinlock_acquire(&td->mapspace_lock);
     vm_mapspace_insert(&td->mapspace, mapping);
     spinlock_release(&td->mapspace_lock);
-    return (void *)addr;
+    return (void *)map_start;
 fail:
     DESTROY_MAPPING(mapping);
     return MAP_FAILED;
