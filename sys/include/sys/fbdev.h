@@ -27,25 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FBDEV_H_
-#define _FBDEV_H_
+#ifndef _SYS_FBDEV_H_
+#define _SYS_FBDEV_H_
 
+#if defined(_KERNEL)
 #include <sys/types.h>
-#include <sys/fbdev.h>
+#else
+#include <stdint.h>
+#endif
 
-struct fbdev {
-    void *mem;
+#define FBIOCTL_INFO 0x00000000
+
+struct fbdev_info {
     uint32_t width;
     uint32_t height;
     uint32_t pitch;
+    uint32_t bits_per_pixel;
 };
 
-static inline size_t
-fbdev_get_index(const struct fbdev *fbdev, uint32_t x, uint32_t y)
-{
-    return x + y * (fbdev->pitch/4);
-}
-
-struct fbdev fbdev_get_front(void);
-
-#endif  /* !_FBDEV_H_ */
+#endif
