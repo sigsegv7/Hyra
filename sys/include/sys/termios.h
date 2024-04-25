@@ -30,7 +30,11 @@
 #ifndef _SYS_TERMIOS_H_
 #define _SYS_TERMIOS_H_
 
+#if defined(_KERNEL)
 #include <sys/types.h>
+#else
+#include <stdint.h>
+#endif
 
 #define NCCS 20
 
