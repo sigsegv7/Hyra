@@ -1,0 +1,10 @@
+# Sys header export list
+# Add headers to be exported to userland here
+# Example: foo.h corresponds to sys/include/sys/foo.h
+sys_headers=$(cat <<END
+    fbdev.h
+    errno.h
+    queue.h
+    signal.h
+END
+)

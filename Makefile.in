@@ -92,6 +92,7 @@ base:
 
 .PHONY: lib
 lib:
+	bash tools/sysexport
 	cd lib/; make $(USER_MKFLGS)
 	cp lib/libc/build/libc.a base/usr/lib/
 

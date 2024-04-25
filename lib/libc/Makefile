@@ -31,3 +31,5 @@ build/:
 clean:
 	rm -f $(LIBC_OBJ) $(LIBC_ASMOBJ)
 	rm -rf build/
+	rm -f $(shell cat include/sys/.sys_export)
+	rm include/sys/.sys_export include/sys/.gitignore
