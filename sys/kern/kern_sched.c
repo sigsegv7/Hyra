@@ -457,6 +457,13 @@ sched_context_switch(struct trapframe *tf)
     sched_oneshot(false);
 }
 
+uint64_t
+sys_exit(struct syscall_args *args)
+{
+    sched_exit();
+    __builtin_unreachable();
+}
+
 void
 sched_init(void)
 {

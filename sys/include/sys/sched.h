@@ -34,6 +34,7 @@
 #include <sys/queue.h>
 #include <sys/types.h>
 #include <sys/spinlock.h>
+#include <sys/syscall.h>
 #include <machine/cpu.h>
 #include <machine/frame.h>
 
@@ -42,6 +43,9 @@ void sched_init(void);
 void sched_exit(void);
 void sched_context_switch(struct trapframe *tf);
 void sched_rest(void);
+
+__noreturn
+uint64_t sys_exit(struct syscall_args *args);
 
 __noreturn
 void sched_init_processor(struct cpu_info *ci);
