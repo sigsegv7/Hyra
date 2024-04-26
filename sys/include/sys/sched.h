@@ -41,6 +41,7 @@ struct proc *this_td(void);
 void sched_init(void);
 void sched_exit(void);
 void sched_context_switch(struct trapframe *tf);
+void sched_rest(void);
 
 __noreturn
 void sched_init_processor(struct cpu_info *ci);

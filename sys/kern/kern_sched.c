@@ -78,16 +78,22 @@ static size_t nthread = 0;
  */
 static struct spinlock tdq_lock = {0};
 
+/*
+ * Perform timer oneshot
+ *
+ * @now: True for shortest timeslice.
+ */
 static inline void
-sched_oneshot(void)
+sched_oneshot(bool now)
 {
     struct timer timer;
+    size_t usec = (now) ? SHORT_TIMESLICE_USEC : DEFAULT_TIMESLICE_USEC;
     tmrr_status_t tmr_status;
 
     tmr_status = req_timer(TIMER_SCHED, &timer);
     __assert(tmr_status == TMRR_SUCCESS);
 
-    timer.oneshot_us(DEFAULT_TIMESLICE_USEC);
+    timer.oneshot_us(usec);
 }
 
 /*
@@ -144,7 +150,7 @@ sched_idle(void)
 __noreturn static void
 sched_enter(void)
 {
-    sched_oneshot();
+    sched_oneshot(false);
     sched_idle();
     __builtin_unreachable();
 }
@@ -354,6 +360,16 @@ sched_make_idletd(void)
     sched_enqueue_td(td);
 }
 
+/*
+ * Cause an early preemption and lets
+ * the next thread run.
+ */
+void
+sched_rest(void)
+{
+    sched_oneshot(true);
+}
+
 void
 sched_exit(void)
 {
@@ -406,7 +422,7 @@ sched_context_switch(struct trapframe *tf)
      * preempt at all.
      */
     if (nthread == 0 || (next_td = sched_dequeue_td()) == NULL) {
-        sched_oneshot();
+        sched_oneshot(false);
         return;
     }
 
@@ -436,7 +452,7 @@ sched_context_switch(struct trapframe *tf)
 
     /* Done, switch out our vas and oneshot */
     pmap_switch_vas(vm_get_ctx(), next_td->addrsp);
-    sched_oneshot();
+    sched_oneshot(false);
 }
 
 void

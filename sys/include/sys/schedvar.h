@@ -31,5 +31,6 @@
 #define _SYS_SCHEDVAR_H_
 
 #define DEFAULT_TIMESLICE_USEC 3000
+#define SHORT_TIMESLICE_USEC 10
 
 #endif /* !_SYS_SCHEDVAR_H_ */
