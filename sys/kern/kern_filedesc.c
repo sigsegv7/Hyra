@@ -242,6 +242,10 @@ write(int fd, const void *buf, size_t count)
     }
 
     desc = fd_from_fdnum(td, fd);
+    if (desc == NULL) {
+        return -EBADF;
+    }
+
     if (desc->oflag != O_WRONLY && desc->oflag != O_WRONLY) {
         ret = -EACCES;
         goto cleanup;
