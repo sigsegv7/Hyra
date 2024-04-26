@@ -53,6 +53,18 @@ __KERNEL_META("$Hyra$: kern_loader.c, Ian Marco Moffett, "
 #define PHDR(hdrptr, IDX) \
     (void *)((uintptr_t)hdr + (hdrptr)->e_phoff + (hdrptr->e_phentsize*IDX))
 
+int
+loader_unload(struct vas vas, struct vm_range *exec_range)
+{
+    size_t start, end;
+
+    start = exec_range->start;
+    end = exec_range->end;
+
+    /* FIXME: Figure out how to free physical memory too */
+    return vm_map_destroy(vas, start, (end - start));
+}
+
 int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
                 size_t load_base, char **ld_path, struct vm_range *prog_range)
 {

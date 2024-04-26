@@ -62,6 +62,7 @@ struct auxval {
 
 #if defined(_KERNEL)
 
+int loader_unload(struct vas vas, struct vm_range *exec_range);
 int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
                 size_t load_base, char **ld_path, struct vm_range *prog_range);
 

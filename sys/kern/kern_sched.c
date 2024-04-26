@@ -308,6 +308,7 @@ static void
 sched_destroy_td(struct proc *td)
 {
     const struct vm_range *stack_range = &td->addr_range[ADDR_RANGE_STACK];
+    struct vm_range *exec_range = &td->addr_range[ADDR_RANGE_EXEC];
     vm_mapq_t *mapq;
 
     processor_free_pcb(td);
@@ -334,6 +335,7 @@ sched_destroy_td(struct proc *td)
         vm_free_mapq(mapq);
     }
 
+    loader_unload(td->addrsp, exec_range);
     pmap_free_vas(vm_get_ctx(), td->addrsp);
     dynfree(td);
 }
