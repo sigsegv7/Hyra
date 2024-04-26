@@ -246,6 +246,7 @@ write(int fd, const void *buf, size_t count)
         return -EBADF;
     }
 
+    mutex_acquire(&desc->lock);
     if (desc->oflag != O_WRONLY && desc->oflag != O_WRONLY) {
         ret = -EACCES;
         goto cleanup;
@@ -271,6 +272,7 @@ write(int fd, const void *buf, size_t count)
         goto cleanup;
     }
 cleanup:
+    mutex_release(&desc->lock);
     dynfree(in_buf);
     return ret;
 }
