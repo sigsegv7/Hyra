@@ -331,19 +331,24 @@ read(int fd, void *buf, size_t count)
         return -EBADF;
     }
 
+    mutex_acquire(&fd_desc->lock);
     if (fd_desc->oflag == O_WRONLY) {
-        return -EACCES;
+        bytes_read = -EACCES;
+        goto done;
     }
 
     sio.offset = fd_desc->offset;
     vnode = fd_desc->vnode;
 
     if (count > MAX_RW_SIZE) {
-        return -EINVAL;
+        bytes_read = -EACCES;
+        goto done;
     }
 
     bytes_read = vfs_read(vnode, &sio);
     fd_desc->offset += bytes_read;
+done:
+    mutex_release(&fd_desc->lock);
     return bytes_read;
 }
 
