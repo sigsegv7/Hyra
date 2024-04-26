@@ -31,7 +31,7 @@
 #define _SYS_FILEDESC_H_
 
 #include <sys/vnode.h>
-#include <sys/spinlock.h>
+#include <sys/mutex.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 
@@ -51,7 +51,7 @@ struct filedesc {
     off_t offset;
     bool is_dir;
     struct vnode *vnode;
-    struct spinlock lock;
+    struct mutex lock;
 };
 
 #if defined(_KERNEL)
