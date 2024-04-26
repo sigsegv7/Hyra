@@ -150,11 +150,14 @@ sched_enter(void)
 }
 
 static uintptr_t
-sched_init_stack(void *stack_top, char *argvp[], char *envp[], struct auxval auxv)
+sched_init_stack(void *stack_top, struct exec_args args)
 {
     uintptr_t *sp = stack_top;
     uintptr_t old_sp = 0;
     size_t argc, envc, len;
+    char **argvp = args.argp;
+    char **envp = args.envp;
+    struct auxval auxv = args.auxv;
 
     /* Copy strings */
     old_sp = (uintptr_t)sp;
@@ -204,8 +207,8 @@ sched_init_stack(void *stack_top, char *argvp[], char *envp[], struct auxval aux
 }
 
 static uintptr_t
-sched_create_stack(struct vas vas, bool user, char *argvp[],
-                   char *envp[], struct auxval auxv, struct proc *td)
+sched_create_stack(struct vas vas, bool user, struct exec_args args,
+                   struct proc *td)
 {
     int status;
     uintptr_t stack;
@@ -216,7 +219,7 @@ sched_create_stack(struct vas vas, bool user, char *argvp[],
         stack = (uintptr_t)dynalloc(STACK_SIZE);
         stack_range->start = (uintptr_t)stack;
         stack_range->end = (uintptr_t)stack + STACK_SIZE;
-        return sched_init_stack((void *)(stack + STACK_SIZE), argvp, envp, auxv);
+        return sched_init_stack((void *)(stack + STACK_SIZE), args);
     }
 
     stack = vm_alloc_pageframe(STACK_PAGES);
@@ -230,13 +233,13 @@ sched_create_stack(struct vas vas, bool user, char *argvp[],
     }
 
     memset(USER_TO_KERN(stack), 0, STACK_SIZE);
-    stack = sched_init_stack((void *)USER_TO_KERN(stack + STACK_SIZE), argvp, envp, auxv);
+    stack = sched_init_stack((void *)USER_TO_KERN(stack + STACK_SIZE), args);
     return stack;
 }
 
 static struct proc *
-sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
-                struct vas vas, bool is_user, struct vm_range *prog_range)
+sched_create_td(uintptr_t rip, struct exec_args args, bool is_user,
+                struct vm_range *prog_range)
 {
     struct proc *td;
     struct vm_range *exec_range;
@@ -256,7 +259,7 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
     }
 
     memset(td, 0, sizeof(struct proc));
-    stack = sched_create_stack(vas, is_user, argvp, envp, auxv, td);
+    stack = sched_create_stack(args.vas, is_user, args, td);
     if (stack == 0) {
         dynfree(tf);
         dynfree(td);
@@ -270,7 +273,7 @@ sched_create_td(uintptr_t rip, char *argvp[], char *envp[], struct auxval auxv,
     td->pid = 0;        /* Don't assign PID until enqueued */
     td->cpu = NULL;     /* Not yet assigned a core */
     td->tf = tf;
-    td->addrsp = vas;
+    td->addrsp = args.vas;
     td->is_user = is_user;
     for (size_t i = 0; i < MTAB_ENTRIES; ++i) {
         /* Init the memory mapping table */
@@ -335,14 +338,18 @@ sched_destroy_td(struct proc *td)
 static void
 sched_make_idletd(void)
 {
-    char *argv[] = {NULL};
-    char *envp[] = {NULL};
-    struct auxval auxv = {0};
+    struct exec_args exec_args = {0};
     struct vm_range range;
     struct proc *td;
 
-    td = sched_create_td((uintptr_t)sched_idle, argv, envp,
-                         auxv, pmap_read_vas(), false, &range);
+    char *argv[] = {NULL};
+    char *envp[] = {NULL};
+
+    exec_args.argp = argv;
+    exec_args.envp = envp;
+    exec_args.vas = pmap_read_vas();
+
+    td = sched_create_td((uintptr_t)sched_idle, exec_args, false, &range);
 
     sched_enqueue_td(td);
 }
@@ -437,25 +444,31 @@ sched_init(void)
 {
     struct proc *init;
     struct vm_range init_range;
-    struct auxval auxv = {0};
-    struct vas vas = pmap_create_vas(vm_get_ctx());
     const char *init_bin;
+
+    struct exec_args exec_args = {0};
+    struct auxval *auxvp = &exec_args.auxv;
+    struct vas vas;
 
     char *argv[] = {"/usr/sbin/init", NULL};
     char *envp[] = {NULL};
+
+    vas = pmap_create_vas(vm_get_ctx());
+    exec_args.vas = vas;
+    exec_args.argp = argv;
+    exec_args.envp = envp;
 
     TAILQ_INIT(&td_queue);
     sched_make_idletd();
 
     if ((init_bin = initramfs_open("/usr/sbin/init")) == NULL) {
-        panic("Could not open /usr/boot/init\n");
+        panic("Could not open /usr/sbin/init\n");
     }
-    if (loader_load(vas, init_bin, &auxv, 0, NULL, &init_range) != 0) {
+    if (loader_load(vas, init_bin, auxvp, 0, NULL, &init_range) != 0) {
         panic("Could not load init\n");
     }
 
-    init = sched_create_td((uintptr_t)auxv.at_entry, argv, envp,
-                           auxv, vas, true, &init_range);
+    init = sched_create_td((uintptr_t)auxvp->at_entry, exec_args, true, &init_range);
     if (init == NULL) {
         panic("Failed to create thread for init\n");
     }

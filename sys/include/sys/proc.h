@@ -34,6 +34,7 @@
 #include <sys/queue.h>
 #include <sys/filedesc.h>
 #include <sys/spinlock.h>
+#include <sys/loader.h>
 #include <machine/cpu.h>
 #include <machine/frame.h>
 #include <machine/pcb.h>
@@ -42,6 +43,12 @@
 
 #define PROC_MAX_FDS 256
 #define PROC_MAX_ADDR_RANGE 4
+
+struct exec_args {
+    char **argp, **envp;
+    struct auxval auxv;
+    struct vas vas;
+};
 
 enum {
     ADDR_RANGE_EXEC = 0,    /* Program address range */
