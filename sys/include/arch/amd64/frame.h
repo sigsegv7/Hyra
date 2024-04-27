@@ -74,5 +74,9 @@ struct trapframe {
     (FRAME)->rsp = SP;                      \
     (FRAME)->ss = 0x20 | 3;                 \
 
+#define set_frame_sp(FRAME, SP) (FRAME)->rsp = SP
+#define set_frame_ip(FRAME, IP) (FRAME)->rip = IP
+#define get_frame_ip(FRAME) (FRAME)->rip
+
 #endif      /* !defined(__ASSEMBLER__) */
 #endif  /* !_AMD64_FRAME_H_ */
