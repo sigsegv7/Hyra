@@ -48,23 +48,6 @@
 #include <assert.h>
 #include <string.h>
 
-#define STACK_PAGES 8
-#define STACK_SIZE (STACK_PAGES*vm_get_page_size())
-
-/*
- * The PHYS_TO_VIRT/VIRT_TO_PHYS macros convert
- * addresses to lower and higher half addresses.
- * Userspace addresses are on the lower half,
- * therefore, we can just wrap over these to
- * keep things simple.
- *
- * XXX: TODO: This won't work when not identity mapping
- *            lowerhalf addresses. Once that is updated,
- *            get rid of this.
- */
-#define USER_TO_KERN(user) PHYS_TO_VIRT(user)
-#define KERN_TO_USER(kern) VIRT_TO_PHYS(kern)
-
 /*
  * Thread ready queue - all threads ready to be
  * scheduled should be added to this queue.
@@ -222,24 +205,24 @@ sched_create_stack(struct vas vas, bool user, struct exec_args args,
     struct vm_range *stack_range = &td->addr_range[ADDR_RANGE_STACK];
 
     if (!user) {
-        stack = (uintptr_t)dynalloc(STACK_SIZE);
+        stack = (uintptr_t)dynalloc(PROC_STACK_SIZE);
         stack_range->start = (uintptr_t)stack;
-        stack_range->end = (uintptr_t)stack + STACK_SIZE;
-        return sched_init_stack((void *)(stack + STACK_SIZE), args);
+        stack_range->end = (uintptr_t)stack + PROC_STACK_SIZE;
+        return sched_init_stack((void *)(stack + PROC_STACK_SIZE), args);
     }
 
-    stack = vm_alloc_pageframe(STACK_PAGES);
+    stack = vm_alloc_pageframe(PROC_STACK_PAGES);
 
     stack_range->start = stack;
-    stack_range->end = stack + STACK_SIZE;
-    status = vm_map_create(vas, stack, stack, USER_STACK_PROT, STACK_SIZE);
+    stack_range->end = stack + PROC_STACK_SIZE;
+    status = vm_map_create(vas, stack, stack, USER_STACK_PROT, PROC_STACK_SIZE);
 
     if (status != 0) {
         return 0;
     }
 
-    memset(USER_TO_KERN(stack), 0, STACK_SIZE);
-    stack = sched_init_stack((void *)USER_TO_KERN(stack + STACK_SIZE), args);
+    memset(USER_TO_KERN(stack), 0, PROC_STACK_SIZE);
+    stack = sched_init_stack((void *)USER_TO_KERN(stack + PROC_STACK_SIZE), args);
     return stack;
 }
 
@@ -320,7 +303,7 @@ sched_destroy_td(struct proc *td)
      * program to perform the proper deallocation method.
      */
     if (td->is_user) {
-        vm_free_pageframe(stack_range->start, STACK_PAGES);
+        vm_free_pageframe(stack_range->start, PROC_STACK_PAGES);
     } else {
         dynfree((void *)stack_range->start);
     }

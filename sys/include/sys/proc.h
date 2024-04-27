@@ -44,6 +44,23 @@
 #define PROC_MAX_FDS 256
 #define PROC_MAX_ADDR_RANGE 4
 
+#define PROC_STACK_PAGES 8
+#define PROC_STACK_SIZE (PROC_STACK_PAGES*vm_get_page_size())
+
+/*
+ * The PHYS_TO_VIRT/VIRT_TO_PHYS macros convert
+ * addresses to lower and higher half addresses.
+ * Userspace addresses are on the lower half,
+ * therefore, we can just wrap over these to
+ * keep things simple.
+ *
+ * XXX: TODO: This won't work when not identity mapping
+ *            lowerhalf addresses. Once that is updated,
+ *            get rid of this.
+ */
+#define USER_TO_KERN(user) PHYS_TO_VIRT(user)
+#define KERN_TO_USER(kern) VIRT_TO_PHYS(kern)
+
 struct exec_args {
     char **argp, **envp;
     struct auxval auxv;
