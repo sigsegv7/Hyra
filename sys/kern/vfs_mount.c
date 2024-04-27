@@ -34,6 +34,7 @@
 #include <sys/errno.h>
 #include <vm/dynalloc.h>
 #include <assert.h>
+#include <string.h>
 
 /* TODO: Make this more flexible */
 #define MOUNTLIST_SIZE 8
@@ -57,6 +58,49 @@ vfs_create_mp(const char *path, int mntflags, struct mount **mp_out)
 
     mp->flags = mntflags;
     *mp_out = mp;
+    return 0;
+}
+
+static int
+mount(const char *source, const char *target, const char *filesystemtype,
+      unsigned long mountflags, const void *data)
+{
+    struct fs_info *info;
+    int status;
+
+    if (source == NULL || target == NULL || filesystemtype == NULL)
+        return -EFAULT;
+
+    /*
+     * Check mount flags.
+     *
+     * XXX: No flags implemented yet.
+     */
+    if (mountflags != 0)
+        return -EINVAL;
+
+    /*
+     * Locate source.
+     *
+     * XXX: Only "none" is currently supported.
+     */
+    if (strcmp(source, "none") != 0)
+        return -ENOENT;
+
+    /* Locate filesystem */
+    info = vfs_byname(filesystemtype);
+    if (info == NULL)
+        return -ENODEV;
+
+    /* Create mount point */
+    status = vfs_mount(target, 0, info);
+    if (status != 0)
+        return status;
+
+    /* Initialize filesystem if needed */
+    if (info->vfsops->init != NULL)
+        return info->vfsops->init(info);
+
     return 0;
 }
 
@@ -161,4 +205,11 @@ vfs_mount_init(void)
     for (size_t i = 0; i < MOUNTLIST_SIZE; ++i) {
         TAILQ_INIT(&mountlist[i].buckets);
     }
+}
+
+uint64_t
+sys_mount(struct syscall_args *args)
+{
+    return mount((void *)args->arg0, (void *)args->arg1, (void *)args->arg2,
+                 (unsigned long)args->arg3, (void *)args->arg4);
 }
