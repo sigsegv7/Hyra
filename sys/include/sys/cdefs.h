@@ -39,6 +39,9 @@
 #define __naked     __attr(naked)
 #define __noreturn  __attr(noreturn)
 
+#define __likely(x) __builtin_expect(!!(x), 1)
+#define __unlikely(x) __builtin_expect(!!(x), 0)
+
 /* Wrapper for inline asm */
 #define __ASMV __asm__ __volatile__
 
