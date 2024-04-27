@@ -61,6 +61,7 @@ exec_get_args(char **argv, struct exec_args *res)
 {
     const size_t ARG_LEN = sizeof(char) * ARG_MAX;
     char *argp = NULL;
+    void *tmp;
 
     struct proc *td;
     size_t argp_len = 0;
@@ -89,11 +90,12 @@ exec_get_args(char **argv, struct exec_args *res)
         copyin((uintptr_t)++argv, &argp, sizeof(char *));
 
         /* Try to resize the argp buffer */
-        res->argp = dynrealloc(res->argp, ARG_LEN * (argp_len + 1));
-        if (res->argp == NULL) {
+        tmp = dynrealloc(res->argp, ARG_LEN * (argp_len + 1));
+        if (tmp == NULL) {
             dynfree(res->argp);
             return -ENOMEM;
         }
+        res->argp = tmp;
     }
 
     return 0;
