@@ -205,6 +205,7 @@ execv(char *pathname, char **argv, uintptr_t *sp_res)
     set_frame_ip(td->tf, args.auxv.at_entry);
 done:
     /* We are done, free argp and release the thread */
+    fd_close_fdnum(td, fd);
     spinlock_release(&td->lock);
     dynfree(args.argp);
     return ret;
