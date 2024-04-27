@@ -130,7 +130,7 @@ exec_set_stack(struct proc *td, struct exec_args args)
 static int
 execv(char *pathname, char **argv, uintptr_t *sp_res)
 {
-    char *bin;
+    char *bin = NULL;
     struct filedesc *filedes;
     struct vm_range *exec_range;
     struct exec_args args;
@@ -204,10 +204,11 @@ execv(char *pathname, char **argv, uintptr_t *sp_res)
     *sp_res = exec_set_stack(td, args);
     set_frame_ip(td->tf, args.auxv.at_entry);
 done:
-    /* We are done, free argp and release the thread */
+    /* We are done, cleanup and release the thread */
+    if (bin != NULL) dynfree(bin);
     fd_close_fdnum(td, fd);
-    spinlock_release(&td->lock);
     dynfree(args.argp);
+    spinlock_release(&td->lock);
     return ret;
 }
 
