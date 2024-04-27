@@ -391,7 +391,7 @@ lseek(int fd, off_t offset, int whence)
         fd_desc->offset += offset;
         break;
     case SEEK_END:
-        /* TODO */
+        fd_desc->offset = vattr.size;
         break;
     default:
         return -EINVAL;
