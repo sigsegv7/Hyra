@@ -48,4 +48,7 @@ __syscall(struct trapframe *tf)
         args.code -= 1;
         tf->rax = g_syscall_table[args.code](&args);
     }
+
+    tf->rip = args.ip;
+    tf->rsp = args.sp;
 }
