@@ -46,6 +46,7 @@ enum {
     SYS_mmap,
     SYS_munmap,
     SYS_ioctl,
+    SYS_execv,
     __MAX_SYSCALLS
 };
 

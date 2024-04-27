@@ -27,24 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/syscall.h>
-#include <sys/sched.h>
-#include <sys/cdefs.h>
-#include <sys/types.h>
-#include <sys/filedesc.h>
-#include <sys/system.h>
-#include <sys/exec.h>
-#include <vm/map.h>
+#ifndef _SYS_EXEC_H_
+#define _SYS_EXEC_H_
 
-uint64_t(*g_syscall_table[__MAX_SYSCALLS])(struct syscall_args *args) = {
-    sys_exit,
-    sys_write,
-    sys_open,
-    sys_close,
-    sys_read,
-    sys_lseek,
-    sys_mmap,
-    sys_munmap,
-    sys_ioctl,
-    sys_execv,
-};
+#include <sys/syscall.h>
+
+uint64_t sys_execv(struct syscall_args *args);
+
+#endif
