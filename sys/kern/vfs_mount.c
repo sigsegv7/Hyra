@@ -65,6 +65,7 @@ static int
 mount(const char *source, const char *target, const char *filesystemtype,
       unsigned long mountflags, const void *data)
 {
+    struct vnode *source_vnode;
     struct fs_info *info;
     int status;
 
@@ -79,13 +80,14 @@ mount(const char *source, const char *target, const char *filesystemtype,
     if (mountflags != 0)
         return -EINVAL;
 
-    /*
-     * Locate source.
-     *
-     * XXX: Only "none" is currently supported.
-     */
-    if (strcmp(source, "none") != 0)
-        return -ENOENT;
+    /* Locate source, if any */
+    if (strcmp(source, "none") == 0) {
+        source_vnode = NULL;
+    } else {
+        status = vfs_path_to_node(source, &source_vnode);
+        if (status != 0)
+            return status;
+    }
 
     /* Locate filesystem */
     info = vfs_byname(filesystemtype);
@@ -99,7 +101,7 @@ mount(const char *source, const char *target, const char *filesystemtype,
 
     /* Initialize filesystem if needed */
     if (info->vfsops->init != NULL)
-        return info->vfsops->init(info);
+        return info->vfsops->init(info, source_vnode);
 
     return 0;
 }

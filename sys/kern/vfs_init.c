@@ -78,7 +78,7 @@ vfs_init(void)
 
         __assert(vfsops->init != NULL);
         __assert(vfs_mount(info->name, 0, info) == 0);
-        vfsops->init(info);
+        vfsops->init(info, NULL);
     }
 
     g_root_vnode->vops = &g_initramfs_vops;

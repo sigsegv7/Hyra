@@ -39,9 +39,10 @@
 
 struct fs_info;
 struct mount;
+struct vnode;
 
 struct vfsops {
-    int(*init)(struct fs_info *info);
+    int(*init)(struct fs_info *info, struct vnode *source);
 };
 
 struct mount {

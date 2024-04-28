@@ -193,8 +193,11 @@ getsize(const char *in)
 }
 
 static int
-initramfs_init(struct fs_info *info)
+initramfs_init(struct fs_info *info, struct vnode *source)
 {
+    if (source != NULL)
+        return -EINVAL;
+
     initramfs = get_module("/boot/initramfs.tar", &initramfs_size);
     info->caps = FSCAP_FULLPATH;
 

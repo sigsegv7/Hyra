@@ -140,8 +140,11 @@ vop_read(struct vnode *vp, struct sio_txn *sio)
 }
 
 static int
-devfs_init(struct fs_info *info)
+devfs_init(struct fs_info *info, struct vnode *source)
 {
+    if (source != NULL)
+        return -EINVAL;
+
     TAILQ_INIT(&nodes);
     nodelist_init = true;
     return 0;
