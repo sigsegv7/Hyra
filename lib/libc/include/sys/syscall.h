@@ -43,6 +43,7 @@
 #define SYS_mmap  7
 #define SYS_munmap 8
 #define SYS_ioctl  9
+#define SYS_execv  10
 #define SYS_mount  11
 
 #if !defined(__ASSEMBLER__)
