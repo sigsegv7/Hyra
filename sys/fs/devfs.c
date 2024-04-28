@@ -68,7 +68,9 @@ blkdev_read(struct device *dev, struct device_node *node, struct sio_txn *sio)
 {
     char *buf;
     struct sio_txn dev_txn = {0};
-    size_t buf_size = dev->blocksize * sio->len;
+    size_t n_blocks = __DIV_ROUNDUP(sio->len, dev->blocksize);
+    size_t n_bytes = n_blocks * dev->blocksize;
+    size_t cpy_off;
 
     if (dev->blocksize == 0 || sio->len == 0) {
         /* Sizes can't be zero! */
@@ -76,21 +78,22 @@ blkdev_read(struct device *dev, struct device_node *node, struct sio_txn *sio)
     }
 
     spinlock_acquire(&node->lock);
-    buf = dynalloc_memalign(buf_size, 0x1000);
+    buf = dynalloc_memalign(n_bytes, 0x1000);
 
     if (buf == NULL) {
         spinlock_release(&node->lock);
         return -ENOMEM;
     }
 
-    dev_txn.len = __DIV_ROUNDUP(sio->len, dev->blocksize);
+    dev_txn.len = n_blocks;
     dev_txn.buf = buf;
-    dev_txn.offset = sio->offset;
+    dev_txn.offset = sio->offset / dev->blocksize;
     dev->read(dev, &dev_txn);
     spinlock_release(&node->lock);
 
+    cpy_off = sio->offset - (dev_txn.offset * dev->blocksize);
     for (size_t i = 0; i < sio->len; ++i) {
-        ((uint8_t *)sio->buf)[i] = buf[i];
+        ((uint8_t *)sio->buf)[i] = buf[i + cpy_off];
     }
 
     dynfree(buf);
