@@ -168,6 +168,17 @@ ioapic_set_base(void *mmio_base)
 }
 
 void
+ioapic_set_vec(uint8_t irq, uint8_t vector)
+{
+    union ioapic_redentry redentry;
+    uint8_t gsi = irq_to_gsi(irq);
+
+    ioapic_read_redentry(&redentry, gsi);
+    redentry.vector = vector;
+    ioapic_write_redentry(&redentry, gsi);
+}
+
+void
 ioapic_init(void)
 {
     size_t tmp;
