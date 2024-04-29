@@ -34,8 +34,8 @@
 
 void ioapic_irq_mask(uint8_t irq);
 void ioapic_irq_unmask(uint8_t irq);
-void ioapic_gsi_mask(uint8_t irq);
-void ioapic_gsi_unmask(uint8_t irq);
+void ioapic_gsi_mask(uint8_t gsi);
+void ioapic_gsi_unmask(uint8_t gsi);
 void ioapic_set_base(void *mmio_base);
 void ioapic_set_vec(uint8_t irq, uint8_t vector);
 void ioapic_init(void);
