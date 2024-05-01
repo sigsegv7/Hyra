@@ -30,6 +30,7 @@
 #include <sys/panic.h>
 #include <sys/syslog.h>
 #include <sys/machdep.h>
+#include <sys/spinlock.h>
 
 /*
  * Tells the user something terribly
@@ -45,6 +46,10 @@ void
 panic(const char *fmt, ...)
 {
     va_list ap;
+    static struct spinlock lock = {0};
+
+    spinlock_acquire(&lock);    /* Never released */
+    __TRY_CALL(cpu_halt_others);
 
     va_start(ap, fmt);
 
