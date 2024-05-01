@@ -66,12 +66,12 @@ struct vm_mapspace {
     size_t map_count;
 };
 
-
+/* Mapping operations */
+int vm_map_destroy(struct vas vas, vaddr_t va, size_t bytes);
 int vm_map_create(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot,
                   size_t bytes);
 
-int vm_map_destroy(struct vas vas, vaddr_t va, size_t bytes);
-
+/* Syscalls */
 uint64_t sys_mmap(struct syscall_args *args);
 uint64_t sys_munmap(struct syscall_args *args);
 
