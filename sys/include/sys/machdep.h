@@ -49,6 +49,7 @@ __weak void chips_init(void);
 __weak void pre_init(void);
 __weak void serial_dbgch(char c);
 __weak void backtrace(void);
+__weak void cpu_halt_others(void);
 
 #endif  /* defined(_KERNEL) */
 #endif  /* !_SYS_MACHDEP_H_ */

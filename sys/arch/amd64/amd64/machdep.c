@@ -43,6 +43,7 @@
 #include <machine/cpu.h>
 #include <machine/uart.h>
 #include <machine/cpuid.h>
+#include <machine/sysvec.h>
 #include <dev/pci/pci.h>
 #include <vm/vm.h>
 #include <vm/dynalloc.h>
@@ -61,6 +62,13 @@ __KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
 #define INIT_FLAG_ACPI   0x00000002U
 
 void syscall_isr(void);
+
+__attr(interrupt)
+static void
+halt_isr(void *sf)
+{
+    processor_halt();
+}
 
 static inline void
 init_tss(struct cpu_info *cur_cpu)
@@ -88,6 +96,7 @@ interrupts_init(void)
     idt_set_desc(0xD, IDT_TRAP_GATE_FLAGS, ISR(general_prot), 0);
     idt_set_desc(0xE, IDT_TRAP_GATE_FLAGS, ISR(page_fault), 0);
     idt_set_desc(0x80, IDT_INT_GATE_USER, ISR(syscall_isr), 0);
+    idt_set_desc(SYSVEC_HLT, IDT_INT_GATE_FLAGS, ISR(halt_isr), 0);
     idt_load();
 }
 
@@ -207,6 +216,12 @@ backtrace(void)
 
         kprintf("[0x%p] <%s+0x%x>\n", rip, name, off);
     }
+}
+
+void
+cpu_halt_others(void)
+{
+    lapic_send_ipi(0, IPI_SHORTHAND_OTHERS, SYSVEC_HLT);
 }
 
 int

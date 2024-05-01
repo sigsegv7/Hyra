@@ -41,6 +41,7 @@
 typedef enum {
     SYSVEC_LAPIC_TIMER = 0x21,     /* Local APIC timer */
     SYSVEC_IPI,                    /* IPI vector */
+    SYSVEC_HLT,                    /* Halt vector */
 
     /* -- XXX: New vectors go above -- */
     NSYSVEC_BASE,                  /* Non-system vector base */
