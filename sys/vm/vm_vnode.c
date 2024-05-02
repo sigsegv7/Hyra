@@ -72,6 +72,7 @@ vn_pager_io(struct vm_object *obj, off_t off, size_t len,
     }
 
     spinlock_acquire(&obj->lock);
+    vm_object_ref(obj);
     dest = PHYS_TO_VIRT(pg->physaddr);
 
     /* Attempt to fetch the vnode */
@@ -95,6 +96,7 @@ vn_pager_io(struct vm_object *obj, off_t off, size_t len,
         goto done;
     }
 done:
+    vm_object_unref(obj);
     spinlock_release(&obj->lock);
     return res;
 }
