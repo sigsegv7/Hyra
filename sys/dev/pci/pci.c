@@ -130,21 +130,26 @@ pci_device_exists(uint8_t bus, uint8_t slot, uint8_t func)
 static void
 pci_set_device_info(struct pci_device *dev)
 {
-    dev->vendor_id = pci_readl(dev, 0x0) & 0xFFFF;
-    dev->device_id = pci_readl(dev, 0x0) >> 16;
-    dev->pci_class = pci_readl(dev, 0x8) >> 24;
+    uint32_t classrev, cmdstatus;
 
-    dev->pci_subclass = (pci_readl(dev, 0x8) >> 16) & 0xFF;
-    dev->prog_if = (pci_readl(dev, 0x8) >> 8) & 0xFF;
+    dev->vendor_id = pci_readl(dev, PCIREG_VENDOR_ID) & __MASK(16);
+    dev->device_id = pci_readl(dev, PCIREG_DEVICE_ID) & __MASK(16);
 
-    dev->bar[0] = pci_readl(dev, 0x10);
-    dev->bar[1] = pci_readl(dev, 0x14);
-    dev->bar[2] = pci_readl(dev, 0x18);
-    dev->bar[3] = pci_readl(dev, 0x1C);
-    dev->bar[4] = pci_readl(dev, 0x20);
-    dev->bar[5] = pci_readl(dev, 0x24);
+    classrev = pci_readl(dev, PCIREG_CLASSREV);
+    cmdstatus = pci_readl(dev, PCIREG_CMDSTATUS);
 
-    dev->irq_line = pci_readl(dev, 0x3C) & 0xFF;
+    dev->pci_class = PCIREG_CLASS(classrev);
+    dev->pci_subclass = PCIREG_SUBCLASS(classrev);
+    dev->prog_if = PCIREG_PROGIF(classrev);
+
+    dev->bar[0] = pci_readl(dev, PCIREG_BAR0);
+    dev->bar[1] = pci_readl(dev, PCIREG_BAR1);
+    dev->bar[2] = pci_readl(dev, PCIREG_BAR2);
+    dev->bar[3] = pci_readl(dev, PCIREG_BAR3);
+    dev->bar[4] = pci_readl(dev, PCIREG_BAR4);
+    dev->bar[5] = pci_readl(dev, PCIREG_BAR5);
+
+    dev->irq_line = pci_readl(dev, PCIREG_IRQLINE) & __MASK(8);
 }
 
 static void
