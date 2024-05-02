@@ -358,6 +358,9 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     mapping->prot = prot | PROT_USER;
     map_start = __ALIGN_DOWN(va, GRANULE);
 
+    /* Ensure the length is aligned */
+    len = __ALIGN_UP(len + misalign, GRANULE);
+
     /*
      * Now we check what type of map request
      * this is.
@@ -409,7 +412,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     }
 
     /* Setup map_end and map ranges */
-    map_end = map_start + __ALIGN_UP(len + misalign, GRANULE);
+    map_end = map_start + len;
     mapping->range.start = map_start;
     mapping->range.end = map_end;
     mapping->physmem_base = physmem;
