@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_ELF_H_
-#define _SYS_ELF_H_
+#ifndef _ELF_H
+#define _ELF_H
 
 #include <stdint.h>
 
@@ -496,4 +496,4 @@ typedef struct {
   Elf64_Xword sh_entsize;	/* Entry size if section holds table */
 } Elf64_Shdr;
 
-#endif      /* _SYS_ELF_H_ */
+#endif      /* _ELF_H */
