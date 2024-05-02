@@ -387,9 +387,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 
             mapping->vmobj = vmobj;
             mapping->physmem_base = 0;
-        }
-
-        if (addr == NULL && physmem != 0) {
+        } else if (addr == NULL && physmem != 0) {
             map_start = physmem + mapoff;
             vm_map((void *)map_start, physmem, prot, len);
             addr = (void *)physmem;
