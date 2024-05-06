@@ -130,13 +130,11 @@ pci_device_exists(uint8_t bus, uint8_t slot, uint8_t func)
 static void
 pci_set_device_info(struct pci_device *dev)
 {
-    uint32_t classrev, cmdstatus;
+    uint32_t classrev;
 
     dev->vendor_id = pci_readl(dev, PCIREG_VENDOR_ID) & __MASK(16);
     dev->device_id = pci_readl(dev, PCIREG_DEVICE_ID) & __MASK(16);
-
     classrev = pci_readl(dev, PCIREG_CLASSREV);
-    cmdstatus = pci_readl(dev, PCIREG_CMDSTATUS);
 
     dev->pci_class = PCIREG_CLASS(classrev);
     dev->pci_subclass = PCIREG_SUBCLASS(classrev);
