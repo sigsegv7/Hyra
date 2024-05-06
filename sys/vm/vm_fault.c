@@ -74,32 +74,14 @@ vm_find_mapping(vaddr_t addr)
     return NULL;
 }
 
-int
-vm_fault(vaddr_t va, vm_prot_t access_type)
+static int
+vm_demand_page(struct vm_mapping *mapping, vaddr_t va, vm_prot_t access_type)
 {
-    struct proc *td = this_td();
-    struct vm_mapping *mapping;
-    struct vm_object *vmobj;
-
-    size_t granule = vm_get_page_size();
-    vaddr_t va_base = va &= ~(granule - 1);
-
-    int s;
+    struct proc *td;
     paddr_t pa_base;
 
-    mapping = vm_find_mapping(va_base);
-    if (mapping == NULL)
-        return -1;
-
-    if ((vmobj = mapping->vmobj) == NULL)
-        /* Virtual memory object non-existent */
-        return -1;
-    if (!vmobj->demand)
-        /* Demand paging not enabled for this object */
-        return -1;
-    if ((access_type & ~mapping->prot) != 0)
-        /* Invalid access type */
-        return -1;
+    int s;
+    size_t granule = vm_get_page_size();
 
     /* Allocate physical memory if needed */
     if (mapping->physmem_base == 0) {
@@ -109,6 +91,36 @@ vm_fault(vaddr_t va, vm_prot_t access_type)
         pa_base = mapping->physmem_base;
     }
 
-    s = vm_map_create(td->addrsp, va_base, pa_base, access_type, granule);
+    td = this_td();
+    s = vm_map_create(td->addrsp, va, pa_base, access_type, granule);
     return s;
+}
+
+int
+vm_fault(vaddr_t va, vm_prot_t access_type)
+{
+    struct vm_mapping *mapping;
+    struct vm_object *vmobj;
+
+    size_t granule = vm_get_page_size();
+    vaddr_t va_base = va & ~(granule - 1);
+
+    mapping = vm_find_mapping(va_base);
+    if (mapping == NULL)
+        return -1;
+
+    if ((vmobj = mapping->vmobj) == NULL)
+        /* Virtual memory object non-existent */
+        return -1;
+    if ((access_type & ~mapping->prot) != 0)
+        /* Invalid access type */
+        return -1;
+
+    /* Can we perform demand paging? */
+    if (vmobj->demand) {
+        if (vm_demand_page(mapping, va_base, access_type) != 0)
+            return -1;
+    }
+
+    return 0;
 }
