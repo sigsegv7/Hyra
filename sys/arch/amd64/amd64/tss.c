@@ -57,7 +57,7 @@ alloc_resources(struct cpu_info *cpu)
             panic("Failed to alloc %d bytes for TSS\n", sizeof(*tss));
 
         memset(tss, 0, sizeof(*tss));
-        rsp0_base = (uintptr_t)dynalloc(STACK_SIZE);
+        rsp0_base = (uintptr_t)dynalloc_memalign(STACK_SIZE, 16);
 
         if (rsp0_base == 0)
             panic("Could not allocate rsp0 base\n");
@@ -131,7 +131,7 @@ tss_update_ist(struct cpu_info *ci, union tss_stack stack, uint8_t istno)
 int
 tss_alloc_stack(union tss_stack *entry_out, size_t size)
 {
-    uintptr_t base = (uintptr_t)dynalloc(size);
+    uintptr_t base = (uintptr_t)dynalloc_memalign(size, 16);
 
     if (base == 0) {
         return -EXIT_FAILURE;
