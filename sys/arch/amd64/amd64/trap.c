@@ -35,6 +35,9 @@
 #include <sys/signal.h>
 #include <sys/proc.h>
 #include <sys/sched.h>
+#include <sys/schedvar.h>
+#include <sys/timer.h>
+#include <sys/machdep.h>
 #include <vm/fault.h>
 
 static const char *trap_type[] = {
@@ -146,7 +149,31 @@ void
 trap_handler(struct trapframe *tf)
 {
     struct proc *curtd = this_td();
+    struct timer sched_tmr;
+    tmrr_status_t tmrr_s;
     int s;
+
+    /*
+     * Mask interrupts so we don't get put in a funky
+     * state as we are dealing with this trap. Then the next
+     * thing we want to do is fetch the sched timer so we can
+     * ensure it is running after we unmask the interrupts.
+     */
+    intr_mask();
+    tmrr_s = req_timer(TIMER_SCHED, &sched_tmr);
+    if (__unlikely(tmrr_s != TMRR_SUCCESS)) {
+        trap_print(tf);
+        panic("Could not fetch TIMER_SCHED (tmrr_s=0x%x)\n", tmrr_s);
+    }
+
+    /*
+     * We should be able to perform a usec oneshot but
+     * make sure just in case.
+     */
+    if (__unlikely(sched_tmr.oneshot_us == NULL)) {
+        trap_print(tf);
+        panic("Timer oneshot_us is NULL!\n");
+    }
 
     /*
      * XXX: Handle NMIs better. For now we just
@@ -177,4 +204,8 @@ trap_handler(struct trapframe *tf)
         signal_raise(curtd, SIGSEGV);
         break;
     }
+
+    /* All good, unmask and start sched timer */
+    intr_unmask();
+    sched_tmr.oneshot_us(DEFAULT_TIMESLICE_USEC);
 }
