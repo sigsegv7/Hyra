@@ -590,7 +590,7 @@ nvme_init(void)
         return -1;
     }
 
-    bar = (struct nvme_bar *)(nvme_dev->bar[0] & ~7);
+    bar = PCI_BAR_MEMBASE(nvme_dev->bar[0]);
     KINFO("NVMe BAR0 @ 0x%p\n", bar);
     TAILQ_INIT(&namespaces);
 
