@@ -57,7 +57,6 @@ static const char *trap_type[] = {
 
 static const int TRAP_COUNT = __ARRAY_COUNT(trap_type);
 
-
 static inline vaddr_t
 pf_faultaddr(void)
 {
