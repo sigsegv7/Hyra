@@ -55,7 +55,7 @@ static struct vm_mapping *
 vm_find_mapping(vaddr_t addr)
 {
     struct vm_mapping *mapping;
-    struct proc *td;
+    struct proc *td = this_td();
     vm_mapq_t *mapq;
 
     mapping = vm_mapping_fetch(&td->mapspace, addr);
@@ -63,7 +63,6 @@ vm_find_mapping(vaddr_t addr)
         return mapping;
 
     /* Need to search other maps */
-    td = this_td();
     for (size_t i = 0; i < MTAB_ENTRIES; ++i) {
         mapq = &td->mapspace.mtab[i];
         mapping = vm_mapq_search(mapq, addr);
