@@ -101,6 +101,7 @@ vm_fault(vaddr_t va, vm_prot_t access_type)
     struct vm_mapping *mapping;
     struct vm_object *vmobj;
 
+    int s = 0;
     size_t granule = vm_get_page_size();
     vaddr_t va_base = va & ~(granule - 1);
 
@@ -115,11 +116,17 @@ vm_fault(vaddr_t va, vm_prot_t access_type)
         /* Invalid access type */
         return -1;
 
+    vm_object_ref(vmobj);
+
     /* Can we perform demand paging? */
     if (vmobj->demand) {
-        if (vm_demand_page(mapping, va_base, access_type) != 0)
-            return -1;
+        s = vm_demand_page(mapping, va_base, access_type);
+        if (s != 0)
+            goto done;
     }
 
-    return 0;
+done:
+    /* Drop the vmobj ref */
+    vm_object_unref(vmobj);
+    return s;
 }
