@@ -34,12 +34,21 @@
 #include <sys/queue.h>
 #include <sys/cdefs.h>
 #include <dev/pci/pciregs.h>
+#include <vm/vm.h>
 
 /* Lookup bits */
 #define PCI_DEVICE_ID   __BIT(0)
 #define PCI_VENDOR_ID   __BIT(1)
 #define PCI_CLASS       __BIT(2)
 #define PCI_SUBCLASS    __BIT(3)
+
+/* Base address masks for BARs */
+#define PCI_BAR_MEMMASK ~7
+#define PCI_BAR_IOMASK  ~3
+
+/* Macros to fetch base address from BAR */
+#define PCI_BAR_MEMBASE(BAR) PHYS_TO_VIRT(BAR & PCI_BAR_MEMMASK)
+#define PCI_BAR_IOBASE(BAR)  PHYS_TO_VIRT(BAR & PCI_BAR_IOMASK)
 
 /* For PCI lookups */
 struct pci_lookup {
