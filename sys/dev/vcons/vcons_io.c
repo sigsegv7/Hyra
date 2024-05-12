@@ -69,6 +69,12 @@ vcons_process_output(struct vcons_screen *scr, int c)
     case ASCII_HT:
         vcons_expand_tab(scr);
         break;
+    case ASCII_BS:
+        if (cursor->xpos > 0) {
+            scr->cpy_x--;
+            cursor->xpos -= FONT_WIDTH;
+        }
+        break;
     default:
         return -1;
     }
