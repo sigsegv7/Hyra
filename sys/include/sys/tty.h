@@ -27,58 +27,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/syslog.h>
-#include <sys/machdep.h>
-#include <sys/tty.h>
+#ifndef _SYS_TTY_H_
+#define _SYS_TTY_H_
+
+#include <sys/types.h>
+#include <sys/termios.h>
+#include <sys/spinlock.h>
 #include <dev/vcons/vcons.h>
-#include <string.h>
 
-struct vcons_screen g_syslog_screen = {0};
+#define TTY_RING_SIZE 32
 
-static void
-syslog_write(const char *s, size_t len)
-{
-    size_t tmp_len = len;
-    const char *tmp_s = s;
+struct tty_ring {
+    char data[TTY_RING_SIZE];   /* Ring data */
+    off_t enq_index;            /* Enqueue index */
+    off_t deq_index;            /* Dequeue index */
+};
 
-    while (tmp_len--) {
-#if defined(__SERIAL_DEBUG)
-        serial_dbgch(*tmp_s);
-#endif  /* defined(__SERIAL_DEBUG) */
-        tty_putc(&g_root_tty, *tmp_s++);
-    }
+struct tty {
+    struct vcons_screen *scr;   /* Console screen */
+    struct tty_ring ring;       /* Input ring */
+    struct spinlock rlock;      /* Ring lock */
+    struct termios termios;     /* Termios structure */
+};
 
-    tty_flush(&g_root_tty);
-}
+extern struct tty g_root_tty;
 
-void
-vkprintf(const char *fmt, va_list *ap)
-{
-    char buffer[1024] = {0};
+int tty_putc(struct tty *tty, int c);
+ssize_t tty_flush(struct tty *tty);
 
-    vsnprintf(buffer, sizeof(buffer), fmt, *ap);
-    syslog_write(buffer, strlen(buffer));
-}
-
-void
-kprintf(const char *fmt, ...)
-{
-    va_list ap;
-
-    va_start(ap, fmt);
-    vkprintf(fmt, &ap);
-    va_end(ap);
-}
-
-void
-syslog_init(void)
-{
-    struct termios termios = {0};
-
-    termios.c_oflag |= OCRNL;   /* Map CR to NL by default */
-
-    g_syslog_screen.bg = 0x000000;
-    g_syslog_screen.fg = 0x808080;
-
-    vcons_attach(&g_syslog_screen);
-}
+#endif  /* !_SYS_TTY_H_ */

@@ -27,58 +27,82 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/syslog.h>
-#include <sys/machdep.h>
 #include <sys/tty.h>
-#include <dev/vcons/vcons.h>
-#include <string.h>
+#include <sys/cdefs.h>
+#include <sys/errno.h>
+#include <sys/syslog.h>
 
-struct vcons_screen g_syslog_screen = {0};
+struct tty g_root_tty = {
+    .scr = &g_syslog_screen,
+    .ring = {
+        .enq_index = 0,
+        .deq_index = 0,
+    }
+};
 
-static void
-syslog_write(const char *s, size_t len)
+/*
+ * Flushes the TTY ring buffer.
+ *
+ * @tty: TTY to flush.
+ *
+ * Returns number of bytes flushed.
+ */
+static ssize_t
+__tty_flush(struct tty *tty)
 {
-    size_t tmp_len = len;
-    const char *tmp_s = s;
+    struct tty_ring *ring = &tty->ring;
+    size_t count = 0;
+    char tmp;
 
-    while (tmp_len--) {
-#if defined(__SERIAL_DEBUG)
-        serial_dbgch(*tmp_s);
-#endif  /* defined(__SERIAL_DEBUG) */
-        tty_putc(&g_root_tty, *tmp_s++);
+    /* Do we have any data left? */
+    if (ring->deq_index >= ring->enq_index)
+        return -EAGAIN;
+
+    /* Flush the ring */
+    while (ring->deq_index < ring->enq_index) {
+        tmp = ring->data[ring->deq_index++];
+        vcons_putch(tty->scr, tmp);
+        ++count;
     }
 
-    tty_flush(&g_root_tty);
+    ring->enq_index = 0;
+    ring->deq_index = 0;
+    return count;
 }
 
-void
-vkprintf(const char *fmt, va_list *ap)
+/*
+ * Serialized wrapper over __tty_flush()
+ */
+ssize_t
+tty_flush(struct tty *tty)
 {
-    char buffer[1024] = {0};
+    ssize_t ret;
 
-    vsnprintf(buffer, sizeof(buffer), fmt, *ap);
-    syslog_write(buffer, strlen(buffer));
+    spinlock_acquire(&tty->rlock);
+    ret = __tty_flush(tty);
+    spinlock_release(&tty->rlock);
+    return ret;
 }
 
-void
-kprintf(const char *fmt, ...)
+/*
+ * Write a character to a TTY
+ *
+ * @tty: TTY to write to.
+ * @c: Character to write.
+ */
+int
+tty_putc(struct tty *tty, int c)
 {
-    va_list ap;
+    struct tty_ring *ring;
 
-    va_start(ap, fmt);
-    vkprintf(fmt, &ap);
-    va_end(ap);
-}
+    ring = &tty->ring;
+    spinlock_acquire(&tty->rlock);
 
-void
-syslog_init(void)
-{
-    struct termios termios = {0};
+    if (ring->enq_index >= TTY_RING_SIZE) {
+        __tty_flush(tty);
+    }
 
-    termios.c_oflag |= OCRNL;   /* Map CR to NL by default */
-
-    g_syslog_screen.bg = 0x000000;
-    g_syslog_screen.fg = 0x808080;
-
-    vcons_attach(&g_syslog_screen);
+    ring->data[ring->enq_index++] = c;
+    spinlock_release(&tty->rlock);
+    return 0;
 }
