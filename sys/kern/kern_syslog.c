@@ -76,7 +76,6 @@ syslog_init(void)
 
     g_syslog_screen.bg = 0x000000;
     g_syslog_screen.fg = 0x808080;
-    g_syslog_screen.termios = termios;
 
     vcons_attach(&g_syslog_screen);
 }

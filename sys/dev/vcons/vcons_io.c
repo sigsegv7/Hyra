@@ -52,17 +52,15 @@ vcons_expand_tab(struct vcons_screen *scr)
 int
 vcons_process_output(struct vcons_screen *scr, int c)
 {
-    struct termios termios = scr->termios;
     struct vcons_cursor *cursor = &scr->cursor;
 
     switch (c) {
     case ASCII_LF:
-        if (__TEST(termios.c_oflag, OCRNL)) {
-            scr->cpy_x = 0;
-            cursor->xpos = 0;
-        }
         scr->cpy_y++;
         cursor->ypos += FONT_HEIGHT;
+
+        scr->cpy_x = 0;
+        cursor->xpos = 0;
         break;
     case ASCII_CR:
         scr->cpy_x = 0;

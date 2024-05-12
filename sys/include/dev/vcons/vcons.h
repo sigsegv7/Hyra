@@ -60,7 +60,6 @@ struct vcons_screen {
 
     struct fbdev fbdev;
     struct vcons_cursor cursor;
-    struct termios termios;
 };
 
 #define is_cursor_drawing(screenptr) (screenptr)->cursor.is_drawing
