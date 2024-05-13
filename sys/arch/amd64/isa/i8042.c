@@ -48,6 +48,7 @@ __KERNEL_META("$Hyra$: i8042.c, Ian Marco Moffett, "
 static struct spinlock data_lock;
 static bool shift_key = false;
 static bool capslock = false;
+static bool capslock_released = true;
 
 static int dev_send(bool aux, uint8_t data);
 
@@ -96,8 +97,18 @@ scancode_to_chr(uint8_t sc, char *chr)
     bool release = __TEST(sc, __BIT(7));
 
     switch (sc) {
-    /* Capslock */
+    /* Capslock pressed */
     case 0x3A:
+        /*
+         * If we are holding down caps-lock, we do not
+         * want a stream of presses that constantly cause
+         * it to toggle, only toggle if released then pushed
+         * again.
+         */
+        if (!capslock_released)
+            return -EAGAIN;
+
+        capslock_released = false;
         capslock = !capslock;
 
         if (!capslock) {
@@ -105,6 +116,10 @@ scancode_to_chr(uint8_t sc, char *chr)
         } else {
             kbd_set_leds(I8042_LED_CAPS);
         }
+        return -EAGAIN;
+    /* Capslock released */
+    case 0xBA:
+        capslock_released = true;
         return -EAGAIN;
     /* Shift */
     case 0x36:
