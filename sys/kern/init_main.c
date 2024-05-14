@@ -92,7 +92,6 @@ main(void)
 
     processor_init();
     list_timers();
-
     vfs_init();
 
     /* Attach the root TTY */
@@ -100,7 +99,6 @@ main(void)
         kprintf("Failed to attach root TTY (got %d)\n", status);
 
     DRIVERS_INIT();
-
     sched_init();
     ci = this_cpu();
 
