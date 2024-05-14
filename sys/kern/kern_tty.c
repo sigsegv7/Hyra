@@ -31,7 +31,10 @@
 #include <sys/cdefs.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
+#include <fs/devfs.h>
+#include <string.h>
 
+static dev_t tty_major = 0;
 struct tty g_root_tty = {
     .scr = &g_syslog_screen,
     .ring = {
@@ -39,6 +42,14 @@ struct tty g_root_tty = {
         .deq_index = 0,
     }
 };
+
+static inline dev_t
+tty_alloc_id(void)
+{
+    static dev_t id = 1;
+
+    return id++;
+}
 
 /*
  * Flushes the TTY ring buffer.
@@ -68,6 +79,33 @@ __tty_flush(struct tty *tty)
     ring->enq_index = 0;
     ring->deq_index = 0;
     return count;
+}
+
+/*
+ * Device structure routine for reading a
+ * TTY device file.
+ */
+static int
+tty_dev_read(struct device *dev, struct sio_txn *sio)
+{
+    struct tty_ring *ring = &g_root_tty.ring;
+    size_t len;
+
+    spinlock_acquire(&g_root_tty.rlock);
+    len = (ring->enq_index - ring->deq_index);
+
+    /*
+     * Transfer data from the TTY ring with SIO and
+     * flush it.
+     *
+     * TODO: As of now we are just reading the root
+     *       TTY, add support for multiple TTYs.
+     */
+    memcpy(sio->buf, ring->data, len);
+    __tty_flush(&g_root_tty);
+
+    spinlock_release(&g_root_tty.rlock);
+    return len;
 }
 
 /*
@@ -105,4 +143,33 @@ tty_putc(struct tty *tty, int c)
     ring->data[ring->enq_index++] = c;
     spinlock_release(&tty->rlock);
     return 0;
+}
+
+dev_t
+tty_attach(struct tty *tty)
+{
+    int tmp;
+    char devname[128];
+    struct device *dev = device_alloc();
+
+    if (dev == NULL)
+        return -ENOMEM;
+
+    /*
+     * Allocate a major for the driver if we don't
+     * have one yet.
+     */
+    if (tty_major == 0)
+        tty_major = device_alloc_major();
+
+    /* Now try to create the device */
+    tty->id = tty_alloc_id();
+    if ((tmp = device_create(dev, tty_major, tty->id)) < 0)
+        return tmp;
+
+    dev->read = tty_dev_read;
+    dev->blocksize = 1;
+
+    snprintf(devname, sizeof(devname), "tty%d", tty->id);
+    return devfs_add_dev(devname, dev);
 }

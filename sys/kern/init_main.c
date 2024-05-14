@@ -32,6 +32,7 @@
 #include <sys/machdep.h>
 #include <sys/timer.h>
 #include <sys/sched.h>
+#include <sys/tty.h>
 #include <sys/vfs.h>
 #include <sys/driver.h>
 #include <machine/cpu_mp.h>
@@ -76,6 +77,7 @@ void
 main(void)
 {
     struct cpu_info *ci;
+    int status;
 
     __TRY_CALL(pre_init);
     syslog_init();
@@ -92,6 +94,10 @@ main(void)
     list_timers();
 
     vfs_init();
+
+    /* Attach the root TTY */
+    if ((status = tty_attach(&g_root_tty)) < 0)
+        kprintf("Failed to attach root TTY (got %d)\n", status);
 
     DRIVERS_INIT();
 

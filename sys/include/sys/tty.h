@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/termios.h>
 #include <sys/spinlock.h>
+#include <sys/device.h>
 #include <dev/vcons/vcons.h>
 
 #define TTY_RING_SIZE 32
@@ -44,14 +45,17 @@ struct tty_ring {
 };
 
 struct tty {
+    dev_t id;
     struct vcons_screen *scr;   /* Console screen */
     struct tty_ring ring;       /* Input ring */
     struct spinlock rlock;      /* Ring lock */
     struct termios termios;     /* Termios structure */
+    struct device *dev;         /* Device pointer */
 };
 
 extern struct tty g_root_tty;
 
+dev_t tty_attach(struct tty *tty);
 int tty_putc(struct tty *tty, int c);
 ssize_t tty_flush(struct tty *tty);
 
