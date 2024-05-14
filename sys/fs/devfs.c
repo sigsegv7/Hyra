@@ -64,6 +64,17 @@ node_from_name(const char *name)
 }
 
 static int
+cdev_read(struct device *dev, struct device_node *node, struct sio_txn *sio)
+{
+    size_t n_bytes;
+
+    spinlock_acquire(&node->lock);
+    n_bytes = dev->read(dev, sio);
+    spinlock_release(&node->lock);
+    return n_bytes;
+}
+
+static int
 blkdev_read(struct device *dev, struct device_node *node, struct sio_txn *sio)
 {
     char *buf;
@@ -139,7 +150,11 @@ vop_read(struct vnode *vp, struct sio_txn *sio)
 
     node = vp->data;
     dev = device_fetch(node->major, node->minor);
-    return blkdev_read(dev, node, sio);
+
+    if (dev->blocksize > 1)
+        return blkdev_read(dev, node, sio);
+
+    return cdev_read(dev, node, sio);
 }
 
 static int
