@@ -253,7 +253,19 @@ machine_panic(void)
 void
 cpu_halt_others(void)
 {
-    lapic_send_ipi(0, IPI_SHORTHAND_OTHERS, SYSVEC_HLT);
+    struct cpu_info *ci = this_cpu();
+
+    /* Is the current CPU structure even valid? */
+    if (ci == NULL)
+        return;
+
+    /*
+     * If the Local APIC base address is NULL, we can't
+     * use lapic_send_ipi() but we we can assume the APs
+     * are still parked.
+     */
+    if (ci->lapic_base != NULL)
+        lapic_send_ipi(0, IPI_SHORTHAND_OTHERS, SYSVEC_HLT);
 }
 
 int
