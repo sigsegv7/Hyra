@@ -84,7 +84,7 @@ vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
             printc(s, size, &off, c1);
             break;
         case 'd':
-            num = va_arg(ap, int64_t);
+            num = va_arg(ap, int);
             itoa(num, num_buf, 10);
             printstr(s, size, &off, num_buf);
             break;
