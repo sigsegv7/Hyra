@@ -34,6 +34,7 @@
 
 #define i8254_COMMAND     0x43
 #define i8254_CHANNEL_0   0x40
+#define i8254_CHANNEL_2   0x42
 #define i8254_DIVIDEND    1193182ULL
 
 uint16_t i8254_get_count(void);
