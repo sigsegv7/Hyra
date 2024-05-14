@@ -45,10 +45,10 @@ void processor_init(void);
 void processor_halt(void);
 void intr_mask(void);
 void intr_unmask(void);
+void machine_panic(void);
 __weak void chips_init(void);
 __weak void pre_init(void);
 __weak void serial_dbgch(char c);
-__weak void backtrace(void);
 __weak void cpu_halt_others(void);
 
 #endif  /* defined(_KERNEL) */

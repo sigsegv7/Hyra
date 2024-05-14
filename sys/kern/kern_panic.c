@@ -55,8 +55,7 @@ panic(const char *fmt, ...)
 
     kprintf("panic: ");
     vkprintf(fmt, &ap);
-    __TRY_CALL(backtrace);
 
-    processor_halt();
+    machine_panic();
     __builtin_unreachable();
 }

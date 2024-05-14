@@ -31,6 +31,7 @@
 #include <sys/cdefs.h>
 #include <sys/panic.h>
 #include <sys/ksyms.h>
+#include <sys/timer.h>
 #include <machine/trap.h>
 #include <machine/idt.h>
 #include <machine/io.h>
@@ -40,6 +41,7 @@
 #include <machine/lapic.h>
 #include <machine/tss.h>
 #include <machine/spectre.h>
+#include <machine/isa/spkr.h>
 #include <machine/cpu.h>
 #include <machine/uart.h>
 #include <machine/cpuid.h>
@@ -192,7 +194,7 @@ backtrace_addr_to_name(uintptr_t addr, off_t *off)
     return NULL;
 }
 
-void
+static void
 backtrace(void)
 {
     uintptr_t *rbp;
@@ -216,6 +218,36 @@ backtrace(void)
 
         kprintf("[0x%p] <%s+0x%x>\n", rip, name, off);
     }
+}
+
+/*
+ * Called last within panic()
+ */
+void
+machine_panic(void)
+{
+    struct timer tmr = {0};
+    bool has_timer = true;
+
+    if (req_timer(TIMER_GP, &tmr) != TMRR_SUCCESS)
+        has_timer = false;
+    if (tmr.msleep == NULL)
+        has_timer = false;
+
+    backtrace();
+
+    /*
+     * If we can use the timer, beep twice to
+     * alert the user.
+     */
+    if (has_timer) {
+        for (int i = 0; i < 2; ++i) {
+            pcspkr_tone(1050, 200);
+            tmr.msleep(100);
+        }
+    }
+
+    processor_halt();
 }
 
 void
