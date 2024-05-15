@@ -335,8 +335,8 @@ processor_init(void)
     /* Set %GS to cpu_info */
     amd64_write_gs_base((uintptr_t)cur_cpu);
 
+    /* Try to enable SSE/SSE2 */
     if (is_sse_supported()) {
-        /* Enable SSE/SSE2 */
         reg_tmp = amd64_read_cr0();
         reg_tmp &= ~(__BIT(2));
         reg_tmp |= __BIT(1);
@@ -353,10 +353,7 @@ processor_init(void)
     CPU_INFO_LOCK(cur_cpu);
     init_tss(cur_cpu);
 
-    /*
-     * See if there are things that have not been set up,
-     * set them up if so...
-     */
+    /* Set up some ACPI things */
     if (!__TEST(init_flags, INIT_FLAG_ACPI)) {
         /*
          * Parse the MADT... This is needed to fetch required information
@@ -365,6 +362,8 @@ processor_init(void)
         init_flags |= INIT_FLAG_ACPI;
         acpi_parse_madt(cur_cpu);
     }
+
+    /* Setup I/O APIC */
     if (!__TEST(init_flags, INIT_FLAG_IOAPIC)) {
         init_flags |= INIT_FLAG_IOAPIC;
         ioapic_init();
@@ -372,7 +371,6 @@ processor_init(void)
 
     cur_cpu->lapic_base = acpi_get_lapic_base();
     CPU_INFO_UNLOCK(cur_cpu);
-
     lapic_init();
 
     /* Use spectre mitigation if enabled */
