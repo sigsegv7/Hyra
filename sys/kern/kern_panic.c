@@ -48,6 +48,7 @@ panic(const char *fmt, ...)
     va_list ap;
     static struct spinlock lock = {0};
 
+    intr_mask();
     spinlock_acquire(&lock);    /* Never released */
     __TRY_CALL(cpu_halt_others);
 
