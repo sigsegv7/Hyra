@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/syslog.h>
 #include <sys/errno.h>
+#include <sys/proc.h>
 #include <vm/vm.h>
 #include <vm/map.h>
 #include <vm/physseg.h>
@@ -63,6 +64,63 @@ loader_unload(struct vas vas, struct vm_range *exec_range)
 
     /* FIXME: Figure out how to free physical memory too */
     return vm_map_destroy(vas, start, (end - start));
+}
+
+uintptr_t
+loader_init_stack(void *stack_top, struct exec_args args)
+{
+    uintptr_t *sp = stack_top;
+    uintptr_t old_sp = 0;
+    size_t argc, envc, len;
+    char **argvp = args.argp;
+    char **envp = args.envp;
+    struct auxval auxv = args.auxv;
+
+    /* Copy strings */
+    old_sp = (uintptr_t)sp;
+    for (argc = 0; argvp[argc] != NULL; ++argc) {
+        len = strlen(argvp[argc]) + 1;
+        sp = (void *)((char *)sp - len);
+        memcpy((char *)sp, argvp[argc], len);
+    }
+    for (envc = 0; envp[envc] != NULL; ++envc) {
+        len = strlen(envp[envc]) + 1;
+        sp = (void *)((char *)sp - len);
+        memcpy((char *)sp, envp[envc], len);
+    }
+
+    /* Ensure the stack is aligned */
+    sp = (void *)__ALIGN_DOWN((uintptr_t)sp, 16);
+    if (((argc + envc + 1) & 1) != 0)
+        --sp;
+
+    AUXVAL(sp, AT_NULL, 0x0);
+    AUXVAL(sp, AT_SECURE, 0x0);
+    AUXVAL(sp, AT_ENTRY, auxv.at_entry);
+    AUXVAL(sp, AT_PHDR, auxv.at_phdr);
+    AUXVAL(sp, AT_PHNUM, auxv.at_phnum);
+    AUXVAL(sp, AT_PAGESIZE, vm_get_page_size());
+    STACK_PUSH(sp, 0);
+
+    /* Copy envp pointers */
+    sp -= envc;
+    for (int i = 0; i < envc; ++i) {
+        len = strlen(envp[i]) + 1;
+        old_sp -= len;
+        sp[i] = KERN_TO_USER(old_sp);
+    }
+
+    /* Copy argvp pointers */
+    STACK_PUSH(sp, 0);
+    sp -= argc;
+    for (int i = 0; i < argc; ++i) {
+        len = strlen(argvp[i]) + 1;
+        old_sp -= len;
+        sp[i] = KERN_TO_USER(old_sp);
+    }
+
+    STACK_PUSH(sp, argc);
+    return (uintptr_t)sp;
 }
 
 int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,

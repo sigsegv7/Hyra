@@ -61,12 +61,6 @@
 #define USER_TO_KERN(user) PHYS_TO_VIRT(user)
 #define KERN_TO_USER(kern) VIRT_TO_PHYS(kern)
 
-struct exec_args {
-    char **argp, **envp;
-    struct auxval auxv;
-    struct vas vas;
-};
-
 enum {
     ADDR_RANGE_EXEC = 0,    /* Program address range */
     ADDR_RANGE_STACK        /* Stack address range */

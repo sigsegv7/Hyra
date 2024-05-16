@@ -118,7 +118,7 @@ exec_set_stack(struct proc *td, struct exec_args args)
     stack_range = &td->addr_range[ADDR_RANGE_STACK];
     stack_top = stack_range->start + (PROC_STACK_SIZE);
 
-    sp = sched_init_stack((void *)stack_top, args);
+    sp = loader_init_stack((void *)stack_top, args);
     return sp;
 }
 

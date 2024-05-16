@@ -60,8 +60,15 @@ struct auxval {
     uint64_t at_phnum;
 };
 
+struct exec_args {
+    char **argp, **envp;
+    struct auxval auxv;
+    struct vas vas;
+};
+
 #if defined(_KERNEL)
 
+uintptr_t loader_init_stack(void *stack_top, struct exec_args args);
 int loader_unload(struct vas vas, struct vm_range *exec_range);
 int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
                 size_t load_base, char **ld_path, struct vm_range *prog_range);

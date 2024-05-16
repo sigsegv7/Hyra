@@ -43,7 +43,6 @@ void sched_init(void);
 void sched_exit(void);
 void sched_context_switch(struct trapframe *tf);
 void sched_rest(void);
-uintptr_t sched_init_stack(void *stack_top, struct exec_args args);
 
 __noreturn
 uint64_t sys_exit(struct syscall_args *args);
