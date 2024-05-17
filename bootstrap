@@ -22,8 +22,13 @@ build_limine() {
     make -C stand/limine/
 }
 
+build_kconf() {
+    make -C tools/kconf/
+}
+
 build() {
     build_limine
+    build_kconf
 }
 
 echo "----------------------------------"

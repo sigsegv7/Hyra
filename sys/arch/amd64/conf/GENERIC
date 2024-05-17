@@ -1,0 +1,7 @@
+// Kernel options
+option SPECTRE_MITIGATION   no
+option SERIAL_DEBUG         yes
+option PANIC_BEEP           yes
+
+// Kernel constants
+setval PANIC_BEEP_HZ        1050
