@@ -27,44 +27,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STDIO_H
-#define _STDIO_H
+#include <sys/types.h>
+#include <stdio.h>
 
-#include <stddef.h>
-#include <stdarg.h>
+static inline void
+printc(char *buf, size_t size, size_t *off, char c)
+{
+    if (*off < size - 1) {
+        buf[(*off)++] = c;
+    }
+    buf[*off] = 0;
+}
 
-#define EOF (int)-1
+static void
+printstr(char *buf, size_t size, size_t *off, const char *s)
+{
+    while (*off < size - 1 && *s != '\0') {
+        buf[(*off)++] = *(s)++;
+    }
+    buf[*off] = 0;
+}
 
-#define FILE_READ  (1 << 0)
-#define FILE_WRITE (1 << 1)
+int
+vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
+{
+    size_t tmp_len, off = 0;
+    ssize_t num = 0;
+    char c, c1;
+    const char *tmp_str;
 
-typedef struct {
-    int fd;
-    int flags;
+    while (off < (size - 1)) {
+        while (*fmt && *fmt != '%') {
+            printc(s, size, &off, *fmt++);
+        }
 
-    char *write_buf;
-    char *write_pos;
-    char *write_end;
-} FILE;
+        if (*(fmt)++ == '\0' || off == size - 1) {
+            return off;
+        }
 
-extern FILE *stdout;
+        c = *fmt++;
+        switch (c) {
+        case 'c':
+            c1 = (char)va_arg(ap, int);
+            printc(s, size, &off, c1);
+            break;
+        case 's':
+            tmp_str = va_arg(ap, const char *);
+            printstr(s, size, &off, tmp_str);
+            break;
+        }
+    }
 
-FILE *fopen(const char *pathname, const char *mode);
-FILE *fdopen(int fd, const char *mode);
-
-size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
-size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
-
-int fputc(int c, FILE *stream);
-#define putc fputc
-int putchar(int c);
-
-int fputs(const char *s, FILE *stream);
-int puts(const char *s);
-
-int fflush(FILE *stream);
-int fclose(FILE *stream);
-
-int vsnprintf(char *s, size_t size, const char *fmt, va_list ap);
-
-#endif  /* !_STDIO_H */
+    return 0;
+}
