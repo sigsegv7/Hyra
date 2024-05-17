@@ -63,6 +63,10 @@ __KERNEL_META("$Hyra$: machdep.c, Ian Marco Moffett, "
 #define INIT_FLAG_IOAPIC 0x00000001U
 #define INIT_FLAG_ACPI   0x00000002U
 
+/* Set by kconf(1) */
+#define PANIC_BEEP_HZ  __PANIC_BEEP_HZ
+#define PANIC_BEEP     __PANIC_BEEP
+
 void syscall_isr(void);
 
 __attr(interrupt)
@@ -158,6 +162,29 @@ backtrace(void)
     }
 }
 
+static void
+panic_beep(void)
+{
+    struct timer tmr = {0};
+    bool has_timer = true;
+
+    if (req_timer(TIMER_GP, &tmr) != TMRR_SUCCESS)
+        has_timer = false;
+    if (tmr.msleep == NULL)
+        has_timer = false;
+
+    /*
+     * If we can use the timer, beep twice to
+     * alert the user.
+     */
+    if (has_timer) {
+        for (int i = 0; i < 2; ++i) {
+            pcspkr_tone(PANIC_BEEP_HZ, 200);
+            tmr.msleep(100);
+        }
+    }
+}
+
 void
 processor_halt(void)
 {
@@ -226,26 +253,10 @@ intr_unmask(void)
 void
 machine_panic(void)
 {
-    struct timer tmr = {0};
-    bool has_timer = true;
-
-    if (req_timer(TIMER_GP, &tmr) != TMRR_SUCCESS)
-        has_timer = false;
-    if (tmr.msleep == NULL)
-        has_timer = false;
-
     backtrace();
 
-    /*
-     * If we can use the timer, beep twice to
-     * alert the user.
-     */
-    if (has_timer) {
-        for (int i = 0; i < 2; ++i) {
-            pcspkr_tone(1050, 200);
-            tmr.msleep(100);
-        }
-    }
+    if (PANIC_BEEP)
+        panic_beep();
 
     processor_halt();
 }
