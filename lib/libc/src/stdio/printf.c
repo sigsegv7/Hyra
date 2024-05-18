@@ -27,45 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STDIO_H
-#define _STDIO_H
+#include <stdio.h>
 
-#include <stddef.h>
-#include <stdarg.h>
+int
+printf(const char *fmt, ...)
+{
+    char buf[4096];
+    va_list ap;
+    int retval;
 
-#define EOF (int)-1
+    va_start(ap, fmt);
+    retval = vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
 
-#define FILE_READ  (1 << 0)
-#define FILE_WRITE (1 << 1)
-
-typedef struct {
-    int fd;
-    int flags;
-
-    char *write_buf;
-    char *write_pos;
-    char *write_end;
-} FILE;
-
-extern FILE *stdout;
-
-FILE *fopen(const char *pathname, const char *mode);
-FILE *fdopen(int fd, const char *mode);
-
-size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
-size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
-
-int fputc(int c, FILE *stream);
-#define putc fputc
-int putchar(int c);
-
-int fputs(const char *s, FILE *stream);
-int puts(const char *s);
-
-int fflush(FILE *stream);
-int fclose(FILE *stream);
-
-int vsnprintf(char *s, size_t size, const char *fmt, va_list ap);
-int printf(const char *fmt, ...);
-
-#endif  /* !_STDIO_H */
+    fputs(buf, stdout);
+    fflush(stdout);         /* TODO: Don't flush manually */
+    return retval;
+}
