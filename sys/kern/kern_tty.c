@@ -135,12 +135,12 @@ tty_putc(struct tty *tty, int c)
 
     ring = &tty->ring;
     spinlock_acquire(&tty->rlock);
+    ring->data[ring->enq_index++] = c;
 
     if (ring->enq_index >= TTY_RING_SIZE) {
         __tty_flush(tty);
     }
 
-    ring->data[ring->enq_index++] = c;
     spinlock_release(&tty->rlock);
     return 0;
 }
