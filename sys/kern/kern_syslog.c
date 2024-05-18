@@ -73,10 +73,6 @@ kprintf(const char *fmt, ...)
 void
 syslog_init(void)
 {
-    struct termios termios = {0};
-
-    termios.c_oflag |= OCRNL;   /* Map CR to NL by default */
-
     g_syslog_screen.bg = 0x000000;
     g_syslog_screen.fg = 0x808080;
 
