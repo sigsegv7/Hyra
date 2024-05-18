@@ -44,8 +44,12 @@
 #define OPOST       0x00000001U         /* Enable output processing */
 #if defined(_KERNEL) || defined(_HYRA_SOURCE)
 #define OCRNL       0x00000002U         /* Map NL to CR-NL */
-#define ORBUF       0x00000004U         /* Buffer bytes */
 #endif      /* defined(_KERNEL) || defined(_HYRA_SOURCE) */
+
+/*
+ * Local flags
+ */
+#define ICANON 0x00000001U
 
 typedef uint32_t tcflag_t;
 typedef uint32_t speed_t;
