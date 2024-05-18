@@ -237,7 +237,6 @@ kb_isr(void *sf)
             tty_putc(&g_root_tty, c);
         }
     }
-    tty_flush(&g_root_tty);
     spinlock_release(&data_lock);
     lapic_send_eoi();
 }

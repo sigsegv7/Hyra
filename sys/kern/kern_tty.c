@@ -31,6 +31,7 @@
 #include <sys/cdefs.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
+#include <sys/ascii.h>
 #include <fs/devfs.h>
 #include <string.h>
 
@@ -62,18 +63,27 @@ static ssize_t
 __tty_flush(struct tty *tty)
 {
     struct tty_ring *ring = &tty->ring;
+    const struct termios *termios;
     size_t count = 0;
     char tmp;
+
+    termios = &tty->termios;
 
     /* Do we have any data left? */
     if (ring->deq_index >= ring->enq_index)
         return -EAGAIN;
 
-    /* Flush the ring */
-    while (ring->deq_index < ring->enq_index) {
-        tmp = ring->data[ring->deq_index++];
-        vcons_putch(tty->scr, tmp);
-        ++count;
+    /*
+     * Flush the ring to the console if we are in
+     * canonical mode. Otherwise, just throw away
+     * the bytes.
+     */
+    if (__TEST(termios->c_lflag, ICANON)) {
+        while (ring->deq_index < ring->enq_index) {
+            tmp = ring->data[ring->deq_index++];
+            vcons_putch(tty->scr, tmp);
+            ++count;
+        }
     }
 
     ring->enq_index = 0;
@@ -132,11 +142,37 @@ int
 tty_putc(struct tty *tty, int c)
 {
     struct tty_ring *ring;
+    const struct termios *termios;
+    bool canon;
 
     ring = &tty->ring;
+    termios = &tty->termios;
+    canon = __TEST(termios->c_lflag, ICANON);
+
     spinlock_acquire(&tty->rlock);
     ring->data[ring->enq_index++] = c;
 
+    /*
+     * If we aren't in canonical mode, just write directly to
+     * the console.
+     *
+     * XXX: Won't need to worry about extra bytes being printed
+     *      as __tty_flush() won't flush them to the console
+     *      when we aren't in canonical mode.
+     */
+    if (!canon) {
+        vcons_putch(tty->scr, c);
+    }
+
+    /*
+     * If we are in canonical mode and we have a linefeed ('\n')
+     * character, we should flush the ring.
+     */
+    if (canon && c == ASCII_LF) {
+        __tty_flush(tty);
+    }
+
+    /* Flush if the buffer is full */
     if (ring->enq_index >= TTY_RING_SIZE) {
         __tty_flush(tty);
     }
