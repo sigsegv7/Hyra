@@ -50,6 +50,7 @@
  * Local flags
  */
 #define ICANON 0x00000001U
+#define ECHO   0x00000002U
 
 typedef uint32_t tcflag_t;
 typedef uint32_t speed_t;

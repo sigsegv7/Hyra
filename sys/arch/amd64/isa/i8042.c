@@ -234,7 +234,7 @@ kb_isr(void *sf)
     while (__TEST(inb(I8042_STATUS), I8042_OBUF_FULL)) {
         data = inb(I8042_DATA);
         if (scancode_to_chr(data, &c) == 0) {
-            tty_putc(&g_root_tty, c);
+            tty_putc(&g_root_tty, c, TTY_SOURCE_DEV);
         }
     }
     spinlock_release(&data_lock);

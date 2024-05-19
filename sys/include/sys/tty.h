@@ -38,6 +38,9 @@
 
 #define TTY_RING_SIZE 32
 
+#define TTY_SOURCE_RAW 0x0001U   /* Raw text */
+#define TTY_SOURCE_DEV 0x0002U   /* Input from device (e.g keyboard) */
+
 struct tty_ring {
     char data[TTY_RING_SIZE];   /* Ring data */
     off_t enq_index;            /* Enqueue index */
@@ -48,6 +51,7 @@ struct tty {
     dev_t id;
     struct vcons_screen *scr;   /* Console screen */
     struct tty_ring ring;       /* Input ring */
+    struct tty_ring outring;    /* Output ring */
     struct spinlock rlock;      /* Ring lock */
     struct termios termios;     /* Termios structure */
     struct device *dev;         /* Device pointer */
@@ -56,7 +60,7 @@ struct tty {
 extern struct tty g_root_tty;
 
 dev_t tty_attach(struct tty *tty);
-int tty_putc(struct tty *tty, int c);
+int tty_putc(struct tty *tty, int c, int flags);
 int tty_putstr(struct tty *tty, const char *s, size_t count);
 ssize_t tty_flush(struct tty *tty);
 

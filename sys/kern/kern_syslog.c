@@ -45,7 +45,7 @@ syslog_write(const char *s, size_t len)
 #if defined(__SERIAL_DEBUG)
         serial_dbgch(*tmp_s);
 #endif  /* defined(__SERIAL_DEBUG) */
-        tty_putc(&g_root_tty, *tmp_s++);
+        tty_putc(&g_root_tty, *tmp_s++, TTY_SOURCE_RAW);
     }
 
     tty_flush(&g_root_tty);

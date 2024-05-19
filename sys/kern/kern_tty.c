@@ -32,6 +32,7 @@
 #include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/ascii.h>
+#include <dev/vcons/vcons_io.h>
 #include <fs/devfs.h>
 #include <string.h>
 
@@ -41,6 +42,9 @@ struct tty g_root_tty = {
     .ring = {
         .enq_index = 0,
         .deq_index = 0,
+    },
+    .termios = {
+        .c_lflag = ICANON | ECHO
     }
 };
 
@@ -50,6 +54,35 @@ tty_alloc_id(void)
     static dev_t id = 1;
 
     return id++;
+}
+
+static inline bool
+tty_is_special(char c)
+{
+    return c < 0x1F;
+}
+
+static inline void
+tty_reset_ring(struct tty_ring *ring)
+{
+    ring->enq_index = 0;
+    ring->deq_index = 0;
+}
+
+static void
+tty_process(struct tty *tty, char c, bool echo)
+{
+    const struct termios *termios;
+    bool canon, special;
+
+    termios = &tty->termios;
+    canon = __TEST(termios->c_lflag, ICANON);
+    special = tty_is_special(c);
+
+    if (canon && special)
+        vcons_process_output(tty->scr, c);
+    if (echo && !special)
+        vcons_putch(tty->scr, c);
 }
 
 /*
@@ -63,31 +96,30 @@ static ssize_t
 __tty_flush(struct tty *tty)
 {
     struct tty_ring *ring = &tty->ring;
-    const struct termios *termios;
+    struct tty_ring *outring = &tty->outring;
     size_t count = 0;
     char tmp;
-
-    termios = &tty->termios;
 
     /* Do we have any data left? */
     if (ring->deq_index >= ring->enq_index)
         return -EAGAIN;
 
     /*
-     * Flush the ring to the console if we are in
-     * canonical mode. Otherwise, just throw away
-     * the bytes.
+     * Flush the input ring to the output ring
+     * to allow user programs to fetch from it
+     * with /dev/ttyN.
      */
-    if (__TEST(termios->c_lflag, ICANON)) {
-        while (ring->deq_index < ring->enq_index) {
-            tmp = ring->data[ring->deq_index++];
-            vcons_putch(tty->scr, tmp);
-            ++count;
-        }
+    while (ring->deq_index < ring->enq_index) {
+        tmp = ring->data[ring->deq_index++];
+        outring->data[outring->enq_index++] = tmp;
+
+        if (outring->enq_index > TTY_RING_SIZE)
+            tty_reset_ring(outring);
+
+        ++count;
     }
 
-    ring->enq_index = 0;
-    ring->deq_index = 0;
+    tty_reset_ring(ring);
     return count;
 }
 
@@ -98,11 +130,15 @@ __tty_flush(struct tty *tty)
 static int
 tty_dev_read(struct device *dev, struct sio_txn *sio)
 {
-    struct tty_ring *ring = &g_root_tty.ring;
-    size_t len;
+    struct tty_ring *ring = &g_root_tty.outring;
+    size_t len, max_len;
 
     spinlock_acquire(&g_root_tty.rlock);
-    len = (ring->enq_index - ring->deq_index);
+    max_len = (ring->enq_index - ring->deq_index);
+    len = sio->len;
+
+    if (len > max_len)
+        len = max_len;
 
     /*
      * Transfer data from the TTY ring with SIO and
@@ -112,8 +148,7 @@ tty_dev_read(struct device *dev, struct sio_txn *sio)
      *       TTY, add support for multiple TTYs.
      */
     memcpy(sio->buf, ring->data, len);
-    __tty_flush(&g_root_tty);
-
+    tty_reset_ring(ring);
     spinlock_release(&g_root_tty.rlock);
     return len;
 }
@@ -139,30 +174,30 @@ tty_flush(struct tty *tty)
  * @c: Character to write.
  */
 int
-tty_putc(struct tty *tty, int c)
+tty_putc(struct tty *tty, int c, int flags)
 {
     struct tty_ring *ring;
     const struct termios *termios;
-    bool canon;
+    bool canon, echo;
 
     ring = &tty->ring;
     termios = &tty->termios;
+
     canon = __TEST(termios->c_lflag, ICANON);
+    echo = __TEST(termios->c_lflag, ECHO);
 
     spinlock_acquire(&tty->rlock);
     ring->data[ring->enq_index++] = c;
 
     /*
-     * If we aren't in canonical mode, just write directly to
-     * the console.
-     *
-     * XXX: Won't need to worry about extra bytes being printed
-     *      as __tty_flush() won't flush them to the console
-     *      when we aren't in canonical mode.
+     * Process the characters for both device input
+     * and raw input. Device input will only be echoed
+     * if the ECHO bit is set within c_lflag
      */
-    if (!canon) {
-        vcons_putch(tty->scr, c);
-    }
+    if (__TEST(flags, TTY_SOURCE_DEV) && echo)
+        tty_process(tty, c, echo);
+    if (__TEST(flags, TTY_SOURCE_RAW))
+        tty_process(tty, c, true);
 
     /*
      * If we are in canonical mode and we have a linefeed ('\n')
@@ -172,9 +207,17 @@ tty_putc(struct tty *tty, int c)
         __tty_flush(tty);
     }
 
-    /* Flush if the buffer is full */
-    if (ring->enq_index >= TTY_RING_SIZE) {
+    /*
+     * Just flush the ring if we aren't in canonical
+     * mode.
+     */
+    if (!canon) {
         __tty_flush(tty);
+    }
+
+    /* Reset the ring if it is full */
+    if (ring->enq_index >= TTY_RING_SIZE) {
+        tty_reset_ring(ring);
     }
 
     spinlock_release(&tty->rlock);
@@ -192,7 +235,7 @@ int
 tty_putstr(struct tty *tty, const char *s, size_t count)
 {
     for (size_t i = 0; i < count; ++i) {
-        tty_putc(tty, *s++);
+        tty_putc(tty, *s++, TTY_SOURCE_RAW);
     }
 
     return 0;
