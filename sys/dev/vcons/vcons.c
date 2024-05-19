@@ -158,11 +158,6 @@ vcons_putch(struct vcons_screen *scr, char c)
         return 1;
     }
 
-    if (vcons_process_output(scr, c) >= 0) {
-        /* No need to do anything */
-        return 0;
-    }
-
     /* Check cursor bounds */
     if (cursor->xpos >= PIX_BOUNDS_MAX_X(scr)) {
         cursor->xpos = FONT_WIDTH;
@@ -208,6 +203,8 @@ vcons_putstr(struct vcons_screen *scr, const char *s, size_t len)
     int status;
 
     for (size_t i = 0; i < len; ++i) {
+        if (vcons_process_output(scr, s[i]) > 0)
+            continue;
         if ((status = vcons_putch(scr, s[i])) != 0) {
             return status;
         }
