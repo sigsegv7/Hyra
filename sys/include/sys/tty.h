@@ -57,6 +57,7 @@ extern struct tty g_root_tty;
 
 dev_t tty_attach(struct tty *tty);
 int tty_putc(struct tty *tty, int c);
+int tty_putstr(struct tty *tty, const char *s, size_t count);
 ssize_t tty_flush(struct tty *tty);
 
 #endif  /* !_SYS_TTY_H_ */

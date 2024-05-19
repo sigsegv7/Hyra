@@ -181,6 +181,23 @@ tty_putc(struct tty *tty, int c)
     return 0;
 }
 
+/*
+ * Write a string to a TTY
+ *
+ * @tty: TTY to write to.
+ * @s: String to write.
+ * @count: Number of bytes to write.
+ */
+int
+tty_putstr(struct tty *tty, const char *s, size_t count)
+{
+    for (size_t i = 0; i < count; ++i) {
+        tty_putc(tty, *s++);
+    }
+
+    return 0;
+}
+
 dev_t
 tty_attach(struct tty *tty)
 {
