@@ -58,7 +58,13 @@ static size_t nthread = 0;
 /*
  * Thread queue lock - all operations to `td_queue'
  * must be done with this lock acquired.
+ *
+ * This lock is aligned on a cache line boundary to ensure
+ * it has its own cacheline to reduce contention. This is
+ * because it is constantly acquired and released on every
+ * processor.
  */
+__cacheline_aligned
 static struct spinlock tdq_lock = {0};
 
 /*
