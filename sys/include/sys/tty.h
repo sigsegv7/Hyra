@@ -38,6 +38,10 @@
 #include <dev/vcons/vcons.h>
 #endif
 
+/* TTY ioctl commands */
+#define TCSETS 0x00000000U
+#define TCGETS 0x00000001U
+
 #if defined(_KERNEL)
 #define TTY_RING_SIZE 32
 #define TTY_SOURCE_RAW 0x0001U   /* Raw text */

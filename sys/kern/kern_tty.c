@@ -28,6 +28,7 @@
  */
 
 #include <sys/tty.h>
+#include <sys/system.h>
 #include <sys/cdefs.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
@@ -153,6 +154,26 @@ tty_dev_read(struct device *dev, struct sio_txn *sio)
     return len;
 }
 
+static int
+tty_ioctl(struct device *dev, uint32_t cmd, uintptr_t arg)
+{
+    /* TODO: Support multiple TTYs */
+    struct termios *tp = &g_root_tty.termios;
+
+    switch (cmd) {
+    case TCGETS:
+        copyout(tp, arg, sizeof(struct termios));
+        break;
+    case TCSETS:
+        copyin(arg, tp, sizeof(struct termios));
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
+}
+
 /*
  * Serialized wrapper over __tty_flush()
  */
@@ -264,6 +285,7 @@ tty_attach(struct tty *tty)
         return tmp;
 
     dev->read = tty_dev_read;
+    dev->ioctl = tty_ioctl;
     dev->blocksize = 1;
 
     snprintf(devname, sizeof(devname), "tty%d", tty->id);
