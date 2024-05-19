@@ -30,14 +30,16 @@
 #ifndef _SYS_TTY_H_
 #define _SYS_TTY_H_
 
-#include <sys/types.h>
 #include <sys/termios.h>
+#if defined(_KERNEL)
+#include <sys/types.h>
 #include <sys/spinlock.h>
 #include <sys/device.h>
 #include <dev/vcons/vcons.h>
+#endif
 
+#if defined(_KERNEL)
 #define TTY_RING_SIZE 32
-
 #define TTY_SOURCE_RAW 0x0001U   /* Raw text */
 #define TTY_SOURCE_DEV 0x0002U   /* Input from device (e.g keyboard) */
 
@@ -64,4 +66,5 @@ int tty_putc(struct tty *tty, int c, int flags);
 int tty_putstr(struct tty *tty, const char *s, size_t count);
 ssize_t tty_flush(struct tty *tty);
 
+#endif  /* defined(_KERNEL) */
 #endif  /* !_SYS_TTY_H_ */

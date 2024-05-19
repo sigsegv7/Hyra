@@ -7,5 +7,6 @@ sys_headers=$(cat <<END
     queue.h
     signal.h
     termios.h
+    tty.h
 END
 )
