@@ -53,4 +53,6 @@ struct auxv_entry {
     };
 };
 
+unsigned long auxv_entry(unsigned long type);
+
 #endif  /* _SYS_AUXV_H */

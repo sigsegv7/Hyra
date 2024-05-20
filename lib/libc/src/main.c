@@ -27,22 +27,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/auxv.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
 
 int main(int argc, const char **argv, const char **envp);
 
+static uint64_t auxv[AT_MAX_COUNT];
 FILE *stdout;
+
+unsigned long
+auxv_entry(unsigned long type)
+{
+    if (type >= AT_MAX_COUNT)
+        return 0;
+
+    return auxv[type];
+}
 
 int
 __libc_entry(uint64_t *ctx)
 {
+    uint64_t envc = 0;
     uint64_t argc = *ctx;
     const char **argv = (const char **)(ctx + 1);
     const char **envp = (const char **)(argv + argc + 1);
+    const struct auxv_entry *auxvp = NULL;
+
+    /* Count envp entries */
+    for (const char **env = envp; *env != NULL; ++env) {
+        ++envc;
+    }
 
     stdout = fdopen(STDOUT_FILENO, "a");
+    auxvp = (struct auxv_entry *)(envp + envc + 1);
+
+    /* Populate 'auxv' */
+    while (auxvp->tag != AT_NULL) {
+        if (auxvp->tag < AT_MAX_COUNT) {
+            auxv[auxvp->tag] = auxvp->val;
+        }
+        ++auxvp;
+    }
 
     return main(argc, argv, envp);
 }
