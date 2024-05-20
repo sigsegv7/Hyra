@@ -27,30 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
-
-#include <sys/types.h>
+#include <sys/reboot.h>
+#include <sys/panic.h>
 #include <sys/cdefs.h>
-#include <sys/proc.h>
+#include <sys/machdep.h>
 
-#if defined(_KERNEL)
+int
+reboot(int type)
+{
+    __TRY_CALL(cpu_reset);
 
-#define MAXCPUS 32
+    /* Should be unreachable if the reboot works */
+    return -1;
+}
 
-int processor_init_pcb(struct proc *proc);
-int processor_free_pcb(struct proc *proc);
-void processor_switch_to(struct proc *old_td, struct proc *new_td);
-void processor_init(void);
-void processor_halt(void);
-void intr_mask(void);
-void intr_unmask(void);
-void machine_panic(void);
-__weak void chips_init(void);
-__weak void pre_init(void);
-__weak void serial_dbgch(char c);
-__weak void cpu_halt_others(void);
-__weak void cpu_reset(void);
-
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+/*
+ * Arg0: Type
+ */
+uint64_t
+sys_reboot(struct syscall_args *args)
+{
+    return reboot(args->arg0);
+}

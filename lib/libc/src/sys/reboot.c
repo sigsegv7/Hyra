@@ -27,30 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MACHDEP_H_
-#define _SYS_MACHDEP_H_
+#include <sys/syscall.h>
+#include <sys/reboot.h>
 
-#include <sys/types.h>
-#include <sys/cdefs.h>
-#include <sys/proc.h>
-
-#if defined(_KERNEL)
-
-#define MAXCPUS 32
-
-int processor_init_pcb(struct proc *proc);
-int processor_free_pcb(struct proc *proc);
-void processor_switch_to(struct proc *old_td, struct proc *new_td);
-void processor_init(void);
-void processor_halt(void);
-void intr_mask(void);
-void intr_unmask(void);
-void machine_panic(void);
-__weak void chips_init(void);
-__weak void pre_init(void);
-__weak void serial_dbgch(char c);
-__weak void cpu_halt_others(void);
-__weak void cpu_reset(void);
-
-#endif  /* defined(_KERNEL) */
-#endif  /* !_SYS_MACHDEP_H_ */
+/*
+ * Reboots the system.
+ *
+ * @type: Reboot method.
+ *
+ * On success, this function does not return.
+ * On failure, a value < 0 is returned.
+ */
+int
+reboot(int type)
+{
+    return syscall(SYS_reboot);
+}

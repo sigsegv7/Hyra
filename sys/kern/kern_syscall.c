@@ -34,6 +34,7 @@
 #include <sys/filedesc.h>
 #include <sys/system.h>
 #include <sys/exec.h>
+#include <sys/reboot.h>
 #include <sys/vfs.h>
 #include <vm/map.h>
 
@@ -48,5 +49,6 @@ uint64_t(*g_syscall_table[__MAX_SYSCALLS])(struct syscall_args *args) = {
     sys_munmap,
     sys_ioctl,
     sys_execv,
-    sys_mount
+    sys_mount,
+    sys_reboot
 };

@@ -48,6 +48,7 @@ enum {
     SYS_ioctl,
     SYS_execv,
     SYS_mount,
+    SYS_reboot,
     __MAX_SYSCALLS
 };
 

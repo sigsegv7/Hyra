@@ -331,6 +331,15 @@ processor_switch_to(struct proc *old_td, struct proc *new_td)
 }
 
 void
+cpu_reset(void)
+{
+    for (;;) {
+        /* Pulse the reset line */
+        outb(0x64, 0xFE);
+    }
+}
+
+void
 processor_init(void)
 {
     /* Indicates what doesn't need to be init anymore */

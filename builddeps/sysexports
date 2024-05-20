@@ -8,5 +8,6 @@ sys_headers=$(cat <<END
     signal.h
     termios.h
     tty.h
+    reboot.h
 END
 )
