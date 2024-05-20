@@ -124,10 +124,6 @@ __tty_flush(struct tty *tty)
     return count;
 }
 
-/*
- * Device structure routine for reading a
- * TTY device file.
- */
 static int
 tty_dev_read(struct device *dev, struct sio_txn *sio)
 {
