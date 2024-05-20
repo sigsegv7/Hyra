@@ -33,6 +33,6 @@
 #include <sys/termios.h>
 
 int tcgetattr(int fd, struct termios *termios_p);
-int tcsetattr(int fd, struct termios *termios_p);
+int tcsetattr(int fd, int op, struct termios *termios_p);
 
 #endif  /* !_TERMIOS_H_ */
