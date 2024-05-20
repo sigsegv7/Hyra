@@ -174,6 +174,20 @@ tty_ioctl(struct device *dev, uint32_t cmd, uintptr_t arg)
     return 0;
 }
 
+static int
+tty_open(struct device *dev)
+{
+    /* TODO: Support multiple TTYs */
+    struct tty *tty = &g_root_tty;
+    struct tty_ring *ring = &tty->outring;
+
+    /* Ensure the ring is clean */
+    spinlock_acquire(&tty->rlock);
+    tty_reset_ring(ring);
+    spinlock_release(&tty->rlock);
+    return 0;
+}
+
 /*
  * Serialized wrapper over __tty_flush()
  */
@@ -286,6 +300,7 @@ tty_attach(struct tty *tty)
 
     dev->read = tty_dev_read;
     dev->ioctl = tty_ioctl;
+    dev->open = tty_open;
     dev->blocksize = 1;
 
     snprintf(devname, sizeof(devname), "tty%d", tty->id);
