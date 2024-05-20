@@ -28,6 +28,7 @@
  */
 
 #include <sys/types.h>
+#include <stdint.h>
 #include <stdio.h>
 
 static inline void
@@ -48,6 +49,48 @@ printstr(char *buf, size_t size, size_t *off, const char *s)
     buf[*off] = 0;
 }
 
+static void
+dec_to_str(int value, char *buf, size_t size, size_t *off)
+{
+        size_t i = 0;
+        uint8_t is_negative = 0;
+        uint8_t tmp;
+        char intbuf[4096];
+
+        if (value == 0) {
+            intbuf[i++] = '0';
+            intbuf[i++] = '\0';
+            printstr(buf, size, off, intbuf);
+            return;
+        }
+
+        if (value < 0) {
+            /* Easier to handle positive numbers */
+            value *= -1;
+            is_negative = 1;
+        }
+
+        while (value > 0) {
+            intbuf[i++] = '0' + (value % 10);
+            value /= 10;
+        }
+
+        if (is_negative) {
+            intbuf[i++] = '-';
+        }
+
+        intbuf[i--] = '\0';
+
+        /* Result is in reverse */
+        for (int j = 0; j < i; ++j, --i) {
+            tmp = intbuf[j];
+            intbuf[j] = intbuf[i];
+            intbuf[i] = tmp;
+        }
+
+        printstr(buf, size, off, intbuf);
+}
+
 int
 vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
 {
@@ -55,6 +98,7 @@ vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
     ssize_t num = 0;
     char c, c1;
     const char *tmp_str;
+    int tmp_num;
 
     while (off < (size - 1)) {
         while (*fmt && *fmt != '%') {
@@ -74,6 +118,10 @@ vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
         case 's':
             tmp_str = va_arg(ap, const char *);
             printstr(s, size, &off, tmp_str);
+            break;
+        case 'd':
+            tmp_num = va_arg(ap, int);
+            dec_to_str(tmp_num, s, size, &off);
             break;
         }
     }
