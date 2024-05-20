@@ -346,6 +346,12 @@ nvme_dev_write(struct device *dev, struct sio_txn *sio)
     return nvme_dev_rw(dev, sio, true);
 }
 
+static int
+nvme_dev_open(struct device *dev)
+{
+    return 0;
+}
+
 /*
  * Get identify data for namespace
  *
@@ -409,6 +415,7 @@ nvme_init_ns(struct nvme_state *state, uint16_t nsid)
     dev = device_alloc();
     dev->read = nvme_dev_read;
     dev->write = nvme_dev_write;
+    dev->open = nvme_dev_open;
     dev->blocksize = ns->lba_bsize;
     dev->mmap = NULL;
     ns->dev_id = device_create(dev, state->major, nsid);

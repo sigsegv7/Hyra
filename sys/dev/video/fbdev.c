@@ -83,6 +83,12 @@ fbdev_mmap(struct device *dev, off_t off, vm_prot_t prot)
     return base + off;
 }
 
+static int
+fbdev_open(struct device *dev)
+{
+    return 0;
+}
+
 struct fbdev
 fbdev_get_front(void)
 {
@@ -104,6 +110,7 @@ fbdev_init(void)
     dev->write = NULL;
     dev->mmap = fbdev_mmap;
     dev->ioctl = fbdev_ioctl;
+    dev->open = fbdev_open;
 
     device_create(dev, device_alloc_major(), 1);
     devfs_add_dev("fb", dev);
