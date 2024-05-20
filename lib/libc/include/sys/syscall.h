@@ -45,6 +45,7 @@
 #define SYS_ioctl  9
 #define SYS_execv  10
 #define SYS_mount  11
+#define SYS_reboot 12
 
 #if !defined(__ASSEMBLER__)
 __attribute__((__always_inline__))
