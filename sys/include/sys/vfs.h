@@ -44,13 +44,16 @@ extern struct vnode *g_root_vnode;
 
 void vfs_init(void);
 struct fs_info *vfs_byname(const char *name);
-int vfs_vget(struct vnode *parent, const char *name, struct vnode **vp);
 
+int vfs_vget(struct vnode *parent, const char *name, struct vnode **vp);
 int vfs_path_to_node(const char *path, struct vnode **vp);
+
 char *vfs_get_fname_at(const char *path, size_t idx);
 int vfs_rootname(const char *path, char **new_path);
+
 bool vfs_is_valid_path(const char *path);
 ssize_t vfs_hash_path(const char *path);
+
 ssize_t vfs_read(struct vnode *vp, struct sio_txn *sio);
 ssize_t vfs_write(struct vnode *vp, struct sio_txn *sio);
 int vfs_getattr(struct vnode *vp, struct vattr *vattr);
@@ -58,5 +61,4 @@ int vfs_getattr(struct vnode *vp, struct vattr *vattr);
 uint64_t sys_mount(struct syscall_args *args);
 
 #endif /* defined(_KERNEL) */
-
 #endif  /* !_SYS_VFS_H_ */
