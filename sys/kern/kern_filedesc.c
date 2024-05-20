@@ -291,10 +291,13 @@ open(const char *pathname, int oflag)
     int status;
 
     /*
-     * Attempt to create a vnode and allocate a
-     * file descriptor
+     * Attempt to create a vnode, call the open hook then
+     * allocate a file descriptor
      */
     if ((status = vfs_path_to_node(pathname, &vp)) != 0) {
+        return status;
+    }
+    if ((status = vfs_open(vp)) != 0) {
         return status;
     }
     if ((status = fd_alloc(this_td(), &fd)) != 0) {

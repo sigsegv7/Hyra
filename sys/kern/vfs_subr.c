@@ -239,3 +239,11 @@ vfs_getattr(struct vnode *vp, struct vattr *vattr)
 {
     return vp->vops->getattr(vp, vattr);
 }
+
+int vfs_open(struct vnode *vp)
+{
+    if (vp->vops->open == NULL)
+        return -EIO;
+
+    return vp->vops->open(vp);
+}
