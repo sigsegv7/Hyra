@@ -142,8 +142,8 @@ tty_dev_read(struct device *dev, struct sio_txn *sio)
         len = max_len;
 
     /*
-     * Transfer data from the TTY ring with SIO and
-     * flush it.
+     * Transfer data from the TTY ring with SIO then
+     * ensure the ring is clean by resetting it.
      *
      * TODO: As of now we are just reading the root
      *       TTY, add support for multiple TTYs.
