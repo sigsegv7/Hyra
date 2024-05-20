@@ -155,7 +155,7 @@ tty_dev_read(struct device *dev, struct sio_txn *sio)
 }
 
 static int
-tty_ioctl(struct device *dev, uint32_t cmd, uintptr_t arg)
+tty_dev_ioctl(struct device *dev, uint32_t cmd, uintptr_t arg)
 {
     /* TODO: Support multiple TTYs */
     struct termios *tp = &g_root_tty.termios;
@@ -175,7 +175,7 @@ tty_ioctl(struct device *dev, uint32_t cmd, uintptr_t arg)
 }
 
 static int
-tty_open(struct device *dev)
+tty_dev_open(struct device *dev)
 {
     /* TODO: Support multiple TTYs */
     struct tty *tty = &g_root_tty;
@@ -299,8 +299,8 @@ tty_attach(struct tty *tty)
         return tmp;
 
     dev->read = tty_dev_read;
-    dev->ioctl = tty_ioctl;
-    dev->open = tty_open;
+    dev->ioctl = tty_dev_ioctl;
+    dev->open = tty_dev_open;
     dev->blocksize = 1;
 
     snprintf(devname, sizeof(devname), "tty%d", tty->id);
