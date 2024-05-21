@@ -79,7 +79,9 @@ struct proc {
     struct vm_range addr_range[PROC_MAX_ADDR_RANGE];
     struct spinlock lock;
     uint8_t is_user;
+    uint8_t rested;
     uint32_t signal;
+    uint32_t priority;
     struct filedesc *fds[PROC_MAX_FDS];
     struct spinlock mapspace_lock;
     struct vm_mapspace mapspace;

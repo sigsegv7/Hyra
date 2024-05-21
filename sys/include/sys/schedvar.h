@@ -30,7 +30,32 @@
 #ifndef _SYS_SCHEDVAR_H_
 #define _SYS_SCHEDVAR_H_
 
+#include <sys/cdefs.h>
+#include <sys/proc.h>
+#include <sys/queue.h>
+
 #define DEFAULT_TIMESLICE_USEC 3000
 #define SHORT_TIMESLICE_USEC 10
+
+#define SCHED_POLICY_MLFQ 0x0000U   /* Multilevel feedback queue */
+#define SCHED_POLICY_RR   0x0001U   /* Round robin */
+
+typedef uint8_t schedpolicy_t;
+
+/* Might be set by kconf(1) */
+#if defined(__SCHED_NQUEUE)
+#define SCHED_NQUEUE __SCHED_NQUEUE
+#else
+#define SCHED_NQUEUE 4
+#endif
+
+/* Ensure SCHED_NQUEUE is an acceptable value */
+__STATIC_ASSERT(SCHED_NQUEUE <= 8, "SCHED_NQUEUE exceeds max");
+__STATIC_ASSERT(SCHED_NQUEUE > 0, "SCHED_NQUEUE cannot be zero");
+
+struct sched_queue {
+    TAILQ_HEAD(, proc) q;
+    size_t nthread;
+};
 
 #endif /* !_SYS_SCHEDVAR_H_ */

@@ -29,43 +29,242 @@
 
 #include <sys/sched.h>
 #include <sys/schedvar.h>
-#include <sys/sched_state.h>
-#include <sys/types.h>
-#include <sys/timer.h>
-#include <sys/cdefs.h>
-#include <sys/spinlock.h>
-#include <sys/loader.h>
-#include <sys/panic.h>
 #include <sys/machdep.h>
+#include <sys/loader.h>
+#include <sys/errno.h>
+#include <sys/cdefs.h>
 #include <sys/filedesc.h>
+#include <sys/timer.h>
+#include <sys/panic.h>
 #include <sys/signal.h>
 #include <fs/initramfs.h>
 #include <vm/dynalloc.h>
 #include <vm/physseg.h>
-#include <vm/pmap.h>
 #include <vm/map.h>
-#include <vm/vm.h>
-#include <assert.h>
+#include <vm/pmap.h>
 #include <string.h>
+#include <assert.h>
 
 /*
- * Thread ready queue - all threads ready to be
- * scheduled should be added to this queue.
+ * Thread ready queues - all threads ready to be
+ * scheduled should be added to the toplevel queue.
  */
-static TAILQ_HEAD(, proc) td_queue;
-static size_t nthread = 0;
+static struct sched_queue qlist[SCHED_NQUEUE];
 
 /*
- * Thread queue lock - all operations to `td_queue'
+ * Global scheduler state.
+ */
+static size_t nthread = 0;
+static schedpolicy_t policy = SCHED_POLICY_MLFQ;
+
+/*
+ * Thread queue lock - all operations to `qlist'
  * must be done with this lock acquired.
  *
  * This lock is aligned on a cache line boundary to ensure
- * it has its own cacheline to reduce contention. This is
+ * it has its own cache line to reduce contention. This is
  * because it is constantly acquired and released on every
  * processor.
  */
 __cacheline_aligned
 static struct spinlock tdq_lock = {0};
+
+/*
+ * Lower thread priority.
+ */
+static inline void
+td_pri_lower(struct proc *td)
+{
+    if (td->priority < (SCHED_NQUEUE - 1))
+        ++td->priority;
+}
+
+/*
+ * Raise thread priority.
+ */
+static inline void
+td_pri_raise(struct proc *td)
+{
+    if (td->priority > 0)
+        --td->priority;
+}
+
+/*
+ * Called during preemption. We raise the priority
+ * if the thread has been rested. If the thread has not
+ * been rested, we lower its priority.
+ */
+static void
+td_pri_update(struct proc *td)
+{
+    if (td->rested) {
+        td->rested = 0;
+        td_pri_raise(td);
+        return;
+    }
+
+    td_pri_lower(td);
+}
+
+/*
+ * Enqueue a thread into the scheduler.
+ */
+static void
+sched_enqueue_td(struct proc *td)
+{
+    struct sched_queue *queue;
+
+    spinlock_acquire(&tdq_lock);
+    queue = &qlist[td->priority];
+
+    TAILQ_INSERT_TAIL(&queue->q, td, link);
+    spinlock_release(&tdq_lock);
+}
+
+/*
+ * Dequeue a thread from a queue.
+ */
+static struct proc *
+sched_dequeue_td(void)
+{
+    struct sched_queue *queue;
+    struct proc *td = NULL;
+
+    spinlock_acquire(&tdq_lock);
+
+    /*
+     * Try to pop a thread from a queue. We start
+     * at the lowest priority which is 0.
+     */
+    for (size_t i = 0; i < SCHED_NQUEUE; ++i) {
+        queue = &qlist[i];
+
+        if (!TAILQ_EMPTY(&queue->q)) {
+            td = TAILQ_FIRST(&queue->q);
+            TAILQ_REMOVE(&queue->q, td, link);
+            break;
+        }
+    }
+
+    spinlock_release(&tdq_lock);
+    return td;
+}
+
+/*
+ * Create a new thread stack.
+ * sched_new_td() helper.
+ */
+static uintptr_t
+sched_create_stack(bool is_user, struct exec_args args, struct proc *td)
+{
+    int status;
+    uintptr_t stack;
+    struct vm_range *stack_range;
+    const vm_prot_t USERSTACK_PROT = PROT_WRITE | PROT_USER;
+
+    stack_range = &td->addr_range[ADDR_RANGE_STACK];
+
+    /*
+     * Kernel stacks can be allocated with dynalloc() as they
+     * are on the higher half.
+     */
+    if (!is_user) {
+        stack = (uintptr_t)dynalloc(PROC_STACK_SIZE);
+        stack_range->start = stack;
+        stack_range->end = stack + PROC_STACK_SIZE;
+        return loader_init_stack((void *)(stack + PROC_STACK_SIZE), args);
+    }
+
+    stack = vm_alloc_pageframe(PROC_STACK_PAGES);
+    if (stack == 0) {
+        return 0;
+    }
+
+    status = vm_map_create(args.vas, stack, stack, USERSTACK_PROT, PROC_STACK_SIZE);
+    if (status != 0) {
+        vm_free_pageframe(stack, PROC_STACK_PAGES);
+        return 0;
+    }
+
+    stack_range->start = stack;
+    stack_range->end = stack + PROC_STACK_SIZE;
+
+    memset(USER_TO_KERN(stack), 0, PROC_STACK_SIZE);
+    stack = loader_init_stack((void *)USER_TO_KERN(stack + PROC_STACK_SIZE), args);
+    return stack;
+}
+
+/*
+ * Create a new thread.
+ *
+ * @ip: Instruction pointer to start at.
+ * @is_user: True for user program.
+ * @exec_args: Common exec args.
+ */
+static int
+sched_new_td(uintptr_t ip, bool is_user, struct exec_args args, struct vm_range *prog_range,
+             struct proc **res)
+{
+    struct vm_range *exec_range;
+    struct proc *td;
+    struct trapframe *tf;
+    uintptr_t stack;
+    int retval = 0;
+
+    td = dynalloc(sizeof(struct proc));
+    tf = dynalloc(sizeof(struct trapframe));
+    if (td == NULL || tf == NULL) {
+        retval = -ENOMEM;
+        goto done;
+    }
+
+    /* Keep them in a known state */
+    memset(td, 0, sizeof(*td));
+    memset(tf, 0, sizeof(*tf));
+
+    /* Try to create a stack */
+    stack = sched_create_stack(is_user, args, td);
+    if (stack == 0) {
+        retval = -ENOMEM;
+        goto done;
+    }
+
+    /* Setup initial thread state */
+    td->pid = nthread++;
+    td->tf = tf;
+    td->addrsp = args.vas;
+    td->is_user = is_user;
+    processor_init_pcb(td);
+
+    /* Setup each mapping table */
+    for (size_t i = 0; i < MTAB_ENTRIES; ++i) {
+        TAILQ_INIT(&td->mapspace.mtab[i]);
+    }
+
+    /* Setup standard file descriptors */
+    __assert(fd_alloc(td, NULL) == 0);  /* STDIN */
+    __assert(fd_alloc(td, NULL) == 0);  /* STDOUT */
+    __assert(fd_alloc(td, NULL) == 0);  /* STDERR */
+
+    exec_range = &td->addr_range[ADDR_RANGE_EXEC];
+    memcpy(exec_range, prog_range, sizeof(struct vm_range));
+
+    /* Init the trapframe */
+    if (!is_user) {
+        init_frame(tf, ip, stack);
+    } else {
+        init_frame_user(tf, ip, KERN_TO_USER(stack));
+    }
+done:
+    if (retval != 0 && td != NULL)
+        dynfree(td);
+    if (retval != 0 && tf != NULL)
+        dynfree(td);
+    if (retval == 0 && res != NULL)
+        *res = td;
+
+    return retval;
+}
 
 /*
  * Perform timer oneshot
@@ -86,170 +285,78 @@ sched_oneshot(bool now)
 }
 
 /*
- * Push a thread into the thread ready queue
- * allowing it to be eventually dequeued
- * and ran.
+ * Enter the schedulera and wait until
+ * preemption.
  */
-static void
-sched_enqueue_td(struct proc *td)
+void
+sched_enter(void)
 {
-    /* Sanity check */
-    if (td == NULL)
-        return;
+    sched_oneshot(false);
 
-    spinlock_acquire(&tdq_lock);
-
-    td->pid = nthread++;
-    TAILQ_INSERT_TAIL(&td_queue, td, link);
-
-    spinlock_release(&tdq_lock);
-}
-
-/*
- * Dequeue the first thread in the thread ready
- * queue.
- */
-static struct proc *
-sched_dequeue_td(void)
-{
-    struct proc *td = NULL;
-
-    spinlock_acquire(&tdq_lock);
-
-    if (!TAILQ_EMPTY(&td_queue)) {
-        td = TAILQ_FIRST(&td_queue);
-        TAILQ_REMOVE(&td_queue, td, link);
-    }
-
-    spinlock_release(&tdq_lock);
-    return td;
-}
-
-__noreturn static void
-sched_idle(void)
-{
     for (;;) {
         hint_spinwait();
     }
 }
 
 /*
- * Processor awaiting tasks to be assigned will be here spinning.
+ * Initialize all of the queues.
  */
-__noreturn static void
-sched_enter(void)
+static void
+sched_init_queues(void)
 {
-    sched_oneshot(false);
-    sched_idle();
-    __builtin_unreachable();
+    for (size_t i = 0; i < SCHED_NQUEUE; ++i) {
+        TAILQ_INIT(&qlist[i].q);
+    }
 }
 
-static uintptr_t
-sched_create_stack(struct vas vas, bool user, struct exec_args args,
-                   struct proc *td)
+/*
+ * Load the first thread (init)
+ */
+static void
+sched_load_init(void)
 {
-    int status;
-    uintptr_t stack;
-    const vm_prot_t USER_STACK_PROT = PROT_WRITE | PROT_USER;
-    struct vm_range *stack_range = &td->addr_range[ADDR_RANGE_STACK];
+    struct exec_args args;
+    struct proc *init;
+    struct auxval *auxvp = &args.auxv;
+    struct vm_range init_range;
+    int tmp;
 
-    if (!user) {
-        stack = (uintptr_t)dynalloc(PROC_STACK_SIZE);
-        stack_range->start = (uintptr_t)stack;
-        stack_range->end = (uintptr_t)stack + PROC_STACK_SIZE;
-        return loader_init_stack((void *)(stack + PROC_STACK_SIZE), args);
-    }
+    char *argv[] = {"/usr/sbin/init", NULL};
+    char *envp[] = {NULL};
+    const char *init_bin;
 
-    stack = vm_alloc_pageframe(PROC_STACK_PAGES);
+    if ((init_bin = initramfs_open("/usr/sbin/init")) == NULL)
+        panic("Could not open /usr/sbin/init\n");
 
-    stack_range->start = stack;
-    stack_range->end = stack + PROC_STACK_SIZE;
-    status = vm_map_create(vas, stack, stack, USER_STACK_PROT, PROC_STACK_SIZE);
+    args.vas = pmap_create_vas(vm_get_ctx());
+    args.argp = argv;
+    args.envp = envp;
 
-    if (status != 0) {
-        return 0;
-    }
+    tmp = loader_load(args.vas, init_bin, auxvp, 0, NULL, &init_range);
+    if (tmp != 0)
+        panic("Failed to load init\n");
 
-    memset(USER_TO_KERN(stack), 0, PROC_STACK_SIZE);
-    stack = loader_init_stack((void *)USER_TO_KERN(stack + PROC_STACK_SIZE), args);
-    return stack;
-}
+    if (sched_new_td(auxvp->at_entry, true, args, &init_range, &init) != 0)
+        panic("Failed to create init thread\n");
 
-static struct proc *
-sched_create_td(uintptr_t rip, struct exec_args args, bool is_user,
-                struct vm_range *prog_range)
-{
-    struct proc *td;
-    struct vm_range *exec_range;
-    uintptr_t stack;
-    struct trapframe *tf;
-
-    tf = dynalloc(sizeof(struct trapframe));
-    if (tf == NULL) {
-        return NULL;
-    }
-
-    td = dynalloc(sizeof(struct proc));
-    if (td == NULL) {
-        /* TODO: Free stack */
-        dynfree(tf);
-        return NULL;
-    }
-
-    memset(td, 0, sizeof(struct proc));
-    stack = sched_create_stack(args.vas, is_user, args, td);
-    if (stack == 0) {
-        dynfree(tf);
-        dynfree(td);
-        return NULL;
-    }
-
-    memset(tf, 0, sizeof(struct trapframe));
-
-    /* Setup process itself */
-    exec_range = &td->addr_range[ADDR_RANGE_EXEC];
-    td->pid = 0;        /* Don't assign PID until enqueued */
-    td->cpu = NULL;     /* Not yet assigned a core */
-    td->tf = tf;
-    td->addrsp = args.vas;
-    td->is_user = is_user;
-    for (size_t i = 0; i < MTAB_ENTRIES; ++i) {
-        /* Init the memory mapping table */
-        TAILQ_INIT(&td->mapspace.mtab[i]);
-    }
-    if (prog_range != NULL) {
-        memcpy(exec_range, prog_range, sizeof(struct vm_range));
-    }
-    processor_init_pcb(td);
-
-    /* Allocate standard file descriptors */
-    __assert(fd_alloc(td, NULL) == 0);       /* STDIN */
-    __assert(fd_alloc(td, NULL) == 0);       /* STDOUT */
-    __assert(fd_alloc(td, NULL) == 0);       /* STDERR */
-
-    /* Setup trapframe */
-    if (!is_user) {
-        init_frame(tf, rip, (uintptr_t)stack);
-    } else {
-        init_frame_user(tf, rip, KERN_TO_USER(stack));
-    }
-    return td;
+    sched_enqueue_td(init);
 }
 
 static void
 sched_destroy_td(struct proc *td)
 {
-    const struct vm_range *stack_range = &td->addr_range[ADDR_RANGE_STACK];
-    struct vm_range *exec_range = &td->addr_range[ADDR_RANGE_EXEC];
+    struct vm_range *stack_range;
+    struct vm_range *exec_range;
     vm_mapq_t *mapq;
 
     processor_free_pcb(td);
+    stack_range = &td->addr_range[ADDR_RANGE_STACK];
+    exec_range = &td->addr_range[ADDR_RANGE_EXEC];
 
     /*
-     * User stacks are allocated with vm_alloc_pageframe(),
-     * while kernel stacks are allocated with dynalloc().
-     * We want to check if we are a user program or kernel
-     * program to perform the proper deallocation method.
+     * User thread's have their stack allocated
+     * with vm_alloc_pageframe() and kernel thread's
+     * have their stacks allocated with dynalloc()
      */
     if (td->is_user) {
         vm_free_pageframe(stack_range->start, PROC_STACK_PAGES);
@@ -257,41 +364,18 @@ sched_destroy_td(struct proc *td)
         dynfree((void *)stack_range->start);
     }
 
-    /* Close all of the file descriptors */
-    for (size_t i = 0; i < PROC_MAX_FDS; ++i) {
-        fd_close_fdnum(td, i);
-    }
-
     for (size_t i = 0; i < MTAB_ENTRIES; ++i) {
         mapq = &td->mapspace.mtab[i];
         vm_free_mapq(mapq);
     }
 
+    for (size_t i = 0; i < PROC_MAX_FDS; ++i) {
+        fd_close_fdnum(td, i);
+    }
+
     loader_unload(td->addrsp, exec_range);
     pmap_free_vas(vm_get_ctx(), td->addrsp);
     dynfree(td);
-}
-
-/*
- * Create the idle thread.
- */
-static void
-sched_make_idletd(void)
-{
-    struct exec_args exec_args = {0};
-    struct vm_range range;
-    struct proc *td;
-
-    char *argv[] = {NULL};
-    char *envp[] = {NULL};
-
-    exec_args.argp = argv;
-    exec_args.envp = envp;
-    exec_args.vas = pmap_read_vas();
-
-    td = sched_create_td((uintptr_t)sched_idle, exec_args, false, &range);
-
-    sched_enqueue_td(td);
 }
 
 /*
@@ -301,24 +385,29 @@ sched_make_idletd(void)
 void
 sched_rest(void)
 {
+    struct proc *td = this_td();
+
+    if (td == NULL)
+        return;
+
+    td->rested = 1;
     sched_oneshot(true);
 }
 
 void
 sched_exit(void)
 {
-    struct proc *td;
+    struct proc *td = this_td();
     struct vas kvas = vm_get_kvas();
 
+    spinlock_acquire(&tdq_lock);
     intr_mask();
-    td = this_td();
-    spinlock_acquire(&td->lock);    /* Never release */
 
-    /* Switch back to the kernel address space and destroy ourself */
+    /* Switch to kernel VAS and destroy td */
     pmap_switch_vas(vm_get_ctx(), kvas);
-    TAILQ_REMOVE(&td_queue, td, link);
     sched_destroy_td(td);
 
+    spinlock_release(&tdq_lock);
     intr_unmask();
     sched_enter();
 }
@@ -339,52 +428,49 @@ this_td(void)
 
 /*
  * Thread context switch routine
+ *
+ * Handles the transition from the currently running
+ * thread to the next thread.
  */
 void
 sched_context_switch(struct trapframe *tf)
 {
     struct cpu_info *ci = this_cpu();
     struct sched_state *state = &ci->sched_state;
-    struct proc *td, *next_td;
+    struct proc *next_td, *td = state->td;
 
-    if (state->td != NULL) {
+    if (td != NULL) {
         signal_handle(state->td);
     }
 
     /*
-     * If we have no threads, we should not
-     * preempt at all.
+     * If a thread is currently running and our policy is
+     * MLFQ, then we should update the thread's priority.
      */
-    if (nthread == 0 || (next_td = sched_dequeue_td()) == NULL) {
+    if (td != NULL && policy == SCHED_POLICY_MLFQ) {
+        td_pri_update(td);
+    }
+
+    /* Don't preempt if we have no threads */
+    if ((next_td = sched_dequeue_td()) == NULL) {
         sched_oneshot(false);
         return;
     }
 
     /*
-     * If we have a thread currently running and we are switching
-     * to another, we shall save our current register state
-     * by copying the trapframe.
+     * If we have a thread currently running, then we should save
+     * its current register state and re-enqueue it.
      */
-    if (state->td != NULL) {
-        td = state->td;
-        memcpy(td->tf, tf, sizeof(struct trapframe));
-    }
-
-    /* Copy over the next thread's register state to us */
-    memcpy(tf, next_td->tf, sizeof(struct trapframe));
-
-    td = state->td;
-    state->td = next_td;
-
-    /* Re-enqueue the previous thread if it exists */
     if (td != NULL) {
+        memcpy(td->tf, tf, sizeof(struct trapframe));
         sched_enqueue_td(td);
     }
 
-    /* Do architecture specific context switch logic */
+    /* Perform the switch */
+    memcpy(tf, next_td->tf, sizeof(struct trapframe));
     processor_switch_to(td, next_td);
 
-    /* Done, switch out our vas and oneshot */
+    state->td = next_td;
     pmap_switch_vas(vm_get_ctx(), next_td->addrsp);
     sched_oneshot(false);
 }
@@ -399,50 +485,6 @@ sys_exit(struct syscall_args *args)
 void
 sched_init(void)
 {
-    struct proc *init;
-    struct vm_range init_range;
-    const char *init_bin;
-
-    struct exec_args exec_args = {0};
-    struct auxval *auxvp = &exec_args.auxv;
-    struct vas vas;
-
-    char *argv[] = {"/usr/sbin/init", NULL};
-    char *envp[] = {NULL};
-
-    vas = pmap_create_vas(vm_get_ctx());
-    exec_args.vas = vas;
-    exec_args.argp = argv;
-    exec_args.envp = envp;
-
-    TAILQ_INIT(&td_queue);
-    sched_make_idletd();
-
-    if ((init_bin = initramfs_open("/usr/sbin/init")) == NULL) {
-        panic("Could not open /usr/sbin/init\n");
-    }
-    if (loader_load(vas, init_bin, auxvp, 0, NULL, &init_range) != 0) {
-        panic("Could not load init\n");
-    }
-
-    init = sched_create_td((uintptr_t)auxvp->at_entry, exec_args, true, &init_range);
-    if (init == NULL) {
-        panic("Failed to create thread for init\n");
-    }
-
-    sched_enqueue_td(init);
-}
-
-/*
- * Setup scheduler related things and enqueue AP.
- */
-void
-sched_init_processor(struct cpu_info *ci)
-{
-    struct sched_state *sched_state = &ci->sched_state;
-    (void)sched_state;      /* TODO */
-
-    sched_enter();
-
-    __builtin_unreachable();
+    sched_init_queues();
+    sched_load_init();
 }

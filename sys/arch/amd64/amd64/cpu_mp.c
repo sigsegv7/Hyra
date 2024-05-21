@@ -51,18 +51,15 @@ static bool is_mp_supported = false;
 static void
 ap_trampoline(struct limine_smp_info *si)
 {
-    struct cpu_info *ci;
     static struct spinlock lock = {0};
 
     spinlock_acquire(&lock);
 
-    ci = (void *)si->extra_argument;
     pre_init();
     processor_init();
 
     spinlock_release(&lock);
-
-    sched_init_processor(ci);
+    sched_enter();
 
     /* Should not be reached */
     __assert(0);

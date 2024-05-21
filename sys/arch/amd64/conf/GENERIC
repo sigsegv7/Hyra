@@ -5,3 +5,4 @@ option PANIC_BEEP           yes
 
 // Kernel constants
 setval PANIC_BEEP_HZ        1050
+setval SCHED_NQUEUE         4

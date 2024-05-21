@@ -45,9 +45,9 @@ void sched_context_switch(struct trapframe *tf);
 void sched_rest(void);
 
 __noreturn
-uint64_t sys_exit(struct syscall_args *args);
+void sched_enter(void);
 
 __noreturn
-void sched_init_processor(struct cpu_info *ci);
+uint64_t sys_exit(struct syscall_args *args);
 
 #endif  /* !_SYS_SCHED_H_ */

@@ -103,7 +103,7 @@ main(void)
     ci = this_cpu();
 
     __TRY_CALL(ap_bootstrap, ci);
-    sched_init_processor(ci);
+    sched_enter();
 
     while (1);
     __builtin_unreachable();
