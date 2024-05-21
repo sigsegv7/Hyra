@@ -133,8 +133,8 @@ sched_dequeue_td(void)
     spinlock_acquire(&tdq_lock);
 
     /*
-     * Try to pop a thread from a queue. We start
-     * at the lowest priority which is 0.
+     * Try to pop a thread from a queue. We start at the
+     * highest priority which is 0.
      */
     for (size_t i = 0; i < SCHED_NQUEUE; ++i) {
         queue = &qlist[i];
