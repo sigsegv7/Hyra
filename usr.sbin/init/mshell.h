@@ -27,28 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include "mshell.h"
+#ifndef MSHELL_H
+#define MSHELL_H
 
-#define VERSION "v0.0.1"
+int  mshell_enter(void);
 
-static void
-loginfo(const char *s)
-{
-    fputs("init [*]: ", stdout);
-    fputs(s, stdout);
-    fflush(stdout);
-}
-
-int
-main(int argc, char **argv)
-{
-    loginfo("Hyra init " VERSION " loaded\n");
-    loginfo("Dropping into maintenance shell...\n");
-
-    if (mshell_enter() != 0)
-        loginfo("Failed to launch mshell!\n");
-
-    loginfo("** EXITING 0 **\n");
-    return 0;
-}
+#endif  /* MSHELL_H */
