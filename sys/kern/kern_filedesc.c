@@ -181,13 +181,7 @@ fd_from_fdnum(const struct proc *td, int fdno)
         return NULL;
     }
 
-    for (size_t i = 0; i < PROC_MAX_FDS; ++i) {
-        if (i == fdno && td->fds[i] != NULL) {
-            return td->fds[i];
-        }
-    }
-
-    return NULL;
+    return td->fds[fdno];
 }
 
 /*
