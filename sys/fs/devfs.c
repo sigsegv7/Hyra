@@ -178,6 +178,26 @@ vop_open(struct vnode *vp)
 }
 
 static int
+vop_close(struct vnode *vp)
+{
+    struct device_node *node;
+    struct device *dev;
+
+    if (vp == NULL) {
+        return -EIO;
+    }
+
+    node = vp->data;
+    dev = device_fetch(node->major, node->minor);
+
+    if (dev->close == NULL) {
+        return -EIO;
+    }
+
+    return dev->close(dev);
+}
+
+static int
 devfs_init(struct fs_info *info, struct vnode *source)
 {
     if (source != NULL)
@@ -270,5 +290,6 @@ struct vfsops g_devfs_ops = {
 struct vops g_devfs_vops = {
     .vget = vop_vget,
     .read = vop_read,
-    .open = vop_open
+    .open = vop_open,
+    .close = vop_close
 };
