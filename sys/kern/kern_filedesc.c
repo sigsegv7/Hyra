@@ -211,6 +211,10 @@ fd_close_fdnum(struct proc *td, int fdno)
         return;
     }
 
+    if (fd->vnode != NULL) {
+        vfs_close(fd->vnode);
+    }
+
     dynfree(fd);
     td->fds[fdno] = NULL;
 }

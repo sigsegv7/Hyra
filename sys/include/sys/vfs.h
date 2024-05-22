@@ -60,6 +60,7 @@ ssize_t vfs_write(struct vnode *vp, struct sio_txn *sio);
 int vfs_getattr(struct vnode *vp, struct vattr *vattr);
 int vfs_open(struct vnode *vp);
 
+int vfs_close(struct vnode *vp);
 uint64_t sys_mount(struct syscall_args *args);
 
 #endif /* defined(_KERNEL) */

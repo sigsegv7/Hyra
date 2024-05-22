@@ -247,3 +247,12 @@ int vfs_open(struct vnode *vp)
 
     return vp->vops->open(vp);
 }
+
+int
+vfs_close(struct vnode *vp)
+{
+    if (vp->vops->close == NULL)
+        return -EIO;
+
+    return vp->vops->close(vp);
+}

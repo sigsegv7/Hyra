@@ -45,6 +45,7 @@ struct vops {
     int(*write)(struct vnode *vp, struct sio_txn *sio);
     int(*getattr)(struct vnode *vp, struct vattr *vattr);
     int(*open)(struct vnode *vp);
+    int(*close)(struct vnode *vp);
 };
 
 struct vattr {
