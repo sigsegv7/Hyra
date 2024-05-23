@@ -33,6 +33,7 @@
 #include <sys/errno.h>
 #include <sys/spinlock.h>
 #include <sys/tty.h>
+#include <sys/intr.h>
 #include <machine/ioapic.h>
 #include <machine/idt.h>
 #include <machine/io.h>
@@ -49,6 +50,7 @@ static struct spinlock data_lock;
 static bool shift_key = false;
 static bool capslock = false;
 static bool capslock_released = true;
+static struct intr_info *irq_info;
 
 static int dev_send(bool aux, uint8_t data);
 
@@ -230,6 +232,10 @@ kb_isr(void *sf)
     uint8_t data;
     char c;
 
+    spinlock_acquire(&irq_info->lock);
+    ++irq_info->count;
+    spinlock_release(&irq_info->lock);
+
     spinlock_acquire(&data_lock);
     while (__TEST(inb(I8042_STATUS), I8042_OBUF_FULL)) {
         data = inb(I8042_DATA);
@@ -263,6 +269,11 @@ i8042_init(void)
     idt_set_desc(SYSVEC_PCKBD, IDT_INT_GATE_FLAGS, (uintptr_t)kb_isr, 0);
     ioapic_set_vec(1, SYSVEC_PCKBD);
     ioapic_irq_unmask(1);
+
+    /* Register the interrupt */
+    irq_info = intr_info_alloc("IOAPIC", "i8042");
+    irq_info->affinity = 0;
+    intr_register(irq_info);
 
     /* Setup config bits */
     conf = i8042_read_conf();
