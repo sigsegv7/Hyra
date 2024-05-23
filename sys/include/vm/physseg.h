@@ -35,6 +35,8 @@
 struct physmem_stat {
     size_t reserved_kib;     /* Reserved memory */
     size_t total_kib;        /* Total memory */
+    size_t avl_kib;          /* Available memory */
+    size_t alloc_kib;        /* Allocated physical memory */
 };
 
 void vm_physseg_init(void);

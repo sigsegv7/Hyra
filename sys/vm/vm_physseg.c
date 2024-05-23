@@ -70,6 +70,7 @@ static bitmap_t bitmap = NULL;
 static size_t pages_total = 0;
 static size_t pages_reserved = 0;
 static size_t last_used_idx = 0;
+static size_t pages_allocated = 0;
 static size_t bitmap_size = 0;
 static size_t highest_frame_idx;
 static size_t bitmap_free_start;    /* Beginning bit of free region */
@@ -220,6 +221,7 @@ vm_alloc_pageframe(size_t count)
             for (size_t i = tmp; i < last_used_idx; ++i)
                 bitmap_set_bit(bitmap, i);
 
+            pages_allocated += count;
             return tmp * vm_get_page_size();
         } else {
             pages = 0;
@@ -243,6 +245,8 @@ vm_free_pageframe(uintptr_t base, size_t count)
     for (uintptr_t p = base; p < base + (count*PAGE_SIZE); p += PAGE_SIZE) {
         bitmap_unset_bit(bitmap, p/0x1000);
     }
+
+    pages_allocated -= count;
 }
 
 void
@@ -262,5 +266,7 @@ vm_phys_memstat(void)
     vm_physseg_getstat();
     stat.total_kib = (pages_total * pagesize) / 1024;
     stat.reserved_kib = (pages_reserved * pagesize) / 1024;
+    stat.alloc_kib = (pages_allocated * pagesize) / 1024;
+    stat.avl_kib = stat.total_kib - stat.alloc_kib;
     return stat;
 }
