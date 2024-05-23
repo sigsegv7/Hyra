@@ -27,63 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/vfs.h>
-#include <sys/cdefs.h>
-#include <sys/mount.h>
+#ifndef _PROCFS_H_
+#define _PROCFS_H_
+
 #include <sys/types.h>
-#include <sys/vnode.h>
-#include <fs/initramfs.h>
-#include <fs/devfs.h>
-#include <fs/procfs.h>
-#include <assert.h>
-#include <string.h>
+#include <sys/mount.h>
+#include <sys/sio.h>
 
-__MODULE_NAME("vfs");
-__KERNEL_META("$Hyra$: vfs.c, Ian Marco Moffett, "
-              "Hyra Virtual File System");
-
-#define INITRAMFS_ID 0
-#define DEVFS_ID 1
-#define PROCFS_ID 2
-
-static struct fs_info filesystems[] = {
-    [INITRAMFS_ID] = { "initramfs", &g_initramfs_ops, NULL},
-    [DEVFS_ID]     = { "dev", &g_devfs_ops, &g_devfs_vops },
-    [PROCFS_ID]    = { "proc", &g_procfs_ops, &g_procfs_vops }
+struct proc_entry {
+    int(*read)(struct proc_entry *p, struct sio_txn *sio);
+    int(*write)(struct proc_entry *p, struct sio_txn *sio);
 };
 
-struct vnode *g_root_vnode = NULL;
+extern struct vfsops g_procfs_ops;
+extern struct vops g_procfs_vops;
 
-struct fs_info *
-vfs_byname(const char *name)
-{
-    for (int i = 0; i < __ARRAY_COUNT(filesystems); ++i) {
-        if (strcmp(filesystems[i].name, name) == 0) {
-            return &filesystems[i];
-        }
-    }
+int procfs_add_entry(const char *name, struct proc_entry *entry);
+struct proc_entry *procfs_alloc_entry(void);
 
-    return NULL;
-}
+/* procfs_subr.c */
+void procfs_populate(void);
 
-void
-vfs_init(void)
-{
-    struct fs_info *info;
-    struct vfsops *vfsops;
-
-    vfs_mount_init();
-    __assert(vfs_alloc_vnode(&g_root_vnode, NULL, VDIR) == 0);
-
-    for (int i = 0; i < __ARRAY_COUNT(filesystems); ++i) {
-        info = &filesystems[i];
-        vfsops = info->vfsops;
-
-        __assert(vfsops->init != NULL);
-        __assert(vfs_mount(info->name, 0, info) == 0);
-        vfsops->init(info, NULL);
-    }
-
-    g_root_vnode->vops = &g_initramfs_vops;
-    g_root_vnode->fs = &filesystems[INITRAMFS_ID];
-}
+#endif  /* !_PROCFS_H_ */
