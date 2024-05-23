@@ -39,6 +39,7 @@
 #include "mshell.h"
 
 #define INPUT_SIZE 32
+#define MAX_FILE_SIZE 1024
 #define TTY_DEV "/dev/tty1"
 #define PROMPT "mshell> "
 
@@ -56,8 +57,35 @@ help(void)
         "\treboot - reboot the system\n"
         "\ttty - show the current TTY\n"
         "\tpagesize - get the current page size\n"
+        "\tkversion - get the kernel version\n"
+        "\tmemstat - get info about memory\n"
         "\texit - exit the shell\n"
     );
+}
+
+static void
+print_file(const char *path)
+{
+    char buf[MAX_FILE_SIZE];
+    int fd = open(path, O_RDONLY);
+    int len;
+
+    if (fd < 0) {
+        printf("Failed to open %s\n", path);
+        return;
+    }
+
+    len = read(fd, buf, sizeof(buf));
+    if (len > MAX_FILE_SIZE) {
+        len = MAX_FILE_SIZE - 1;
+    }
+
+    if (len > 0) {
+        buf[len] = '\0';
+        printf("%s\n", buf);
+    }
+
+    close(fd);
 }
 
 static void
@@ -91,6 +119,10 @@ parse_input(struct mshell_state *state)
         help();
     } else if (strcmp(cmd, "exit") == 0) {
         state->running = 0;
+    } else if (strcmp(cmd, "kversion") == 0) {
+        print_file("/proc/version");
+    } else if (strcmp(cmd, "memstat") == 0) {
+        print_file("/proc/memstat");
     } else {
         printf("Unknown command '%s'\n", cmd);
         printf("Use 'help' for help\n");
