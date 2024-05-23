@@ -80,7 +80,6 @@ ap_bootstrap(struct cpu_info *ci)
 {
     struct limine_smp_response *resp = g_smp_req.response;
     struct limine_smp_info **cpus;
-    struct cpu_info *ap_ci = NULL;
     size_t cpu_init_counter;
 
     /* Should not happen */
@@ -101,11 +100,6 @@ ap_bootstrap(struct cpu_info *ci)
             continue;
         }
 
-        ap_ci = dynalloc(sizeof(struct cpu_info));
-        __assert(ap_ci != NULL);
-        cpu_attach(ap_ci);
-
-        cpus[i]->extra_argument = (uintptr_t)dynalloc(sizeof(struct cpu_info));
         cpus[i]->goto_address = ap_trampoline;
     }
 }
