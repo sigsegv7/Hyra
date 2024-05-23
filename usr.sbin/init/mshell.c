@@ -59,6 +59,7 @@ help(void)
         "\tpagesize - get the current page size\n"
         "\tkversion - get the kernel version\n"
         "\tmemstat - get info about memory\n"
+        "\tintr - get interrupt information\n"
         "\texit - exit the shell\n"
     );
 }
@@ -123,6 +124,8 @@ parse_input(struct mshell_state *state)
         print_file("/proc/version");
     } else if (strcmp(cmd, "memstat") == 0) {
         print_file("/proc/memstat");
+    } else if (strcmp(cmd, "intr") == 0) {
+        print_file("/proc/interrupts");
     } else {
         printf("Unknown command '%s'\n", cmd);
         printf("Use 'help' for help\n");
