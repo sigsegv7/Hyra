@@ -99,4 +99,9 @@ int pmap_free_vas(struct vm_ctx *, struct vas);
  * Unmap a page.
  */
 int pmap_unmap(struct vm_ctx *, struct vas, vaddr_t);
+
+/*
+ * Architecture specific init code for pmap
+ */
+int pmap_init(struct vm_ctx *);
 #endif  /* _VM_PMAP_H_ */

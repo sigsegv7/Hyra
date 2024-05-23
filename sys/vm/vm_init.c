@@ -29,6 +29,7 @@
 
 #include <vm/vm.h>
 #include <vm/physseg.h>
+#include <vm/pmap.h>
 #include <sys/panic.h>
 #include <assert.h>
 
@@ -74,6 +75,9 @@ vm_init(void)
     void *pool_va;
 
     kernel_vas = pmap_read_vas();
+    if (pmap_init(vm_get_ctx()) != 0) {
+        panic("Failed to init pmap layer\n");
+    }
 
     /* Setup virtual memory context */
     bsp_vm_ctx.dynalloc_pool_sz = DYNALLOC_POOL_SZ;

@@ -257,3 +257,9 @@ pmap_read_vas(void)
     vas.lock.lock = 0;
     return vas;
 }
+
+int
+pmap_init(struct vm_ctx *ctx)
+{
+    return 0;
+}
