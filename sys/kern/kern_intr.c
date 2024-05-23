@@ -65,9 +65,15 @@ proc_read(struct proc_entry *entry, struct sio_txn *sio)
             idx += res;
             p += res;
         }
+
+        if (idx >= (PROC_BUF_SIZE - 1)) {
+            break;
+        }
     }
 
-    len = strlen(buf);
+    len = idx + 1;
+    buf[idx] = '\0';
+
     if (sio->len > PROC_BUF_SIZE)
         sio->len = PROC_BUF_SIZE;
     if (len > sio->len)
@@ -75,7 +81,7 @@ proc_read(struct proc_entry *entry, struct sio_txn *sio)
 
     memcpy(sio->buf, buf, len);
     mutex_release(&intrlist_lock);
-    return sio->len;
+    return len;
 }
 
 /*
