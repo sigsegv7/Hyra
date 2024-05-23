@@ -39,6 +39,7 @@
 #include <sys/cdefs.h>
 #include <vm/page.h>
 #include <vm/pmap.h>
+#include <vm/physseg.h>
 
 extern volatile struct limine_hhdm_request g_hhdm_request;
 
@@ -50,6 +51,10 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 struct vm_range {
     uintptr_t start;
     uintptr_t end;
+};
+
+struct vm_memstat {
+    struct physmem_stat pmem_stat;
 };
 
 /*
@@ -67,5 +72,6 @@ vm_get_page_size(void)
 void vm_init(void);
 struct vm_ctx *vm_get_ctx(void);
 struct vas vm_get_kvas(void);
+struct vm_memstat vm_memstat(void);
 
 #endif      /* !_VM_H_ */

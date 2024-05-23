@@ -27,20 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _VM_VM_PHYSSEG_H_
-#define _VM_VM_PHYSSEG_H_
+#include <vm/physseg.h>
+#include <vm/vm.h>
 
-#include <sys/types.h>
+struct vm_memstat
+vm_memstat(void)
+{
+    struct vm_memstat stat;
 
-struct physmem_stat {
-    size_t reserved_kib;     /* Reserved memory */
-    size_t total_kib;        /* Total memory */
-};
-
-void vm_physseg_init(void);
-uintptr_t vm_alloc_pageframe(size_t count);
-
-void vm_free_pageframe(uintptr_t base, size_t count);
-struct physmem_stat vm_phys_memstat(void);
-
-#endif      /* !_VM_VM_PHYSSEG_H_ */
+    stat.pmem_stat = vm_phys_memstat();
+    return stat;
+}

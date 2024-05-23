@@ -67,10 +67,39 @@ static const int MAX_SEGMENTS = __ARRAY_COUNT(segment_name);
 
 
 static bitmap_t bitmap = NULL;
+static size_t pages_total = 0;
+static size_t pages_reserved = 0;
 static size_t last_used_idx = 0;
 static size_t bitmap_size = 0;
 static size_t highest_frame_idx;
 static size_t bitmap_free_start;    /* Beginning bit of free region */
+
+static void
+vm_physseg_getstat(void)
+{
+    struct limine_memmap_entry *entry;
+    size_t entry_pages = 0;
+
+    pages_total = 0;
+    pages_reserved = 0;
+
+    for (size_t i = 0; i < resp->entry_count; ++i) {
+        entry = resp->entries[i];
+        entry_pages = entry->length / vm_get_page_size();
+
+        /* Drop invalid entries */
+        if (entry->type >= MAX_SEGMENTS) {
+            continue;
+        }
+
+        pages_total += entry_pages;
+
+        if (entry->type != LIMINE_MEMMAP_USABLE) {
+            pages_reserved += entry_pages;
+            continue;
+        }
+    }
+}
 
 static void
 vm_physseg_bitmap_alloc(void)
@@ -222,4 +251,16 @@ vm_physseg_init(void)
     resp = mmap_req.response;
 
     vm_physseg_bitmap_init();
+}
+
+struct physmem_stat
+vm_phys_memstat(void)
+{
+    size_t pagesize = vm_get_page_size();
+    struct physmem_stat stat;
+
+    vm_physseg_getstat();
+    stat.total_kib = (pages_total * pagesize) / 1024;
+    stat.reserved_kib = (pages_reserved * pagesize) / 1024;
+    return stat;
 }
