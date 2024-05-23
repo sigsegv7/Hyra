@@ -41,7 +41,7 @@ procfs_ver_read(struct proc_entry *p, struct sio_txn *sio)
     char buf[1024];
     size_t len;
 
-    len = snprintf(buf, sizeof(buf), "Hyra/%s v%s: %s (%s)",
+    len = snprintf(buf, sizeof(buf), "Hyra/%s v%s: %s (%s)\n",
                    HYRA_ARCH, HYRA_VERSION,
                    HYRA_BUILDDATE, HYRA_BUILDBRANCH);
 
@@ -68,7 +68,7 @@ procfs_memstat_read(struct proc_entry *p, struct sio_txn *sio)
                    "ReservedMem:   %d KiB\n"
                    "AvailableMem:  %d KiB\n"
                    "AllocatedMem:  %d KiB\n"
-                   "VMemObjCount:  %d",
+                   "VMemObjCount:  %d\n",
                    pstat->total_kib,
                    pstat->reserved_kib,
                    pstat->avl_kib,
