@@ -77,6 +77,10 @@ parse_input(struct mshell_state *state)
 
     cmd[cmd_idx] = '\0';
 
+    /* Ignore empty commands */
+    if (cmd_idx == 0)
+        return;
+
     if (strcmp(cmd, "reboot") == 0) {
         reboot(REBOOT_DEFAULT);
     } else if (strcmp(cmd, "pagesize") == 0) {
