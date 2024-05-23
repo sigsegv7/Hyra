@@ -54,6 +54,7 @@ struct vm_object {
         }                               \
     } while (0);
 
+size_t vm_obj_count(void);
 int vm_obj_init(struct vm_object **res, struct vnode *vnode);
 int vm_obj_destroy(struct vm_object *obj);
 

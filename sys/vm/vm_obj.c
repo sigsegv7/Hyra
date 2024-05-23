@@ -32,6 +32,8 @@
 #include <sys/errno.h>
 #include <string.h>
 
+static size_t obj_count = 0;
+
 static void
 vm_set_pgops(struct vm_object *obj, struct vnode *vnode)
 {
@@ -63,6 +65,7 @@ vm_obj_init(struct vm_object **res, struct vnode *vnode)
 
     vm_set_pgops(obj, vnode);
     *res = obj;
+    ++obj_count;
     return 0;
 }
 
@@ -79,5 +82,12 @@ vm_obj_destroy(struct vm_object *obj)
         return -EBUSY;
 
     dynfree(obj);
+    --obj_count;
     return 0;
+}
+
+size_t
+vm_obj_count(void)
+{
+    return obj_count;
 }

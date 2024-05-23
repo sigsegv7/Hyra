@@ -55,6 +55,7 @@ struct vm_range {
 
 struct vm_memstat {
     struct physmem_stat pmem_stat;
+    size_t vmobj_cnt;
 };
 
 /*

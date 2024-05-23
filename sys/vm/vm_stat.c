@@ -29,6 +29,7 @@
 
 #include <vm/physseg.h>
 #include <vm/vm.h>
+#include <vm/obj.h>
 
 struct vm_memstat
 vm_memstat(void)
@@ -36,5 +37,6 @@ vm_memstat(void)
     struct vm_memstat stat;
 
     stat.pmem_stat = vm_phys_memstat();
+    stat.vmobj_cnt = vm_obj_count();
     return stat;
 }
