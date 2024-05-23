@@ -82,7 +82,7 @@ print_file(const char *path)
 
     if (len > 0) {
         buf[len] = '\0';
-        printf("%s\n", buf);
+        printf("%s", buf);
     }
 
     close(fd);
