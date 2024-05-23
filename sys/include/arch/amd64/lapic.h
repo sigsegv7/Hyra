@@ -37,6 +37,7 @@
 
 /* IPI Destination Shorthands */
 enum {
+    IPI_SHORTHAND_NONE,
     IPI_SHORTHAND_SELF,
     IPI_SHORTHAND_ALL,
     IPI_SHORTHAND_OTHERS
