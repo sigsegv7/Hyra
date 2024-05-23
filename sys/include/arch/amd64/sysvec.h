@@ -43,6 +43,7 @@ typedef enum {
     SYSVEC_IPI,                    /* IPI vector */
     SYSVEC_HLT,                    /* Halt vector */
     SYSVEC_PCKBD,                  /* Keyboard vector */
+    SYSVEC_TLB,                    /* TLB shootdown */
 
     /* -- XXX: New vectors go above -- */
     NSYSVEC_BASE,                  /* Non-system vector base */

@@ -35,6 +35,7 @@
 #include <sys/spinlock.h>
 #include <sys/sched_state.h>
 #include <sys/queue.h>
+#include <sys/intr.h>
 #include <machine/tss.h>
 #include <machine/msr.h>
 /*
@@ -72,6 +73,8 @@ struct cpu_info {
     volatile void *lapic_base;
     volatile bool has_x2apic;
     volatile struct tss_entry *tss;
+    volatile uintptr_t tlb_flush_ptr;   /* Address to flush */
+    struct intr_info *tlb_shootdown;    /* Shootdown interrupt info */
 };
 
 /*

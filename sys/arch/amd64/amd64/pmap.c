@@ -31,7 +31,12 @@
 #include <vm/vm.h>
 #include <vm/physseg.h>
 #include <sys/cdefs.h>
+#include <sys/cpu.h>
+#include <sys/intr.h>
 #include <machine/tlb.h>
+#include <machine/lapic.h>
+#include <machine/sysvec.h>
+#include <machine/idt.h>
 #include <assert.h>
 #include <string.h>
 
@@ -51,6 +56,45 @@
 #define PTE_PAT         __BIT(7)
 #define PTE_GLOBAL      __BIT(8)
 #define PTE_NX          __BIT(63)       /* Execute-disable */
+
+__attr(interrupt) static void
+tlb_shootdown_isr(void *sf)
+{
+    struct cpu_info *ci = this_cpu();
+    struct intr_info *intr_info = ci->tlb_shootdown;
+
+    /* Setup interrupt information if needed */
+    if (ci->tlb_shootdown == NULL) {
+        intr_info = intr_info_alloc("TLB-Shootdown", "LAPIC-IPI");
+        intr_info->affinity = ci->id;
+
+        ci->tlb_shootdown = intr_info;
+        intr_register(intr_info);
+    }
+
+    ++intr_info->count;
+    tlb_flush(ci->tlb_flush_ptr);
+
+    ci->tlb_flush_ptr = 0;
+    lapic_send_eoi();
+}
+
+static void
+tlb_shootdown(vaddr_t flush_va)
+{
+    struct cpu_info *curcpu, *ci = NULL;
+    size_t idx = 0;
+
+    curcpu = this_cpu();
+    while ((ci = cpu_get(idx++)) != NULL) {
+        if (ci->id == curcpu->id)
+            continue;
+
+        ci->tlb_flush_ptr = flush_va;
+    }
+
+    lapic_send_ipi(0, IPI_SHORTHAND_OTHERS, SYSVEC_TLB);
+}
 
 /*
  * Convert pmap prot flags to PTE flags.
@@ -160,6 +204,17 @@ pmap_modify_tbl(struct vm_ctx *ctx, struct vas vas, vaddr_t va, size_t val)
 
     /* Map our page */
     tbl[pmap_get_level_index(1, va)] = val;
+
+    /*
+     * Do TLB shootdown if CPUs are listed.
+     *
+     * XXX: Some might not be listed during early
+     *      startup.
+     */
+    if (cpu_get(0) != NULL) {
+        tlb_shootdown(va);
+    }
+
     tlb_flush(va);
 done:
     return status;
@@ -261,5 +316,8 @@ pmap_read_vas(void)
 int
 pmap_init(struct vm_ctx *ctx)
 {
+    idt_set_desc(SYSVEC_TLB, IDT_INT_GATE_FLAGS,
+                 (uintptr_t)tlb_shootdown_isr, 0);
+
     return 0;
 }
