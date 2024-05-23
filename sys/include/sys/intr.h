@@ -47,7 +47,7 @@ struct intr_info {
     TAILQ_ENTRY(intr_info) link;
 };
 
-struct intr_info *intr_info_alloc(const char *name, const char *dev);
+struct intr_info *intr_info_alloc(const char *source, const char *dev);
 void intr_register(struct intr_info *info);
 void intr_init_proc(void);
 
