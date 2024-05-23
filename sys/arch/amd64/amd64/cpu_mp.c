@@ -34,6 +34,7 @@
 #include <sys/syslog.h>
 #include <sys/sched.h>
 #include <sys/cpu.h>
+#include <sys/intr.h>
 #include <vm/dynalloc.h>
 #include <assert.h>
 
@@ -47,16 +48,47 @@ static volatile struct limine_smp_request g_smp_req = {
 };
 
 static bool is_mp_supported = false;
+static struct intr_info *tmr_irqlist[MAXCPUS];
+
+void handle_local_tmr(void);
+
+/*
+ * Add local timer IRQ stat
+ */
+static inline void
+tmr_irqstat_add(struct cpu_info *ci)
+{
+    tmr_irqlist[ci->idx] = intr_info_alloc("LAPIC", "APICTMR");
+    tmr_irqlist[ci->idx]->affinity = ci->idx;
+    intr_register(tmr_irqlist[ci->idx]);
+}
+
+/*
+ * Update local timer IRQ stats from
+ * interrupt.
+ */
+void
+handle_local_tmr(void)
+{
+    struct cpu_info *ci = this_cpu();
+
+    ++tmr_irqlist[ci->idx]->count;
+}
 
 static void
 ap_trampoline(struct limine_smp_info *si)
 {
     static struct spinlock lock = {0};
+    struct cpu_info *ci;
 
     spinlock_acquire(&lock);
 
     pre_init();
     processor_init();
+
+    ci = this_cpu();
+    cpu_attach(ci);
+    tmr_irqstat_add(ci);
 
     spinlock_release(&lock);
     sched_enter();
@@ -87,6 +119,9 @@ ap_bootstrap(struct cpu_info *ci)
 
     cpus = resp->cpus;
     cpu_init_counter = resp->cpu_count - 1;
+
+    cpu_attach(ci);
+    tmr_irqstat_add(ci);
 
     if (resp->cpu_count == 1) {
         KINFO("CPU has 1 core, no APs to bootstrap...\n");

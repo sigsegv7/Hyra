@@ -41,6 +41,7 @@ lapic_tmr_isr:
     push_trapframe $0
     mov %rsp, %rdi
     call sched_context_switch
+    call handle_local_tmr
     call lapic_send_eoi
     pop_trapframe
     iretq
