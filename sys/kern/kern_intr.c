@@ -32,7 +32,6 @@
 #include <sys/mutex.h>
 #include <vm/dynalloc.h>
 #include <fs/procfs.h>
-#include <sys/panic.h>
 #include <string.h>
 #include <assert.h>
 
