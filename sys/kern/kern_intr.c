@@ -27,86 +27,96 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/panic.h>
 #include <sys/intr.h>
-#include <machine/cpu.h>
+#include <sys/queue.h>
+#include <sys/mutex.h>
+#include <vm/dynalloc.h>
 #include <fs/procfs.h>
-#include <vm/vm.h>
+#include <sys/panic.h>
 #include <string.h>
+#include <assert.h>
 
-static bool populated = false;
+#define PROC_BUF_SIZE 4096
+
+static TAILQ_HEAD(, intr_info) intrlist;
+static struct mutex intrlist_lock = {0};
+static struct proc_entry *proc;
 
 static int
-procfs_ver_read(struct proc_entry *p, struct sio_txn *sio)
+proc_read(struct proc_entry *entry, struct sio_txn *sio)
 {
-    char buf[1024];
-    size_t len;
+    struct intr_info *info;
+    char buf[PROC_BUF_SIZE];
+    char *p = &buf[0];
+    size_t idx = 0, len;
+    int res;
 
-    len = snprintf(buf, sizeof(buf), "Hyra/%s v%s: %s (%s)\n",
-                   HYRA_ARCH, HYRA_VERSION,
-                   HYRA_BUILDDATE, HYRA_BUILDBRANCH);
+    mutex_acquire(&intrlist_lock);
+    TAILQ_FOREACH(info, &intrlist, link) {
+        __assert((sizeof(buf) - idx) > 0);
+        res = snprintf(p, sizeof(buf) - idx,
+                "CPU%d\t\t%d\t\t%s\t\t%s\n",
+                info->affinity,
+                info->count,
+                info->source,
+                info->device
+        );
 
-    /* Truncate if needed */
+        if (res > 0) {
+            idx += res;
+            p += res;
+        }
+    }
+
+    len = strlen(buf);
+    if (sio->len > PROC_BUF_SIZE)
+        sio->len = PROC_BUF_SIZE;
     if (len > sio->len)
         len = sio->len;
 
     memcpy(sio->buf, buf, len);
-    return len;
-}
-
-static int
-procfs_memstat_read(struct proc_entry *p, struct sio_txn *sio)
-{
-    struct vm_memstat stat;
-    struct physmem_stat *pstat;
-    char buf[1024];
-    size_t len;
-
-    stat = vm_memstat();
-    pstat = &stat.pmem_stat;
-    len = snprintf(buf, sizeof(buf),
-                   "TotalMem:      %d KiB\n"
-                   "ReservedMem:   %d KiB\n"
-                   "AvailableMem:  %d KiB\n"
-                   "AllocatedMem:  %d KiB\n"
-                   "VMemObjCount:  %d\n",
-                   pstat->total_kib,
-                   pstat->reserved_kib,
-                   pstat->avl_kib,
-                   pstat->alloc_kib,
-                   stat.vmobj_cnt);
-
-    /* Truncate if needed */
-    if (len > sio->len)
-        len = sio->len;
-
-    memcpy(sio->buf, buf, len);
-    return len;
+    mutex_release(&intrlist_lock);
+    return sio->len;
 }
 
 /*
- * Populate procfs with basic misc entries
+ * Register an interrupt stat
+ *
+ * @source: Source of interrupt (e.g IOAPIC)
+ * @dev: Device (e.g i8042)
  */
-void
-procfs_populate(void)
+struct intr_info *
+intr_info_alloc(const char *source, const char *dev)
 {
-    struct proc_entry *version;
-    struct proc_entry *memstat;
+    struct intr_info *intr;
 
-    if (populated)
+    intr = dynalloc(sizeof(*intr));
+    if (intr == NULL)
+        return NULL;
+
+    memset(intr, 0, sizeof(*intr));
+    intr->source = source;
+    intr->device = dev;
+    return intr;
+}
+
+void
+intr_register(struct intr_info *info)
+{
+    if (info == NULL)
         return;
 
-    populated = true;
+    TAILQ_INSERT_TAIL(&intrlist, info, link);
+}
 
-    /* Kernel version */
-    version = procfs_alloc_entry();
-    version->read = procfs_ver_read;
-    procfs_add_entry("version", version);
+void
+intr_init_proc(void)
+{
+    /* Init the interrupt list */
+    TAILQ_INIT(&intrlist);
 
-    /* Memstat */
-    memstat = procfs_alloc_entry();
-    memstat->read = procfs_memstat_read;
-    procfs_add_entry("memstat", memstat);
-
-    intr_init_proc();
+    /* Setup /proc/interrupts */
+    proc = procfs_alloc_entry();
+    proc->read = proc_read;
+    procfs_add_entry("interrupts", proc);
 }
