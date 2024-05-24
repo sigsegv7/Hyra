@@ -206,12 +206,12 @@ pmap_modify_tbl(struct vm_ctx *ctx, struct vas vas, vaddr_t va, size_t val)
     tbl[pmap_get_level_index(1, va)] = val;
 
     /*
-     * Do TLB shootdown if CPUs are listed.
+     * Do TLB shootdown if multiple CPUs are listed.
      *
      * XXX: Some might not be listed during early
      *      startup.
      */
-    if (cpu_get(0) != NULL) {
+    if (cpu_count() > 1) {
         tlb_shootdown(va);
     }
 
