@@ -77,9 +77,6 @@ print_file(const char *path)
     }
 
     len = read(fd, buf, sizeof(buf));
-    if (len > MAX_FILE_SIZE) {
-        len = MAX_FILE_SIZE - 1;
-    }
 
     if (len > 0) {
         buf[len] = '\0';
