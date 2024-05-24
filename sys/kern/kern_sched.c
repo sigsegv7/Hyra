@@ -230,7 +230,7 @@ sched_new_td(uintptr_t ip, bool is_user, struct exec_args args, struct vm_range 
     }
 
     /* Setup initial thread state */
-    td->pid = nthread++;
+    td->pid = ++nthread;
     td->tf = tf;
     td->addrsp = args.vas;
     td->is_user = is_user;
