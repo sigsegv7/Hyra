@@ -58,7 +58,7 @@ void handle_local_tmr(void);
 static inline void
 tmr_irqstat_add(struct cpu_info *ci)
 {
-    tmr_irqlist[ci->idx] = intr_info_alloc("LAPIC", "APICTMR");
+    tmr_irqlist[ci->idx] = intr_info_alloc("LAPIC", "LAPIC-TMR");
     tmr_irqlist[ci->idx]->affinity = ci->idx;
     intr_register(tmr_irqlist[ci->idx]);
 }
