@@ -146,6 +146,27 @@ handle_fatal(struct trapframe *tf)
 }
 
 /*
+ * Raise a fatal signal.
+ *
+ * @curtd: Current thread.
+ * @sched_tmr: Scheduler timer.
+ * @sig: Signal to raise.
+ */
+static void
+raise_fatal(struct proc *curtd, struct timer *sched_tmr, int sig)
+{
+    /*
+     * trap_handler() disables interrupts. We will be
+     * killing the current process but before we do that
+     * we need to make sure interrupts are running and the
+     * scheduler timer is still going...
+     */
+    intr_unmask();
+    sched_tmr->oneshot_us(DEFAULT_TIMESLICE_USEC);
+    signal_raise(curtd, sig);
+}
+
+/*
  * Handle a pagefault occuring in the userland
  *
  * @curtd: Current thread.
@@ -153,7 +174,8 @@ handle_fatal(struct trapframe *tf)
  * @sched_tmr: Scheduler timer.
  */
 static void
-handle_user_pf(struct proc *curtd, struct trapframe *tf)
+handle_user_pf(struct proc *curtd, struct trapframe *tf,
+               struct timer *sched_tmr)
 {
     uintptr_t fault_addr;
     vm_prot_t access_type;
@@ -168,7 +190,7 @@ handle_user_pf(struct proc *curtd, struct trapframe *tf)
         KERR("Fault access mask: 0x%x\n", access_type);
         KERR("Raising SIGSEGV to PID %d...\n", curtd->pid);
         regdump(tf);
-        signal_raise(curtd, SIGSEGV);
+        raise_fatal(curtd, sched_tmr, SIGSEGV);
     }
 }
 
@@ -224,16 +246,16 @@ trap_handler(struct trapframe *tf)
     case TRAP_ARITH_ERR:
         KERR("Got arithmetic error - raising SIGFPE...\n");
         KERR("SIGFPE -> PID %d\n", curtd->pid);
-        signal_raise(curtd, SIGFPE);
+        raise_fatal(curtd, &sched_tmr, SIGFPE);
         break;
     case TRAP_PAGEFLT:
-        handle_user_pf(curtd, tf);
+        handle_user_pf(curtd, tf, &sched_tmr);
         break;
     default:
         KERR("Got %s - raising SIGSEGV...\n", trap_type[tf->trapno]);
         KERR("SIGSEGV -> PID %d\n", curtd->pid);
         regdump(tf);
-        signal_raise(curtd, SIGSEGV);
+        raise_fatal(curtd, &sched_tmr, SIGSEGV);
         break;
     }
 
