@@ -34,6 +34,7 @@
 
 #define cpu_index(ci) ci->idx
 
+size_t cpu_count(void);
 void cpu_attach(struct cpu_info *ci);
 struct cpu_info *cpu_get(size_t i);
 

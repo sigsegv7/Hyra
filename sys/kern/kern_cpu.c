@@ -68,3 +68,9 @@ cpu_get(size_t i)
 
     return ci_list[i];
 }
+
+size_t
+cpu_count(void)
+{
+    return ncpu;
+}
