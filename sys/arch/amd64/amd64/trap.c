@@ -40,6 +40,10 @@
 #include <sys/machdep.h>
 #include <vm/fault.h>
 
+__MODULE_NAME("trap");
+__KERNEL_META("$Hyra$: trap.c, Ian Marco Moffett, "
+              "Trap handling");
+
 static const char *trap_type[] = {
     [TRAP_BREAKPOINT]   = "breakpoint",
     [TRAP_ARITH_ERR]    = "arithmetic error",
@@ -142,6 +146,33 @@ handle_fatal(struct trapframe *tf)
 }
 
 /*
+ * Handle a pagefault occuring in the userland
+ *
+ * @curtd: Current thread.
+ * @tf: Trapframe.
+ * @sched_tmr: Scheduler timer.
+ */
+static void
+handle_user_pf(struct proc *curtd, struct trapframe *tf)
+{
+    uintptr_t fault_addr;
+    vm_prot_t access_type;
+    int s;
+
+    fault_addr = pf_faultaddr();
+    access_type = pf_accesstype(tf);
+    s = vm_fault(fault_addr, access_type);
+
+    if (s != 0) {
+        KERR("Got page fault @ 0x%p\n", fault_addr);
+        KERR("Fault access mask: 0x%x\n", access_type);
+        KERR("Raising SIGSEGV to PID %d...\n", curtd->pid);
+        regdump(tf);
+        signal_raise(curtd, SIGSEGV);
+    }
+}
+
+/*
  * Handles traps.
  */
 void
@@ -150,7 +181,6 @@ trap_handler(struct trapframe *tf)
     struct proc *curtd = this_td();
     struct timer sched_tmr;
     tmrr_status_t tmrr_s;
-    int s;
 
     /*
      * Mask interrupts so we don't get put in a funky
@@ -192,14 +222,17 @@ trap_handler(struct trapframe *tf)
 
     switch (tf->trapno) {
     case TRAP_ARITH_ERR:
+        KERR("Got arithmetic error - raising SIGFPE...\n");
+        KERR("SIGFPE -> PID %d\n", curtd->pid);
         signal_raise(curtd, SIGFPE);
         break;
     case TRAP_PAGEFLT:
-        s = vm_fault(pf_faultaddr(), pf_accesstype(tf));
-        if (s != 0)
-            signal_raise(curtd, SIGSEGV);
+        handle_user_pf(curtd, tf);
         break;
     default:
+        KERR("Got %s - raising SIGSEGV...\n", trap_type[tf->trapno]);
+        KERR("SIGSEGV -> PID %d\n", curtd->pid);
+        regdump(tf);
         signal_raise(curtd, SIGSEGV);
         break;
     }
