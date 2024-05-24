@@ -102,6 +102,9 @@ main(void)
     sched_init();
     ci = this_cpu();
 
+    /* Stop writing kernel messages to TTY */
+    g_syslog_use_tty = false;
+
     __TRY_CALL(ap_bootstrap, ci);
     sched_enter();
 

@@ -29,6 +29,7 @@
 
 #include <sys/panic.h>
 #include <sys/intr.h>
+#include <sys/syslog.h>
 #include <machine/cpu.h>
 #include <fs/procfs.h>
 #include <vm/vm.h>
@@ -109,4 +110,5 @@ procfs_populate(void)
     procfs_add_entry("memstat", memstat);
 
     intr_init_proc();
+    syslog_init_proc();
 }

@@ -34,6 +34,7 @@
 #ifndef _SYS_SYSLOG_H_
 #define _SYS_SYSLOG_H_
 
+#include <sys/types.h>
 #include <stdarg.h>
 #include <dev/vcons/vcons.h>
 
@@ -56,10 +57,12 @@
     kprintf(__VA_ARGS__);
 
 void syslog_init(void);
+void syslog_init_proc(void);
 void kprintf(const char *fmt, ...);
 void vkprintf(const char *fmt, va_list *ap);
 
 extern struct vcons_screen g_syslog_screen;
+extern bool g_syslog_use_tty;
 
 #endif  /* defined(_KERNEL) */
 
