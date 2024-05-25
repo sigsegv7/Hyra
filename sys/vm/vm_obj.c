@@ -61,7 +61,7 @@ vm_obj_init(struct vm_object **res, struct vnode *vnode)
 
     memset(obj, 0, sizeof(struct vm_object));
     obj->vnode = vnode;
-    obj->ref = 1;
+    obj->ref = 0;
 
     vm_set_pgops(obj, vnode);
     *res = obj;

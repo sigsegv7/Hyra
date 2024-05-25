@@ -305,12 +305,12 @@ munmap(void *addr, size_t len)
         spinlock_acquire(&obj->lock);
         /*
          * Drop our ref and try to cleanup. If the refcount
-         * is > 1, something is still holding it and we can't
+         * is > 0, something is still holding it and we can't
          * do much.
          */
         vm_object_unref(obj);
         vp = obj->vnode;
-        if (vp != NULL && obj->ref == 1) {
+        if (vp != NULL && obj->ref == 0) {
             vp->vmobj = NULL;
             vm_obj_destroy(obj);
         }

@@ -49,7 +49,7 @@ struct vm_object {
 
 #define vm_object_ref(OBJPTR) (++(OBJPTR)->ref)
 #define vm_object_unref(OBJPTR) do {    \
-        if ((OBJPTR)->ref > 1) {        \
+        if ((OBJPTR)->ref > 0) {        \
             --(OBJPTR)->ref;            \
         }                               \
     } while (0);
