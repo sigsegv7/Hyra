@@ -235,8 +235,8 @@ pmap_unmap(struct vm_ctx *ctx, struct vas vas, vaddr_t va)
     return pmap_modify_tbl(ctx, vas, va, 0);
 }
 
-struct vas
-pmap_create_vas(struct vm_ctx *ctx)
+int
+pmap_create_vas(struct vm_ctx *ctx, struct vas *res)
 {
     struct vas current_vas = pmap_read_vas();
     struct vas new_vas = {0};
@@ -250,8 +250,7 @@ pmap_create_vas(struct vm_ctx *ctx)
     new_vas.top_level = vm_alloc_pageframe(1);
 
     if (new_vas.top_level == 0) {
-        /* Top level may remain zero to denote failure */
-        return new_vas;
+        return -1;
     }
 
     src = PHYS_TO_VIRT(current_vas.top_level);
@@ -269,7 +268,8 @@ pmap_create_vas(struct vm_ctx *ctx)
         dest[i] = src[i];
     }
 
-    return new_vas;
+    *res = new_vas;
+    return 0;
 }
 
 void

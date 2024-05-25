@@ -328,7 +328,7 @@ sched_load_init(void)
     if ((init_bin = initramfs_open("/usr/sbin/init")) == NULL)
         panic("Could not open /usr/sbin/init\n");
 
-    args.vas = pmap_create_vas(vm_get_ctx());
+    pmap_create_vas(vm_get_ctx(), &args.vas);
     args.argp = argv;
     args.envp = envp;
 

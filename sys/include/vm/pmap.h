@@ -70,7 +70,7 @@ struct vm_ctx {
  * Create a virtual address space
  * and return the descriptor.
  */
-struct vas pmap_create_vas(struct vm_ctx *);
+int pmap_create_vas(struct vm_ctx *, struct vas *);
 
 /*
  * Switch the current virtual address space
