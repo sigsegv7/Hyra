@@ -287,7 +287,6 @@ munmap(void *addr, size_t len)
     size_t map_len, granule;
     vaddr_t map_start, map_end;
 
-    spinlock_acquire(&td->mapspace_lock);
     ms = &td->mapspace;
 
     granule = vm_get_page_size();
@@ -296,6 +295,7 @@ munmap(void *addr, size_t len)
         return -1;
     }
 
+    spinlock_acquire(&td->mapspace_lock);
     map_start = mapping->range.start;
     map_end = mapping->range.end;
     map_len = map_end - map_start;
