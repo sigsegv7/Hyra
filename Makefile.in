@@ -27,7 +27,8 @@ endif
 override AS = $(CC)
 override USRDIR=$(shell pwd)/base/usr/
 override LIBC = libc.a
-override USER_MKFLGS = CC=$(CC) LD=$(LD) LIBC=$(LIBC) USRDIR=$(USRDIR)
+override USER_LDSCRIPT = $(shell pwd)/conf/user-link.ld
+override USER_MKFLGS = LDSCRIPT=$(USER_LDSCRIPT) CC=$(CC) LD=$(LD) LIBC=$(LIBC) USRDIR=$(USRDIR)
 
 ##########################
 # Architecture specifics

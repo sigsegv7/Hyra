@@ -1,4 +1,5 @@
 CC =
 LIBDIR =
 USRDIR =
-INTERNAL_CFLAGS = -znoexecstack -nostdlib -I$(USRDIR)/include/ $(USRDIR)/lib/libc.a
+LDSCRIPT =
+INTERNAL_CFLAGS = -T$(LDSCRIPT) -znoexecstack -nostdlib -I$(USRDIR)/include/ $(USRDIR)/lib/libc.a
