@@ -279,9 +279,7 @@ munmap(void *addr, size_t len)
 {
     struct proc *td = this_td();
     struct vm_mapping *mapping;
-
     struct vm_object *obj;
-    struct vnode *vp;
 
     struct vm_mapspace *ms;
     size_t map_len, granule;
@@ -302,19 +300,15 @@ munmap(void *addr, size_t len)
 
     /* Try to release any virtual memory objects */
     if ((obj = mapping->vmobj) != NULL) {
-        spinlock_acquire(&obj->lock);
         /*
          * Drop our ref and try to cleanup. If the refcount
          * is > 0, something is still holding it and we can't
          * do much.
          */
         vm_object_unref(obj);
-        vp = obj->vnode;
-        if (vp != NULL && obj->ref == 0) {
-            vp->vmobj = NULL;
+        if (obj->ref == 0) {
             vm_obj_destroy(obj);
         }
-        spinlock_release(&obj->lock);
     }
 
     /* Release the mapping */
