@@ -74,12 +74,12 @@ vm_obj_destroy(struct vm_object *obj)
 {
     struct vnode *vp = obj->vnode;
 
-    if (vp->vmobj != NULL)
-        vp->vmobj = NULL;
-
     /* Check the ref count */
-    if (obj->ref > 1)
+    if (obj->ref > 0)
         return -EBUSY;
+
+    if (vp != NULL)
+        vp->vmobj = NULL;
 
     dynfree(obj);
     --obj_count;
