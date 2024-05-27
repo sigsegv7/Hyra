@@ -32,6 +32,7 @@
 #include <sys/tty.h>
 #include <sys/cdefs.h>
 #include <sys/timer.h>
+#include <sys/spinlock.h>
 #include <dev/vcons/vcons.h>
 #include <fs/procfs.h>
 #include <string.h>
@@ -49,6 +50,7 @@ __STATIC_ASSERT(KMSG_BUF_SHIFT <= 16, "Log buffer shift too large!\n");
 static char kmsg_buf[KMSG_BUF_SIZE];
 static size_t kmsg_buf_idx = 0;
 static struct proc_entry *kmsg_proc;
+static struct spinlock lock = {0};
 
 struct vcons_screen g_syslog_screen = {0};
 bool g_syslog_use_tty = true;
@@ -92,6 +94,9 @@ syslog_write(const char *s, size_t len)
     tty_flush(&g_root_tty);
 }
 
+/*
+ * XXX: Not serialized
+ */
 void
 vkprintf(const char *fmt, va_list *ap)
 {
@@ -110,6 +115,8 @@ kprintf(const char *fmt, ...)
     bool use_timestamp = true;
     const char *fmt_p = fmt;
     struct timer tmr = {0};
+
+    spinlock_acquire(&lock);
 
     /*
      * If the first char is OMIT_TIMESTAMP, then we won't
@@ -139,6 +146,8 @@ kprintf(const char *fmt, ...)
     va_start(ap, fmt);
     vkprintf(fmt_p, &ap);
     va_end(ap);
+
+    spinlock_release(&lock);
 }
 
 void
