@@ -112,7 +112,7 @@ kprintf(const char *fmt, ...)
     struct timer tmr = {0};
 
     /*
-     * If the first char is OMIT_TIMESTAMP, than we won't
+     * If the first char is OMIT_TIMESTAMP, then we won't
      * print out the timestamp.
      */
     if (*fmt_p == OMIT_TIMESTAMP[0]) {
