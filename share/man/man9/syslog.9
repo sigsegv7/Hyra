@@ -57,18 +57,5 @@ The "%d" format specifier is for base-10 values
 
 The "%x" format specifier is for base-16 values
 
-Is it recommend to use macros like
-.Ft KINFO()
-or similar for standard logging.
-
-All of these macros are defined in the
-.Ft sys/syslog.h
-header. But require
-.Ft __THIS_MODULE
-to be defined by the
-.Ft __MODULE_NAME()
-macro found in
-.Ft sys/cdefs.h
-
 .Sh AUTHORS
 .An Ian Moffett Aq Mt ian@osmora.org
