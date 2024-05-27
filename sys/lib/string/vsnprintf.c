@@ -64,10 +64,11 @@ snprintf(char *s, size_t size, const char *fmt, ...)
 int
 vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
 {
-    size_t tmp_len, off = 0;
+    size_t tmp_len, num_len, off = 0;
     ssize_t num = 0;
     char c, c1, num_buf[256] = {0};
     const char *tmp_str;
+    uint8_t pad_width = 0;
 
     while (off < (size - 1)) {
         while (*fmt && *fmt != '%') {
@@ -75,6 +76,18 @@ vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
         }
         if (*(fmt)++ == '\0' || off == size - 1) {
             return off;
+        }
+
+        /*
+         * Handle a case where we have "%0N". For example:
+         * "%04d"
+         */
+        if (*fmt == '0') {
+            ++fmt;
+            while (*fmt >= '0' && *fmt <= '9') {
+                pad_width = pad_width * 10 + (*fmt - '0');
+                ++fmt;
+            }
         }
 
         c = *fmt++;
@@ -86,6 +99,12 @@ vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
         case 'd':
             num = va_arg(ap, int);
             itoa(num, num_buf, 10);
+
+            if (pad_width > 0) {
+                num_len = strlen(num_buf);
+                for (size_t i = num_len; i < pad_width; ++i)
+                    printc(s, size, &off, '0');
+            }
             printstr(s, size, &off, num_buf);
             break;
         case 'p':
