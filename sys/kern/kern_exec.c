@@ -198,7 +198,7 @@ execv(char *pathname, char **argv, uintptr_t *sp_res)
     status = loader_load(td->addrsp, bin, &args.auxv, 0, NULL, exec_range);
     if (status != 0) {
         /* Well shit */
-        KERR("Failed to load new process image\n");
+        kprintf("exec: Failed to load new process image\n");
         signal_raise(td, SIGSEGV);
         for (;;);
     }

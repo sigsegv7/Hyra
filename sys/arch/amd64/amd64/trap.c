@@ -44,6 +44,8 @@ __MODULE_NAME("trap");
 __KERNEL_META("$Hyra$: trap.c, Ian Marco Moffett, "
               "Trap handling");
 
+#define pr_error(fmt, ...) kprintf("trap: " fmt, ##__VA_ARGS__)
+
 static const char *trap_type[] = {
     [TRAP_BREAKPOINT]   = "breakpoint",
     [TRAP_ARITH_ERR]    = "arithmetic error",
@@ -92,14 +94,15 @@ dbg_errcode(struct trapframe *tf)
 
     switch (tf->trapno) {
     case TRAP_PAGEFLT:
-        kprintf("bits (pwui): %c%c%c%c\n",
+        kprintf(OMIT_TIMESTAMP
+                "bits (pwui): %c%c%c%c\n",
                 __TEST(ec, __BIT(0)) ? 'p' : '-',
                 __TEST(ec, __BIT(1)) ? 'w' : '-',
                 __TEST(ec, __BIT(2)) ? 'u' : '-',
                 __TEST(ec, __BIT(4)) ? 'i' : '-');
         break;
     case TRAP_SS:
-        kprintf("ss: 0x%x\n", ec);
+        kprintf(OMIT_TIMESTAMP "ss: 0x%x\n", ec);
         break;
     }
 }
@@ -108,9 +111,9 @@ static void
 trap_print(struct trapframe *tf)
 {
     if (tf->trapno < TRAP_COUNT) {
-        kprintf("** Fatal %s **\n", trap_type[tf->trapno]);
+        kprintf(OMIT_TIMESTAMP "** Fatal %s **\n", trap_type[tf->trapno]);
     } else {
-        kprintf("** Unknown trap %d **\n", tf->trapno);
+        kprintf(OMIT_TIMESTAMP "** Unknown trap %d **\n", tf->trapno);
     }
 
     dbg_errcode(tf);
@@ -127,7 +130,8 @@ regdump(struct trapframe *tf)
            : "memory"
     );
 
-    kprintf("RAX=%p RCX=%p RDX=%p\n"
+    kprintf(OMIT_TIMESTAMP
+            "RAX=%p RCX=%p RDX=%p\n"
             "RBX=%p RSI=%p RDI=%p\n"
             "RFL=%p CR2=%p CR3=%p\n"
             "RBP=%p RSP=%p RIP=%p\n",
@@ -186,9 +190,9 @@ handle_user_pf(struct proc *curtd, struct trapframe *tf,
     s = vm_fault(fault_addr, access_type);
 
     if (s != 0) {
-        KERR("Got page fault @ 0x%p\n", fault_addr);
-        KERR("Fault access mask: 0x%x\n", access_type);
-        KERR("Raising SIGSEGV to PID %d...\n", curtd->pid);
+        pr_error("Got page fault @ 0x%p\n", fault_addr);
+        pr_error("Fault access mask: 0x%x\n", access_type);
+        pr_error("Raising SIGSEGV to PID %d...\n", curtd->pid);
         regdump(tf);
         raise_fatal(curtd, sched_tmr, SIGSEGV);
     }
@@ -232,8 +236,8 @@ trap_handler(struct trapframe *tf)
      */
     if (tf->trapno == TRAP_NMI) {
         trap_print(tf);
-        kprintf("Possible hardware failure?\n");
-        panic("Caught NMI; bailing out\n");
+        kprintf(OMIT_TIMESTAMP "Possible hardware failure?\n");
+        panic(OMIT_TIMESTAMP "Caught NMI; bailing out\n");
     }
 
     if (curtd == NULL) {
@@ -244,16 +248,16 @@ trap_handler(struct trapframe *tf)
 
     switch (tf->trapno) {
     case TRAP_ARITH_ERR:
-        KERR("Got arithmetic error - raising SIGFPE...\n");
-        KERR("SIGFPE -> PID %d\n", curtd->pid);
+        pr_error("Got arithmetic error - raising SIGFPE...\n");
+        pr_error("SIGFPE -> PID %d\n", curtd->pid);
         raise_fatal(curtd, &sched_tmr, SIGFPE);
         break;
     case TRAP_PAGEFLT:
         handle_user_pf(curtd, tf, &sched_tmr);
         break;
     default:
-        KERR("Got %s - raising SIGSEGV...\n", trap_type[tf->trapno]);
-        KERR("SIGSEGV -> PID %d\n", curtd->pid);
+        pr_error("Got %s - raising SIGSEGV...\n", trap_type[tf->trapno]);
+        pr_error("SIGSEGV -> PID %d\n", curtd->pid);
         regdump(tf);
         raise_fatal(curtd, &sched_tmr, SIGSEGV);
         break;

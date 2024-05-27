@@ -41,6 +41,9 @@ __MODULE_NAME("hpet");
 __KERNEL_META("$Hyra$: hpet.c, Ian Marco Moffett, "
               "HPET driver");
 
+#define pr_trace(fmt, ...) kprintf("hpet: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
+
 #define HPET_REG_CAPS               0x00
 #define HPET_GENERAL_CONFIG         0x10
 #define HPET_REG_MAIN_COUNTER       0xF0
@@ -168,7 +171,7 @@ hpet_init(void)
 
     /* Ensure caps aren't bogus */
     if (CAP_REV_ID(caps) == 0) {
-        KERR("Found bogus revision, assuming faulty\n");
+        pr_error("Found bogus revision, assuming faulty\n");
         is_faulty = true;
         return 1;
     }
@@ -178,14 +181,14 @@ hpet_init(void)
          * must be <= 0x05F5E100. So we'll consider it
          * as bogus if it exceeds this value
          */
-        KERR("Found bogus COUNTER_CLK_PERIOD, assuming faulty\n");
-        KINFO("HPET REV - 0x%x\n", CAP_REV_ID(caps));
-        KINFO("COUNTER_CLK_PERIOD - 0x%x\n", CAP_CLK_PERIOD(caps));
+        pr_error("Found bogus COUNTER_CLK_PERIOD, assuming faulty\n");
+        pr_trace("HPET REV - 0x%x\n", CAP_REV_ID(caps));
+        pr_trace("COUNTER_CLK_PERIOD - 0x%x\n", CAP_CLK_PERIOD(caps));
         is_faulty = true;
         return 1;
     }
 
-    KINFO("HPET integrity verified\n");
+    pr_trace("HPET integrity verified\n");
 
     hpet_write(HPET_REG_MAIN_COUNTER, 0);
     hpet_write(HPET_GENERAL_CONFIG, 1);

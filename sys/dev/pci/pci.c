@@ -43,6 +43,8 @@ __MODULE_NAME("pci");
 __KERNEL_META("$Hyra$: pci.c, Ian Marco Moffett, "
               "PCI driver core");
 
+#define pr_trace(fmt, ...) kprintf("pci: " fmt, ##__VA_ARGS__)
+
 static TAILQ_HEAD(, pci_device) device_list;
 static int access_method = PCI_ACCESS_CAM;
 
@@ -276,7 +278,7 @@ pci_init(void)
 {
     TAILQ_INIT(&device_list);
 
-    KINFO("Scanning each bus...\n");
+    pr_trace("Scanning each bus...\n");
 
     for (uint16_t i = 0; i < 256; ++i) {
         pci_scan_bus(i);

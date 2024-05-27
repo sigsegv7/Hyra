@@ -54,7 +54,7 @@ panic(const char *fmt, ...)
 
     va_start(ap, fmt);
 
-    kprintf("panic: ");
+    kprintf(OMIT_TIMESTAMP "panic: ");
     vkprintf(fmt, &ap);
 
     machine_panic();

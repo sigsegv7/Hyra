@@ -40,21 +40,7 @@
 
 #if defined(_KERNEL)
 
-#define KINFO(...)                              \
-    kprintf("%s[info]: ", __THIS_MODULE);       \
-    kprintf(__VA_ARGS__);
-
-#define KWARN(...)                              \
-    kprintf("%s[WARN]: ", __THIS_MODULE);       \
-    kprintf(__VA_ARGS__);
-
-#define KDEBUG(...)                             \
-    kprintf("%s[debug]: ", __THIS_MODULE);      \
-    kprintf(__VA_ARGS__);
-
-#define KERR(...)                               \
-    kprintf("%s[ERROR]: ", __THIS_MODULE);      \
-    kprintf(__VA_ARGS__);
+#define OMIT_TIMESTAMP "\x01"
 
 void syslog_init(void);
 void syslog_init_proc(void);

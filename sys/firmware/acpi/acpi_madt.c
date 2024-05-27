@@ -40,9 +40,12 @@
 #define APIC_TYPE_IO_APIC               1
 #define APIC_TYPE_INTERRUPT_OVERRIDE    2
 
+#define pr_trace(fmt, ...) kprintf("acpi: " fmt, ##__VA_ARGS__)
+
 __MODULE_NAME("acpi");
 __KERNEL_META("$Hyra$: acpi_madt.c, Ian Marco Moffett, "
               "ACPI MADT parsing");
+
 
 static struct acpi_madt *madt = NULL;
 
@@ -84,7 +87,7 @@ do_parse(struct cpu_info *ci)
 
             ioapic = (struct ioapic *)cur;
 
-            KINFO("Detected I/O APIC (id=%d, gsi_base=%d)\n",
+            pr_trace("Detected I/O APIC (id=%d, gsi_base=%d)\n",
                   ioapic->ioapic_id, ioapic->gsi_base);
 
             ioapic_mmio_base = (void *)(uintptr_t)ioapic->ioapic_addr;

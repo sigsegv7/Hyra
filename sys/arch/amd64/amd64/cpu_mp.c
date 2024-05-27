@@ -42,6 +42,8 @@ __MODULE_NAME("cpu_mp");
 __KERNEL_META("$Hyra$: cpu_mp.c, Ian Marco Moffett, "
               "SMP related code");
 
+#define pr_trace(fmt, ...) kprintf("cpu_mp: " fmt, ##__VA_ARGS__)
+
 static volatile struct limine_smp_request g_smp_req = {
     .id = LIMINE_SMP_REQUEST,
     .revision = 0
@@ -124,14 +126,14 @@ ap_bootstrap(struct cpu_info *ci)
     tmr_irqstat_add(ci);
 
     if (resp->cpu_count == 1) {
-        KINFO("CPU has 1 core, no APs to bootstrap...\n");
+        pr_trace("CPU has 1 core, no APs to bootstrap...\n");
         return;
     }
 
-    KINFO("Bootstrapping %d cores...\n", cpu_init_counter);
+    pr_trace("Bootstrapping %d cores...\n", cpu_init_counter);
     for (size_t i = 0; i < resp->cpu_count; ++i) {
         if (ci->id == cpus[i]->lapic_id) {
-            KINFO("Skip %d (BSP)... continue\n", ci->id);
+            pr_trace("Skip %d (BSP)... continue\n", ci->id);
             continue;
         }
 

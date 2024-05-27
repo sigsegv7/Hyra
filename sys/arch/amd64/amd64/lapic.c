@@ -47,15 +47,18 @@ __MODULE_NAME("lapic");
 __KERNEL_META("$Hyra$: lapic.c, Ian Marco Moffett, "
               "Local APIC driver");
 
+#define pr_trace(fmt, ...) kprintf("lapic: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
+
 /*
- * Only calls KINFO if we are the BSP.
+ * Only calls pr_trace if we are the BSP.
  */
-#define BSP_KINFO(...) do {                     \
+#define BSP_TRACE(...) do {                     \
         uint64_t msr_val;                       \
                                                 \
         msr_val = rdmsr(IA32_APIC_BASE_MSR);    \
         if (__TEST(msr_val, 1 << 8)) {          \
-            KINFO(__VA_ARGS__);                 \
+            pr_trace(__VA_ARGS__);                 \
         }                                       \
     } while (0);
 
@@ -397,7 +400,7 @@ lapic_init(void)
     /* Software enable the Local APIC via SVR */
     lapic_reg_set(LAPIC_SVR, LAPIC_SW_ENABLE);
 
-    BSP_KINFO("Enabled Local APIC for BSP\n");
+    BSP_TRACE("Enabled Local APIC for BSP\n");
     lapic_set_ldr(ci);
 
     /* Setup the timer descriptor */
@@ -411,7 +414,7 @@ lapic_init(void)
 
     /* Set the Local APIC ID */
     ci->id = lapic_get_id(ci);
-    BSP_KINFO("BSP Local APIC ID: %d\n", ci->id);
+    BSP_TRACE("BSP Local APIC ID: %d\n", ci->id);
 
     /* Setup LAPIC Timer TSS stack */
     if (tss_alloc_stack(&tmr_stack, vm_get_page_size()) != 0) {
@@ -427,6 +430,6 @@ lapic_init(void)
     idt_set_desc(SYSVEC_LAPIC_TIMER, IDT_INT_GATE_FLAGS,
                  (uintptr_t)lapic_tmr_isr, IST_SCHED);
 
-    BSP_KINFO("LAPIC Timer on Interrupt Stack %d (IST_SCHED) with vector 0x%x\n",
+    BSP_TRACE("LAPIC Timer on Interrupt Stack %d (IST_SCHED) with vector 0x%x\n",
               IST_SCHED, SYSVEC_LAPIC_TIMER);
 }

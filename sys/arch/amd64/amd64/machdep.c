@@ -145,7 +145,7 @@ backtrace(void)
     off_t off;
     const char *name;
 
-    kprintf("** Backtrace **\n");
+    kprintf(OMIT_TIMESTAMP "** Backtrace **\n");
     __ASMV("mov %%rbp, %0" : "=r" (rbp) :: "memory");
 
     while (1) {
@@ -158,7 +158,7 @@ backtrace(void)
         if (name == NULL)
             name = "???";
 
-        kprintf("[0x%p] <%s+0x%x>\n", rip, name, off);
+        kprintf(OMIT_TIMESTAMP "[0x%p] <%s+0x%x>\n", rip, name, off);
     }
 }
 

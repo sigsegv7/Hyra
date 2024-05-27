@@ -48,11 +48,11 @@ static inline void
 log_timer(const char *purpose, tmrr_status_t s, const struct timer *tmr)
 {
     if (s == TMRR_EMPTY_ENTRY) {
-        KINFO("%s not yet registered\n", purpose);
+        kprintf("init_main: %s not yet registered\n", purpose);
     } else if (tmr->name == NULL) {
-        KINFO("Nameless %s registered; unknown\n", purpose);
+        kprintf("init_main: Nameless %s registered; unknown\n", purpose);
     } else {
-        KINFO("%s registered: %s\n", purpose, tmr->name);
+        kprintf("init_main: %s registered: %s\n", purpose, tmr->name);
     }
 }
 

@@ -43,6 +43,9 @@ __MODULE_NAME("nvme");
 __KERNEL_META("$Hyra$: nvme.c, Ian Marco Moffett, "
               "NVMe driver");
 
+#define pr_trace(fmt, ...) kprintf("nvme: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
+
 static struct pci_device *nvme_dev;
 static struct timer driver_tmr;
 static TAILQ_HEAD(,nvme_ns) namespaces;
@@ -168,12 +171,12 @@ nvme_poll_submit_cmd(struct nvme_queue *queue, struct nvme_cmd cmd)
             break;
         }
         if ((status & ~1) != 0) {
-            KDEBUG("NVMe cmd error (bits=0x%x)\n", status >> 1);
+            pr_trace("NVMe cmd error (bits=0x%x)\n", status >> 1);
             break;
         }
         if (spins > 5) {
             /* Attempts exhausted */
-            KERR("Hang on phase bit poll, giving up (cmd error)\n");
+            pr_error("Hang on phase bit poll, giving up (cmd error)\n");
             break;
         }
 
@@ -422,7 +425,7 @@ nvme_init_ns(struct nvme_state *state, uint16_t nsid)
 
     snprintf(devname, sizeof(devname), "nvme0n%d", nsid);
     if (devfs_add_dev(devname, dev) != 0) {
-        KERR("Failed to create /dev/%s\n", devname);
+        pr_error("Failed to create /dev/%s\n", devname);
     }
 
     TAILQ_INSERT_TAIL(&namespaces, ns, link);
@@ -443,7 +446,7 @@ nvme_disable_controller(struct nvme_state *state)
     }
 
     if (nvme_poll_ready(bar, 0) < 0) {
-        KERR("Failed to disable controller\n");
+        pr_error("Failed to disable controller\n");
         return -1;
     }
 
@@ -467,8 +470,8 @@ nvme_log_ctrl_id(struct nvme_id *id)
         fr[i] = id->fr[i];
     }
 
-    KDEBUG("NVMe model: %s\n", mn);
-    KDEBUG("NVMe firmware revision: %s\n", fr);
+    pr_trace("NVMe model: %s\n", mn);
+    pr_trace("NVMe firmware revision: %s\n", fr);
 }
 
 /*
@@ -508,7 +511,7 @@ nvme_enable_controller(struct nvme_state *state)
     }
 
     if (nvme_poll_ready(bar, 1) < 0) {
-        KERR("Failed to enable controller\n");
+        pr_error("Failed to enable controller\n");
         return -1;
     }
 
@@ -539,7 +542,7 @@ nvme_enable_controller(struct nvme_state *state)
     /* Init NVMe namespaces */
     for (size_t i = 0; i < id->nn; ++i) {
         if (nsids[i] != 0) {
-            KINFO("Found NVMe namespace (id=%d)\n", nsids[i]);
+            pr_trace("Found NVMe namespace (id=%d)\n", nsids[i]);
             nvme_init_ns(state, nsids[i]);
         }
     }
@@ -583,12 +586,12 @@ nvme_init(void)
     };
 
     if (req_timer(TIMER_GP, &driver_tmr) != 0) {
-        KERR("Failed to fetch general purpose timer\n");
+        pr_error("Failed to fetch general purpose timer\n");
         return -1;
     }
 
     if (driver_tmr.msleep == NULL) {
-        KERR("Timer does not have msleep()\n");
+        pr_error("Timer does not have msleep()\n");
         return -1;
     }
 
@@ -598,7 +601,7 @@ nvme_init(void)
     }
 
     bar = PCI_BAR_MEMBASE(nvme_dev->bar[0]);
-    KINFO("NVMe BAR0 @ 0x%p\n", bar);
+    pr_trace("NVMe BAR0 @ 0x%p\n", bar);
     TAILQ_INIT(&namespaces);
 
     if (nvme_init_controller(bar) < 0) {

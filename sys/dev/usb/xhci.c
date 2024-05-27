@@ -43,6 +43,9 @@ __MODULE_NAME("xhci");
 __KERNEL_META("$Hyra$: xhci.c, Ian Marco Moffett, "
               "xHCI driver");
 
+#define pr_trace(fmt, ...) kprintf("xhci: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
+
 static struct pci_device *hci_dev;
 static struct timer driver_tmr;
 
@@ -188,12 +191,12 @@ xhci_init_scratchpads(struct xhci_hc *hc)
         return 0;
     }
 
-    KINFO("Need %d scratchpad buffers\n", max_bufs);
+    pr_trace("Need %d scratchpad buffers\n", max_bufs);
 
     /* Allocate buffer array */
     buffer_array = dynalloc_memalign(sizeof(uintptr_t)*max_bufs, 0x1000);
     if (buffer_array == NULL) {
-        KERR("Failed to allocate scratchpad buffer array\n");
+        pr_error("Failed to allocate scratchpad buffer array\n");
         return -1;
     }
 
@@ -205,7 +208,7 @@ xhci_init_scratchpads(struct xhci_hc *hc)
 
         if (tmp == 0) {
             /* TODO: Shutdown, free memory */
-            KERR("Failed to fill scratchpad buffer array\n");
+            pr_error("Failed to fill scratchpad buffer array\n");
             return -1;
         }
 
@@ -229,7 +232,7 @@ xhci_init_ports(struct xhci_hc *hc)
     for (size_t i = 1; i < maxports; ++i) {
         portsc = xhci_get_portsc(hc, i);
         if (__TEST(*portsc, XHCI_PORTSC_CCS)) {
-            KINFO("Device connected on port %d, resetting...\n", i);
+            pr_trace("Device connected on port %d, resetting...\n", i);
             *portsc |= XHCI_PORTSC_PR;
         }
     }
@@ -287,7 +290,7 @@ xhci_reset_hc(struct xhci_hc *hc)
     struct xhci_opregs *opregs = hc->opregs;
     size_t time_waiting = 0;    /* In ms */
 
-    KINFO("Resetting host controller...\n");
+    pr_trace("Resetting host controller...\n");
 
     /*
      * Set USBCMD.HCRST to reset the controller and
@@ -300,7 +303,7 @@ xhci_reset_hc(struct xhci_hc *hc)
             break;
         }
         if (time_waiting >= XHCI_TIMEOUT) {
-            KERR("Hang while polling USBCMD.HCRST to be zero\n");
+            pr_error("Hang while polling USBCMD.HCRST to be zero\n");
             return -1;
         }
         driver_tmr.msleep(50);
@@ -443,14 +446,14 @@ xhci_init(void)
     bar1 = hci_dev->bar[1] & ~7;
     base = __COMBINE32(bar1, bar0);
     hc.base = PHYS_TO_VIRT(base);
-    KINFO("xHCI HC base @ 0x%p\n", base);
+    pr_trace("xHCI HC base @ 0x%p\n", base);
 
     if (req_timer(TIMER_GP, &driver_tmr) != 0) {
-        KERR("Failed to fetch general purpose timer\n");
+        pr_error("Failed to fetch general purpose timer\n");
         return -1;
     }
     if (driver_tmr.msleep == NULL) {
-        KERR("Timer does not have msleep()\n");
+        pr_error("Timer does not have msleep()\n");
         return -1;
     }
 

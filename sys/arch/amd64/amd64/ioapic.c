@@ -39,6 +39,7 @@ __MODULE_NAME("ioapic");
 __KERNEL_META("$Hyra$: ioapic.c, Ian Marco Moffett, "
               "I/O APIC driver");
 
+#define pr_trace(fmt, ...) kprintf("ioapic: " fmt, ##__VA_ARGS__)
 #define IOAPIC_BASE_OFF(off) ((void *)((uintptr_t)ioapic_base + off))
 
 static void *ioapic_base = NULL;
@@ -191,7 +192,7 @@ ioapic_init(void)
     tmp = ioapic_readl(IOAPICVER);
     redir_entry_cnt = __SHIFTOUT(tmp, 0xFF << 16) + 1;
 
-    KINFO("Masking %d GSIs...\n", redir_entry_cnt);
+    pr_trace("Masking %d GSIs...\n", redir_entry_cnt);
 
     for (uint8_t i = 0; i < redir_entry_cnt; ++i) {
         ioapic_gsi_mask(i);

@@ -39,6 +39,8 @@ __MODULE_NAME("acpi");
 __KERNEL_META("$Hyra$: acpi_init.c, Ian Marco Moffett, "
               "ACPI init logic");
 
+#define pr_trace(fmt, ...) kprintf("acpi: " fmt, ##__VA_ARGS__)
+
 static volatile struct limine_rsdp_request rsdp_req = {
     .id = LIMINE_RSDP_REQUEST,
     .revision = 0
@@ -58,13 +60,13 @@ static void
 acpi_print_oemid(const char *type, char oemid[OEMID_SIZE])
 {
     if (type != NULL) {
-        KINFO("%s OEMID: ", type);
+        pr_trace("%s OEMID: ", type);
     }
 
     for (size_t i = 0; i < OEMID_SIZE; ++i) {
-        kprintf("%c", oemid[i]);
+        kprintf(OMIT_TIMESTAMP "%c", oemid[i]);
     }
-    kprintf("\n");
+    kprintf(OMIT_TIMESTAMP "\n");
 }
 
 struct acpi_root_sdt *
@@ -97,10 +99,10 @@ acpi_init(void)
     if (rsdp->revision >= 2) {
         using_xsdt = true;
         root_sdt = PHYS_TO_VIRT(rsdp->xsdt_addr);
-        KINFO("Using XSDT as root SDT\n");
+        pr_trace("Using XSDT as root SDT\n");
     } else {
         root_sdt = PHYS_TO_VIRT(rsdp->rsdt_addr);
-        KINFO("Using RSDT as root SDT\n");
+        pr_trace("Using RSDT as root SDT\n");
     }
     if (!acpi_is_checksum_valid(&root_sdt->hdr)) {
         panic("Root SDT has an invalid checksum!\n");
