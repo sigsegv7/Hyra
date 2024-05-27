@@ -31,6 +31,7 @@
 #include <sys/machdep.h>
 #include <sys/tty.h>
 #include <sys/cdefs.h>
+#include <sys/timer.h>
 #include <dev/vcons/vcons.h>
 #include <fs/procfs.h>
 #include <string.h>
@@ -104,9 +105,38 @@ void
 kprintf(const char *fmt, ...)
 {
     va_list ap;
+    char timestamp[64] = "[  0.000000] ";
+    bool has_counter = true;
+    bool use_timestamp = true;
+    const char *fmt_p = fmt;
+    struct timer tmr = {0};
+
+    /*
+     * If the first char is OMIT_TIMESTAMP, than we won't
+     * print out the timestamp.
+     */
+    if (*fmt_p == OMIT_TIMESTAMP[0]) {
+        ++fmt_p;
+        use_timestamp = false;
+    }
+
+    /* See if we can use the counter */
+    if (req_timer(TIMER_GP, &tmr) != 0)
+        has_counter = false;
+
+    if (has_counter) {
+        if (tmr.get_time_sec != NULL && tmr.get_time_usec != NULL)
+            snprintf(timestamp, sizeof(timestamp), "[  %d.%06d] ",
+                     tmr.get_time_sec(), tmr.get_time_usec());
+
+    }
+
+    if (use_timestamp) {
+        syslog_write(timestamp, strlen(timestamp));
+    }
 
     va_start(ap, fmt);
-    vkprintf(fmt, &ap);
+    vkprintf(fmt_p, &ap);
     va_end(ap);
 }
 
