@@ -124,6 +124,7 @@ kprintf(const char *fmt, ...)
     if (req_timer(TIMER_GP, &tmr) != 0)
         has_counter = false;
 
+    /* If we can use the counter, format the timestamp */
     if (has_counter) {
         if (tmr.get_time_sec != NULL && tmr.get_time_usec != NULL)
             snprintf(timestamp, sizeof(timestamp), "[  %d.%06d] ",
