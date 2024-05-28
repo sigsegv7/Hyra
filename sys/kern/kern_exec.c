@@ -59,6 +59,7 @@ __KERNEL_META("$Hyra$: kern_exec.c, Ian Marco Moffett, "
 static int
 exec_get_args(char **argv, struct exec_args *res)
 {
+    static char *dmmy_envp[] = {NULL};
     const size_t ARG_LEN = sizeof(char) * ARG_MAX;
     char *argp = NULL;
     void *tmp;
@@ -76,6 +77,7 @@ exec_get_args(char **argv, struct exec_args *res)
 
     td = this_td();
     res->vas = td->addrsp;
+    res->envp = dmmy_envp;
 
     /* Read argv */
     copyin((uintptr_t)argv, &argp, sizeof(char *));
