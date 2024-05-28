@@ -45,11 +45,8 @@ __MODULE_NAME("kern_loader");
 __KERNEL_META("$Hyra$: kern_loader.c, Ian Marco Moffett, "
               "Kernel ELF loader");
 
-#if !defined(DEBUG)
-#define DBG(...) __nothing
-#else
-#define DBG(...) KDEBUG(__VA_ARGS__)
-#endif
+#define pr_trace(fmt, ...) kprintf("loader: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
 
 #define PHDR(hdrptr, IDX) \
     (void *)((uintptr_t)hdr + (hdrptr)->e_phoff + (hdrptr->e_phentsize*IDX))
@@ -141,13 +138,13 @@ int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
     void *tmp_ptr;
 
     if (auxv == NULL) {
-        DBG("Auxval argument NULL\n");
+        pr_error("Auxval argument NULL\n");
         return -1;
     }
 
     if (memcmp(hdr->e_ident, ELFMAG, 4) != 0) {
         /* Bad ELF header */
-        DBG("ELF header bad! (Magic incorrect)\n");
+        pr_error("ELF header bad! (Magic incorrect)\n");
         return -1;
     }
 
@@ -179,7 +176,7 @@ int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
 
             /* Do we not have enough page frames? */
             if (physmem == 0) {
-                DBG("Failed to allocate physical memory\n");
+                pr_error("Failed to allocate physical memory\n");
                 vm_free_pageframe(physmem, page_count);
                 return -ENOMEM;
             }
@@ -202,7 +199,7 @@ int loader_load(struct vas vas, const void *dataptr, struct auxval *auxv,
             *ld_path = dynalloc(phdr->p_filesz);
 
             if (ld_path == NULL) {
-                DBG("Failed to allocate memory for PT_INTERP path\n");
+                pr_error("Failed to allocate memory for PT_INTERP path\n");
                 return -ENOMEM;
             }
 
