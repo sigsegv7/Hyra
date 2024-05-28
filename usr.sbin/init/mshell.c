@@ -42,27 +42,17 @@
 #define MAX_FILE_SIZE 1024
 #define TTY_DEV "/dev/tty1"
 #define PROMPT "mshell> "
+#define NELEMENTS(ARRAY) (sizeof(ARRAY) / sizeof(ARRAY[0]))
 
 struct mshell_state {
     uint8_t running : 1;
     char input[INPUT_SIZE];
 };
 
-static void
-help(void)
-{
-    printf(
-        "MSHELL COMMANDS\n"
-        "\thelp - show this message\n"
-        "\treboot - reboot the system\n"
-        "\ttty - show the current TTY\n"
-        "\tpagesize - get the current page size\n"
-        "\tkversion - get the kernel version\n"
-        "\tmemstat - get info about memory\n"
-        "\tintr - get interrupt information\n"
-        "\texit - exit the shell\n"
-    );
-}
+struct command {
+    const char *name;
+    void(*run)(struct mshell_state *state);
+};
 
 static void
 print_file(const char *path)
@@ -87,6 +77,75 @@ print_file(const char *path)
 }
 
 static void
+rebootcmd(struct mshell_state *state)
+{
+    reboot(REBOOT_DEFAULT);
+}
+
+static void
+helpcmd(struct mshell_state *state)
+{
+    printf(
+        "MSHELL COMMANDS\n"
+        "\thelp - show this message\n"
+        "\treboot - reboot the system\n"
+        "\ttty - show the current TTY\n"
+        "\tpagesize - get the current page size\n"
+        "\tkversion - get the kernel version\n"
+        "\tmemstat - get info about memory\n"
+        "\tintr - get interrupt information\n"
+        "\texit - exit the shell\n"
+    );
+}
+
+static void
+pagesizecmd(struct mshell_state *state)
+{
+    printf("%d\n", auxv_entry(AT_PAGESIZE));
+}
+
+static void
+ttycmd(struct mshell_state *state)
+{
+    printf("%s\n", TTY_DEV);
+}
+
+static void
+exitcmd(struct mshell_state *state)
+{
+    state->running = 0;
+}
+
+static void
+kversioncmd(struct mshell_state *state)
+{
+    print_file("/proc/version");
+}
+
+static void
+memstatcmd(struct mshell_state *state)
+{
+    print_file("/proc/memstat");
+}
+
+static void
+intrcmd(struct mshell_state *state)
+{
+    print_file("/proc/interrupts");
+}
+
+static struct command cmdtab[] = {
+    { "reboot", rebootcmd },
+    { "help", helpcmd },
+    { "pagesize", pagesizecmd },
+    { "tty", ttycmd },
+    { "exit", exitcmd },
+    { "kversion", kversioncmd },
+    { "memstat", memstatcmd },
+    { "intr", intrcmd }
+};
+
+static void
 parse_input(struct mshell_state *state)
 {
     char cmd[INPUT_SIZE];
@@ -107,26 +166,17 @@ parse_input(struct mshell_state *state)
     if (cmd_idx == 0)
         return;
 
-    if (strcmp(cmd, "reboot") == 0) {
-        reboot(REBOOT_DEFAULT);
-    } else if (strcmp(cmd, "pagesize") == 0) {
-        printf("%d\n", auxv_entry(AT_PAGESIZE));
-    } else if (strcmp(cmd, "tty") == 0) {
-        printf("%s\n", TTY_DEV);
-    } else if (strcmp(cmd, "help") == 0) {
-        help();
-    } else if (strcmp(cmd, "exit") == 0) {
-        state->running = 0;
-    } else if (strcmp(cmd, "kversion") == 0) {
-        print_file("/proc/version");
-    } else if (strcmp(cmd, "memstat") == 0) {
-        print_file("/proc/memstat");
-    } else if (strcmp(cmd, "intr") == 0) {
-        print_file("/proc/interrupts");
-    } else {
-        printf("Unknown command '%s'\n", cmd);
-        printf("Use 'help' for help\n");
+    /* Iterate through possible commands */
+    for(int i = 0; i < NELEMENTS(cmdtab); i++) {
+        if (strcmp(cmd, cmdtab[i].name) == 0) {
+            cmdtab[i].run(state);
+            return;
+        }
     }
+
+    /* If no command was executed */
+    printf("Unknown command '%s'\n", cmd);
+    printf("Use 'help' for help\n");
 }
 
 int
