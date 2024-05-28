@@ -52,6 +52,7 @@ panic(const char *fmt, ...)
     spinlock_acquire(&lock);    /* Never released */
     __TRY_CALL(cpu_halt_others);
 
+    g_syslog_use_tty = true;
     va_start(ap, fmt);
 
     kprintf(OMIT_TIMESTAMP "panic: ");
