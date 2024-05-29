@@ -29,6 +29,9 @@
 
 #include <sys/types.h>
 
+#ifndef _QUEUE_H_
+#define _QUEUE_H_
+
 #define _Q_INVALIDATE(a)
 
 /*
@@ -167,3 +170,4 @@ struct {								\
 		TAILQ_INIT((head2));					\
 	}								\
 } while (0)
+#endif  /* _QUEUE_H_ */
