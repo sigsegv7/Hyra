@@ -444,6 +444,12 @@ ahci_reset_port(struct hba_port *port)
 {
     uint32_t sctl, ssts;
 
+    /*
+     * Some odd behaviour may occur if a COMRESET is sent
+     * to the port while it is in an idle state...
+     * A workaround to this is to bring the port up
+     * then immediately transmit the COMRESET to the device.
+     */
     ahci_start_port(port);
     sctl = mmio_read32(&port->sctl);
 
