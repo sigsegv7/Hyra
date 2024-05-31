@@ -314,7 +314,7 @@ ahci_identify(struct ahci_hba *hba, struct hba_port *port)
     buf_phys = vm_alloc_pageframe(1);
     buf = PHYS_TO_VIRT(buf_phys);
 
-    if (buf == 0) {
+    if (buf_phys == 0) {
         status = -ENOMEM;
         goto done;
     }
