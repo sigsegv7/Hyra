@@ -118,7 +118,6 @@ struct ahci_hba {
     struct ahci_cmd_hdr *cmdlist;
     uint32_t ncmdslots;
     uint32_t nports;
-    struct mutex lock;
 };
 
 /* Commands */

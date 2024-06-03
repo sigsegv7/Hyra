@@ -48,6 +48,7 @@ __KERNEL_META("$Hyra$: ahci.c, Ian Marco Moffett, "
 
 static struct pci_device *dev;
 static struct timer driver_tmr;
+static struct mutex io_lock;
 
 /*
  * Poll register to have `bits' set/unset.
@@ -271,7 +272,7 @@ ahci_submit_cmd(struct ahci_hba *hba, struct hba_port *port, uint8_t cmdslot)
     }
 
     /* Activate the command slot */
-    mutex_acquire(&hba->lock);
+    mutex_acquire(&io_lock);
     mmio_write32(&port->ci, __BIT(cmdslot));
 
     /*
@@ -291,7 +292,7 @@ ahci_submit_cmd(struct ahci_hba *hba, struct hba_port *port, uint8_t cmdslot)
         pr_error("IDENTIFY timeout: slot %d still set!\n", cmdslot);
     }
 
-    mutex_release(&hba->lock);
+    mutex_release(&io_lock);
     return status;
 }
 
