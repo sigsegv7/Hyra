@@ -697,6 +697,7 @@ ahci_init_ports(struct ahci_hba *hba)
 
     return 0;
 }
+
 /*
  * Sets up the HBA
  */
