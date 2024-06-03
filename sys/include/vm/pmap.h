@@ -54,6 +54,10 @@
 #define PROT_EXEC       __BIT(1)      /* Executable */
 #define PROT_USER       __BIT(2)      /* User accessible */
 
+/* Caching types */
+#define VM_CACHE_UC  0x00000U      /* Uncachable */
+#define VM_CACHE_WT  0x00001U      /* Write-through */
+
 #define is_vas_valid(vas) (vas.top_level != 0)
 
 /*
@@ -65,6 +69,12 @@ struct vm_ctx {
     tlsf_t tlsf_ctx;
     struct spinlock dynalloc_lock;
 };
+
+/*
+ * Mark a virtual address with a specific caching
+ * type.
+ */
+int pmap_set_cache(struct vm_ctx *, struct vas, vaddr_t, int);
 
 /*
  * Create a virtual address space

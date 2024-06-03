@@ -255,6 +255,38 @@ pmap_modify_tbl(struct vm_ctx *ctx, struct vas vas, vaddr_t va, size_t val)
 }
 
 int
+pmap_set_cache(struct vm_ctx *ctx, struct vas vas, vaddr_t va, int type)
+{
+    uintptr_t *tbl;
+    int status;
+    size_t idx;
+
+    if ((status = pmap_get_tbl(ctx, vas, va, false, &tbl)) != 0) {
+        return status;
+    }
+
+    idx = pmap_get_level_index(1, va);
+
+    /* Set the policy based on the type */
+    switch (type) {
+    case VM_CACHE_UC:
+        tbl[idx] |= PTE_PCD;
+        tbl[idx] &= ~(PTE_PWT);
+        break;
+    case VM_CACHE_WT:
+        tbl[idx] &= ~(PTE_PCD);
+        tbl[idx] |= PTE_PWT;
+        break;
+    default:
+        /* Invalid type */
+        return 1;
+    }
+
+    pmap_flush(va);
+    return 0;
+}
+
+int
 pmap_map(struct vm_ctx *ctx, struct vas vas, vaddr_t va, paddr_t pa,
          vm_prot_t prot)
 {
