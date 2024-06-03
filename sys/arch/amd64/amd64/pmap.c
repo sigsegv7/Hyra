@@ -175,36 +175,51 @@ pmap_extract(uint8_t level, vaddr_t va, uintptr_t *pmap, bool allocate)
 /*
  * Modify a page table by writing `val' to it.
  *
- * TODO: Ensure operations here are serialized.
+ * @ctx: Virtual memory context.
+ * @vas: Virtual address space.
+ * @va: Virtual address.
+ * @alloc: True to alloc new entries.
+ * @res: Result
  */
 static int
-pmap_modify_tbl(struct vm_ctx *ctx, struct vas vas, vaddr_t va, size_t val)
+pmap_get_tbl(struct vm_ctx *ctx, struct vas vas, vaddr_t va, bool alloc,
+             uintptr_t **res)
 {
     uintptr_t *pml4 = PHYS_TO_VIRT(vas.top_level);
     uintptr_t *pdpt, *pd, *tbl;
     int status = 0;
 
-    pdpt = pmap_extract(4, va, pml4, true);
+    pdpt = pmap_extract(4, va, pml4, alloc);
     if (pdpt == NULL) {
         status = 1;
         goto done;
     }
 
-    pd = pmap_extract(3, va, pdpt, true);
+    pd = pmap_extract(3, va, pdpt, alloc);
     if (pd == NULL) {
         status = 1;
         goto done;
     }
 
-    tbl = pmap_extract(2, va, pd, true);
+    tbl = pmap_extract(2, va, pd, alloc);
     if (tbl == NULL) {
         status = 1;
         goto done;
     }
 
-    /* Map our page */
-    tbl[pmap_get_level_index(1, va)] = val;
+    *res = tbl;
+done:
+    return status;
+}
 
+/*
+ * Flush a virtual address.
+ *
+ * @va: VA to flush from TLB.
+ */
+static void
+pmap_flush(vaddr_t va)
+{
     /*
      * Do TLB shootdown if multiple CPUs are listed.
      *
@@ -216,8 +231,27 @@ pmap_modify_tbl(struct vm_ctx *ctx, struct vas vas, vaddr_t va, size_t val)
     }
 
     tlb_flush(va);
-done:
-    return status;
+}
+
+/*
+ * Modify a page table by writing `val' to it.
+ *
+ * TODO: Ensure operations here are serialized.
+ */
+static int
+pmap_modify_tbl(struct vm_ctx *ctx, struct vas vas, vaddr_t va, size_t val)
+{
+    uintptr_t *tbl;
+    int status;
+
+    if ((status = pmap_get_tbl(ctx, vas, va, true, &tbl) != 0)) {
+        return status;
+    }
+
+    /* Map our page */
+    tbl[pmap_get_level_index(1, va)] = val;
+    pmap_flush(va);
+    return 0;
 }
 
 int
