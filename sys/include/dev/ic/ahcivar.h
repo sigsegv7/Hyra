@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/mutex.h>
+#include <sys/queue.h>
 #include <dev/ic/ahciregs.h>
 
 struct ata_identity {
@@ -113,6 +114,13 @@ struct ahci_fis_h2d {
     uint8_t rsvd1[4];
 };
 
+struct ahci_device {
+    struct ahci_hba *hba;
+    struct hba_port *port;
+    dev_t minor;
+    TAILQ_ENTRY(ahci_device) link;
+};
+
 struct ahci_hba {
     struct hba_memspace *abar;
     struct ahci_cmd_hdr *cmdlist;
@@ -121,8 +129,10 @@ struct ahci_hba {
 };
 
 /* Commands */
-#define ATA_CMD_NOP      0x00
-#define ATA_CMD_IDENTIFY 0xEC
+#define ATA_CMD_NOP         0x00
+#define ATA_CMD_IDENTIFY    0xEC
+#define ATA_CMD_READ_DMA    0x25
+#define ATA_CMD_WRITE_DMA   0x35
 
 /* FIS types */
 #define FIS_TYPE_H2D 0x27

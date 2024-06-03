@@ -34,6 +34,8 @@
 #include <sys/syslog.h>
 #include <sys/mmio.h>
 #include <sys/errno.h>
+#include <sys/device.h>
+#include <fs/devfs.h>
 #include <dev/pci/pci.h>
 #include <dev/ic/ahciregs.h>
 #include <dev/ic/ahcivar.h>
@@ -46,9 +48,38 @@ __KERNEL_META("$Hyra$: ahci.c, Ian Marco Moffett, "
 #define pr_trace(fmt, ...) kprintf("ahci: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
+static TAILQ_HEAD(, ahci_device) sata_devs;
+
 static struct pci_device *dev;
 static struct timer driver_tmr;
 static struct mutex io_lock;
+static size_t dev_count = 0;
+
+static bool
+is_word_aligned(void *ptr)
+{
+    return (((uintptr_t)ptr) & 1) == 0;
+}
+
+/*
+ * Fetch a SATA device with a SATA device
+ * minor.
+ *
+ * @dev_minor: SATA device minor.
+ */
+static struct ahci_device *
+ahci_get_sata(dev_t dev_minor)
+{
+    struct ahci_device *dev;
+
+    TAILQ_FOREACH(dev, &sata_devs, link) {
+        if (dev->minor == dev_minor) {
+            return dev;
+        }
+    }
+
+    return NULL;
+}
 
 /*
  * Poll register to have `bits' set/unset.
@@ -296,6 +327,62 @@ ahci_submit_cmd(struct ahci_hba *hba, struct hba_port *port, uint8_t cmdslot)
     return status;
 }
 
+static int
+ahci_sata_rw(struct ahci_hba *hba, struct hba_port *port, struct sio_txn *sio,
+             bool write)
+{
+    paddr_t buf_phys;
+    struct ahci_cmd_hdr *cmdhdr;
+    struct ahci_cmdtab *cmdtbl;
+    struct ahci_fis_h2d *fis;
+    int cmdslot, status;
+
+    if (sio->buf == NULL || !is_word_aligned(sio->buf))
+        return -EINVAL;
+    if (sio->len == 0)
+        return -EINVAL;
+
+    buf_phys = VIRT_TO_PHYS(sio->buf);
+    cmdslot = ahci_alloc_cmdslot(hba, port);
+
+    /* Setup command header */
+    cmdhdr = PHYS_TO_VIRT(port->clb + cmdslot * sizeof(struct ahci_cmd_hdr));
+    cmdhdr->w = 0;
+    cmdhdr->cfl = sizeof(struct ahci_fis_h2d) / 4;
+    cmdhdr->prdtl = 1;
+
+    /* Setup physical region descriptor */
+    cmdtbl = PHYS_TO_VIRT(cmdhdr->ctba);
+    cmdtbl->prdt[0].dba = buf_phys;
+    cmdtbl->prdt[0].dbc = (sio->len << 9) - 1;
+    cmdtbl->prdt[0].i = 0;
+
+    /* Setup command FIS */
+    fis = (void *)&cmdtbl->cfis;
+    fis->type = FIS_TYPE_H2D;
+    fis->command = write ? ATA_CMD_WRITE_DMA : ATA_CMD_READ_DMA;
+    fis->c = 1;
+    fis->device = (1 << 6);
+
+    /* Setup LBA */
+    fis->lba0 = sio->offset & 0xFF;
+    fis->lba1 = (sio->offset >> 8) & 0xFF;
+    fis->lba2 = (sio->offset >> 16) & 0xFF;
+    fis->lba3 = (sio->offset >> 24) & 0xFF;
+    fis->lba4 = (sio->offset >> 32) & 0xFF;
+    fis->lba5 = (sio->offset >> 40) & 0xFF;
+
+    /* Setup count */
+    fis->countl = sio->len & 0xFF;
+    fis->counth = (sio->len >> 8) & 0xFF;
+
+    if ((status = ahci_submit_cmd(hba, port, cmdslot)) != 0) {
+        return status;
+    }
+
+    return 0;
+}
+
 /*
  * Send the IDENTIFY command to a device and
  * log info for debugging purposes.
@@ -349,6 +436,92 @@ ahci_identify(struct ahci_hba *hba, struct hba_port *port)
 done:
     vm_free_pageframe(VIRT_TO_PHYS(buf), 1);
     return status;
+}
+
+/*
+ * Device interface read/write helper
+ */
+static int
+sata_dev_rw(struct device *dev, struct sio_txn *sio, bool write)
+{
+    struct ahci_device *sata;
+
+    if (sio == NULL)
+        return -1;
+    if (sio->buf == NULL)
+        return -1;
+
+    sata = ahci_get_sata(dev->minor);
+
+    if (sata == NULL)
+       return -1;
+
+    return ahci_sata_rw(sata->hba, sata->port, sio, write);
+}
+
+/*
+ * Device interface read
+ */
+static int
+sata_dev_read(struct device *dev, struct sio_txn *sio)
+{
+    return sata_dev_rw(dev, sio, false);
+}
+
+/*
+ * Device interface write
+ */
+static int
+sata_dev_write(struct device *dev, struct sio_txn *sio)
+{
+    return sata_dev_rw(dev, sio, true);
+}
+
+/*
+ * Device interface open
+ */
+static int
+sata_dev_open(struct device *dev)
+{
+    return 0;
+}
+
+/*
+ * Register a SATA device to the rest of the system
+ * and expose to userland as a device file.
+ */
+static int
+ahci_sata_register(struct ahci_hba *hba, struct hba_port *port)
+{
+    char devname[128];
+    struct device *dev = NULL;
+    struct ahci_device *sata = NULL;
+    dev_t dev_id;
+    dev_t major;
+
+    sata = dynalloc(sizeof(struct ahci_device));
+    if (sata == NULL) {
+        return -ENOMEM;
+    }
+
+    dev_id = ++dev_count;
+    major = device_alloc_major();
+
+    dev = device_alloc();
+    dev->open = sata_dev_open;
+    dev->read = sata_dev_read;
+    dev->write = sata_dev_write;
+    dev->blocksize = 512;
+    device_create(dev, dev_id, major);
+
+    sata->port = port;
+    sata->hba = hba;
+    sata->minor = dev->minor;
+
+    snprintf(devname, sizeof(devname), "sd%d", dev_id);
+    devfs_add_dev(devname, dev);
+    TAILQ_INSERT_TAIL(&sata_devs, sata, link);
+    return 0;
 }
 
 /*
@@ -427,6 +600,7 @@ ahci_init_port(struct ahci_hba *hba, struct hba_port *port, size_t portno)
     }
 
     ahci_identify(hba, port);
+    ahci_sata_register(hba, port);
 done:
     if (status != 0 && cmdlist != NULL)
         vm_free_pageframe(port->clb, cmdlist_size / pagesize);
@@ -537,6 +711,7 @@ ahci_init_hba(struct ahci_hba *hba)
 static int
 ahci_init(void)
 {
+    int status;
     uint16_t cmdreg_bits;
     struct ahci_hba hba = {0};
     struct pci_lookup ahci_lookup = {
@@ -563,8 +738,12 @@ ahci_init(void)
         return -1;
     }
 
-    hba.abar = (struct hba_memspace *)PCI_BAR_MEMBASE(dev->bar[5]);
+    if ((status = pci_map_bar(dev, 5, (void *)&hba.abar)) != 0) {
+        return status;
+    }
+
     pr_trace("AHCI HBA memspace @ 0x%p\n", hba.abar);
+    TAILQ_INIT(&sata_devs);
     ahci_init_hba(&hba);
     return 0;
 }
