@@ -77,6 +77,7 @@ int pci_init(void);
 uint32_t pci_readl(struct pci_device *dev, uint32_t offset);
 void pci_writel(struct pci_device *dev, uint32_t offset, uint32_t val);
 void pci_set_cmdreg(struct pci_device *dev, uint16_t bits);
+int pci_map_bar(struct pci_device *dev, uint8_t bar, void **vap);
 struct pci_device *pci_get_device(struct pci_lookup lookup, uint16_t lookup_type);
 
 #endif  /* !_DEV_PCI_H_ */

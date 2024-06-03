@@ -33,7 +33,9 @@
 #include <sys/panic.h>
 #include <sys/queue.h>
 #include <sys/syslog.h>
+#include <sys/errno.h>
 #include <vm/dynalloc.h>
+#include <machine/bus.h>
 #if defined(__x86_64__)
 #include <machine/io.h>
 #endif
@@ -180,6 +182,62 @@ pci_scan_bus(uint8_t bus)
             pci_register_device(bus, slot, func);
         }
     }
+}
+
+/*
+ * Convert a BAR number to BAR register offset.
+ *
+ * @dev: Device of BAR to check.
+ * @bar: Bar number.
+ */
+static uint8_t
+pci_get_barreg(struct pci_device *dev, uint8_t bar)
+{
+    switch (bar) {
+    case 0: return PCIREG_BAR0;
+    case 1: return PCIREG_BAR1;
+    case 2: return PCIREG_BAR2;
+    case 3: return PCIREG_BAR3;
+    case 4: return PCIREG_BAR4;
+    case 5: return PCIREG_BAR5;
+    default: return 0;
+    }
+}
+
+/*
+ * Map a PCI(e) BAR into kernel memory.
+ *
+ * @dev: Device of BAR to map.
+ * @bar: BAR number to map.
+ * @vap: Resulting virtual address.
+ */
+int
+pci_map_bar(struct pci_device *dev, uint8_t bar, void **vap)
+{
+    uint8_t bar_reg = pci_get_barreg(dev, bar);
+    uintptr_t tmp;
+    uint32_t size;
+
+    if (bar_reg == 0) {
+        return -EINVAL;
+    }
+
+    /*
+     * Get the length of the region this BAR covers by writing a
+     * mask of 32 bits into the BAR register and seeing how many
+     * bits are unset. We can use this to compute the size of the
+     * region. We know that log2(len) bits must be unset.
+     */
+    tmp = pci_readl(dev, bar_reg);
+    pci_writel(dev, bar_reg, __MASK(32));
+    size = pci_readl(dev, bar_reg);
+    size = ~size + 1;
+
+    /* Now we need to restore the previous value */
+    pci_writel(dev, bar_reg, tmp);
+
+    /* Now do the actual mapping work */
+    return bus_map(dev->bar[bar], size, 0, vap);
 }
 
 /*
