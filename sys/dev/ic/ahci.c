@@ -487,6 +487,15 @@ sata_dev_open(struct device *dev)
 }
 
 /*
+ * Device interface close
+ */
+static int
+sata_dev_close(struct device *dev)
+{
+    return 0;
+}
+
+/*
  * Register a SATA device to the rest of the system
  * and expose to userland as a device file.
  */
@@ -509,6 +518,7 @@ ahci_sata_register(struct ahci_hba *hba, struct hba_port *port)
 
     dev = device_alloc();
     dev->open = sata_dev_open;
+    dev->close = sata_dev_close;
     dev->read = sata_dev_read;
     dev->write = sata_dev_write;
     dev->blocksize = 512;
