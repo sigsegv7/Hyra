@@ -48,6 +48,16 @@ static volatile struct limine_rsdp_request rsdp_req = {
     .revision = 0
 };
 
+static void
+acpi_init_hpet(void)
+{
+#if defined(__x86_64__)
+    if (hpet_init() != 0) {
+        panic("Could not init HPET\n");
+    }
+#endif
+}
+
 /*
  * Writes out OEMID of ACPI header.
  *
@@ -107,4 +117,5 @@ acpi_init(void)
     }
 
     root_sdt_entries = (root_sdt->hdr.length - sizeof(root_sdt->hdr)) / 4;
+    acpi_init_hpet();
 }
