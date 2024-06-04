@@ -27,27 +27,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
-#include <sys/syslog.h>
-#include <dev/cons/cons.h>
+#include <sys/types.h>
 #include <dev/acpi/acpi.h>
-#include <machine/cpu.h>
+#include <dev/acpi/acpivar.h>
+#include <dev/acpi/tables.h>
+#include <vm/vm.h>
+#include <string.h>
 
-int
-main(void)
+/*
+ * Compute the ACPI checksum of a header.
+ *
+ * @hdr: HDR to check.
+ *
+ * Must return zero to be a valid checksum!
+ */
+uint8_t
+acpi_checksum(struct acpi_header *hdr)
 {
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+    uint8_t sum = 0;
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+    for (int i = 0; i < hdr->length; ++i) {
+        sum += ((char *)hdr)[i];
+    }
 
-    /* Startup the BSP */
-    cpu_startup();
+    return sum;
+}
 
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
+/*
+ * Looks up an ACPI table with a specific
+ * signature e.g "APIC" for MADT (if present).
+ *
+ * @query: The specific query to make e.g "APIC"
+ */
+void *
+acpi_query(const char *query)
+{
+    struct acpi_header *hdr;
+    struct acpi_root_sdt *root_sdt;
+    size_t root_sdt_len, signature_len;
+
+    root_sdt = acpi_get_root_sdt();
+    root_sdt_len = acpi_get_root_sdt_len();
+    signature_len = sizeof(hdr->signature);
+
+    for (size_t i = 0; i < root_sdt_len; ++i) {
+        hdr = (struct acpi_header *)PHYS_TO_VIRT(root_sdt->tables[i]);
+
+        if (memcmp(hdr->signature, query, signature_len) == 0) {
+            return (void *)hdr;
+        }
+    }
+
+    return NULL;
 }

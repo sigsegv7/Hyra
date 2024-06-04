@@ -27,27 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
-#include <sys/syslog.h>
-#include <dev/cons/cons.h>
-#include <dev/acpi/acpi.h>
-#include <machine/cpu.h>
+#ifndef _ACPI_ACPIVAR_H_
+#define _ACPI_ACPIVAR_H_
 
-int
-main(void)
-{
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+#include <sys/types.h>
+#include <dev/acpi/tables.h>
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+uint8_t acpi_checksum(struct acpi_header *hdr);
+struct acpi_root_sdt *acpi_get_root_sdt(void);
+size_t acpi_get_root_sdt_len(void);
 
-    /* Startup the BSP */
-    cpu_startup();
-
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
-}
+#endif  /* !_ACPI_ACPIVAR_H_ */
