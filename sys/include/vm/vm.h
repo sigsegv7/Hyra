@@ -39,4 +39,8 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 #define PHYS_TO_VIRT(phys) (void *)((uintptr_t)phys + VM_HIGHER_HALF)
 #define VIRT_TO_PHYS(virt) ((uintptr_t)virt - VM_HIGHER_HALF)
 
+#define DEFAULT_PAGESIZE 4096
+
+void vm_init(void);
+
 #endif

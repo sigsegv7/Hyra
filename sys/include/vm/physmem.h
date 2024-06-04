@@ -27,17 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/limine.h>
-#include <vm/vm.h>
-#include <vm/physmem.h>
+#ifndef _VM_PHYSMEM_H_
+#define _VM_PHYSMEM_H_
 
-volatile struct limine_hhdm_request g_hhdm_request = {
-    .id = LIMINE_HHDM_REQUEST,
-    .revision = 0
-};
+#include <sys/types.h>
 
-void
-vm_init(void)
-{
-    vm_physmem_init();
-}
+void vm_physmem_init(void);
+uintptr_t vm_alloc_frame(size_t count);
+void vm_free_frame(uintptr_t base, size_t count);
+
+#endif  /* !_VM_PHYSMEM_H_ */
