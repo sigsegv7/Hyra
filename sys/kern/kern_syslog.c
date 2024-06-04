@@ -30,6 +30,7 @@
 #include <sys/syslog.h>
 #include <sys/spinlock.h>
 #include <dev/cons/cons.h>
+#include <dev/timer.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -66,6 +67,8 @@ kprintf(const char *fmt, ...)
     char timestamp[64] = "[  0.000000] ";
     const char *fmt_p = fmt;
     bool use_timestamp = true;
+    bool has_counter = true;
+    struct timer tmr;
 
     /*
      * If the first char is OMIT_TIMESTAMP, then we won't
@@ -74,6 +77,19 @@ kprintf(const char *fmt, ...)
     if (*fmt == OMIT_TIMESTAMP[0]) {
         ++fmt_p;
         use_timestamp = false;
+    }
+
+    /* See if we have a timer */
+    if (req_timer(TIMER_GP, &tmr) != TMRR_SUCCESS) {
+        has_counter = false;
+    }
+
+    /* If we can use the counter, format the timestamp */
+    if (has_counter) {
+        if (tmr.get_time_sec != NULL && tmr.get_time_usec != NULL) {
+            snprintf(timestamp, sizeof(timestamp), "[  %d.%06d] ",
+                tmr.get_time_sec(), tmr.get_time_usec());
+        }
     }
 
     if (use_timestamp) {
