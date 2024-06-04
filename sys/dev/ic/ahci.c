@@ -39,6 +39,7 @@
 #include <dev/pci/pci.h>
 #include <dev/ic/ahciregs.h>
 #include <dev/ic/ahcivar.h>
+#include <machine/bus.h>
 #include <vm/vm.h>
 #include <string.h>
 
@@ -724,6 +725,7 @@ ahci_init(void)
 {
     int status;
     uint16_t cmdreg_bits;
+    uint32_t bar_size;
     struct ahci_hba hba = {0};
     struct pci_lookup ahci_lookup = {
         .pci_class = 0x01,
@@ -749,8 +751,15 @@ ahci_init(void)
         return -1;
     }
 
-    if ((status = pci_map_bar(dev, 5, (void *)&hba.abar)) != 0) {
-        return status;
+    if ((bar_size = pci_bar_size(dev, 5)) == 0) {
+        pr_error("Failed to fetch BAR size\n");
+        return -1;
+    }
+
+    status = bus_map(dev->bar[5], bar_size, 0, (void *)&hba.abar);
+    if (status != 0) {
+        pr_error("Failed to map BAR into higher half\n");
+        return -1;
     }
 
     pr_trace("AHCI HBA memspace @ 0x%p\n", hba.abar);

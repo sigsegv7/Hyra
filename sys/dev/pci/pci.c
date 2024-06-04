@@ -205,21 +205,21 @@ pci_get_barreg(struct pci_device *dev, uint8_t bar)
 }
 
 /*
- * Map a PCI(e) BAR into kernel memory.
+ * Get size length of memory region that a PCI(e) BAR
+ * covers. A returned value of zero is invalid and indicates
+ * an error.
  *
- * @dev: Device of BAR to map.
- * @bar: BAR number to map.
- * @vap: Resulting virtual address.
+ * @dev: Device of BAR to get.
+ * @bar: BAR number.
  */
-int
-pci_map_bar(struct pci_device *dev, uint8_t bar, void **vap)
+uint32_t
+pci_bar_size(struct pci_device *dev, uint8_t bar)
 {
     uint8_t bar_reg = pci_get_barreg(dev, bar);
-    uintptr_t tmp;
-    uint32_t size;
+    uint32_t tmp, size;
 
     if (bar_reg == 0) {
-        return -EINVAL;
+        return 0;
     }
 
     /*
@@ -235,9 +235,7 @@ pci_map_bar(struct pci_device *dev, uint8_t bar, void **vap)
 
     /* Now we need to restore the previous value */
     pci_writel(dev, bar_reg, tmp);
-
-    /* Now do the actual mapping work */
-    return bus_map(dev->bar[bar], size, 0, vap);
+    return size;
 }
 
 /*
