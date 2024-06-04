@@ -38,6 +38,10 @@
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
+/* Align up/down a value */
+#define ALIGN_DOWN(value, align)      ((value) & ~((align)-1))
+#define ALIGN_UP(value, align)        (((value) + (align)-1) & ~((align)-1))
+
 /* Bitmap helper macros */
 #define setbit(a, b) ((a)[(b) >> 3] |= BIT(b % 8))
 #define clrbit(a, b) ((a)[(b) >> 3] &= ~BIT(b % 8))
