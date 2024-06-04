@@ -1,0 +1,13 @@
+*.d
+*.o
+*.iso
+*.log
+*.status
+/sys/kern/ksyms.c
+/Makefile
+/cross
+/configure
+/stand
+/base
+/sys/include/machine
+autom4te.cache
