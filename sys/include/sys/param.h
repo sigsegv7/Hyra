@@ -38,6 +38,11 @@
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
+/* Bitmap helper macros */
+#define setbit(a, b) ((a)[(b) >> 3] |= BIT(b % 8))
+#define clrbit(a, b) ((a)[(b) >> 3] &= ~BIT(b % 8))
+#define testbit(a, b) (ISSET((a)[(b) >> 3], BIT(b % 8)))
+
 #define NELEM(a) (sizeof(a) / sizeof(a[0]))
 
 #endif  /* _SYS_PARAM_H_ */
