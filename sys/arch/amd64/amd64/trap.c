@@ -27,12 +27,69 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/param.h>
+#include <sys/cdefs.h>
 #include <sys/reboot.h>
+#include <sys/panic.h>
+#include <sys/syslog.h>
 #include <machine/trap.h>
 #include <machine/frame.h>
+
+#define pr_error(fmt, ...) kprintf("trap: " fmt, ##__VA_ARGS__)
+
+static const char *trap_type[] = {
+    [TRAP_BREAKPOINT]   = "breakpoint",
+    [TRAP_ARITH_ERR]    = "arithmetic error",
+    [TRAP_OVERFLOW]     = "overflow",
+    [TRAP_BOUND_RANGE]  = "bound range exceeded",
+    [TRAP_INVLOP]       = "invalid opcode",
+    [TRAP_DOUBLE_FAULT] = "double fault",
+    [TRAP_INVLTSS]      = "invalid TSS",
+    [TRAP_SEGNP]        = "segment not present",
+    [TRAP_PROTFLT]      = "general protection",
+    [TRAP_PAGEFLT]      = "page fault",
+    [TRAP_NMI]          = "non-maskable interrupt",
+    [TRAP_SS]           = "stack-segment fault"
+};
+
+static inline uintptr_t
+pf_faultaddr(void)
+{
+    uintptr_t cr2;
+    __ASMV("mov %%cr2, %0\n" : "=r" (cr2) :: "memory");
+    return cr2;
+}
+
+static void
+regdump(struct trapframe *tf)
+{
+    uintptr_t cr3, cr2 = pf_faultaddr();
+
+    __ASMV("mov %%cr3, %0\n"
+           : "=r" (cr3)
+           :
+           : "memory"
+    );
+
+    kprintf(OMIT_TIMESTAMP
+        "RAX=%p RCX=%p RDX=%p\n"
+        "RBX=%p RSI=%p RDI=%p\n"
+        "RFL=%p CR2=%p CR3=%p\n"
+        "RBP=%p RSP=%p RIP=%p\n",
+        tf->rax, tf->rcx, tf->rdx,
+        tf->rbx, tf->rsi, tf->rdi,
+        tf->rflags, cr2, cr3,
+        tf->rbp, tf->rsp, tf->rip);
+}
 
 void
 trap_handler(struct trapframe *tf)
 {
-    cpu_reboot(REBOOT_HALT);
+    if (tf->trapno >= NELEM(trap_type)) {
+        panic("Got unknown trap %d\n", tf->trapno);
+    }
+
+    pr_error("Got %s\n", trap_type[tf->trapno]);
+    regdump(tf);
+    panic("Fatal trap - halting\n");
 }
