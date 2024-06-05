@@ -118,4 +118,5 @@ acpi_init(void)
 
     root_sdt_entries = (root_sdt->hdr.length - sizeof(root_sdt->hdr)) / 4;
     acpi_init_hpet();
+    acpi_init_madt();
 }

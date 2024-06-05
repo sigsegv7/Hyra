@@ -27,16 +27,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ACPI_ACPIVAR_H_
-#define _ACPI_ACPIVAR_H_
-
-#include <sys/types.h>
+#include <sys/panic.h>
+#include <sys/syslog.h>
+#include <dev/acpi/acpi.h>
+#include <dev/acpi/acpivar.h>
 #include <dev/acpi/tables.h>
 
-uint8_t acpi_checksum(struct acpi_header *hdr);
-struct acpi_root_sdt *acpi_get_root_sdt(void);
+#define pr_trace(fmt, ...) kprintf("acpi: " fmt, ##__VA_ARGS__)
 
-size_t acpi_get_root_sdt_len(void);
-int acpi_init_madt(void);
+int
+acpi_init_madt(void)
+{
+    struct acpi_madt *madt = acpi_query("APIC");
+    struct apic_header *apichdr;
+    struct ioapic *ioapic = NULL;
+    uint8_t *cur, *end;
 
-#endif  /* !_ACPI_ACPIVAR_H_ */
+    if (madt == NULL) {
+        panic("Could not find MADT!\n");
+    }
+
+    cur = (uint8_t *)(madt + 1);
+    end = (uint8_t *)madt + madt->hdr.length;
+
+    while (cur < end) {
+        apichdr = (void *)cur;
+        if (apichdr->type == APIC_TYPE_IO_APIC) {
+            /*
+             * TODO: Figure out how to use multiple I/O APICs
+             */
+            if (ioapic != NULL) {
+                pr_trace("Skipping I/O APIC with ID %d\n", ioapic->ioapic_id);
+                break;
+            }
+
+            ioapic = (struct ioapic *)cur;
+            pr_trace("Detected I/O APIC (id=%d, gsi_base=%d)\n",
+                ioapic->ioapic_id, ioapic->gsi_base);
+        }
+
+        cur += apichdr->length;
+    }
+
+    return 0;
+
+}

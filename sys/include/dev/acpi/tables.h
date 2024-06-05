@@ -33,6 +33,11 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 
+/* MADT APIC header types */
+#define APIC_TYPE_LOCAL_APIC            0
+#define APIC_TYPE_IO_APIC               1
+#define APIC_TYPE_INTERRUPT_OVERRIDE    2
+
 #define OEMID_SIZE 6
 
 struct __packed acpi_header {
