@@ -27,62 +27,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/types.h>
-#include <machine/cpu.h>
-#include <machine/gdt.h>
-#include <machine/idt.h>
-#include <machine/trap.h>
-#include <machine/asm.h>
-#include <machine/cpuid.h>
+ #include <machine/msr.h>
 
-#if defined(__SPECTRE_IBRS)
-#define SPECTRE_IBRS  __SPECTRE_IBRS
-#else
-#define SPECTRE_IBRS 0
-#endif
+    .text
+    .globl ibrs_enable
+    .type ibrs_enable, @function
+ibrs_enable:
+    /* See if it is supported */
+    mov $7, %eax
+    xor %ecx, %ecx
+    cpuid
+    bt $26, %edx
+    jnc fail
 
-int ibrs_enable(void);
-
-static struct cpu_info g_bsp_ci = {0};
-static struct gdtr bsp_gdtr = {
-    .limit = sizeof(struct gdt_entry) * 256 - 1,
-    .offset = (uintptr_t)&g_gdt_data[0]
-};
-
-static void
-setup_vectors(void)
-{
-    idt_set_desc(0x0, IDT_TRAP_GATE, ISR(arith_err), 0);
-    idt_set_desc(0x2, IDT_TRAP_GATE, ISR(nmi), 0);
-    idt_set_desc(0x3, IDT_TRAP_GATE, ISR(breakpoint_handler), 0);
-    idt_set_desc(0x4, IDT_TRAP_GATE, ISR(overflow), 0);
-    idt_set_desc(0x5, IDT_TRAP_GATE, ISR(bound_range), 0);
-    idt_set_desc(0x6, IDT_TRAP_GATE, ISR(invl_op), 0);
-    idt_set_desc(0x8, IDT_TRAP_GATE, ISR(double_fault), 0);
-    idt_set_desc(0xA, IDT_TRAP_GATE, ISR(invl_tss), 0);
-    idt_set_desc(0xB, IDT_TRAP_GATE, ISR(segnp), 0);
-    idt_set_desc(0xC, IDT_TRAP_GATE, ISR(ss_fault), 0);
-    idt_set_desc(0xD, IDT_TRAP_GATE, ISR(general_prot), 0);
-    idt_set_desc(0xE, IDT_TRAP_GATE, ISR(page_fault), 0);
-}
-
-static void
-try_mitigate_spectre(void)
-{
-    if (!SPECTRE_IBRS) {
-        return;
-    }
-
-    ibrs_enable();
-}
-
-void
-cpu_startup(void)
-{
-    gdt_load(&bsp_gdtr);
-    idt_load();
-
-    setup_vectors();
-    amd64_write_gs_base((uintptr_t)&g_bsp_ci);
-    try_mitigate_spectre();
-}
+    /* Now we enable it */
+    mov $IA32_SPEC_CTL, %ecx
+    rdmsr
+    or $1, %eax
+    wrmsr
+    xor %rax, %rax
+    jmp 1f
+fail:
+    mov $1, %rax
+1:
+    retq

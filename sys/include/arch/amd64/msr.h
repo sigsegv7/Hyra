@@ -33,6 +33,7 @@
 #define IA32_SPEC_CTL       0x00000048
 #define IA32_KERNEL_GS_BASE 0xC0000102
 
+#if !defined(__ASSEMBLER__)
 static inline uint64_t
 rdmsr(uint32_t msr_addr)
 {
@@ -60,4 +61,5 @@ wrmsr(uint32_t msr_addr, uint64_t value)
     );
 }
 
+#endif  /* !__ASSEMBLER__ */
 #endif  /* !_MACHINE_MSR_H_ */
