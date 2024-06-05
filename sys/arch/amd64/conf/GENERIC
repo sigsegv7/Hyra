@@ -1,2 +1,2 @@
 // Kernel options
-option SPECTRE_IBRS yes
+option SPECTRE_IBRS no
