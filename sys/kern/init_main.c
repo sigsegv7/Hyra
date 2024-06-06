@@ -32,6 +32,7 @@
 #include <dev/cons/cons.h>
 #include <dev/acpi/acpi.h>
 #include <machine/cpu.h>
+#include <vm/vm.h>
 
 int
 main(void)
@@ -43,6 +44,9 @@ main(void)
 
     /* Start the ACPI subsystem */
     acpi_init();
+
+    /* Init the virtual memory subsystem */
+    vm_init();
 
     /* Startup the BSP */
     cpu_startup();
