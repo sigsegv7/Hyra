@@ -27,53 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/panic.h>
-#include <sys/syslog.h>
-#include <dev/acpi/acpi.h>
-#include <dev/acpi/acpivar.h>
-#include <dev/acpi/tables.h>
-#include <machine/ioapic.h>
-#include <machine/lapic.h>
+#ifndef _MACHINE_LAPIC_H_
+#define _MACHINE_LAPIC_H_
 
-#define pr_trace(fmt, ...) kprintf("acpi: " fmt, ##__VA_ARGS__)
+#include <sys/types.h>
 
-int
-acpi_init_madt(void)
-{
-    struct acpi_madt *madt = acpi_query("APIC");
-    struct apic_header *apichdr;
-    struct ioapic *ioapic = NULL;
-    uint8_t *cur, *end;
+void lapic_init(void);
 
-    if (madt == NULL) {
-        panic("Could not find MADT!\n");
-    }
+extern uintptr_t g_lapic_base;
 
-    cur = (uint8_t *)(madt + 1);
-    end = (uint8_t *)madt + madt->hdr.length;
-    g_lapic_base = madt->lapic_addr;
-
-    while (cur < end) {
-        apichdr = (void *)cur;
-        if (apichdr->type == APIC_TYPE_IO_APIC) {
-            /*
-             * TODO: Figure out how to use multiple I/O APICs
-             */
-            if (ioapic != NULL) {
-                pr_trace("Skipping I/O APIC with ID %d\n", ioapic->ioapic_id);
-                break;
-            }
-
-            ioapic = (struct ioapic *)cur;
-            pr_trace("Detected I/O APIC (id=%d, gsi_base=%d)\n",
-                ioapic->ioapic_id, ioapic->gsi_base);
-
-            ioapic_init((void *)(uintptr_t)ioapic->ioapic_addr);
-        }
-
-        cur += apichdr->length;
-    }
-
-    return 0;
-
-}
+#endif  /* !_MACHINE_LAPIC_H_ */

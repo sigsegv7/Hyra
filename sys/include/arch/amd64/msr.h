@@ -32,6 +32,7 @@
 
 #define IA32_SPEC_CTL       0x00000048
 #define IA32_KERNEL_GS_BASE 0xC0000102
+#define IA32_APIC_BASE_MSR  0x0000001B
 
 #if !defined(__ASSEMBLER__)
 static inline uint64_t

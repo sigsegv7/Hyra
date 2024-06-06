@@ -35,9 +35,10 @@
 
 struct cpu_info {
     uint32_t apicid;
+    uint8_t has_x2apic : 1;
 };
 
 void cpu_startup(void);
-
+struct cpu_info *this_cpu(void);
 
 #endif  /* !_MACHINE_CPU_H_ */

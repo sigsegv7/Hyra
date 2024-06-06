@@ -34,6 +34,7 @@
 #include <machine/trap.h>
 #include <machine/asm.h>
 #include <machine/cpuid.h>
+#include <machine/lapic.h>
 
 #if defined(__SPECTRE_IBRS)
 #define SPECTRE_IBRS  __SPECTRE_IBRS
@@ -76,6 +77,16 @@ try_mitigate_spectre(void)
     ibrs_enable();
 }
 
+/*
+ * Get the descriptor for the currently
+ * running processor.
+ */
+struct cpu_info *
+this_cpu(void)
+{
+    return (void *)amd64_read_gs_base();
+}
+
 void
 cpu_startup(void)
 {
@@ -84,5 +95,7 @@ cpu_startup(void)
 
     setup_vectors();
     amd64_write_gs_base((uintptr_t)&g_bsp_ci);
+
     try_mitigate_spectre();
+    lapic_init();
 }
