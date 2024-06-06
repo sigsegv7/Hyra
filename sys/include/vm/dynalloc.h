@@ -27,41 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/limine.h>
-#include <sys/panic.h>
-#include <vm/vm.h>
-#include <vm/physmem.h>
-#include <assert.h>
+#ifndef _VM_DYNALLOC_H_
+#define _VM_DYNALLOC_H_
 
-#define DYNALLOC_POOL_SZ        0x400000  /* 4 MiB */
-#define DYNALLOC_POOL_PAGES     (DYNALLOC_POOL_SZ / DEFAULT_PAGESIZE)
+#include <sys/types.h>
 
-static struct vm_ctx vm_ctx;
-volatile struct limine_hhdm_request g_hhdm_request = {
-    .id = LIMINE_HHDM_REQUEST,
-    .revision = 0
-};
+void *dynalloc(size_t sz);
+void *dynrealloc(void *old_ptr, size_t newsize);
+void dynfree(void *ptr);
 
-struct vm_ctx *
-vm_get_ctx(void)
-{
-    return &vm_ctx;
-}
-
-void
-vm_init(void)
-{
-    void *pool;
-
-    vm_physmem_init();
-
-    vm_ctx.dynalloc_pool_sz = DYNALLOC_POOL_SZ;
-    vm_ctx.dynalloc_pool_pa = vm_alloc_frame(DYNALLOC_POOL_PAGES);
-    if (vm_ctx.dynalloc_pool_pa == 0) {
-        panic("Failed to allocate dynamic pool\n");
-    }
-
-    pool = PHYS_TO_VIRT(vm_ctx.dynalloc_pool_pa);
-    vm_ctx.tlsf_ctx = tlsf_create_with_pool(pool, DYNALLOC_POOL_SZ);
-    __assert(vm_ctx.tlsf_ctx != 0);
-}
+#endif  /* !_VM_DYNALLOC_H_ */

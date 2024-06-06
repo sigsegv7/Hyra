@@ -27,41 +27,55 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/limine.h>
-#include <sys/panic.h>
+#include <vm/dynalloc.h>
 #include <vm/vm.h>
-#include <vm/physmem.h>
-#include <assert.h>
 
-#define DYNALLOC_POOL_SZ        0x400000  /* 4 MiB */
-#define DYNALLOC_POOL_PAGES     (DYNALLOC_POOL_SZ / DEFAULT_PAGESIZE)
-
-static struct vm_ctx vm_ctx;
-volatile struct limine_hhdm_request g_hhdm_request = {
-    .id = LIMINE_HHDM_REQUEST,
-    .revision = 0
-};
-
-struct vm_ctx *
-vm_get_ctx(void)
+/*
+ * Dynamically allocates memory
+ *
+ * @sz: The amount of bytes to allocate
+ */
+void *
+dynalloc(size_t sz)
 {
-    return &vm_ctx;
+    struct vm_ctx *vm_ctx = vm_get_ctx();
+    void *tmp;
+
+    spinlock_acquire(&vm_ctx->dynalloc_lock);
+    tmp = tlsf_malloc(vm_ctx->tlsf_ctx, sz);
+    spinlock_release(&vm_ctx->dynalloc_lock);
+    return tmp;
 }
 
-void
-vm_init(void)
+/*
+ * Reallocates memory pool created by `dynalloc()'
+ *
+ * @old_ptr: Pointer to old pool.
+ * @newsize: Size of new pool.
+ */
+void *
+dynrealloc(void *old_ptr, size_t newsize)
 {
-    void *pool;
+    struct vm_ctx *vm_ctx = vm_get_ctx();
+    void *tmp;
 
-    vm_physmem_init();
+    spinlock_acquire(&vm_ctx->dynalloc_lock);
+    tmp = tlsf_realloc(vm_ctx->tlsf_ctx, old_ptr, newsize);
+    spinlock_release(&vm_ctx->dynalloc_lock);
+    return tmp;
+}
 
-    vm_ctx.dynalloc_pool_sz = DYNALLOC_POOL_SZ;
-    vm_ctx.dynalloc_pool_pa = vm_alloc_frame(DYNALLOC_POOL_PAGES);
-    if (vm_ctx.dynalloc_pool_pa == 0) {
-        panic("Failed to allocate dynamic pool\n");
-    }
+/*
+ * Free dynamically allocated memory
+ *
+ * @ptr: Pointer to base of memory.
+ */
+void
+dynfree(void *ptr)
+{
+    struct vm_ctx *vm_ctx = vm_get_ctx();
 
-    pool = PHYS_TO_VIRT(vm_ctx.dynalloc_pool_pa);
-    vm_ctx.tlsf_ctx = tlsf_create_with_pool(pool, DYNALLOC_POOL_SZ);
-    __assert(vm_ctx.tlsf_ctx != 0);
+    spinlock_acquire(&vm_ctx->dynalloc_lock);
+    tlsf_free(vm_ctx->tlsf_ctx, ptr);
+    spinlock_release(&vm_ctx->dynalloc_lock);
 }

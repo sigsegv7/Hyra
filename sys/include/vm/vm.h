@@ -32,6 +32,8 @@
 
 #include <sys/types.h>
 #include <sys/limine.h>
+#include <sys/spinlock.h>
+#include <vm/tlsf.h>
 
 extern volatile struct limine_hhdm_request g_hhdm_request;
 
@@ -41,6 +43,14 @@ extern volatile struct limine_hhdm_request g_hhdm_request;
 
 #define DEFAULT_PAGESIZE 4096
 
+struct vm_ctx {
+    size_t dynalloc_pool_sz;
+    uintptr_t dynalloc_pool_pa;
+    struct spinlock dynalloc_lock;
+    tlsf_t tlsf_ctx;
+};
+
+struct vm_ctx *vm_get_ctx(void);
 void vm_init(void);
 
 #endif
