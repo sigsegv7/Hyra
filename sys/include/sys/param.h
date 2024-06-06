@@ -47,6 +47,11 @@
 #define clrbit(a, b) ((a)[(b) >> 3] &= ~BIT(b % 8))
 #define testbit(a, b) (ISSET((a)[(b) >> 3], BIT(b % 8)))
 
+/* Combine bits */
+#define COMBINE8(h, l) ((uint16_t)((uint16_t)(h) << 8) | (l))
+#define COMBINE16(h, l) ((uint32_t)((uint32_t)(h) << 16) | (l))
+#define COMBINE32(h, l) ((uint64_t)((uint64_t)(h) << 32) | (l))
+
 #define NELEM(a) (sizeof(a) / sizeof(a[0]))
 
 #endif  /* _SYS_PARAM_H_ */
