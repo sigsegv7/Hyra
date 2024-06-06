@@ -33,5 +33,7 @@
 #define __ASMV          __asm__ __volatile__
 #define __always_inline __attribute__((__always_inline__))
 #define __packed        __attribute__((__packed__))
+#define __likely(exp)   __builtin_expect(((exp) != 0), 1)
+#define __unlikely(exp) __builtin_expect(((exp) != 0), 0)
 
 #endif  /* !_SYS_CDEFS_H_ */
