@@ -36,6 +36,7 @@
 struct cpu_info {
     uint32_t apicid;
     uint8_t has_x2apic : 1;
+    size_t lapic_tmr_freq;
 };
 
 void cpu_startup(void);

@@ -32,11 +32,15 @@
 #include <sys/panic.h>
 #include <sys/mmio.h>
 #include <sys/syslog.h>
+#include <dev/timer.h>
+#include <machine/intr.h>
+#include <machine/isa/i8254.h>
 #include <machine/lapicvar.h>
 #include <machine/lapic.h>
 #include <machine/cpuid.h>
 #include <machine/cpu.h>
 #include <machine/msr.h>
+#include <machine/idt.h>
 
 #define pr_trace(fmt, ...) kprintf("lapic: " fmt, ##__VA_ARGS__)
 
@@ -52,7 +56,11 @@
         }                                       \
     } while (0);
 
+static struct timer lapic_timer;
+static uint8_t lapic_timer_vec = 0;
 uintptr_t g_lapic_base = 0;
+
+void lapic_tmr_isr(void);
 
 /*
  * Returns true if LAPIC is supported.
@@ -124,6 +132,62 @@ lapic_writel(uint32_t reg, uint64_t val)
 }
 
 /*
+ * Starts the Local APIC countdown timer...
+ *
+ * @mask: True to mask timer.
+ * @mode: Timer mode.
+ * @count: Count to start at.
+ */
+static inline void
+lapic_timer_start(bool mask, uint8_t mode, uint32_t count)
+{
+    uint32_t tmp;
+
+    tmp = (mode << 17) | (mask << 16) | lapic_timer_vec;
+    lapic_writel(LAPIC_LVT_TMR, tmp);
+    lapic_writel(LAPIC_DCR, 0);
+    lapic_writel(LAPIC_INIT_CNT, count);
+}
+
+/*
+ * Start Local APIC timer oneshot with number
+ * of ticks to count down from.
+ *
+ * @mask: If `true', timer will be masked, `count' should be 0.
+ * @count: Number of ticks.
+ */
+static void
+lapic_timer_oneshot(bool mask, uint32_t count)
+{
+    lapic_timer_start(mask, LVT_TMR_ONESHOT, count);
+}
+
+/*
+ * Start Local APIC timer oneshot in microseconds.
+ *
+ * @us: Microseconds.
+ */
+static void
+lapic_timer_oneshot_us(size_t usec)
+{
+    uint64_t ticks;
+    struct cpu_info *ci = this_cpu();
+
+    ticks = usec * (ci->lapic_tmr_freq / 1000000);
+    lapic_timer_oneshot(false, ticks);
+}
+
+/*
+ * Stops the Local APIC timer
+ */
+static void
+lapic_timer_stop(void)
+{
+    lapic_writel(LAPIC_LVT_TMR, LAPIC_LVT_MASK);
+    lapic_writel(LAPIC_INIT_CNT, 0);
+}
+
+/*
  * Set bits within a LAPIC register
  * without overwriting the whole thing.
  *
@@ -187,10 +251,37 @@ lapic_read_id(const struct cpu_info *ci)
     }
 }
 
+/*
+ * Init the Local APIC timer and return
+ * the frequency.
+ */
+static size_t
+lapic_timer_init(void)
+{
+    uint16_t ticks_start, ticks_end;
+    size_t ticks_total, freq;
+    const uint16_t MAX_SAMPLES = 0xFFFF;
+
+    lapic_timer_stop();
+    i8254_set_reload(MAX_SAMPLES);
+    ticks_start = i8254_get_count();
+
+    lapic_writel(LAPIC_INIT_CNT, MAX_SAMPLES);
+    while (lapic_readl(LAPIC_CUR_CNT) != 0);
+
+    ticks_end = i8254_get_count();
+    ticks_total = ticks_start - ticks_end;
+
+    freq = (MAX_SAMPLES / ticks_total) * I8254_DIVIDEND;
+    lapic_timer_stop();
+    return freq;
+}
+
 void
 lapic_init(void)
 {
     struct cpu_info *ci = this_cpu();
+    tmrr_status_t tmr_status;
 
     /*
      * Hyra currently depends on the existance
@@ -198,6 +289,12 @@ lapic_init(void)
      */
     if (!lapic_supported()) {
         panic("This machine does not support LAPIC!\n");
+    }
+
+    /* Allocate a vector if needed */
+    if (lapic_timer_vec == 0) {
+        lapic_timer_vec = intr_alloc_vector();
+        idt_set_desc(lapic_timer_vec, IDT_INT_GATE, ISR(lapic_tmr_isr), 0);
     }
 
     /* Ensure the LAPIC base is valid */
@@ -209,6 +306,18 @@ lapic_init(void)
     lapic_enable(ci);
 
     ci->apicid = lapic_read_id(ci);
+    ci->lapic_tmr_freq = lapic_timer_init();
     bsp_trace("BSP LAPIC enabled in %s mode (id=%d)\n",
         ci->has_x2apic ? "x2APIC" : "xAPIC", ci->apicid);
+
+    /* Try to register the timer */
+    lapic_timer.name = "LAPIC_INTEGRATED_TIMER";
+    lapic_timer.stop = lapic_timer_stop;
+    lapic_timer.oneshot_us = lapic_timer_oneshot_us;
+    tmr_status = register_timer(TIMER_SCHED, &lapic_timer);
+
+    /* This should not happen but handle it just in case */
+    if (__unlikely(tmr_status != TMRR_SUCCESS)) {
+        panic("Failed to register %s\n", lapic_timer.name);
+    }
 }
