@@ -41,6 +41,7 @@
 #include <machine/cpu.h>
 #include <machine/msr.h>
 #include <machine/idt.h>
+#include <machine/tss.h>
 
 #define pr_trace(fmt, ...) kprintf("lapic: " fmt, ##__VA_ARGS__)
 
@@ -281,6 +282,7 @@ void
 lapic_init(void)
 {
     struct cpu_info *ci = this_cpu();
+    union tss_stack tmr_stack;
     tmrr_status_t tmr_status;
 
     /*
@@ -291,10 +293,18 @@ lapic_init(void)
         panic("This machine does not support LAPIC!\n");
     }
 
+    /* Try to allocate LAPIC timer interrupt stack */
+    if (tss_alloc_stack(&tmr_stack, DEFAULT_PAGESIZE) != 0) {
+        panic("Failed to allocate LAPIC TMR stack!\n");
+    }
+
+    tss_update_ist(ci, tmr_stack, IST_SCHED);
+
     /* Allocate a vector if needed */
     if (lapic_timer_vec == 0) {
         lapic_timer_vec = intr_alloc_vector();
-        idt_set_desc(lapic_timer_vec, IDT_INT_GATE, ISR(lapic_tmr_isr), 0);
+        idt_set_desc(lapic_timer_vec, IDT_INT_GATE, ISR(lapic_tmr_isr),
+            IST_SCHED);
     }
 
     /* Ensure the LAPIC base is valid */
