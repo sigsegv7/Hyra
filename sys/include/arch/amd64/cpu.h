@@ -32,11 +32,13 @@
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
+#include <machine/tss.h>
 
 struct cpu_info {
     uint32_t apicid;
     uint8_t has_x2apic : 1;
     size_t lapic_tmr_freq;
+    struct tss_entry *tss;
 };
 
 void cpu_startup(void);

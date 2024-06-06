@@ -6,6 +6,7 @@
 
 #define KERNEL_CS 0x08
 #define KERNEL_DS 0x10
+#define GDT_TSS 5
 
 struct __packed gdt_entry {
     uint16_t limit;

@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <machine/cpu.h>
 #include <machine/gdt.h>
+#include <machine/tss.h>
 #include <machine/idt.h>
 #include <machine/trap.h>
 #include <machine/asm.h>
@@ -67,6 +68,16 @@ setup_vectors(void)
     idt_set_desc(0xE, IDT_TRAP_GATE, ISR(page_fault), 0);
 }
 
+static inline void
+init_tss(struct cpu_info *ci)
+{
+    struct tss_desc *desc;
+
+    desc = (struct tss_desc *)&g_gdt_data[GDT_TSS];
+    write_tss(ci, desc);
+    tss_load();
+}
+
 static void
 try_mitigate_spectre(void)
 {
@@ -95,6 +106,7 @@ cpu_startup(void)
 
     setup_vectors();
     amd64_write_gs_base((uintptr_t)&g_bsp_ci);
+    init_tss(&g_bsp_ci);
 
     try_mitigate_spectre();
     lapic_init();

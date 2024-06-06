@@ -32,6 +32,10 @@
 
 #include <sys/types.h>
 
+#define IST_SCHED   1U
+#define IST_HW_IRQ  2U
+#define IST_SW_INT  3U
+
 int intr_alloc_vector(void);
 
 #endif
