@@ -49,7 +49,7 @@ main(void)
     vm_init();
 
     /* Startup the BSP */
-    cpu_startup();
+    cpu_startup(&g_bsp_ci);
 
     /* Nothing left to do... halt */
     cpu_reboot(REBOOT_HALT);

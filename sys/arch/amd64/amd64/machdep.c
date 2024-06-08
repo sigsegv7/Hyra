@@ -45,7 +45,7 @@
 
 int ibrs_enable(void);
 
-static struct cpu_info g_bsp_ci = {0};
+struct cpu_info g_bsp_ci = {0};
 static struct gdtr bsp_gdtr = {
     .limit = sizeof(struct gdt_entry) * 256 - 1,
     .offset = (uintptr_t)&g_gdt_data[0]
@@ -99,15 +99,16 @@ this_cpu(void)
 }
 
 void
-cpu_startup(void)
+cpu_startup(struct cpu_info *ci)
 {
     gdt_load(&bsp_gdtr);
     idt_load();
 
     setup_vectors();
-    amd64_write_gs_base((uintptr_t)&g_bsp_ci);
-    init_tss(&g_bsp_ci);
+    amd64_write_gs_base((uintptr_t)ci);
+    init_tss(ci);
 
     try_mitigate_spectre();
+    __ASMV("sti");              /* Unmask interrupts */
     lapic_init();
 }

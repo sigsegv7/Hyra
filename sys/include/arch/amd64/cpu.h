@@ -41,7 +41,8 @@ struct cpu_info {
     struct tss_entry *tss;
 };
 
-void cpu_startup(void);
+void cpu_startup(struct cpu_info *ci);
 struct cpu_info *this_cpu(void);
+extern struct cpu_info g_bsp_ci;
 
 #endif  /* !_MACHINE_CPU_H_ */
