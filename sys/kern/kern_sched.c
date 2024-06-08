@@ -27,36 +27,76 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
-#include <sys/syslog.h>
+#include <sys/types.h>
 #include <sys/sched.h>
-#include <dev/cons/cons.h>
-#include <dev/acpi/acpi.h>
-#include <machine/cpu.h>
-#include <vm/vm.h>
+#include <sys/schedvar.h>
+#include <sys/cdefs.h>
+#include <sys/syslog.h>
+#include <machine/frame.h>
+#include <dev/timer.h>
+#include <assert.h>
 
-int
-main(void)
+#define pr_trace(fmt, ...) kprintf("ksched: " fmt, ##__VA_ARGS__)
+
+void sched_switch(struct trapframe *tf);
+
+static sched_policy_t policy = SCHED_POLICY_RR;
+
+/*
+ * Thread ready queues - all threads ready to be
+ * scheduled should be added to the toplevel queue.
+ */
+static struct sched_queue qlist[SCHED_NQUEUE];
+
+/*
+ * Perform timer oneshot
+ */
+static inline void
+sched_oneshot(bool now)
 {
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+    struct timer timer;
+    size_t usec = now ? SHORT_TIMESLICE_USEC : DEFAULT_TIMESLICE_USEC;
+    tmrr_status_t tmr_status;
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+    tmr_status = req_timer(TIMER_SCHED, &timer);
+    __assert(tmr_status == TMRR_SUCCESS);
 
-    /* Init the virtual memory subsystem */
-    vm_init();
+    timer.oneshot_us(usec);
+}
 
-    /* Startup the BSP */
-    cpu_startup(&g_bsp_ci);
+/*
+ * Perform a context switch.
+ *
+ * TODO
+ */
+void
+sched_switch(struct trapframe *tf)
+{
+    static struct spinlock lock = {0};
 
-    /* Start scheduler and bootstrap APs */
-    sched_init();
-    mp_bootstrap_aps(&g_bsp_ci);
+    spinlock_acquire(&lock);
+    spinlock_release(&lock);
+    sched_oneshot(false);
+}
 
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
+/*
+ * Main scheduler loop
+ */
+void
+sched_enter(void)
+{
+    sched_oneshot(false);
+    for (;;);
+}
+
+void
+sched_init(void)
+{
+    /* Setup the queues */
+    for (int i = 0; i < SCHED_NQUEUE; ++i) {
+        TAILQ_INIT(&qlist[i].q);
+    }
+
+    pr_trace("Prepared %d queues (policy=0x%x)\n",
+        SCHED_NQUEUE, policy);
 }

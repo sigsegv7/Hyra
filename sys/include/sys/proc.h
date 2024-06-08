@@ -27,36 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
-#include <sys/syslog.h>
-#include <sys/sched.h>
-#include <dev/cons/cons.h>
-#include <dev/acpi/acpi.h>
+#ifndef _SYS_PROC_H_
+#define _SYS_PROC_H_
+
+#include <sys/types.h>
+#include <sys/spinlock.h>
+#if defined(_KERNEL)
 #include <machine/cpu.h>
-#include <vm/vm.h>
+#include <machine/frame.h>
+#endif  /* _KERNEL */
 
-int
-main(void)
-{
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+#if defined(_KERNEL)
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+struct proc {
+    pid_t pid;
+    struct cpu_info *cpu;
+};
 
-    /* Init the virtual memory subsystem */
-    vm_init();
-
-    /* Startup the BSP */
-    cpu_startup(&g_bsp_ci);
-
-    /* Start scheduler and bootstrap APs */
-    sched_init();
-    mp_bootstrap_aps(&g_bsp_ci);
-
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
-}
+#endif  /* _KERNEL */
+#endif  /* !_SYS_PROC_H_ */

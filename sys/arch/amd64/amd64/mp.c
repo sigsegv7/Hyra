@@ -27,36 +27,67 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
+#include <sys/types.h>
+#include <sys/limine.h>
 #include <sys/syslog.h>
+#include <sys/spinlock.h>
 #include <sys/sched.h>
-#include <dev/cons/cons.h>
-#include <dev/acpi/acpi.h>
 #include <machine/cpu.h>
-#include <vm/vm.h>
+#include <vm/dynalloc.h>
+#include <assert.h>
+#include <string.h>
 
-int
-main(void)
+#define pr_trace(fmt, ...) kprintf("cpu_mp: " fmt, ##__VA_ARGS__)
+
+static volatile struct limine_smp_request g_smp_req = {
+    .id = LIMINE_SMP_REQUEST,
+    .revision = 0
+};
+
+static void
+ap_trampoline(struct limine_smp_info *si)
 {
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+    struct spinlock lock = {0};
+    struct cpu_info *ci;
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+    spinlock_acquire(&lock);
+    ci = dynalloc(sizeof(*ci));
+    __assert(ci != NULL);
 
-    /* Init the virtual memory subsystem */
-    vm_init();
+    memset(ci, 0, sizeof(*ci));
+    cpu_startup(ci);
 
-    /* Startup the BSP */
-    cpu_startup(&g_bsp_ci);
+    spinlock_release(&lock);
+    sched_enter();
 
-    /* Start scheduler and bootstrap APs */
-    sched_init();
-    mp_bootstrap_aps(&g_bsp_ci);
+    while (1);
+}
 
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
+void
+mp_bootstrap_aps(struct cpu_info *ci)
+{
+    struct limine_smp_response *resp = g_smp_req.response;
+    struct limine_smp_info **cpus;
+    size_t cpu_init_counter;
+
+    /* Should not happen */
+    __assert(resp != NULL);
+
+    cpus = resp->cpus;
+    cpu_init_counter = resp->cpu_count - 1;
+
+    if (resp->cpu_count == 1) {
+        pr_trace("CPU has 1 core, no APs to bootstrap...\n");
+        return;
+    }
+
+    pr_trace("Bootstrapping %d cores...\n", cpu_init_counter);
+    for (size_t i = 0; i < resp->cpu_count; ++i) {
+        if (ci->apicid == cpus[i]->lapic_id) {
+            pr_trace("Skip %d (BSP)... continue\n", ci->apicid);
+            continue;
+        }
+
+        cpus[i]->goto_address = ap_trampoline;
+    }
 }

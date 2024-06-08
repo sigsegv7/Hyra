@@ -32,6 +32,7 @@
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
+#include <sys/proc.h>
 #include <machine/tss.h>
 
 struct cpu_info {
@@ -39,10 +40,13 @@ struct cpu_info {
     uint8_t has_x2apic : 1;
     size_t lapic_tmr_freq;
     struct tss_entry *tss;
+    struct proc *curtd;
 };
 
 void cpu_startup(struct cpu_info *ci);
 struct cpu_info *this_cpu(void);
+void mp_bootstrap_aps(struct cpu_info *ci);
+
 extern struct cpu_info g_bsp_ci;
 
 #endif  /* !_MACHINE_CPU_H_ */

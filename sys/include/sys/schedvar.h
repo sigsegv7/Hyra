@@ -27,36 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
-#include <sys/syslog.h>
-#include <sys/sched.h>
-#include <dev/cons/cons.h>
-#include <dev/acpi/acpi.h>
-#include <machine/cpu.h>
-#include <vm/vm.h>
+#ifndef _SYS_SCHEDVAR_H_
+#define _SYS_SCHEDVAR_H_
 
-int
-main(void)
-{
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+#include <sys/cdefs.h>
+#include <sys/queue.h>
+#include <sys/proc.h>
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+#if defined(_KERNEL)
+#define DEFAULT_TIMESLICE_USEC 1050
+#define SHORT_TIMESLICE_USEC 10
 
-    /* Init the virtual memory subsystem */
-    vm_init();
+#define SCHED_POLICY_MLFQ 0x00U   /* Multilevel feedback queue */
+#define SCHED_POLICY_RR   0x01U   /* Round robin */
 
-    /* Startup the BSP */
-    cpu_startup(&g_bsp_ci);
+typedef uint8_t sched_policy_t;
 
-    /* Start scheduler and bootstrap APs */
-    sched_init();
-    mp_bootstrap_aps(&g_bsp_ci);
+/* Might be set by kconf(1) */
+#if defined(__SCHED_NQUEUE)
+#define SCHED_NQUEUE __SCHED_NQUEUE
+#else
+#define SCHED_NQUEUE 4
+#endif  /* __SCHED_NQUEUE */
 
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
-}
+/* Ensure SCHED_NQUEUE is an acceptable value */
+__static_assert(SCHED_NQUEUE <= 8, "SCHED_NQUEUE exceeds max");
+__static_assert(SCHED_NQUEUE > 0, "SCHED_NQUEUE cannot be zero");
+
+struct sched_queue {
+    TAILQ_HEAD(, proc) q;
+    size_t nthread;
+};
+
+#endif  /* _KERNEL */
+#endif  /* !_SYS_SCHEDVAR_H_ */
