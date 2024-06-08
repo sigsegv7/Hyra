@@ -284,6 +284,16 @@ lapic_timer_init(void)
     return freq;
 }
 
+/*
+ * Indicates that the current interrupt is finished
+ * being serviced.
+ */
+void
+lapic_eoi(void)
+{
+    lapic_writel(LAPIC_EOI, 0);
+}
+
 void
 lapic_init(void)
 {

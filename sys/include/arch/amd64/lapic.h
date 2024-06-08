@@ -33,6 +33,7 @@
 #include <sys/types.h>
 
 void lapic_init(void);
+void lapic_eoi(void);
 
 extern uintptr_t g_lapic_base;
 
