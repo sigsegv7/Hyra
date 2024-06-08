@@ -57,5 +57,6 @@ typedef int32_t     ssize_t;        /* Byte count or error */
 
 typedef size_t uintptr_t;
 typedef _Bool bool;
+typedef int pid_t;
 
 #endif  /* _SYS_TYPES_H_ */
