@@ -30,6 +30,11 @@
 #ifndef _SYS_PARAM_H_
 #define _SYS_PARAM_H_
 
+/* Assumed cache line size */
+#ifndef COHERENCY_UNIT
+#define COHERENCY_UNIT 64
+#endif
+
 /* Bit related macros */
 #define ISSET(v, f)  ((v) & (f))
 #define BIT(n) (1 << (n))

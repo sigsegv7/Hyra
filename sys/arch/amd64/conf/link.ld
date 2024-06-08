@@ -32,13 +32,19 @@ SECTIONS
     . += CONSTANT(MAXPAGESIZE);
 
     .data : {
-        *(.data .data.*)
+        *(.data)
     } :data
 
     .bss : {
         *(COMMON)
         *(.bss .bss.*)
     } :data
+
+    /* -- Cache line alignment -- */
+    . = ALIGN(64);
+    .data.cacheline_aligned : {
+        *(.data.cacheline_aligned)
+    }
 
     /DISCARD/ : {
         *(.eh_frame)

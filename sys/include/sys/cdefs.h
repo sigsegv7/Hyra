@@ -30,10 +30,27 @@
 #ifndef _SYS_CDEFS_H_
 #define _SYS_CDEFS_H_
 
+#include <sys/param.h>
+
 #define __ASMV          __asm__ __volatile__
 #define __always_inline __attribute__((__always_inline__))
 #define __packed        __attribute__((__packed__))
 #define __likely(exp)   __builtin_expect(((exp) != 0), 1)
 #define __unlikely(exp) __builtin_expect(((exp) != 0), 0)
+
+#if defined(_KERNEL)
+/*
+ *  Align data on a cache line boundary. This is
+ *  mostly useful for certain locks to ensure they
+ *  have their own cache line to reduce contention.
+ *
+ */
+#ifndef __cacheline_aligned
+#define __cacheline_aligned                             \
+    __attribute__((__aligned__(COHERENCY_UNIT),         \
+                __section__(".data.cacheline_aligned")))
+
+#endif  /* __cacheline_aligned */
+#endif  /* _KERNEL */
 
 #endif  /* !_SYS_CDEFS_H_ */
