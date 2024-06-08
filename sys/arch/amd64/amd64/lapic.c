@@ -289,7 +289,6 @@ lapic_init(void)
 {
     struct cpu_info *ci = this_cpu();
     union tss_stack tmr_stack;
-    tmrr_status_t tmr_status;
 
     /*
      * Hyra currently depends on the existance
@@ -330,10 +329,5 @@ lapic_init(void)
     lapic_timer.name = "LAPIC_INTEGRATED_TIMER";
     lapic_timer.stop = lapic_timer_stop;
     lapic_timer.oneshot_us = lapic_timer_oneshot_us;
-    tmr_status = register_timer(TIMER_SCHED, &lapic_timer);
-
-    /* This should not happen but handle it just in case */
-    if (__unlikely(tmr_status != TMRR_SUCCESS)) {
-        panic("Failed to register %s\n", lapic_timer.name);
-    }
+    register_timer(TIMER_SCHED, &lapic_timer);
 }
