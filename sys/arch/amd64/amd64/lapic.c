@@ -32,6 +32,7 @@
 #include <sys/panic.h>
 #include <sys/mmio.h>
 #include <sys/syslog.h>
+#include <sys/spinlock.h>
 #include <dev/timer.h>
 #include <machine/intr.h>
 #include <machine/isa/i8254.h>
@@ -262,6 +263,9 @@ lapic_timer_init(void)
     uint16_t ticks_start, ticks_end;
     size_t ticks_total, freq;
     const uint16_t MAX_SAMPLES = 0xFFFF;
+    static struct spinlock lock = {0};
+
+    spinlock_acquire(&lock);
 
     lapic_timer_stop();
     i8254_set_reload(MAX_SAMPLES);
@@ -275,6 +279,8 @@ lapic_timer_init(void)
 
     freq = (MAX_SAMPLES / ticks_total) * I8254_DIVIDEND;
     lapic_timer_stop();
+
+    spinlock_release(&lock);
     return freq;
 }
 
