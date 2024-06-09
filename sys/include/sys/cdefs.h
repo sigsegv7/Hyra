@@ -44,7 +44,6 @@
  *  Align data on a cache line boundary. This is
  *  mostly useful for certain locks to ensure they
  *  have their own cache line to reduce contention.
- *
  */
 #ifndef __cacheline_aligned
 #define __cacheline_aligned                             \
