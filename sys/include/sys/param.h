@@ -37,7 +37,7 @@
 
 /* Bit related macros */
 #define ISSET(v, f)  ((v) & (f))
-#define BIT(n) (1 << (n))
+#define BIT(n) (1ULL << (n))
 
 /* Min/max macros */
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
