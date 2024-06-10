@@ -59,4 +59,9 @@ typedef size_t uintptr_t;
 typedef _Bool bool;
 typedef int pid_t;
 
+#if defined(_KERNEL)
+typedef uintptr_t paddr_t;
+typedef uintptr_t vaddr_t;
+#endif  /* _KERNEL */
+
 #endif  /* _SYS_TYPES_H_ */
