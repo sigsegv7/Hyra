@@ -56,6 +56,7 @@ typedef int32_t     ssize_t;        /* Byte count or error */
 #endif
 
 typedef size_t uintptr_t;
+typedef size_t off_t;
 typedef _Bool bool;
 typedef int pid_t;
 
