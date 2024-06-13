@@ -117,13 +117,14 @@ pmap_extract(uint8_t level, vaddr_t va, vaddr_t *pmap, bool alloc)
     }
 
     if (!alloc) {
-        return 0;
+        return NULL;
     }
 
     /* Allocate the next level */
     level_alloc = vm_alloc_frame(1);
-    if (level_alloc == 0)
-        return 0;
+    if (level_alloc == 0) {
+        return NULL;
+    }
 
     memset(PHYS_TO_VIRT(level_alloc), 0, DEFAULT_PAGESIZE);
     pmap[idx] = level_alloc | (PTE_P | PTE_RW | PTE_US);
