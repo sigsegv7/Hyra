@@ -27,23 +27,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _LIB_STRING_H_
-#define _LIB_STRING_H_
+#include <string.h>
 
-#include <sys/types.h>
-#include <stdarg.h>
+int
+strncmp(const char *s1, const char *s2, size_t n)
+{
+    if (n == 0) {
+        return 0;
+    }
 
-size_t strlen(const char *s);
-char *itoa(int64_t value, char *buf, int base);
+    do {
+        if (*s1 != *s2++) {
+            return (*(unsigned char *)s1 - *(unsigned char *)--s2);
+        }
 
-int vsnprintf(char *s, size_t size, const char *fmt, va_list ap);
-int snprintf(char *s, size_t size, const char *fmt, ...);
+        if (*s1++ == 0) {
+            break;
+        }
+    } while (--n != 0);
 
-void *memcpy(void *dest, const void *src, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
-
-void *memset(void *s, int c, size_t n);
-int strcmp(const char *s1, const char *s2);
-int strncmp(const char *s1, const char *s2, size_t n);
-
-#endif  /* !_LIB_STRING_H_ */
+    return 0;
+}
