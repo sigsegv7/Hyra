@@ -59,6 +59,7 @@ typedef size_t uintptr_t;
 typedef size_t off_t;
 typedef _Bool bool;
 typedef int pid_t;
+typedef uint32_t mode_t;
 
 #if defined(_KERNEL)
 typedef uintptr_t paddr_t;
