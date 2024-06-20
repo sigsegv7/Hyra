@@ -27,40 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
-#include <sys/syslog.h>
-#include <sys/sched.h>
-#include <sys/mount.h>
-#include <dev/cons/cons.h>
-#include <dev/acpi/acpi.h>
-#include <machine/cpu.h>
-#include <vm/vm.h>
+#ifndef _SYS_NAMEI_H_
+#define _SYS_NAMEI_H_
 
-int
-main(void)
-{
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+#include <sys/types.h>
+#include <sys/vnode.h>
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+struct nameidata {
+    const char *path;   /* Pathname */
+    uint32_t flags;
+    struct vnode *vp;   /* Vnode result */
+};
 
-    /* Init the virtual memory subsystem */
-    vm_init();
+int namei(struct nameidata *ndp);
 
-    /* Startup the BSP */
-    cpu_startup(&g_bsp_ci);
-
-    /* Init the virtual file system */
-    vfs_init();
-
-    /* Start scheduler and bootstrap APs */
-    sched_init();
-    mp_bootstrap_aps(&g_bsp_ci);
-
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
-}
+#endif  /* !_SYS_NAMEI_H_ */

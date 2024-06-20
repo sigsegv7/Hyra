@@ -27,40 +27,96 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
-#include <sys/syslog.h>
-#include <sys/sched.h>
+#include <sys/vnode.h>
+#include <sys/errno.h>
 #include <sys/mount.h>
-#include <dev/cons/cons.h>
-#include <dev/acpi/acpi.h>
-#include <machine/cpu.h>
-#include <vm/vm.h>
+#include <vm/dynalloc.h>
+#include <string.h>
+
+mountlist_t g_mountlist;
 
 int
-main(void)
+vfs_alloc_vnode(struct vnode **res, int type)
 {
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+    struct vnode *vp = dynalloc(sizeof(struct vnode));
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+    if (vp == NULL) {
+        return -ENOMEM;
+    }
 
-    /* Init the virtual memory subsystem */
-    vm_init();
+    memset(vp, 0, sizeof(*vp));
+    vp->type = type;
+    *res = vp;
+    return 0;
+}
 
-    /* Startup the BSP */
-    cpu_startup(&g_bsp_ci);
+/*
+ * Allocate a mount structure.
+ *
+ * @vp: Vnode this mount structure covers.
+ * @fip: File system information.
+ */
+struct mount *
+vfs_alloc_mount(struct vnode *vp, struct fs_info *fip)
+{
+    struct mount *mp;
 
-    /* Init the virtual file system */
-    vfs_init();
+    mp = dynalloc(sizeof(*mp));
 
-    /* Start scheduler and bootstrap APs */
-    sched_init();
-    mp_bootstrap_aps(&g_bsp_ci);
+    if (mp == NULL) {
+        return NULL;
+    }
 
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
+    memset(mp, 0, sizeof(*mp));
+    mp->vp = vp;
+    mp->mnt_ops = fip->vfsops;
+    return mp;
+}
+
+/*
+ * Release a vnode and its resources from
+ * memory.
+ */
+int
+vfs_release_vnode(struct vnode *vp)
+{
+    const struct vops *vops = vp->vops;
+    int status = 0;
+
+    if (vp == NULL) {
+        return -EINVAL;
+    }
+
+    if (vops->reclaim != NULL) {
+        status = vops->reclaim(vp);
+    }
+
+    dynfree(vp);
+    return status;
+}
+
+int
+vfs_vop_lookup(struct vnode *vp, struct vop_lookup_args *args)
+{
+    const struct vops *vops = vp->vops;
+
+    if (vops == NULL)
+        return -EIO;
+    if (vops->lookup == NULL)
+        return -EIO;
+
+    return vops->lookup(args);
+}
+
+int
+vfs_vop_read(struct vnode *vp, struct sio_txn *sio)
+{
+    const struct vops *vops = vp->vops;
+
+    if (vops == NULL)
+        return -EIO;
+    if (vops->read == NULL)
+        return -EIO;
+
+    return vops->read(vp, sio);
 }

@@ -27,40 +27,58 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
-#include <sys/syslog.h>
-#include <sys/sched.h>
-#include <sys/mount.h>
-#include <dev/cons/cons.h>
-#include <dev/acpi/acpi.h>
-#include <machine/cpu.h>
-#include <vm/vm.h>
+#ifndef _SYS_MOUNT_H_
+#define _SYS_MOUNT_H_
 
-int
-main(void)
-{
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+#include <sys/types.h>
+#include <sys/queue.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/spinlock.h>
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+#if defined(_KERNEL)
 
-    /* Init the virtual memory subsystem */
-    vm_init();
+#define FS_NAME_MAX 16  /* Length of fs name including nul */
 
-    /* Startup the BSP */
-    cpu_startup(&g_bsp_ci);
+/*
+ * Filesystem types.
+ */
+#define MOUNT_RAMFS "initramfs"
 
-    /* Init the virtual file system */
-    vfs_init();
+struct vfsops;
+struct mount;
 
-    /* Start scheduler and bootstrap APs */
-    sched_init();
-    mp_bootstrap_aps(&g_bsp_ci);
+/* Mount list */
+typedef TAILQ_HEAD(, mount) mountlist_t;
+extern mountlist_t g_mountlist;
 
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
-}
+/* Filesystem operations */
+extern const struct vfsops g_initramfs_vfsops;
+
+struct mount {
+    struct spinlock lock;
+    struct vnode *vp;
+    const struct vfsops *mnt_ops;
+    void *data;
+    TAILQ_ENTRY(mount) mnt_list;
+};
+
+struct fs_info {
+    char name[FS_NAME_MAX];         /* FS Type name */
+    const struct vfsops *vfsops;    /* Operations vector */
+    int flags;                      /* Flags for this filesystem */
+    int refcount;                   /* Mount count of this type */
+};
+
+struct vfsops {
+    int(*init)(struct fs_info *fip);
+    int(*mount)(struct mount *mp, const char *path, void *data,
+        struct nameidata *ndp);
+};
+
+void vfs_init(void);
+struct mount *vfs_alloc_mount(struct vnode *vp, struct fs_info *fip);
+struct fs_info *vfs_byname(const char *name);
+
+#endif  /* _KERNEL */
+#endif  /* _SYS_MOUNT_H_ */

@@ -27,40 +27,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
-#include <sys/syslog.h>
-#include <sys/sched.h>
+#include <sys/param.h>
 #include <sys/mount.h>
-#include <dev/cons/cons.h>
-#include <dev/acpi/acpi.h>
-#include <machine/cpu.h>
-#include <vm/vm.h>
+#include <sys/vnode.h>
+#include <sys/panic.h>
+#include <string.h>
 
-int
-main(void)
+struct vnode *g_root_vnode = NULL;
+static struct fs_info fs_list[] = {
+    {MOUNT_RAMFS, &g_initramfs_vfsops, 0, 0},
+};
+
+void
+vfs_init(void)
 {
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+    struct fs_info *fs;
+    const struct vfsops *vfsops;
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+    TAILQ_INIT(&g_mountlist);
 
-    /* Init the virtual memory subsystem */
-    vm_init();
+    for (size_t i= 0; i < NELEM(fs_list); ++i) {
+        fs = &fs_list[i];
+        vfsops = fs->vfsops;
 
-    /* Startup the BSP */
-    cpu_startup(&g_bsp_ci);
+        /* Try to initialize the filesystem */
+        if (vfsops->init != NULL) {
+            vfsops->init(fs);
+        }
+    }
+}
 
-    /* Init the virtual file system */
-    vfs_init();
+struct fs_info *
+vfs_byname(const char *name)
+{
+    for (int i = 0; i < NELEM(fs_list); ++i) {
+        if (strcmp(fs_list[i].name, name) == 0) {
+            return &fs_list[i];
+        }
+    }
 
-    /* Start scheduler and bootstrap APs */
-    sched_init();
-    mp_bootstrap_aps(&g_bsp_ci);
-
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
+    return NULL;
 }

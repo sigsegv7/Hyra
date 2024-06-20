@@ -46,7 +46,7 @@ override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
 override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
 
 .PHONY: all
-all: base base/boot/hyra-kernel iso
+all: base base/boot/hyra-kernel ramfs iso
 		rm -f sys/include/machine
 		rm -rf iso_root
 
@@ -60,6 +60,12 @@ base:
 run:
 	$(QEMU) $(QEMU_FLAGS)
 
+.PHONY: ramfs
+ramfs:
+	cd base/; find . -name "*" | cpio --create --format=odc \
+		--no-absolute-filenames > ../ramfs.cpio
+	$(PROMPT) " RAMFS " $(shell pwd)/ramfs.cpio
+
 .PHONY: clean
 clean:
 	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
@@ -70,6 +76,7 @@ iso:
 	mkdir -p iso_root/boot/
 	mkdir -p iso_root/EFI/BOOT/
 	cp stand/limine/BOOTX64.EFI iso_root/EFI/BOOT/
+	mv ramfs.cpio iso_root/boot/
 	cp builddeps/limine.cfg stand/limine/limine-bios.sys \
 		stand/limine/limine-bios-cd.bin stand/limine/limine-uefi-cd.bin iso_root/
 	cp base/boot/* iso_root/boot/

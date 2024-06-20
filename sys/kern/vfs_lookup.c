@@ -27,40 +27,57 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
-#include <sys/syslog.h>
-#include <sys/sched.h>
-#include <sys/mount.h>
-#include <dev/cons/cons.h>
-#include <dev/acpi/acpi.h>
-#include <machine/cpu.h>
-#include <vm/vm.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/errno.h>
+#include <vm/dynalloc.h>
+#include <string.h>
 
+/*
+ * Convert a path to a vnode.
+ *
+ * @ndp: Nameidata containing the path and resulting
+ *       vnode.
+ *
+ * TODO: Add support for lookups with individual
+ *       path components
+ */
 int
-main(void)
+namei(struct nameidata *ndp)
 {
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+    struct vnode *vp;
+    struct vop_lookup_args lookup_args;
+    const char *path = ndp->path;
+    int status;
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+    if (path == NULL) {
+        return -EINVAL;
+    }
 
-    /* Init the virtual memory subsystem */
-    vm_init();
+    /* Path must start with "/" */
+    if (*path != '/') {
+        return -EINVAL;
+    }
 
-    /* Startup the BSP */
-    cpu_startup(&g_bsp_ci);
+    /* Just return the root vnode if we can */
+    if (strcmp(path, "/") == 0) {
+        ndp->vp = g_root_vnode;
+        return 0;
+    }
 
-    /* Init the virtual file system */
-    vfs_init();
+    /*
+     * Some filesystems (like initramfs) may only understand
+     * full paths, so try passing it through.
+     */
+    lookup_args.name = path;
+    lookup_args.dirvp = g_root_vnode;
+    lookup_args.vpp = &vp;
+    status = vfs_vop_lookup(lookup_args.dirvp, &lookup_args);
 
-    /* Start scheduler and bootstrap APs */
-    sched_init();
-    mp_bootstrap_aps(&g_bsp_ci);
+    if (status != 0) {
+        return status;
+    }
 
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
+    ndp->vp = vp;
+    return 0;
 }

@@ -27,40 +27,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/reboot.h>
-#include <sys/syslog.h>
-#include <sys/sched.h>
-#include <sys/mount.h>
-#include <dev/cons/cons.h>
-#include <dev/acpi/acpi.h>
-#include <machine/cpu.h>
-#include <vm/vm.h>
+#ifndef _SYS_VNODE_H_
+#define _SYS_VNODE_H_
 
-int
-main(void)
-{
-    /* Startup the console */
-    cons_init();
-    kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
-        HYRA_BUILDDATE);
+#include <sys/sio.h>
 
-    /* Start the ACPI subsystem */
-    acpi_init();
+#if defined(_KERNEL)
 
-    /* Init the virtual memory subsystem */
-    vm_init();
+struct vops;
 
-    /* Startup the BSP */
-    cpu_startup(&g_bsp_ci);
+struct vnode {
+    int type;
+    int flags;
+    void *data;
+    const struct vops *vops;
+};
 
-    /* Init the virtual file system */
-    vfs_init();
+/* Vnode type flags */
+#define VNON    0x00    /* Uninitialized */
+#define VREG    0x01    /* Regular file */
+#define VDIR    0x02    /* Directory */
+#define VCHR    0x03    /* Character device */
+#define VBLK    0x04    /* Block device */
 
-    /* Start scheduler and bootstrap APs */
-    sched_init();
-    mp_bootstrap_aps(&g_bsp_ci);
+struct vop_lookup_args {
+    const char *name;       /* Current path component */
+    struct vnode *dirvp;    /* Directory vnode */
+    struct vnode **vpp;     /* Result vnode */
+};
 
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
-    __builtin_unreachable();
-}
+struct vops {
+    int(*lookup)(struct vop_lookup_args *args);
+    int(*read)(struct vnode *vp, struct sio_txn *sio);
+    int(*reclaim)(struct vnode *vp);
+};
+
+extern struct vnode *g_root_vnode;
+
+int vfs_alloc_vnode(struct vnode **res, int type);
+int vfs_release_vnode(struct vnode *vp);
+
+int vfs_vop_lookup(struct vnode *vp, struct vop_lookup_args *args);
+int vfs_vop_read(struct vnode *vp, struct sio_txn *sio);
+
+#endif  /* _KERNEL */
+#endif  /* !_SYS_VNODE_H_ */
