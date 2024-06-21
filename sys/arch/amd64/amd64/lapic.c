@@ -317,7 +317,7 @@ lapic_init(void)
 
     /* Allocate a vector if needed */
     if (lapic_timer_vec == 0) {
-        lapic_timer_vec = intr_alloc_vector();
+        lapic_timer_vec = intr_alloc_vector("lapictmr", IPL_CLOCK);
         idt_set_desc(lapic_timer_vec, IDT_INT_GATE, ISR(lapic_tmr_isr),
             IST_SCHED);
     }

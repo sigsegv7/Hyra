@@ -28,16 +28,71 @@
  */
 
 #include <sys/types.h>
+#include <sys/param.h>
+#include <sys/errno.h>
+#include <sys/panic.h>
 #include <machine/intr.h>
+#include <machine/cpu.h>
+#include <machine/asm.h>
+#include <vm/dynalloc.h>
+
+static struct intr_entry *intrs[256] = {0};
+
+void
+splraise(uint8_t s)
+{
+    struct cpu_info *ci = this_cpu();
+
+    if (s < ci->ipl) {
+        panic("splraise IPL less than current IPL\n");
+    }
+
+    amd64_write_cr8(s);
+    ci->ipl = s;
+}
+
+void
+splx(uint8_t s)
+{
+    struct cpu_info *ci = this_cpu();
+
+    if (s > ci->ipl) {
+        panic("splx IPL greater than current IPL\n");
+    }
+
+    amd64_write_cr8(s);
+    ci->ipl = s;
+}
 
 int
-intr_alloc_vector(void)
+intr_alloc_vector(const char *name, uint8_t priority)
 {
-    static size_t vec = 0x21;
+    size_t vec = MAX(priority << IPL_SHIFT, 0x20);
+    struct intr_entry *intr;
 
-    if (vec >= 0xFF) {
+    /* Sanity check */
+    if (vec > NELEM(intrs)) {
         return -1;
     }
 
-    return vec++;
+    /*
+     * Try to allocate an interrupt vector. An IPL is made up
+     * of 4 bits so there can be 16 vectors per IPL.
+     */
+    for (int i = vec; i < vec + 16; ++i) {
+        if (intrs[i] != NULL) {
+            continue;
+        }
+
+        intr = dynalloc(sizeof(*intr));
+        if (intr == NULL) {
+            return -ENOMEM;
+        }
+
+        intr->priority = priority;
+        intrs[i] = intr;
+        return i;
+    }
+
+    return -1;
 }

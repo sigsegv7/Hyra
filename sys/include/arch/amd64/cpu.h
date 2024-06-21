@@ -38,6 +38,7 @@
 struct cpu_info {
     uint32_t apicid;
     uint8_t has_x2apic : 1;
+    uint8_t ipl;
     size_t lapic_tmr_freq;
     struct tss_entry *tss;
     struct proc *curtd;

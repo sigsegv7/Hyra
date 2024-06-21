@@ -85,6 +85,20 @@ amd64_write_cr0(uint64_t val)
 }
 
 static inline uint64_t
+amd64_read_cr8(void)
+{
+    uint64_t cr8;
+    __ASMV("mov %%cr8, %0" : "=r" (cr8) :: "memory");
+    return cr8;
+}
+
+static inline void
+amd64_write_cr8(uint64_t val)
+{
+    __ASMV("mov %0, %%cr8" :: "r" (val) : "memory");
+}
+
+static inline uint64_t
 amd64_read_cr4(void)
 {
     uint64_t cr4;

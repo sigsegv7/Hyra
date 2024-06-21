@@ -36,6 +36,23 @@
 #define IST_HW_IRQ  2U
 #define IST_SW_INT  3U
 
-int intr_alloc_vector(void);
+/* Upper 4 bits of interrupt vector */
+#define IPL_SHIFT 4
+
+/*
+ * Interrupt priority levels
+ */
+#define IPL_NONE    0   /* Don't defer anything */
+#define IPL_BIO     1   /* Block I/O */
+#define IPL_CLOCK   2   /* Clock */
+#define IPL_HIGH    3   /* Defer everything */
+
+struct intr_entry {
+    int priority;
+};
+
+int intr_alloc_vector(const char *name, uint8_t priority);
+void splraise(uint8_t s);
+void splx(uint8_t s);
 
 #endif
