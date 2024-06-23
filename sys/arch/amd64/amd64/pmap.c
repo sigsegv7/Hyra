@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/cdefs.h>
+#include <sys/errno.h>
 #include <machine/tlb.h>
 #include <machine/vas.h>
 #include <vm/pmap.h>
@@ -188,6 +189,38 @@ pmap_update_tbl(struct vas vas, vaddr_t va, uint64_t val)
 
     tbl[pmap_get_level_index(1, va)] = val;
     tlb_flush(va);
+    return 0;
+}
+
+int
+pmap_new_vas(struct vas *res)
+{
+    const struct vas *kvas = &g_kvas;
+    struct vas new_vas;
+    uint64_t *src, *dest;
+
+    new_vas.cr3_flags = kvas->cr3_flags;
+    new_vas.top_level = vm_alloc_frame(1);
+    if (new_vas.top_level == 0)
+        return -ENOMEM;
+
+    src = PHYS_TO_VIRT(kvas->top_level);
+    dest = PHYS_TO_VIRT(new_vas.top_level);
+
+    /*
+     * Keep the higher half but zero out the lower
+     * half for user programs.
+     */
+    for (int i = 0; i < 512; ++i) {
+        if (i < 256) {
+            dest[i] = 0;
+            continue;
+        }
+
+        dest[i] = src[i];
+    }
+
+    *res = new_vas;
     return 0;
 }
 
