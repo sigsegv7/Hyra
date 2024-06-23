@@ -31,11 +31,13 @@
 #include <sys/panic.h>
 #include <vm/vm.h>
 #include <vm/physmem.h>
+#include <vm/pmap.h>
 #include <assert.h>
 
 #define DYNALLOC_POOL_SZ        0x400000  /* 4 MiB */
 #define DYNALLOC_POOL_PAGES     (DYNALLOC_POOL_SZ / DEFAULT_PAGESIZE)
 
+struct vas g_kvas;
 static struct vm_ctx vm_ctx;
 volatile struct limine_hhdm_request g_hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,
@@ -55,6 +57,7 @@ vm_init(void)
 
     vm_physmem_init();
 
+    g_kvas = pmap_read_vas();
     vm_ctx.dynalloc_pool_sz = DYNALLOC_POOL_SZ;
     vm_ctx.dynalloc_pool_pa = vm_alloc_frame(DYNALLOC_POOL_PAGES);
     if (vm_ctx.dynalloc_pool_pa == 0) {

@@ -34,6 +34,7 @@
 #include <sys/limine.h>
 #include <sys/spinlock.h>
 #include <vm/tlsf.h>
+#include <vm/pmap.h>
 
 extern volatile struct limine_hhdm_request g_hhdm_request;
 
@@ -49,6 +50,8 @@ struct vm_ctx {
     struct spinlock dynalloc_lock;
     tlsf_t tlsf_ctx;
 };
+
+extern struct vas g_kvas;
 
 struct vm_ctx *vm_get_ctx(void);
 void vm_init(void);
