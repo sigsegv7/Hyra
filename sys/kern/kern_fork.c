@@ -27,33 +27,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_PROC_H_
-#define _SYS_PROC_H_
-
 #include <sys/types.h>
-#include <sys/spinlock.h>
-#include <sys/queue.h>
-#if defined(_KERNEL)
-#include <machine/frame.h>
-#include <machine/pcb.h>
-#endif  /* _KERNEL */
+#include <sys/proc.h>
+#include <sys/errno.h>
+#include <sys/sched.h>
+#include <vm/dynalloc.h>
+#include <string.h>
 
-#if defined(_KERNEL)
-#define PROC_STACK_PAGES 8
-#define PROC_STACK_SIZE  (PROC_STACK_PAGES * DEFAULT_PAGESIZE)
+static size_t nthreads = 0;
 
-struct proc {
-    pid_t pid;
-    struct trapframe tf;
-    struct pcb pcb;
-    size_t priority;
-    uintptr_t stack_base;
-    TAILQ_ENTRY(proc) link;
-};
+/*
+ * Fork1 - fork and direct a thread to 'ip'
+ *
+ * @cur: Current process.
+ * @flags: Flags to set.
+ * @ip: Location for new thread to start at.
+ * @newprocp: Will contain new thread if not NULL.
+ */
+int
+fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
+{
+    struct proc *newproc;
+    int status = 0;
 
-struct proc *this_td(void);
-int md_td_init(struct proc *p, struct proc *parent, uintptr_t ip);
-int fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp);
+    newproc = dynalloc(sizeof(*newproc));
+    if (newproc == NULL)
+        return -ENOMEM;
 
-#endif  /* _KERNEL */
-#endif  /* !_SYS_PROC_H_ */
+    /*
+     * We want to zero the proc to ensure it is in known
+     * state. We then want to initialize machine dependent
+     * fields.
+     */
+    memset(newproc, 0, sizeof(*newproc));
+    status = md_td_init(newproc, cur, (uintptr_t)ip);
+    if (status != 0)
+        goto done;
+
+    /* Set proc output if we can */
+    if (newprocp != NULL)
+        *newprocp = newproc;
+
+    newproc->pid = nthreads++;
+    sched_enqueue_td(newproc);
+done:
+    if (status != 0)
+        dynfree(newproc);
+
+    return status;
+}
