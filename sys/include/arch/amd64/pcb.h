@@ -27,16 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SCHED_H_
-#define _SYS_SCHED_H_
+#ifndef _MACHINE_PCB_H_
+#define _MACHINE_PCB_H_
 
-#include <sys/proc.h>
+#include <sys/types.h>
+#include <vm/pmap.h>
 
-#if defined(_KERNEL)
+struct pcb {
+    struct vas addrsp;
+};
 
-void sched_init(void);
-void sched_enter(void);
-void sched_enqueue_td(struct proc *td);
-
-#endif  /* _KERNEL */
-#endif  /* !_SYS_SCHED_H_ */
+#endif  /* !_MACHINE_PCB_H_ */

@@ -32,17 +32,24 @@
 
 #include <sys/types.h>
 #include <sys/spinlock.h>
+#include <sys/queue.h>
 #if defined(_KERNEL)
-#include <machine/cpu.h>
 #include <machine/frame.h>
+#include <machine/pcb.h>
 #endif  /* _KERNEL */
 
 #if defined(_KERNEL)
 
 struct proc {
     pid_t pid;
-    struct cpu_info *cpu;
+    struct trapframe tf;
+    struct pcb pcb;
+    size_t priority;
+    uintptr_t stack_base;
+    TAILQ_ENTRY(proc) link;
 };
+
+struct proc *this_td(void);
 
 #endif  /* _KERNEL */
 #endif  /* !_SYS_PROC_H_ */

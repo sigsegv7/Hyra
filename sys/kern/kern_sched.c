@@ -33,8 +33,11 @@
 #include <sys/cdefs.h>
 #include <sys/syslog.h>
 #include <machine/frame.h>
+#include <machine/cpu.h>
+#include <vm/pmap.h>
 #include <dev/timer.h>
 #include <assert.h>
+#include <string.h>
 
 #define pr_trace(fmt, ...) kprintf("ksched: " fmt, ##__VA_ARGS__)
 
@@ -47,6 +50,12 @@ static sched_policy_t policy = SCHED_POLICY_RR;
  * scheduled should be added to the toplevel queue.
  */
 static struct sched_queue qlist[SCHED_NQUEUE];
+
+/*
+ * Thread queue lock - all operations to `qlist'
+ * must be done with this lock acquired.
+ */
+__cacheline_aligned static struct spinlock tdq_lock = {0};
 
 /*
  * Perform timer oneshot
@@ -64,6 +73,54 @@ sched_oneshot(bool now)
     timer.oneshot_us(usec);
 }
 
+static struct proc *
+sched_dequeue_td(void)
+{
+    struct sched_queue *queue;
+    struct proc *td = NULL;
+
+    spinlock_acquire(&tdq_lock);
+
+    for (size_t i = 0; i < SCHED_NQUEUE; ++i) {
+        queue = &qlist[i];
+        if (!TAILQ_EMPTY(&queue->q)) {
+            td = TAILQ_FIRST(&queue->q);
+            TAILQ_REMOVE(&queue->q, td, link);
+            break;
+        }
+    }
+
+    spinlock_release(&tdq_lock);
+    return td;
+}
+
+/*
+ * Add a thread to the scheduler.
+ */
+void
+sched_enqueue_td(struct proc *td)
+{
+    struct sched_queue *queue;
+
+    spinlock_acquire(&tdq_lock);
+    queue = &qlist[td->priority];
+
+    TAILQ_INSERT_TAIL(&queue->q, td, link);
+    spinlock_release(&tdq_lock);
+}
+
+/*
+ * Return the currently running thread.
+ */
+struct proc *
+this_td(void)
+{
+    struct cpu_info *ci;
+
+    ci = this_cpu();
+    return ci->curtd;
+}
+
 /*
  * Perform a context switch.
  *
@@ -72,10 +129,30 @@ sched_oneshot(bool now)
 void
 sched_switch(struct trapframe *tf)
 {
-    static struct spinlock lock = {0};
+    struct cpu_info *ci;
+    struct pcb *pcbp;
+    struct proc *next_td, *td;
 
-    spinlock_acquire(&lock);
-    spinlock_release(&lock);
+    ci = this_cpu();
+    td = ci->curtd;
+
+    /* Do we have threads to switch to? */
+    if ((next_td = sched_dequeue_td()) == NULL) {
+        sched_oneshot(false);
+        return;
+    }
+
+    /* Re-enqueue the old thread */
+    if (td != NULL) {
+        memcpy(&td->tf, tf, sizeof(td->tf));
+        sched_enqueue_td(td);
+    }
+
+    memcpy(tf, &next_td->tf, sizeof(*tf));
+    ci->curtd = next_td;
+    pcbp = &next_td->pcb;
+
+    pmap_switch_vas(pcbp->addrsp);
     sched_oneshot(false);
 }
 
