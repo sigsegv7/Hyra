@@ -31,10 +31,13 @@
 #include <sys/syslog.h>
 #include <sys/sched.h>
 #include <sys/mount.h>
+#include <sys/proc.h>
 #include <dev/cons/cons.h>
 #include <dev/acpi/acpi.h>
 #include <machine/cpu.h>
 #include <vm/vm.h>
+
+static struct proc proc0;
 
 int
 main(void)
@@ -52,6 +55,9 @@ main(void)
 
     /* Startup the BSP */
     cpu_startup(&g_bsp_ci);
+
+    /* Init process 0 */
+    md_td_init(&proc0, NULL, 0);
 
     /* Init the virtual file system */
     vfs_init();
