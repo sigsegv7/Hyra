@@ -39,6 +39,8 @@
 #endif  /* _KERNEL */
 
 #if defined(_KERNEL)
+#define PROC_STACK_PAGES 8
+#define PROC_STACK_SIZE  (PROC_STACK_PAGES * DEFAULT_PAGESIZE)
 
 struct proc {
     pid_t pid;
@@ -50,6 +52,7 @@ struct proc {
 };
 
 struct proc *this_td(void);
+int md_td_init(struct proc *p, struct proc *parent, uintptr_t ip);
 
 #endif  /* _KERNEL */
 #endif  /* !_SYS_PROC_H_ */
