@@ -1,7 +1,0 @@
-set cindent
-set cinoptions=(4200,u4200,+0.5s,*500,:0,t0,U4200
-set indentexpr=IgnoreParenIndent()
-set indentkeys=0{,0},0),:,0#,!^F,o,O,e
-set sw=4 ts=4
-set softtabstop=4
-set expandtab
