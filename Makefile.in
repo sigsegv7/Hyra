@@ -1,0 +1,109 @@
+.SILENT:
+override PROMPT := printf "%s\t\t%s\n"
+
+###############################
+# CFLAGS, QEMU flags + misc
+###############################
+override ARCH = @ARCH@
+override HYRA_VERSION = @PACKAGE_VERSION@
+override PROMPT := printf "%s\t\t%s\n"
+override KERNEL_CFLAGS = @KERNEL_CFLAGS@ $(KERNEL_DEFINES)
+override KERNEL_LDFLAGS = -nostdlib -znoexecstack -zmax-page-size=0x1000 -static -Tsys/arch/$(ARCH)/conf/link.ld
+override QEMU_FLAGS = @QEMU_FLAGS@
+override KERNEL_DEFINES = $ -DHYRA_VERSION="\"$(HYRA_VERSION)\""\
+                          -DHYRA_BUILDDATE="\"@HYRA_BUILDDATE@\""\
+                          -DHYRA_ARCH="\"@ARCH@\"" $(shell cat sys/arch/$(ARCH)/conf/GENERIC | tools/kconf/kconf)
+
+######################
+# Binutils stuff
+######################
+ifeq ($(ARCH), amd64)
+	override CC = $(shell pwd)/cross/bin/x86_64-hyra-gcc
+	override LD = $(shell pwd)/cross/bin/x86_64-hyra-ld
+else
+	override CC = $(shell pwd)/cross/bin/$(ARCH)-hyra-gcc
+	override LD = $(shell pwd)/cross/bin/$(ARCH)-hyra-ld
+endif
+
+##########################
+# Architecture specifics
+##########################
+override ALL_ARCH_CFILES = find sys/ -name "*.c" |  grep "sys/arch/$(ARCH).*"
+override ALL_ARCH_ASM_FILES = find sys/ -name "*.S" | grep "sys/arch/$(ARCH).*"
+override QEMU = @QEMU@
+
+##########################
+# General kernel sources
+##########################
+override KERNEL_CFILES = $(shell find sys/ -name "*.c" | grep -v "sys/arch/*" | grep -v sys/kern/ksyms.c) $(shell $(ALL_ARCH_CFILES))
+override KERNEL_ASMFILES = $(shell find sys/ -name "*.S" | grep -v "sys/arch/*") $(shell $(ALL_ARCH_ASM_FILES))
+
+########################
+# Objects & header deps
+########################
+override KERNEL_OBJECTS = $(KERNEL_CFILES:.c=.o)
+override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
+override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
+
+.PHONY: all
+all: base base/boot/hyra-kernel ramfs iso
+		rm -f sys/include/machine
+		rm -rf iso_root
+
+.PHONY: base
+base:
+	mkdir -p base/usr/lib/
+	mkdir -p base/usr/sbin/
+	mkdir -p base/boot/
+
+.PHONY: run
+run:
+	$(QEMU) $(QEMU_FLAGS)
+
+.PHONY: ramfs
+ramfs:
+	cd base/; find . -name "*" | cpio --create --format=odc \
+		--no-absolute-filenames > ../ramfs.cpio
+	$(PROMPT) " RAMFS " $(shell pwd)/ramfs.cpio
+
+.PHONY: clean
+clean:
+	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
+	rm -f sys/include/machine
+
+.PHONY: iso
+iso:
+	mkdir -p iso_root/boot/
+	mkdir -p iso_root/EFI/BOOT/
+	cp stand/limine/BOOTX64.EFI iso_root/EFI/BOOT/
+	mv ramfs.cpio iso_root/boot/
+	cp builddeps/limine.cfg stand/limine/limine-bios.sys \
+		stand/limine/limine-bios-cd.bin stand/limine/limine-uefi-cd.bin iso_root/
+	cp base/boot/* iso_root/boot/
+	xorriso -as mkisofs -b limine-bios-cd.bin -no-emul-boot -boot-load-size 4\
+		-boot-info-table --efi-boot limine-uefi-cd.bin -efi-boot-part \
+		--efi-boot-image --protective-msdos-label iso_root -o Hyra.iso > /dev/null
+	stand/limine/limine bios-install Hyra.iso
+	$(PROMPT) " ISO " $(shell pwd)/Hyra.iso
+
+base/boot/hyra-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
+	rm -rf iso_root
+	$(PROMPT) " LD " $(shell pwd)/base/boot/hyra-kernel
+	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/hyra-kernel
+	tools/ksyms sys/kern/ksyms.c base/boot/hyra-kernel
+	# === Generating symbols ===
+	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) sys/kern/ksyms.c -o sys/kern/ksyms.o
+	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) \
+		sys/kern/ksyms.o -o base/boot/hyra-kernel
+
+sys/include/machine/:
+	cd sys/include/; ln -sf arch/$(ARCH) machine
+
+-include $(KERNEL_HEADER_DEPS)
+%.o: %.c sys/include/machine/
+	$(PROMPT) " CC " $<
+	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) $< -o $@
+
+%.S.o: %.S
+	$(PROMPT) " AS " $<
+	$(CC) -c $< -o $@ -D__$(ARCH)__ -I sys/include/

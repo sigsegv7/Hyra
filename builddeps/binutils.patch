@@ -1,0 +1,99 @@
+diff -ruN binutils-2.42-copy/bfd/config.bfd binutils-2.42/bfd/config.bfd
+--- binutils-2.42-copy/bfd/config.bfd	2024-01-28 19:00:00.000000000 -0500
++++ binutils-2.42/bfd/config.bfd	2024-03-03 11:27:01.508232956 -0500
+@@ -665,6 +665,11 @@
+     targ_selvecs=
+     targ64_selvecs=x86_64_elf64_vec
+     ;;
++  i[3-7]86-*-hyra*)
++    targ_defvec=i386_elf32_vec
++    targ_selvecs=
++    targ64_selvecs=x86_64_elf64_vec
++    ;;
+ #ifdef BFD64
+   x86_64-*-cloudabi*)
+     targ_defvec=x86_64_elf64_cloudabi_vec
+@@ -729,6 +734,11 @@
+     targ_defvec=x86_64_elf64_vec
+     targ_selvecs=i386_elf32_vec
+     want64=true
++    ;;
++  x86_64-*-hyra*)
++    targ_defvec=x86_64_elf64_vec
++    targ_selvecs=i386_elf32_vec
++    want64=true
+     ;;
+   x86_64-*-gnu*)
+     targ_defvec=x86_64_elf64_vec
+diff -ruN binutils-2.42-copy/config.sub binutils-2.42/config.sub
+--- binutils-2.42-copy/config.sub	2024-01-28 19:00:00.000000000 -0500
++++ binutils-2.42/config.sub	2024-03-03 11:27:01.508232956 -0500
+@@ -1766,7 +1766,7 @@
+ 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
+ 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
+ 	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | zephyr* \
+-	     | fiwix* | mlibc* | cos* | mbr* )
++	     | fiwix* | mlibc* | cos* | mbr* | hyra* )
+ 		;;
+ 	# This one is extra strict with allowed versions
+ 	sco3.2v2 | sco3.2v[4-9]* | sco5v6*)
+diff -ruN binutils-2.42-copy/gas/configure.tgt binutils-2.42/gas/configure.tgt
+--- binutils-2.42-copy/gas/configure.tgt	2024-01-28 19:00:00.000000000 -0500
++++ binutils-2.42/gas/configure.tgt	2024-03-03 11:27:01.508232956 -0500
+@@ -229,6 +229,7 @@
+   i386-*-beos*)				fmt=elf ;;
+   i386-*-elfiamcu)			fmt=elf arch=iamcu ;;
+   i386-*-elf*)				fmt=elf ;;
++  i386-*-hyra*)				fmt=elf em=gnu ;;
+   i386-*-fuchsia*)			fmt=elf ;;
+   i386-*-haiku*)			fmt=elf em=haiku ;;
+   i386-*-genode*)			fmt=elf ;;
+diff -ruN binutils-2.42-copy/gprofng/libcollector/configure.ac binutils-2.42/gprofng/libcollector/configure.ac
+--- binutils-2.42-copy/gprofng/libcollector/configure.ac	2024-01-28 19:00:00.000000000 -0500
++++ binutils-2.42/gprofng/libcollector/configure.ac	2024-03-03 11:27:01.508232956 -0500
+@@ -18,7 +18,7 @@
+ 
+ m4_include([../../bfd/version.m4])
+ AC_INIT([gprofng], BFD_VERSION)
+-AC_CONFIG_MACRO_DIRS([../../config ../..])
++#AC_CONFIG_MACRO_DIRS([../../config ../..])
+ AC_CONFIG_AUX_DIR(../..)
+ AC_CANONICAL_TARGET
+ AM_INIT_AUTOMAKE
+diff -ruN binutils-2.42-copy/ld/configure.tgt binutils-2.42/ld/configure.tgt
+--- binutils-2.42-copy/ld/configure.tgt	2024-01-28 19:00:00.000000000 -0500
++++ binutils-2.42/ld/configure.tgt	2024-03-03 11:29:12.677328228 -0500
+@@ -384,6 +384,10 @@
+ i[3-7]86-*-redox*)	targ_emul=elf_i386
+ 			targ_extra_emuls=elf_x86_64
+ 			;;
++i[3-7]86-*-hyra*)
++            targ_emul=elf_i386
++            targ_extra_emuls=elf_x86_64
++			;;
+ i[3-7]86-*-solaris2*)	targ_emul=elf_i386_sol2
+ 			targ_extra_emuls="elf_i386_ldso elf_i386 elf_iamcu elf_x86_64_sol2 elf_x86_64"
+ 			targ_extra_libpath=$targ_extra_emuls
+@@ -1023,6 +1027,10 @@
+ x86_64-*-redox*)	targ_emul=elf_x86_64
+ 			targ_extra_emuls=elf_i386
+ 			;;
++x86_64-*-hyra*)
++            targ_emul=elf_x86_64
++            targ_extra_emuls=elf_i386
++			;;
+ x86_64-*-solaris2*)	targ_emul=elf_x86_64_sol2
+ 			targ_extra_emuls="elf_x86_64 elf_i386_sol2 elf_i386_ldso elf_i386 elf_iamcu"
+ 			targ_extra_libpath=$targ_extra_emuls
+diff -ruN binutils-2.42-copy/libiberty/configure.ac binutils-2.42/libiberty/configure.ac
+--- binutils-2.42-copy/libiberty/configure.ac	2024-01-28 19:00:00.000000000 -0500
++++ binutils-2.42/libiberty/configure.ac	2024-03-03 11:27:01.508232956 -0500
+@@ -37,7 +37,7 @@
+   libiberty_topdir="${srcdir}/.."
+ fi
+ AC_SUBST(libiberty_topdir)
+-AC_CONFIG_AUX_DIR($libiberty_topdir)
++AC_CONFIG_AUX_DIR([.])
+ 
+ dnl Very limited version of automake's enable-maintainer-mode
+ 

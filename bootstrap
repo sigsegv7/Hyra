@@ -1,0 +1,56 @@
+#!/bin/sh
+set -e
+
+mkdir -p lib/
+
+# arg0: Output path.
+# arg1: Command for downloading
+try_fetch() {
+    if [[ -d $2 ]]
+    then
+        echo "try_fetch: Skipping $2: already exists"
+    else
+        ${@:1}
+    fi
+}
+
+fetch() {
+    try_fetch "git clone https://github.com/limine-bootloader/limine.git --branch=v6.x-branch-binary --depth=1" "stand/limine"
+}
+
+build_limine() {
+    make -C stand/limine/
+}
+
+build_kconf() {
+    make -C tools/kconf/
+}
+
+build() {
+    build_limine
+    build_kconf
+}
+
+echo "----------------------------------"
+echo
+echo "      Fetching sources...        "
+echo
+echo "----------------------------------"
+echo -e "\n"
+
+fetch           # Fetch sources
+
+echo "----------------------------------"
+echo
+echo "      Building sources...        "
+echo
+echo "----------------------------------"
+echo -e "\n"
+
+build           # Build sources
+
+if [[ ! -f ./configure ]]
+then
+    echo "Creating configure script..."
+    autoconf
+fi

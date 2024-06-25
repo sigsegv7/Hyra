@@ -1,0 +1,5 @@
+// Kernel options
+option SPECTRE_IBRS no
+
+// Kernel constants
+setval SCHED_NQUEUE 4
