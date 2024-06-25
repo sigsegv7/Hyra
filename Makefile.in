@@ -56,6 +56,10 @@ base:
 	mkdir -p base/usr/sbin/
 	mkdir -p base/boot/
 
+.PHONY: cross
+cross:
+	bash tools/cross.sh $(ARCH)
+
 .PHONY: run
 run:
 	$(QEMU) $(QEMU_FLAGS)
