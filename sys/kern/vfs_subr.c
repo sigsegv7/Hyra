@@ -62,10 +62,8 @@ vfs_alloc_mount(struct vnode *vp, struct fs_info *fip)
     struct mount *mp;
 
     mp = dynalloc(sizeof(*mp));
-
-    if (mp == NULL) {
+    if (mp == NULL)
         return NULL;
-    }
 
     memset(mp, 0, sizeof(*mp));
     mp->vp = vp;
@@ -83,13 +81,10 @@ vfs_release_vnode(struct vnode *vp)
     const struct vops *vops = vp->vops;
     int status = 0;
 
-    if (vp == NULL) {
+    if (vp == NULL)
         return -EINVAL;
-    }
-
-    if (vops->reclaim != NULL) {
+    if (vops->reclaim != NULL)
         status = vops->reclaim(vp);
-    }
 
     dynfree(vp);
     return status;
