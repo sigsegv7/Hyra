@@ -30,6 +30,7 @@
 #ifndef _SYS_VNODE_H_
 #define _SYS_VNODE_H_
 
+#include <sys/types.h>
 #include <sys/sio.h>
 
 #if defined(_KERNEL)
@@ -50,14 +51,31 @@ struct vnode {
 #define VCHR    0x03    /* Character device */
 #define VBLK    0x04    /* Block device */
 
+#define VNOVAL -1
+
 struct vop_lookup_args {
     const char *name;       /* Current path component */
     struct vnode *dirvp;    /* Directory vnode */
     struct vnode **vpp;     /* Result vnode */
 };
 
+/*
+ * A field in this structure is unavailable
+ * if it has a value of VNOVAL.
+ */
+struct vattr {
+    mode_t mode;
+    size_t size;
+};
+
+struct vop_getattr_args {
+    struct vnode *vp;
+    struct vattr *res;
+};
+
 struct vops {
     int(*lookup)(struct vop_lookup_args *args);
+    int(*getattr)(struct vop_getattr_args *args);
     int(*read)(struct vnode *vp, struct sio_txn *sio);
     int(*reclaim)(struct vnode *vp);
 };
@@ -69,6 +87,7 @@ int vfs_release_vnode(struct vnode *vp);
 
 int vfs_vop_lookup(struct vnode *vp, struct vop_lookup_args *args);
 int vfs_vop_read(struct vnode *vp, struct sio_txn *sio);
+int vfs_vop_getattr(struct vnode *vp, struct vop_getattr_args *args);
 
 #endif  /* _KERNEL */
 #endif  /* !_SYS_VNODE_H_ */

@@ -115,3 +115,16 @@ vfs_vop_read(struct vnode *vp, struct sio_txn *sio)
 
     return vops->read(vp, sio);
 }
+
+int
+vfs_vop_getattr(struct vnode *vp, struct vop_getattr_args *args)
+{
+    const struct vops *vops = vp->vops;
+
+    if (vops == NULL)
+        return -EIO;
+    if (vops->getattr == NULL)
+        return -EIO;
+
+    return vops->getattr(args);
+}
