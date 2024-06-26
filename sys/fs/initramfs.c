@@ -193,6 +193,25 @@ initramfs_lookup(struct vop_lookup_args *args)
 }
 
 static int
+initramfs_getattr(struct vop_getattr_args *args)
+{
+    struct vnode *vp;
+    struct initramfs_node *n;
+    struct vattr attr;
+
+    if ((vp = args->vp) == NULL)
+        return -EIO;
+    if ((n = vp->data) == NULL)
+        return -EIO;
+
+    memset(&attr, VNOVAL, sizeof(attr));
+    attr.mode = n->mode;
+    attr.size = n->size;
+    *args->res = attr;
+    return 0;
+}
+
+static int
 initramfs_read(struct vnode *vp, struct sio_txn *sio)
 {
     struct initramfs_node *n = vp->data;
@@ -256,7 +275,8 @@ initramfs_init(struct fs_info *fip)
 const struct vops g_initramfs_vops = {
     .lookup = initramfs_lookup,
     .read = initramfs_read,
-    .reclaim = initramfs_reclaim
+    .reclaim = initramfs_reclaim,
+    .getattr = initramfs_getattr
 };
 
 const struct vfsops g_initramfs_vfsops = {
