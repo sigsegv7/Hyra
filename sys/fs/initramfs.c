@@ -227,6 +227,7 @@ initramfs_reclaim(struct vnode *vp)
         dynfree(vp->data);
     }
 
+    vp->data = NULL;
     return 0;
 }
 
