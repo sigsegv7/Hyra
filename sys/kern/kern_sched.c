@@ -123,8 +123,6 @@ this_td(void)
 
 /*
  * Perform a context switch.
- *
- * TODO
  */
 void
 sched_switch(struct trapframe *tf)
