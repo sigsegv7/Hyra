@@ -284,6 +284,44 @@ lapic_timer_init(void)
     return freq;
 }
 
+void
+lapic_send_ipi(uint8_t id, uint8_t shorthand, uint8_t vector)
+{
+    const uint32_t X2APIC_IPI_SELF = 0x3F0;
+    struct cpu_info *ci = this_cpu();
+    uint64_t icr_lo = 0;
+
+    /*
+     * If we are in x2APIC mode and the shorthand is "self", use
+     * the x2APIC SELF IPI register as it is more optimized.
+     */
+    if (shorthand == IPI_SHORTHAND_SELF && ci->has_x2apic) {
+        lapic_writel(X2APIC_IPI_SELF, vector);
+        return;
+    }
+
+    /* Encode dest into the low dword of the ICR */
+    icr_lo |= (vector | IPI_DEST_PHYSICAL);
+    icr_lo |= ((shorthand & 0x3) << 18);
+
+    /*
+     * In xAPIC mode, the Delivery Status bit (bit 12) must
+     * be polled until clear after sending an IPI. However,
+     * in x2APIC mode, this bit does not exist, so there's no
+     * need to worry about polling. Since the x2APIC interface
+     * uses MSRs, we can accomplish what we need with a single
+     * write, unlike with xAPICs where you'd need to write to the
+     * ICR high dword first.
+     */
+    if (ci->has_x2apic) {
+        lapic_writel(LAPIC_ICRLO, ((uint64_t)id << 32) | icr_lo);
+    } else {
+        lapic_writel(LAPIC_ICRHI, ((uint32_t)id << 24));
+        lapic_writel(LAPIC_ICRLO, icr_lo);
+        while (ISSET(lapic_readl(LAPIC_ICRLO), BIT(12)));
+    }
+}
+
 /*
  * Indicates that the current interrupt is finished
  * being serviced.

@@ -30,10 +30,20 @@
 #ifndef _MACHINE_LAPIC_H_
 #define _MACHINE_LAPIC_H_
 
+#include <sys/param.h>
 #include <sys/types.h>
+
+#define IPI_SHORTHAND_NONE      0x00
+#define IPI_SHORTHAND_SELF      0x01
+#define IPI_SHORTHAND_ALL       0x02
+#define IPI_SHORTHAND_OTHERS    0x03
+
+#define IPI_DEST_PHYSICAL   0
+#define IPI_DEST_LOGICAL    BIT(11)
 
 void lapic_init(void);
 void lapic_eoi(void);
+void lapic_send_ipi(uint8_t id, uint8_t shorthand, uint8_t vector);
 
 extern uintptr_t g_lapic_base;
 
