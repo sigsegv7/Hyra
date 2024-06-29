@@ -31,6 +31,7 @@
 #define _SYS_VNODE_H_
 
 #include <sys/types.h>
+#include <sys/atomic.h>
 #include <sys/sio.h>
 
 #if defined(_KERNEL)
@@ -42,7 +43,10 @@ struct vnode {
     int flags;
     void *data;
     const struct vops *vops;
+    uint32_t refcount;
 };
+
+#define vfs_vref(VP) (atomic_inc_int(&(VP)->refcount))
 
 /* Vnode type flags */
 #define VNON    0x00    /* Uninitialized */

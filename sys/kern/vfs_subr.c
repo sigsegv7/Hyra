@@ -30,6 +30,7 @@
 #include <sys/vnode.h>
 #include <sys/errno.h>
 #include <sys/mount.h>
+#include <sys/syslog.h>
 #include <vm/dynalloc.h>
 #include <string.h>
 
@@ -46,6 +47,7 @@ vfs_alloc_vnode(struct vnode **res, int type)
 
     memset(vp, 0, sizeof(*vp));
     vp->type = type;
+    vp->refcount = 1;
     *res = vp;
     return 0;
 }
@@ -83,6 +85,23 @@ vfs_release_vnode(struct vnode *vp)
 
     if (vp == NULL)
         return -EINVAL;
+
+    /*
+     * The refcount cannot be zero before we decrement it,
+     * something is quite wrong if this happens.
+     */
+    if (vp->refcount == 0) {
+        kprintf("Cannot release vnode, bad refcount\n");
+        return -EIO;
+    }
+
+    /*
+     * Drop the reference and don't destroy the vnode
+     * if it's still not zero.
+     */
+    if (atomic_dec_int(&vp->refcount) > 0)
+        return 0;
+
     if (vops->reclaim != NULL)
         status = vops->reclaim(vp);
     if (status != 0)
