@@ -232,6 +232,7 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
     /* Did program header loading fail? */
     if (error != 0) {
         elf_unload(td, prog);
+        dynfree(file.data);
         return error;
     }
 
