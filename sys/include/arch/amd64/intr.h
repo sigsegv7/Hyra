@@ -52,7 +52,7 @@ struct intr_entry {
 };
 
 int intr_alloc_vector(const char *name, uint8_t priority);
-void splraise(uint8_t s);
+int splraise(uint8_t s);
 void splx(uint8_t s);
 
 #endif

@@ -38,17 +38,20 @@
 
 static struct intr_entry *intrs[256] = {0};
 
-void
+int
 splraise(uint8_t s)
 {
     struct cpu_info *ci = this_cpu();
+    int old_ipl;
 
     if (s < ci->ipl) {
         panic("splraise IPL less than current IPL\n");
     }
 
     amd64_write_cr8(s);
+    old_ipl = ci->ipl;
     ci->ipl = s;
+    return old_ipl;
 }
 
 void
