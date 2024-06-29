@@ -85,6 +85,8 @@ vfs_release_vnode(struct vnode *vp)
         return -EINVAL;
     if (vops->reclaim != NULL)
         status = vops->reclaim(vp);
+    if (status != 0)
+        return status;
 
     dynfree(vp);
     return status;
