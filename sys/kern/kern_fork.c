@@ -54,13 +54,7 @@ fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
     if (newproc == NULL)
         return -ENOMEM;
 
-    /*
-     * We want to zero the proc to ensure it is in known
-     * state. We then want to initialize machine dependent
-     * fields.
-     */
-    memset(newproc, 0, sizeof(*newproc));
-    status = md_td_init(newproc, cur, (uintptr_t)ip);
+    status = md_fork(newproc, cur, (uintptr_t)ip);
     if (status != 0)
         goto done;
 

@@ -56,9 +56,6 @@ main(void)
     /* Startup the BSP */
     cpu_startup(&g_bsp_ci);
 
-    /* Init process 0 */
-    md_td_init(&proc0, NULL, 0);
-
     /* Init the virtual file system */
     vfs_init();
 

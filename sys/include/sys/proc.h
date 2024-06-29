@@ -52,7 +52,7 @@ struct proc {
 };
 
 struct proc *this_td(void);
-int md_td_init(struct proc *p, struct proc *parent, uintptr_t ip);
+int md_fork(struct proc *p, struct proc *parent, uintptr_t ip);
 int fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp);
 
 #endif  /* _KERNEL */

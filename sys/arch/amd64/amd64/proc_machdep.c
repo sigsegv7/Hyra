@@ -46,12 +46,12 @@
  * @ip: Instruction pointer.
  */
 int
-md_td_init(struct proc *p, struct proc *parent, uintptr_t ip)
+md_fork(struct proc *p, struct proc *parent, uintptr_t ip)
 {
     uintptr_t stack_base;
-    struct trapframe *tfp, *parent_tfp;
+    struct trapframe *tfp;
     struct pcb *pcbp;
-    uint8_t rpl;
+    uint8_t rpl = 0;
     int error;
 
     tfp = &p->tf;
@@ -61,18 +61,15 @@ md_td_init(struct proc *p, struct proc *parent, uintptr_t ip)
     if ((error = pmap_new_vas(&pcbp->addrsp)) != 0)
         return error;
 
+    memcpy(tfp, &parent->tf, sizeof(p->tf));
+
     /*
-     * If parent is NULL, assume kernel space and zero the
-     * trapframe. Otherwise we can just set it up normally.
+     * Kernel threads cannot be on the lower half.
+     * If 'ip' is on the lower half, assume that it
+     * is a userspace program and set RPL to ring 3.
      */
-    if (parent == NULL) {
-        rpl = 0;
-        memset(tfp, 0, sizeof(*tfp));
-    } else {
-        parent_tfp = &parent->tf;
-        rpl = parent_tfp->cs & 3;
-        memcpy(tfp, &parent->tf, sizeof(*tfp));
-    }
+    if (ip < VM_HIGHER_HALF)
+        rpl = 3;
 
     /*
      * RPL being 3 indicates that the parent thread is in
