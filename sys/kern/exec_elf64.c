@@ -176,14 +176,14 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
     struct pcb *pcbp;
     struct exec_range loadmap[MAX_PHDRS];
     struct auxval *auxvalp;
-    int error = 0;
+    int status = 0;
 
-    if ((error = elf_get_file(pathname, &file)) != 0)
-        return error;
+    if ((status = elf_get_file(pathname, &file)) != 0)
+        return status;
 
     hdr = (Elf64_Ehdr *)file.data;
-    if ((error = elf64_verify(hdr)) != 0)
-        return error;
+    if ((status = elf64_verify(hdr)) != 0)
+        goto done;
 
     pcbp = &td->pcb;
 
@@ -204,14 +204,14 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
             /* Try to allocate page frames */
             physmem = vm_alloc_frame(page_count);
             if (physmem == 0) {
-                error = -ENOMEM;
+                status = -ENOMEM;
                 break;
             }
 
-            error = vm_map(pcbp->addrsp, phdr->p_vaddr, physmem,
+            status = vm_map(pcbp->addrsp, phdr->p_vaddr, physmem,
                 prot, map_len);
 
-            if (error != 0) {
+            if (status != 0) {
                 break;
             }
 
@@ -230,12 +230,12 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
     auxvalp->at_phnum = hdr->e_phnum;
 
     /* Did program header loading fail? */
-    if (error != 0) {
+    if (status != 0) {
         elf_unload(td, prog);
-        dynfree(file.data);
-        return error;
+        goto done;
     }
 
+done:
     dynfree(file.data);
-    return 0;
+    return status;
 }
