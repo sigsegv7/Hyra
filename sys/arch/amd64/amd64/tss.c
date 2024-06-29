@@ -33,6 +33,7 @@
 #include <sys/panic.h>
 #include <vm/dynalloc.h>
 #include <vm/physmem.h>
+#include <vm/vm.h>
 #include <machine/tss.h>
 #include <machine/cpu.h>
 #include <assert.h>
@@ -60,7 +61,7 @@ alloc_resources(struct cpu_info *ci)
         }
 
         memset(tss, 0, sizeof(*tss));
-        rsp0_base = vm_alloc_frame(1);
+        rsp0_base = vm_alloc_frame(1) + VM_HIGHER_HALF;
 
         if (rsp0_base == 0) {
             panic("Could not allocate RSP0 base\n");
