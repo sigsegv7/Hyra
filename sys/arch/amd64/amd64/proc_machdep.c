@@ -72,9 +72,8 @@ md_fork(struct proc *p, struct proc *parent, uintptr_t ip)
         rpl = 3;
 
     /*
-     * RPL being 3 indicates that the parent thread is in
-     * userland. If this is the case, we'd want this new thread
-     * to also be in userland.
+     * RPL being 3 indicates that the new thread should be in
+     * userland. If this is the case, use user segment selectors.
      */
     tfp->rip = ip;
     tfp->cs = (rpl == 3) ? (USER_CS | 3) : KERNEL_CS;
