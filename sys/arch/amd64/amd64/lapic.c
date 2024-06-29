@@ -223,7 +223,7 @@ lapic_reg_clear(uint32_t reg, uint32_t value)
 
 /*
  * Hardware and software enable the Local APIC
- * through IA32_APIC_BASE_MSR
+ * through IA32_APIC_BASE_MSR and the SVR.
  */
 static inline void
 lapic_enable(const struct cpu_info *ci)
