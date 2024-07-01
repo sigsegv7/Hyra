@@ -31,11 +31,12 @@
 #define _SYS_SCHED_H_
 
 #include <sys/proc.h>
+#include <sys/cdefs.h>
 
 #if defined(_KERNEL)
 
 void sched_init(void);
-void sched_enter(void);
+__dead void sched_enter(void);
 void sched_enqueue_td(struct proc *td);
 
 #endif  /* _KERNEL */
