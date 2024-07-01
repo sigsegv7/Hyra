@@ -224,6 +224,12 @@ pmap_new_vas(struct vas *res)
     return 0;
 }
 
+void
+pmap_destroy_vas(struct vas vas)
+{
+    vm_free_frame(vas.top_level, 1);
+}
+
 struct vas
 pmap_read_vas(void)
 {

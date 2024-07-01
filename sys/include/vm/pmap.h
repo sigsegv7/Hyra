@@ -57,6 +57,11 @@ void pmap_switch_vas(struct vas vas);
 int pmap_new_vas(struct vas *res);
 
 /*
+ * Deallocate a virtual address space.
+ */
+void pmap_destroy_vas(struct vas vas);
+
+/*
  * Create a virtual memory mapping of a single page.
  */
 int pmap_map(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot);
