@@ -38,6 +38,20 @@
 #include <vm/map.h>
 #include <string.h>
 
+void
+setregs(struct proc *td, struct exec_prog *prog, uintptr_t stack)
+{
+    struct trapframe *tfp = &td->tf;
+    struct auxval *auxvalp = &prog->auxval;
+
+    memset(tfp, 0, sizeof(*tfp));
+    tfp->rip = auxvalp->at_entry;
+    tfp->cs = USER_CS | 3;
+    tfp->ss = USER_DS | 3;
+    tfp->rsp = stack;
+    tfp->rflags = 0x202;
+}
+
 /*
  * MD thread init code
  *

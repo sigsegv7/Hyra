@@ -58,6 +58,7 @@ struct exec_prog {
 
 int elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog);
 void elf_unload(struct proc *td, struct exec_prog *prog);
+void setregs(struct proc *td, struct exec_prog *prog, uintptr_t stack);
 
 #endif  /* _KERNEL */
 #endif  /* !_SYS_EXEC_H_ */
