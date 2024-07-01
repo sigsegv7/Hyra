@@ -31,12 +31,72 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/errno.h>
+#include <sys/exec.h>
 #include <machine/frame.h>
 #include <machine/gdt.h>
 #include <vm/physmem.h>
 #include <vm/vm.h>
 #include <vm/map.h>
 #include <string.h>
+
+void
+md_td_stackinit(struct proc *td, void *stack_top, struct exec_prog *prog)
+{
+    uintptr_t *sp = stack_top;
+    uintptr_t old_sp;
+    size_t argc, envc, len;
+    char **argvp = prog->argp;
+    char **envp = prog->envp;
+    struct auxval auxval = prog->auxval;
+    struct trapframe *tfp;
+
+    /* Copy strings */
+    old_sp = (uintptr_t)sp;
+    for (argc = 0; argvp[argc] != NULL; ++argc) {
+        len = strlen(argvp[argc]) + 1;
+        sp = (void *)((char *)sp - len);
+        memcpy((char *)sp, argvp[argc], len);
+    }
+    for (envc = 0; envp[envc] != NULL; ++envc) {
+        len = strlen(envp[envc]) + 1;
+        sp = (void *)((char *)sp - len);
+        memcpy((char *)sp, envp[envc], len);
+    }
+
+    /* Ensure the stack is aligned */
+    sp = (void *)ALIGN_DOWN((uintptr_t)sp, 16);
+    if (((argc + envc + 1) & 1) != 0)
+        --sp;
+
+    AUXVAL(sp, AT_NULL, 0x0);
+    AUXVAL(sp, AT_SECURE, 0x0);
+    AUXVAL(sp, AT_ENTRY, auxval.at_entry);
+    AUXVAL(sp, AT_PHDR, auxval.at_phdr);
+    AUXVAL(sp, AT_PHNUM, auxval.at_phnum);
+    AUXVAL(sp, AT_PAGESIZE, DEFAULT_PAGESIZE);
+    STACK_PUSH(sp, 0);
+
+    /* Copy envp pointers */
+    sp -= envc;
+    for (int i = 0; i < envc; ++i) {
+        len = strlen(envp[i]) + 1;
+        old_sp -= len;
+        sp[i] = (uintptr_t)old_sp - VM_HIGHER_HALF;
+    }
+
+    /* Copy argvp pointers */
+    STACK_PUSH(sp, 0);
+    sp -= argc;
+    for (int i = 0; i < argc; ++i) {
+        len = strlen(argvp[i]) + 1;
+        old_sp -= len;
+        sp[i] = (uintptr_t)old_sp - VM_HIGHER_HALF;
+    }
+
+    STACK_PUSH(sp, argc);
+    tfp = &td->tf;
+    tfp->rsp = (uintptr_t)sp - VM_HIGHER_HALF;
+}
 
 void
 setregs(struct proc *td, struct exec_prog *prog, uintptr_t stack)

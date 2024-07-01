@@ -43,6 +43,8 @@
 #define PROC_STACK_PAGES 8
 #define PROC_STACK_SIZE  (PROC_STACK_PAGES * DEFAULT_PAGESIZE)
 
+struct exec_prog;
+
 struct proc {
     pid_t pid;
     struct trapframe tf;
@@ -57,6 +59,9 @@ struct proc {
 
 struct proc *this_td(void);
 int md_fork(struct proc *p, struct proc *parent, uintptr_t ip);
+
+void md_td_stackinit(struct proc *td, void *stack_top, struct exec_prog *prog);
+
 int fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp);
 int exit1(struct proc *td);
 

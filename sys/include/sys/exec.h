@@ -34,7 +34,23 @@
 
 #if defined(_KERNEL)
 
+/* Danger: Do not change these !! */
+#define AT_NULL 0
+#define AT_ENTRY 1
+#define AT_PHDR 2
+#define AT_PHENT 3
+#define AT_PHNUM 4
+#define AT_EXECPATH 5
+#define AT_SECURE 6
+#define AT_RANDOM 7
+#define AT_EXECFN 8
+#define AT_PAGESIZE 9
+
 #define MAX_PHDRS 32
+#define STACK_PUSH(PTR, VAL) *(--(PTR)) = VAL
+#define AUXVAL(PTR, TAG, VAL)   \
+    STACK_PUSH(PTR, VAL);       \
+    STACK_PUSH(PTR, TAG);
 
 struct exec_range {
     uintptr_t start;
