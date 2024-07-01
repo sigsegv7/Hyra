@@ -72,7 +72,15 @@ struct exec_prog {
     char **envp;
 };
 
+struct execve_args {
+    const char *pathname;
+    char **argv;
+    char **envp;
+};
+
+int execve(struct proc *td, const struct execve_args *args);
 int elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog);
+
 void elf_unload(struct proc *td, struct exec_prog *prog);
 void setregs(struct proc *td, struct exec_prog *prog, uintptr_t stack);
 

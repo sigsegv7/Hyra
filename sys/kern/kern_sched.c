@@ -74,6 +74,24 @@ sched_oneshot(bool now)
     timer.oneshot_us(usec);
 }
 
+/*
+ * Save thread state and enqueue it back into one
+ * of the ready queues.
+ */
+static void
+sched_save_td(struct proc *td, struct trapframe *tf)
+{
+    /*
+     * Save trapframe to process structure only
+     * if PROC_EXEC is not set.
+     */
+    if (!ISSET(td->flags, PROC_EXEC)) {
+        memcpy(&td->tf, tf, sizeof(td->tf));
+    }
+
+    sched_enqueue_td(td);
+}
+
 static struct proc *
 sched_dequeue_td(void)
 {
@@ -137,6 +155,21 @@ sched_switch(struct trapframe *tf)
     ci = this_cpu();
     td = ci->curtd;
 
+    if (td != NULL) {
+        inexec = ISSET(td->flags, PROC_INEXEC);
+
+        /*
+         * If both PROC_INEXEC and PROC_EXEC are set,
+         * an exec is in progress. However, if PROC_INEXEC is
+         * unset and PROC_EXEC is set, an exec has completed
+         * and we can unset PROC_EXEC and copy the new trapframe.
+         */
+        if (ISSET(td->flags, PROC_EXEC) && !inexec) {
+            memcpy(tf, &td->tf, sizeof(*tf));
+            td->flags &= ~PROC_EXEC;
+        }
+    }
+
     /*
      * Get the next thread and use it only if it isn't
      * in the middle of an exit, exec, or whatever.
@@ -148,6 +181,14 @@ sched_switch(struct trapframe *tf)
         }
 
         /*
+         * If we are in the middle of an exec, don't use this
+         * thread.
+         */
+        if (ISSET(next_td->flags, PROC_EXEC)) {
+            use_current = false;
+        }
+
+        /*
          * Don't use this thread if we are currently
          * exiting.
          */
@@ -156,10 +197,9 @@ sched_switch(struct trapframe *tf)
         }
     } while (!use_current);
 
-    /* Re-enqueue the old thread */
+    /* Save the previous thread */
     if (td != NULL) {
-        memcpy(&td->tf, tf, sizeof(td->tf));
-        sched_enqueue_td(td);
+        sched_save_td(td, tf);
     }
 
     memcpy(tf, &next_td->tf, sizeof(*tf));
