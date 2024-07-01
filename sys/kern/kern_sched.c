@@ -31,6 +31,7 @@
 #include <sys/sched.h>
 #include <sys/schedvar.h>
 #include <sys/cdefs.h>
+#include <sys/param.h>
 #include <sys/syslog.h>
 #include <machine/frame.h>
 #include <machine/cpu.h>
@@ -130,15 +131,30 @@ sched_switch(struct trapframe *tf)
     struct cpu_info *ci;
     struct pcb *pcbp;
     struct proc *next_td, *td;
+    bool use_current = true;
+    bool inexec;
 
     ci = this_cpu();
     td = ci->curtd;
 
-    /* Do we have threads to switch to? */
-    if ((next_td = sched_dequeue_td()) == NULL) {
-        sched_oneshot(false);
-        return;
-    }
+    /*
+     * Get the next thread and use it only if it isn't
+     * in the middle of an exit, exec, or whatever.
+     */
+    do {
+        if ((next_td = sched_dequeue_td()) == NULL) {
+            sched_oneshot(false);
+            return;
+        }
+
+        /*
+         * Don't use this thread if we are currently
+         * exiting.
+         */
+        if (ISSET(next_td->flags, PROC_EXITING)) {
+            use_current = false;
+        }
+    } while (!use_current);
 
     /* Re-enqueue the old thread */
     if (td != NULL) {

@@ -27,38 +27,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_PROC_H_
-#define _SYS_PROC_H_
+#include <sys/proc.h>
+#include <sys/sched.h>
+#include <vm/physmem.h>
+#include <vm/dynalloc.h>
+#include <vm/vm.h>
 
-#include <sys/types.h>
-#include <sys/spinlock.h>
-#include <sys/queue.h>
-#include <sys/param.h>
-#if defined(_KERNEL)
-#include <machine/frame.h>
-#include <machine/pcb.h>
-#endif  /* _KERNEL */
+/*
+ * Kill a thread and deallocate its resources.
+ *
+ * @td: Thread to exit
+ */
+int
+exit1(struct proc *td)
+{
+    struct pcb *pcbp;
+    struct proc *curtd;
+    uintptr_t stack;
+    pid_t target_pid, curpid;
 
-#if defined(_KERNEL)
-#define PROC_STACK_PAGES 8
-#define PROC_STACK_SIZE  (PROC_STACK_PAGES * DEFAULT_PAGESIZE)
+    target_pid = td->pid;
+    curtd = this_td();
+    pcbp = &td->pcb;
 
-struct proc {
-    pid_t pid;
-    struct trapframe tf;
-    struct pcb pcb;
-    size_t priority;
-    uint32_t flags;
-    uintptr_t stack_base;
-    TAILQ_ENTRY(proc) link;
-};
+    curpid = curtd->pid;
+    stack = td->stack_base;
+    td->flags |= PROC_EXITING;
 
-#define PROC_EXITING    BIT(0)  /* Exiting */
+    /*
+     * If this is on the higher half, it is kernel
+     * mapped and we need to convert it to a physical
+     * address.
+     */
+    if (stack >= VM_HIGHER_HALF) {
+        stack -= VM_HIGHER_HALF;
+    }
 
-struct proc *this_td(void);
-int md_fork(struct proc *p, struct proc *parent, uintptr_t ip);
-int fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp);
-int exit1(struct proc *td);
+    vm_free_frame(stack, PROC_STACK_PAGES);
+    pmap_destroy_vas(pcbp->addrsp);
+    dynfree(td);
 
-#endif  /* _KERNEL */
-#endif  /* !_SYS_PROC_H_ */
+    /*
+     * If we are the thread exiting, reenter the scheduler
+     * and do not return.
+     */
+    if (target_pid == curpid)
+        sched_enter();
+
+    return 0;
+}
