@@ -30,114 +30,39 @@
 #include <machine/frameasm.h>
 #include <machine/trap.h>
 
-.macro handle_trap
-    mov %rsp, %rdi
-    call trap_handler
-.endm
-
     .text
     .globl breakpoint_handler
-breakpoint_handler:
-    push_trapframe_ec $TRAP_BREAKPOINT
-
-    handle_trap
-
-    cli
-    hlt
+TRAPENTRY(breakpoint_handler, $TRAP_BREAKPOINT)
 
     .globl arith_err
-arith_err:
-    push_trapframe_ec $TRAP_ARITH_ERR
-
-    handle_trap
-
-    cli
-    hlt
+TRAPENTRY(arith_err, $TRAP_ARITH_ERR)
 
     .globl overflow
-overflow:
-    push_trapframe_ec $TRAP_OVERFLOW
-
-    handle_trap
-
-    cli
-    hlt
+TRAPENTRY(overflow, $TRAP_OVERFLOW)
 
     .globl bound_range
-bound_range:
-    push_trapframe_ec $TRAP_BOUND_RANGE
-
-    handle_trap
-
-    cli
-    hlt
+TRAPENTRY(bound_range, $TRAP_BOUND_RANGE)
 
     .globl invl_op
-invl_op:
-    push_trapframe_ec $TRAP_INVLOP
-
-    handle_trap
-
-    cli
-    hlt
+TRAPENTRY(invl_op, $TRAP_INVLOP)
 
     .globl double_fault
-double_fault:
-    push_trapframe_ec $TRAP_DOUBLE_FAULT
-
-    handle_trap
-
-    cli
-    hlt
+TRAPENTRY(double_fault, $TRAP_DOUBLE_FAULT)
 
     .globl invl_tss
-invl_tss:
-    push_trapframe_ec $TRAP_INVLTSS
-
-    handle_trap
-
-    cli
-    hlt
+TRAPENTRY(invl_tss, $TRAP_INVLTSS)
 
     .globl segnp
-segnp:
-    push_trapframe_ec $TRAP_SEGNP
-
-    handle_trap
-
-    cli
-    hlt
+TRAPENTRY(segnp, $TRAP_SEGNP)
 
     .globl general_prot
-general_prot:
-    push_trapframe_ec $TRAP_PROTFLT
-
-    handle_trap
-
-    cli
-    hlt
+TRAPENTRY(general_prot, $TRAP_PROTFLT)
 
     .globl page_fault
-page_fault:
-    push_trapframe_ec $TRAP_PAGEFLT
-
-    handle_trap
-    cli
-    hlt
+TRAPENTRY(page_fault, $TRAP_PAGEFLT)
 
     .globl nmi
-nmi:
-    push_trapframe_ec $TRAP_NMI
-
-    handle_trap
-
-    cli
-    hlt
+TRAPENTRY(nmi, $TRAP_NMI)
 
     .globl ss_fault
-ss_fault:
-    push_trapframe_ec $TRAP_SS
-
-    handle_trap
-    cli
-    hlt
+TRAPENTRY(ss_fault, $TRAP_SS)

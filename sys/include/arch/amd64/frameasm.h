@@ -100,4 +100,28 @@
     pop_trapframe_ec
     add $8, %rsp        /* Pop error code */
 .endm
+
+/*
+ * Generic interrupt entry.
+ */
+#define INTRENTRY(ENTLABEL, HANDLER)    \
+    ENTLABEL:                           \
+        push_trapframe $0             ; \
+        mov %rsp, %rdi                ; \
+        call HANDLER                  ; \
+        pop_trapframe                 ; \
+        iretq
+
+/*
+ * Trap entry where an error code is on
+ * the stack.
+ */
+#define TRAPENTRY(ENTLABEL, TRAPNO)    \
+    ENTLABEL:                          \
+        push_trapframe_ec TRAPNO     ; \
+        mov %rsp, %rdi               ; \
+        call trap_handler            ; \
+        pop_trapframe_ec             ; \
+        iretq
+
 #endif  /* !_MACHINE_FRAMEASM_H_ */
