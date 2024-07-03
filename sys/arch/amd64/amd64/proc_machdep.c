@@ -116,7 +116,7 @@ setregs(struct proc *td, struct exec_prog *prog, uintptr_t stack)
 /*
  * Startup a user thread.
  *
- * @td: Thead to start up.
+ * @td: Thread to start up.
  */
 void
 md_td_kick(struct proc *td)
