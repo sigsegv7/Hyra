@@ -150,25 +150,9 @@ sched_switch(struct trapframe *tf)
     struct pcb *pcbp;
     struct proc *next_td, *td;
     bool use_current = true;
-    bool inexec;
 
     ci = this_cpu();
     td = ci->curtd;
-
-    if (td != NULL) {
-        inexec = ISSET(td->flags, PROC_INEXEC);
-
-        /*
-         * If both PROC_INEXEC and PROC_EXEC are set,
-         * an exec is in progress. However, if PROC_INEXEC is
-         * unset and PROC_EXEC is set, an exec has completed
-         * and we can unset PROC_EXEC and copy the new trapframe.
-         */
-        if (ISSET(td->flags, PROC_EXEC) && !inexec) {
-            memcpy(tf, &td->tf, sizeof(*tf));
-            td->flags &= ~PROC_EXEC;
-        }
-    }
 
     /*
      * Get the next thread and use it only if it isn't

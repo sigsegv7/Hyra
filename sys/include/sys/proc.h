@@ -58,7 +58,6 @@ struct proc {
 
 #define PROC_EXITING    BIT(0)  /* Exiting */
 #define PROC_EXEC       BIT(1)  /* Exec called (cleared by sched) */
-#define PROC_INEXEC     BIT(2)  /* Exec in progress */
 
 struct proc *this_td(void);
 int md_fork(struct proc *p, struct proc *parent, uintptr_t ip);

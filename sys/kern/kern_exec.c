@@ -71,7 +71,7 @@ execve(struct proc *td, const struct execve_args *args)
         return error;
 
     /* Mark the thread as running exec */
-    td->flags |= (PROC_EXEC | PROC_INEXEC);
+    td->flags |= PROC_EXEC;
 
     /* Create the new stack */
     stack = vm_alloc_frame(PROC_STACK_PAGES);
@@ -97,12 +97,7 @@ execve(struct proc *td, const struct execve_args *args)
     md_td_stackinit(td, (void *)(stack_top + VM_HIGHER_HALF), &prog);
     setregs(td, &prog, stack_top);
 
-    /*
-     * Done, reset flags and start the user thread.
-     *
-     * XXX: PROC_EXEC is unset by the scheduler so it
-     *      can properly start the new exec'd program.
-     */
-    td->flags &= ~PROC_INEXEC;
+    /* Done, reset flags and start the user thread */
+    td->flags &= ~PROC_EXEC;
     md_td_kick(td);
 }
