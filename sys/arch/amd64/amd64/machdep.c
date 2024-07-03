@@ -95,20 +95,36 @@ try_mitigate_spectre(void)
 struct cpu_info *
 this_cpu(void)
 {
-    return (void *)amd64_read_gs_base();
+    struct cpu_info *ci;
+
+    /*
+     * This might look crazy but we are just leveraging the "m"
+     * constraint to calculate the offset of the self field within
+     * cpu_info. The self field points to the cpu_info structure
+     * itself allowing us to access cpu_info through %gs.
+     */
+    __ASMV("mov %%gs:%1, %0"
+        : "=r" (ci)
+        : "m" (*&((struct cpu_info *)0)->self)
+        : "memory");
+
+    return ci;
 }
 
 void
 cpu_startup(struct cpu_info *ci)
 {
+    ci->self = ci;
     gdt_load(&bsp_gdtr);
     idt_load();
 
     setup_vectors();
     amd64_write_gs_base((uintptr_t)ci);
-    init_tss(ci);
+    __ASMV("swapgs");           /* Get kernel GS */
 
+    init_tss(ci);
     try_mitigate_spectre();
+
     __ASMV("sti");              /* Unmask interrupts */
     lapic_init();
 }

@@ -98,11 +98,11 @@ execve(struct proc *td, const struct execve_args *args)
     setregs(td, &prog, stack_top);
 
     /*
-     * Done, reset flags and yield
+     * Done, reset flags and start the user thread.
      *
      * XXX: PROC_EXEC is unset by the scheduler so it
      *      can properly start the new exec'd program.
      */
     td->flags &= ~PROC_INEXEC;
-    sched_enter();
+    md_td_kick(td);
 }

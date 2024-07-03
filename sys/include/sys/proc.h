@@ -34,6 +34,7 @@
 #include <sys/spinlock.h>
 #include <sys/queue.h>
 #include <sys/param.h>
+#include <sys/cdefs.h>
 #if defined(_KERNEL)
 #include <machine/frame.h>
 #include <machine/pcb.h>
@@ -63,6 +64,7 @@ struct proc *this_td(void);
 int md_fork(struct proc *p, struct proc *parent, uintptr_t ip);
 
 void md_td_stackinit(struct proc *td, void *stack_top, struct exec_prog *prog);
+__dead void md_td_kick(struct proc *td);
 
 int fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp);
 int exit1(struct proc *td);

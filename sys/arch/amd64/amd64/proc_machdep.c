@@ -34,6 +34,7 @@
 #include <sys/exec.h>
 #include <machine/frame.h>
 #include <machine/gdt.h>
+#include <machine/cpu.h>
 #include <vm/physmem.h>
 #include <vm/vm.h>
 #include <vm/map.h>
@@ -110,6 +111,35 @@ setregs(struct proc *td, struct exec_prog *prog, uintptr_t stack)
     tfp->ss = USER_DS | 3;
     tfp->rsp = stack;
     tfp->rflags = 0x202;
+}
+
+/*
+ * Startup a user thread.
+ *
+ * @td: Thead to start up.
+ */
+void
+md_td_kick(struct proc *td)
+{
+    struct trapframe *tfp;
+
+    tfp = &td->tf;
+    __ASMV(
+        "push %0\n"
+        "push %1\n"
+        "pushf\n"
+        "push %2\n"
+        "push %3\n"
+        "swapgs\n"
+        "iretq"
+        :
+        : "i" (USER_DS | 3),
+          "r" (tfp->rsp),
+          "i" (USER_CS | 3),
+          "r" (tfp->rip)
+    );
+
+    __builtin_unreachable();
 }
 
 /*

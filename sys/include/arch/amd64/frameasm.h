@@ -106,11 +106,19 @@
  */
 #define INTRENTRY(ENTLABEL, HANDLER)    \
     ENTLABEL:                           \
-        push_trapframe $0             ; \
+        testq $0x3, 8(%rsp)           ; \
+        jz 1f                         ; \
+        lfence                        ; \
+        swapgs                        ; \
+    1:  push_trapframe $0             ; \
         mov %rsp, %rdi                ; \
         call HANDLER                  ; \
         pop_trapframe                 ; \
-        iretq
+        testq $0x3, 8(%rsp)           ; \
+        jz 2f                         ; \
+        lfence                        ; \
+        swapgs                        ; \
+    2:  iretq
 
 /*
  * Trap entry where an error code is on
@@ -118,10 +126,18 @@
  */
 #define TRAPENTRY(ENTLABEL, TRAPNO)    \
     ENTLABEL:                          \
-        push_trapframe_ec TRAPNO     ; \
+        testq $0x3, 8(%rsp)          ; \
+        jz 1f                        ; \
+        lfence                       ; \
+        swapgs                       ; \
+    1:  push_trapframe_ec TRAPNO     ; \
         mov %rsp, %rdi               ; \
         call trap_handler            ; \
         pop_trapframe_ec             ; \
-        iretq
+        testq $0x3, 8(%rsp)          ; \
+        jz 2f                        ; \
+        lfence                       ; \
+        swapgs                       ; \
+    2:  iretq
 
 #endif  /* !_MACHINE_FRAMEASM_H_ */

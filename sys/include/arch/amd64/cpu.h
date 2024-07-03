@@ -42,6 +42,7 @@ struct cpu_info {
     size_t lapic_tmr_freq;
     struct tss_entry *tss;
     struct proc *curtd;
+    struct cpu_info *self;
 };
 
 void cpu_startup(struct cpu_info *ci);
