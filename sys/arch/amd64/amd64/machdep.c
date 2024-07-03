@@ -99,7 +99,7 @@ this_cpu(void)
 
     /*
      * This might look crazy but we are just leveraging the "m"
-     * constraint to calculate the offset of the self field within
+     * constraint to add the offset of the self field within
      * cpu_info. The self field points to the cpu_info structure
      * itself allowing us to access cpu_info through %gs.
      */
