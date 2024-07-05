@@ -45,16 +45,36 @@ override KERNEL_OBJECTS = $(KERNEL_CFILES:.c=.o)
 override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
 override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
 
+########################
+# Userland
+########################
+override SBIN_MAKEDIRS = $(shell find usr.sbin/ -type d -name "*" | awk '!/usr.sbin\/$$/')
+override USRDIR = $(shell pwd)/base/usr
+
 .PHONY: all
-all: base base/boot/hyra-kernel ramfs iso
+all: base libc sbin base/boot/hyra-kernel ramfs iso
 		rm -f sys/include/machine
 		rm -rf iso_root
+
+.PHONY: sbin
+sbin: $(SBIN_MAKEDIRS)
+	$(MAKE) -C $^ -I$(shell pwd)/builddeps \
+		LDSCRIPT=$(shell pwd)/usr.sbin/link.ld USRDIR=$(USRDIR)
+	find $^ -type f -executable -exec mv {} base/usr/sbin/ \;
+
+.PHONY: libc
+libc:
+	$(MAKE) -C lib/libc/ -I$(shell pwd)/builddeps \
+		USRDIR=$(USRDIR)
+	cp lib/libc/build/libc.a base/usr/lib/
 
 .PHONY: base
 base:
 	mkdir -p base/usr/lib/
 	mkdir -p base/usr/sbin/
 	mkdir -p base/boot/
+	mkdir -p base/usr/include/sys/
+	cp sys/include/sys/*.h base/usr/include/sys/
 
 .PHONY: cross
 cross:
