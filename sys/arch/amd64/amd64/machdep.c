@@ -44,6 +44,7 @@
 #endif
 
 int ibrs_enable(void);
+void syscall_isr(void);
 
 struct cpu_info g_bsp_ci = {0};
 static struct gdtr bsp_gdtr = {
@@ -66,6 +67,7 @@ setup_vectors(void)
     idt_set_desc(0xC, IDT_TRAP_GATE, ISR(ss_fault), 0);
     idt_set_desc(0xD, IDT_TRAP_GATE, ISR(general_prot), 0);
     idt_set_desc(0xE, IDT_TRAP_GATE, ISR(page_fault), 0);
+    idt_set_desc(0x80, IDT_USER_INT_GATE, ISR(syscall_isr), 0);
 }
 
 static inline void

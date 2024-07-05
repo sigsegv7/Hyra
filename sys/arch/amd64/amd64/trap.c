@@ -32,10 +32,13 @@
 #include <sys/reboot.h>
 #include <sys/panic.h>
 #include <sys/syslog.h>
+#include <sys/syscall.h>
 #include <machine/trap.h>
 #include <machine/frame.h>
 
 #define pr_error(fmt, ...) kprintf("trap: " fmt, ##__VA_ARGS__)
+
+void trap_syscall(struct trapframe *tf);
 
 static const char *trap_type[] = {
     [TRAP_BREAKPOINT]   = "breakpoint",
@@ -80,6 +83,24 @@ regdump(struct trapframe *tf)
         tf->rbx, tf->rsi, tf->rdi,
         tf->rflags, cr2, cr3,
         tf->rbp, tf->rsp, tf->rip);
+}
+
+void
+trap_syscall(struct trapframe *tf)
+{
+    struct syscall_args scargs = {
+        .arg0 = tf->rdi,
+        .arg1 = tf->rsi,
+        .arg2 = tf->rdx,
+        .arg3 = tf->r10,
+        .arg4 = tf->r9,
+        .arg5 = tf->r8,
+        .tf = tf
+    };
+
+    if (tf->rax < MAX_SYSCALLS && tf->rax > 0) {
+        tf->rax = g_sctab[tf->rax](&scargs);
+    }
 }
 
 void

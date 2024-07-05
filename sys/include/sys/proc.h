@@ -35,6 +35,7 @@
 #include <sys/queue.h>
 #include <sys/param.h>
 #include <sys/cdefs.h>
+#include <sys/syscall.h>
 #if defined(_KERNEL)
 #include <machine/frame.h>
 #include <machine/pcb.h>
@@ -67,6 +68,7 @@ __dead void md_td_kick(struct proc *td);
 
 int fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp);
 int exit1(struct proc *td);
+__dead scret_t sys_exit(struct syscall_args *scargs);
 
 #endif  /* _KERNEL */
 #endif  /* !_SYS_PROC_H_ */

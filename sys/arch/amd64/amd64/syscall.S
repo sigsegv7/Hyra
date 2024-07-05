@@ -27,59 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/proc.h>
-#include <sys/sched.h>
-#include <vm/physmem.h>
-#include <vm/dynalloc.h>
-#include <vm/vm.h>
+#include <machine/frameasm.h>
 
-/*
- * Kill a thread and deallocate its resources.
- *
- * @td: Thread to exit
- */
-int
-exit1(struct proc *td)
-{
-    struct pcb *pcbp;
-    struct proc *curtd;
-    uintptr_t stack;
-    pid_t target_pid, curpid;
-
-    target_pid = td->pid;
-    curtd = this_td();
-    pcbp = &td->pcb;
-
-    curpid = curtd->pid;
-    stack = td->stack_base;
-    td->flags |= PROC_EXITING;
-
-    /*
-     * If this is on the higher half, it is kernel
-     * mapped and we need to convert it to a physical
-     * address.
-     */
-    if (stack >= VM_HIGHER_HALF) {
-        stack -= VM_HIGHER_HALF;
-    }
-
-    vm_free_frame(stack, PROC_STACK_PAGES);
-    pmap_destroy_vas(pcbp->addrsp);
-    dynfree(td);
-
-    /*
-     * If we are the thread exiting, reenter the scheduler
-     * and do not return.
-     */
-    if (target_pid == curpid)
-        sched_enter();
-
-    return 0;
-}
-
-scret_t
-sys_exit(struct syscall_args *scargs)
-{
-    exit1(this_td());
-    __builtin_unreachable();
-}
+    .text
+    .globl syscall_isr
+INTRENTRY(syscall_isr, trap_syscall)
