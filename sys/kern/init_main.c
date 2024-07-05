@@ -32,12 +32,30 @@
 #include <sys/sched.h>
 #include <sys/mount.h>
 #include <sys/proc.h>
+#include <sys/exec.h>
+#include <sys/panic.h>
 #include <dev/cons/cons.h>
 #include <dev/acpi/acpi.h>
 #include <machine/cpu.h>
 #include <vm/vm.h>
+#include <string.h>
 
 static struct proc proc0;
+
+static void
+start_init(void)
+{
+    struct proc *td = this_td();
+    struct execve_args execve_args;
+    char *argv[] = { "/usr/sbin/init", NULL };
+    char *envp[] = { NULL };
+
+    execve_args.pathname = argv[0];
+    execve_args.argv = argv;
+    execve_args.envp = envp;
+    if (execve(td, &execve_args) != 0)
+        panic("Failed to load init\n");
+}
 
 int
 main(void)
@@ -62,6 +80,10 @@ main(void)
     /* Start scheduler and bootstrap APs */
     sched_init();
     mp_bootstrap_aps(&g_bsp_ci);
+
+    /* Startup init */
+    memset(&proc0, 0, sizeof(proc0.tf));
+    fork1(&proc0, 0, start_init, NULL);
 
     /* Nothing left to do... halt */
     cpu_reboot(REBOOT_HALT);
