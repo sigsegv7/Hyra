@@ -28,6 +28,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/syslog.h>
 #include <machine/cpu.h>
 #include <machine/gdt.h>
 #include <machine/tss.h>
@@ -36,6 +37,7 @@
 #include <machine/asm.h>
 #include <machine/cpuid.h>
 #include <machine/lapic.h>
+#include <machine/uart.h>
 
 #if defined(__SPECTRE_IBRS)
 #define SPECTRE_IBRS  __SPECTRE_IBRS
@@ -88,6 +90,18 @@ try_mitigate_spectre(void)
     }
 
     ibrs_enable();
+}
+
+void
+serial_init(void)
+{
+    uart_init();
+}
+
+void
+serial_putc(char c)
+{
+   uart_write(c);
 }
 
 /*

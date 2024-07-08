@@ -34,6 +34,12 @@
 #include <stdarg.h>
 #include <string.h>
 
+#if defined(__SERIAL_DEBUG)
+#define SERIAL_DEBUG __SERIAL_DEBUG
+#else
+#define SERIAL_DEBUG 0
+#endif
+
 /* Global logger lock */
 static struct spinlock lock = {0};
 
@@ -44,6 +50,9 @@ syslog_write(const char *s, size_t len)
 
     while (len--) {
         cons_putch(&g_root_scr, *p);
+        if (SERIAL_DEBUG) {
+            serial_putc(*p);
+        }
         ++p;
     }
 }

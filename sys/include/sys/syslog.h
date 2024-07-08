@@ -37,6 +37,8 @@
 #define OMIT_TIMESTAMP "\x01"
 
 void kprintf(const char *fmt, ...);
+void serial_init(void);
+void serial_putc(char c);
 void vkprintf(const char *fmt, va_list *ap);
 
 #endif  /* !_KERNEL */

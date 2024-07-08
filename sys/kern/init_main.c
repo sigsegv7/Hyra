@@ -60,6 +60,9 @@ start_init(void)
 int
 main(void)
 {
+    /* Setup serial driver */
+    serial_init();
+
     /* Startup the console */
     cons_init();
     kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
