@@ -51,8 +51,11 @@ cons_render_char(struct cons_screen *scr, char c, uint32_t x, uint32_t y)
     size_t idx;
     const uint8_t *glyph;
 
-    glyph = &CONS_FONT[(int)c*16];
+    if (scr->fb_mem == NULL) {
+        return;
+    }
 
+    glyph = &CONS_FONT[(int)c*16];
     for (uint32_t cy = 0; cy < FONT_HEIGHT; ++cy) {
         for (uint32_t cx = 0; cx < FONT_WIDTH; ++cx) {
             idx = fbdev_get_index(&scr->fbdev, x+FONT_WIDTH-cx, y+cy);
