@@ -274,3 +274,32 @@ pmap_unmap(struct vas vas, vaddr_t va)
 {
     return pmap_update_tbl(vas, va, 0);
 }
+
+int
+pmap_set_cache(struct vas vas, vaddr_t va, int type)
+{
+    uintptr_t *tbl;
+    int status;
+    size_t idx;
+
+    if ((status = pmap_get_tbl(vas, va, false, &tbl)) != 0)
+        return status;
+
+    idx = pmap_get_level_index(1, va);
+
+    /* Set the caching policy */
+    switch (type) {
+    case VM_CACHE_UC:
+        tbl[idx] |= PTE_PCD;
+        tbl[idx] &= ~PTE_PWT;
+        break;
+    case VM_CACHE_WT:
+        tbl[idx] &= ~PTE_PCD;
+        tbl[idx] |= PTE_PWT;
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
+}

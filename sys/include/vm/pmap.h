@@ -39,6 +39,10 @@
 #define PROT_EXEC       BIT(1)      /* Executable */
 #define PROT_USER       BIT(2)      /* User accessible */
 
+/* Caching types */
+#define VM_CACHE_UC 0x00000U /* Uncachable */
+#define VM_CACHE_WT 0x00001U /* Write-through */
+
 typedef uint32_t vm_prot_t;
 
 /*
@@ -70,5 +74,11 @@ int pmap_map(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot);
  * Unmap a virtual memory mapping of a single page.
  */
 int pmap_unmap(struct vas vas, vaddr_t va);
+
+/*
+ * Mark a virtual address with a specific
+ * caching type.
+ */
+int pmap_set_cache(struct vas vas, vaddr_t va, int type);
 
 #endif  /* !_VM_PMAP_H_ */
