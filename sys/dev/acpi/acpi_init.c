@@ -34,6 +34,7 @@
 #include <dev/acpi/acpi.h>
 #include <dev/acpi/tables.h>
 #include <dev/acpi/acpivar.h>
+#include <dev/pci/pci.h>
 #include <vm/vm.h>
 #if defined(__x86_64__)
 #include <machine/hpet.h>
@@ -119,4 +120,5 @@ acpi_init(void)
     root_sdt_entries = (root_sdt->hdr.length - sizeof(root_sdt->hdr)) / 4;
     acpi_init_hpet();
     acpi_init_madt();
+    pci_init();
 }
