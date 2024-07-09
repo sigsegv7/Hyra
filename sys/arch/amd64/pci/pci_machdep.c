@@ -29,8 +29,14 @@
 
 #include <sys/types.h>
 #include <sys/param.h>
+#include <sys/errno.h>
 #include <dev/pci/pci.h>
+#include <dev/pci/pciregs.h>
 #include <machine/pio.h>
+#include <machine/bus.h>
+
+/* Base address masks for BARs */
+#define PCI_BAR_MEMMASK ~7
 
 static inline uint32_t
 pci_conf_addr(struct pci_device *dev, uint32_t offset)
@@ -40,6 +46,26 @@ pci_conf_addr(struct pci_device *dev, uint32_t offset)
            (dev->func << 8)    |
            (dev->slot << 11)   |
            (dev->bus << 16);
+}
+
+/*
+ * Convert a BAR number to BAR register offset.
+ *
+ * @dev: Device of BAR to check.
+ * @bar: Bar number.
+ */
+static inline uint8_t
+pci_get_barreg(struct pci_device *dev, uint8_t bar)
+{
+    switch (bar) {
+    case 0: return PCIREG_BAR0;
+    case 1: return PCIREG_BAR1;
+    case 2: return PCIREG_BAR2;
+    case 3: return PCIREG_BAR3;
+    case 4: return PCIREG_BAR4;
+    case 5: return PCIREG_BAR5;
+    default: return 0;
+    }
 }
 
 pcireg_t
@@ -60,4 +86,38 @@ pci_writel(struct pci_device *dev, uint32_t offset, pcireg_t val)
     address = pci_conf_addr(dev, offset);
     outl(0xCF8, address);
     outl(0xCFC, val);
+}
+
+/*
+ * Map a BAR into kernel memory.
+ *
+ * @dev: Device of BAR to map.
+ * @barno: BAR number to map.
+ * @vap: Resulting virtual address.
+ */
+int
+pci_map_bar(struct pci_device *dev, uint8_t barno, void **vap)
+{
+    uint8_t barreg = pci_get_barreg(dev, barno);
+    uintptr_t tmp, bar;
+    uint32_t size;
+
+    if (barreg == 0)
+        return -EINVAL;
+
+    /*
+     * Get the length of the region this BAR covers by writing a
+     * mask of 32 bits into the BAR register and seeing how many
+     * bits are unset. We can use this to compute the size of the
+     * region. We know that log2(len) bits must be unset.
+     */
+    tmp = pci_readl(dev, barreg);
+    pci_writel(dev, barreg, 0xFFFFFFFF);
+    size = pci_readl(dev, barreg);
+    size = ~size + 1;
+
+    /* Restore old value and map the BAR */
+    pci_writel(dev, barreg, tmp);
+    bar = dev->bar[barno] & PCI_BAR_MEMMASK;
+    return bus_map(bar, size, 0, vap);
 }

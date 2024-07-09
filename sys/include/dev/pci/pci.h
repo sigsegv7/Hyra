@@ -67,6 +67,7 @@ struct pci_device {
 pcireg_t pci_readl(struct pci_device *dev, uint32_t offset);
 struct pci_device *pci_get_device(struct pci_lookup lookup, uint16_t lookup_type);
 
+int pci_map_bar(struct pci_device *dev, uint8_t barno, void **vap);
 void pci_writel(struct pci_device *dev, uint32_t offset, pcireg_t val);
 int pci_init(void);
 
