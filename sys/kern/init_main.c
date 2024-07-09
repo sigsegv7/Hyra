@@ -68,11 +68,11 @@ main(void)
     kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
         HYRA_BUILDDATE);
 
-    /* Start the ACPI subsystem */
-    acpi_init();
-
     /* Init the virtual memory subsystem */
     vm_init();
+
+    /* Start the ACPI subsystem */
+    acpi_init();
 
     /* Startup the BSP */
     cpu_startup(&g_bsp_ci);
