@@ -33,6 +33,12 @@
 #include <sys/types.h>
 #include <dev/video/fbdev.h>
 
+struct cons_char {
+    char c;
+    uint32_t fg;
+    uint32_t bg;
+};
+
 struct cons_screen {
     struct fbdev fbdev;
     uint32_t fg;
@@ -44,6 +50,9 @@ struct cons_screen {
     uint32_t ncols;
     uint32_t ch_col;    /* Current col */
     uint32_t ch_row;    /* Current row */
+    uint32_t curs_col;  /* Cursor col */
+    uint32_t curs_row;  /* Cursor row */
+    struct cons_char last_chr;
 };
 
 void cons_init(void);
