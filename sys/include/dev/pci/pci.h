@@ -33,7 +33,21 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 
+/* Lookup bits */
+#define PCI_DEVICE_ID   BIT(0)
+#define PCI_VENDOR_ID   BIT(1)
+#define PCI_CLASS       BIT(2)
+#define PCI_SUBCLASS    BIT(3)
+
 typedef uint32_t pcireg_t;
+
+/* For PCI lookups */
+struct pci_lookup {
+    uint16_t device_id;
+    uint16_t vendor_id;
+    uint8_t pci_class;
+    uint8_t pci_subclass;
+};
 
 struct pci_device {
     uint8_t bus;
@@ -51,6 +65,8 @@ struct pci_device {
 };
 
 pcireg_t pci_readl(struct pci_device *dev, uint32_t offset);
+struct pci_device *pci_get_device(struct pci_lookup lookup, uint16_t lookup_type);
+
 void pci_writel(struct pci_device *dev, uint32_t offset, pcireg_t val);
 int pci_init(void);
 

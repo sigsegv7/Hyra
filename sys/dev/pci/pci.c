@@ -127,6 +127,48 @@ pci_scan_bus(uint8_t bus)
     }
 }
 
+struct pci_device *
+pci_get_device(struct pci_lookup lookup, uint16_t lookup_type)
+{
+    struct pci_device *dev;
+    uint16_t lookup_matches = 0;
+
+    TAILQ_FOREACH(dev, &device_list, link) {
+        if (ISSET(lookup_type, PCI_DEVICE_ID)) {
+            /* Check device ID */
+            if (lookup.device_id == dev->device_id)
+                lookup_matches |= PCI_DEVICE_ID;
+        }
+
+        if (ISSET(lookup_type, PCI_VENDOR_ID)) {
+            /* Check vendor ID */
+            if (lookup.vendor_id == dev->vendor_id)
+                lookup_matches |= PCI_VENDOR_ID;
+        }
+
+        if (ISSET(lookup_type, PCI_CLASS)) {
+            /* Check PCI class */
+            if (lookup.pci_class == dev->pci_class)
+                lookup_matches |= PCI_CLASS;
+        }
+
+        if (ISSET(lookup_type, PCI_SUBCLASS)) {
+            /* Check PCI subclass */
+            if (lookup.pci_subclass == dev->pci_subclass)
+                lookup_matches |= PCI_SUBCLASS;
+        }
+
+        if (lookup_type == lookup_matches) {
+            /* We found the device! */
+            return dev;
+        }
+
+        lookup_matches = 0;
+    }
+
+    return NULL;
+}
+
 int
 pci_init(void)
 {
