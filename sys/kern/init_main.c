@@ -33,6 +33,7 @@
 #include <sys/mount.h>
 #include <sys/proc.h>
 #include <sys/exec.h>
+#include <sys/driver.h>
 #include <sys/panic.h>
 #include <dev/cons/cons.h>
 #include <dev/acpi/acpi.h>
@@ -79,6 +80,8 @@ main(void)
 
     /* Init the virtual file system */
     vfs_init();
+
+    DRIVERS_INIT();
 
     /* Start scheduler and bootstrap APs */
     sched_init();
