@@ -47,7 +47,7 @@ static volatile struct limine_smp_request g_smp_req = {
 static void
 ap_trampoline(struct limine_smp_info *si)
 {
-    struct spinlock lock = {0};
+    static struct spinlock lock = {0};
     struct cpu_info *ci;
 
     spinlock_acquire(&lock);
