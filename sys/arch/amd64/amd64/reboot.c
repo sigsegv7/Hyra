@@ -31,18 +31,13 @@
 #include <sys/param.h>
 #include <sys/cdefs.h>
 #include <machine/pio.h>
-
-__always_inline static inline void
-cpu_halt(void)
-{
-    __ASMV("cli; hlt");
-}
+#include <machine/cpu.h>
 
 void
 cpu_reboot(int method)
 {
     if (ISSET(method, REBOOT_HALT)) {
-        cpu_halt();
+        cpu_halt_all();
     }
 
     /* Pulse the reset line until the machine goes down */

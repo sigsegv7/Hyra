@@ -38,12 +38,15 @@
 #include <machine/cpuid.h>
 #include <machine/lapic.h>
 #include <machine/uart.h>
+#include <machine/intr.h>
 
 #if defined(__SPECTRE_IBRS)
 #define SPECTRE_IBRS  __SPECTRE_IBRS
 #else
 #define SPECTRE_IBRS 0
 #endif
+
+static uint8_t halt_vector = 0;
 
 int ibrs_enable(void);
 void syscall_isr(void);
@@ -54,9 +57,21 @@ static struct gdtr bsp_gdtr = {
     .offset = (uintptr_t)&g_gdt_data[0]
 };
 
+__attribute__((__interrupt__))
+static void
+cpu_halt_isr(void *p)
+{
+    __ASMV("cli; hlt");
+    __builtin_unreachable();
+}
+
 static void
 setup_vectors(void)
 {
+    if (halt_vector == 0) {
+        halt_vector = intr_alloc_vector("cpu-halt", IPL_HIGH);
+    }
+
     idt_set_desc(0x0, IDT_TRAP_GATE, ISR(arith_err), 0);
     idt_set_desc(0x2, IDT_TRAP_GATE, ISR(nmi), 0);
     idt_set_desc(0x3, IDT_TRAP_GATE, ISR(breakpoint_handler), 0);
@@ -70,6 +85,7 @@ setup_vectors(void)
     idt_set_desc(0xD, IDT_TRAP_GATE, ISR(general_prot), 0);
     idt_set_desc(0xE, IDT_TRAP_GATE, ISR(page_fault), 0);
     idt_set_desc(0x80, IDT_USER_INT_GATE, ISR(syscall_isr), 0);
+    idt_set_desc(halt_vector, IDT_INT_GATE, ISR(cpu_halt_isr), 0);
 }
 
 static inline void
@@ -90,6 +106,14 @@ try_mitigate_spectre(void)
     }
 
     ibrs_enable();
+}
+
+void
+cpu_halt_all(void)
+{
+    /* Send IPI to all cores */
+    lapic_send_ipi(0, IPI_SHORTHAND_ALL, halt_vector);
+    for (;;);
 }
 
 void
