@@ -42,6 +42,7 @@
 #define PCIREG_BAR4       0x20  /* 32 bits */
 #define PCIREG_BAR5       0x24  /* 32 bits */
 #define PCIREG_IRQLINE    0x3C  /* 8 bits */
+#define PCIREG_CAPPTR     0x34  /* 8 bits */
 #define PCIREG_CMDSTATUS  0x04  /* command (15:0), status (31:16) */
 
 /* Macros to extract PCIREG_CLASSREV bits */
@@ -63,5 +64,9 @@
 /* PCI status register bits */
 #define PCI_STATUS_CAPLIST  BIT(4)
 #define PCI_STATUS_66MHZ    BIT(5)
+
+/* Capability IDs */
+#define PCI_CAP_MSI     0x05
+#define PCI_CAP_MSIX    0x11
 
 #endif  /* _PCI_PCIREGS_H_ */

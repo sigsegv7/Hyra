@@ -54,6 +54,7 @@ struct pci_device {
     uint8_t slot;
     uint8_t func;
 
+    uint16_t msix_capoff;
     uint16_t device_id;
     uint16_t vendor_id;
     uint8_t pci_class;
@@ -64,11 +65,18 @@ struct pci_device {
     TAILQ_ENTRY(pci_device) link;
 };
 
+struct msi_intr {
+    const char *name;
+    void(*handler)(void *);
+};
+
 pcireg_t pci_readl(struct pci_device *dev, uint32_t offset);
 struct pci_device *pci_get_device(struct pci_lookup lookup, uint16_t lookup_type);
 
 int pci_map_bar(struct pci_device *dev, uint8_t barno, void **vap);
 void pci_writel(struct pci_device *dev, uint32_t offset, pcireg_t val);
+
+int pci_enable_msix(struct pci_device *dev, const struct msi_intr *intr);
 int pci_init(void);
 
 #endif  /* !_PCI_H_ */

@@ -30,10 +30,14 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/errno.h>
+#include <sys/mmio.h>
 #include <dev/pci/pci.h>
 #include <dev/pci/pciregs.h>
 #include <machine/pio.h>
 #include <machine/bus.h>
+#include <machine/cpu.h>
+#include <machine/intr.h>
+#include <machine/idt.h>
 
 /* Base address masks for BARs */
 #define PCI_BAR_MEMMASK ~7
@@ -120,4 +124,65 @@ pci_map_bar(struct pci_device *dev, uint8_t barno, void **vap)
     pci_writel(dev, barreg, tmp);
     bar = dev->bar[barno] & PCI_BAR_MEMMASK;
     return bus_map(bar, size, 0, vap);
+}
+
+/*
+ * Enable MSI-X for a device and allocate an
+ * interrupt vector.
+ *
+ * @dev: Device to enable MSI-X for.
+ * @intr: MSI-X interrupt descriptor.
+ */
+int
+pci_enable_msix(struct pci_device *dev, const struct msi_intr *intr)
+{
+    volatile uint64_t *tbl;
+    struct cpu_info *ci;
+    uint32_t data, msg_ctl;
+    uint64_t msg_addr, tmp;
+    uint16_t tbl_off;
+    uint8_t bir;
+    uint8_t vector;
+
+    if (dev->msix_capoff == 0)
+        return -ENOTSUP;
+
+    /* Get the data from cap offset 0x04 */
+    data = pci_readl(dev, (dev->msix_capoff + 0x04));
+    bir = data & 3;
+    tbl_off = data & ~3;
+
+    ci = this_cpu();
+    msg_addr = (0xFEE00000 | (ci->apicid << 12));
+
+    /* Calculate the start of the message table */
+    tbl = (void *)((dev->bar[bir] & PCI_BAR_MEMMASK) + MMIO_OFFSET);
+    tbl = (void *)((char *)tbl + tbl_off);
+
+    /* Get the vector and setup handler */
+    vector = intr_alloc_vector(intr->name, IPL_BIO);
+    idt_set_desc(vector, IDT_INT_GATE, ISR(intr->handler), 0);
+
+    /*
+     * Setup the message data at bits 95:64 of the message
+     * table by ORing the interrupt vector to it. We also
+     * unmask the interrupt with bit 1 of the vector control.
+     */
+    tmp = mmio_read64(&tbl[1]);
+    tmp |= vector;
+    tmp &= ~BIT(32);
+
+    /* Write the message table */
+    mmio_write64(&tbl[0], msg_addr);
+    mmio_write64(&tbl[1], tmp);
+
+    /*
+     * Set bit 16 of message control to enable MSI-X.
+     * Message control lives at cap offset 0x00 in bits
+     * 31:16.
+     */
+    msg_ctl = pci_readl(dev, dev->msix_capoff);
+    msg_ctl |= BIT(31);
+    pci_writel(dev, dev->msix_capoff, msg_ctl);
+    return 0;
 }

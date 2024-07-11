@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/syslog.h>
+#include <sys/errno.h>
 #include <dev/pci/pci.h>
 #include <dev/pci/pciregs.h>
 #include <vm/dynalloc.h>
@@ -55,6 +56,47 @@ pci_dev_exists(uint8_t bus, uint8_t slot, uint8_t func)
     }
 
     return true;
+}
+
+/*
+ * Attempt to search for a capability within the device
+ * capability list if it supports one.
+ *
+ * @dev: Target device.
+ * @id: Requested capability ID.
+ *
+ * The offset is returned if found, otherwise 0.
+ * A value less than zero is returned on error.
+ */
+static int
+pci_get_cap(struct pci_device *dev, uint8_t id)
+{
+    uint16_t status;
+    uint32_t cap;
+    uint8_t curid;
+    uint8_t cap_ptr;
+
+    /* Does the device even support this? */
+    status = pci_readl(dev, PCIREG_CMDSTATUS) >> 16;
+    if (!ISSET(status, PCI_STATUS_CAPLIST)) {
+        return -ENOTSUP;
+    }
+
+    cap_ptr = pci_readl(dev, PCIREG_CAPPTR) & 0xFF;
+
+    /* Go through the capability list */
+    while (cap_ptr != 0) {
+        cap = pci_readl(dev, cap_ptr);
+        curid = cap & 0xFF;
+
+        if (curid == id) {
+            return cap_ptr;
+        }
+
+        cap_ptr = (cap >> 8) & 0xFF;
+    }
+
+    return 0;
 }
 
 /*
@@ -85,6 +127,7 @@ pci_set_device_info(struct pci_device *dev)
     dev->bar[5] = pci_readl(dev, PCIREG_BAR5);
 
     dev->irq_line = pci_readl(dev, PCIREG_IRQLINE) & 0xFF;
+    dev->msix_capoff = pci_get_cap(dev, PCI_CAP_MSIX);
 }
 
 /*
