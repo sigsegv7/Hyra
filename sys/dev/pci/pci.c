@@ -110,6 +110,7 @@ static void
 pci_set_device_info(struct pci_device *dev)
 {
     uint32_t classrev;
+    int capoff;
 
     dev->vendor_id = pci_readl(dev, PCIREG_VENDOR_ID) & 0xFFFF;
     dev->device_id = pci_readl(dev, PCIREG_DEVICE_ID) & 0xFFFF;
@@ -127,7 +128,8 @@ pci_set_device_info(struct pci_device *dev)
     dev->bar[5] = pci_readl(dev, PCIREG_BAR5);
 
     dev->irq_line = pci_readl(dev, PCIREG_IRQLINE) & 0xFF;
-    dev->msix_capoff = pci_get_cap(dev, PCI_CAP_MSIX);
+    capoff = pci_get_cap(dev, PCI_CAP_MSIX);
+    dev->msix_capoff = (capoff < 0) ? 0 : capoff;
 }
 
 /*
