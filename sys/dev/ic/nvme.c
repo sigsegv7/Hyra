@@ -244,19 +244,19 @@ nvme_poll_submit_cmd(struct nvme_queue *q, struct nvme_cmd cmd)
 }
 
 static int
-nvme_identify(struct nvme_ctrl *ctrl, struct nvme_id *id)
+nvme_identify(struct nvme_ctrl *ctrl, void *buf, uint32_t nsid, uint8_t cns)
 {
     struct nvme_cmd cmd = {0};
     struct nvme_identify_cmd *idcmd = &cmd.identify;
 
-    if (!is_4k_aligned(id)) {
+    if (!is_4k_aligned(buf)) {
         return -1;
     }
 
     idcmd->opcode = NVME_OP_IDENTIFY;
-    idcmd->nsid = 0;
-    idcmd->cns = 1;  /* Identify controller */
-    idcmd->prp1 = VIRT_TO_PHYS(id);
+    idcmd->nsid = nsid;
+    idcmd->cns = cns;  /* Identify controller */
+    idcmd->prp1 = VIRT_TO_PHYS(buf);
     idcmd->prp2 = 0;
     return nvme_poll_submit_cmd(&ctrl->adminq, cmd);
 }
@@ -338,8 +338,9 @@ nvme_init_ctrl(struct nvme_bar *bar)
         return -ENOMEM;
     }
 
-    nvme_identify(&ctrl, id);
+    nvme_identify(&ctrl, id, 0, ID_CNS_CTRL);
     nvme_log_ctrl_id(id);
+
     dynfree(id);
     return 0;
 }

@@ -37,6 +37,10 @@
 #define NVME_OP_CREATE_IOCQ     0x05
 #define NVME_OP_IDENTIFY        0x06
 
+/* Identify CNS values */
+#define ID_CNS_CTRL         0x01    /* Identify controller */
+#define ID_CNS_NSID_LIST    0x07    /* Active NSID list */
+
 struct nvme_identify_cmd {
     uint8_t opcode;
     uint8_t flags;
