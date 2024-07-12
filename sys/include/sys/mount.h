@@ -45,6 +45,7 @@
  * Filesystem types.
  */
 #define MOUNT_RAMFS "initramfs"
+#define MOUNT_DEVFS "devfs"
 
 struct vfsops;
 struct mount;
@@ -55,6 +56,7 @@ extern mountlist_t g_mountlist;
 
 /* Filesystem operations */
 extern const struct vfsops g_initramfs_vfsops;
+extern const struct vfsops g_devfs_vfsops;
 
 struct mount {
     char *name;

@@ -27,45 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/param.h>
-#include <sys/mount.h>
+#ifndef _FS_DEVFS_H_
+#define _FS_DEVFS_H_
+
 #include <sys/vnode.h>
-#include <sys/panic.h>
-#include <string.h>
+#include <sys/types.h>
 
-struct vnode *g_root_vnode = NULL;
-static struct fs_info fs_list[] = {
-    {MOUNT_RAMFS, &g_initramfs_vfsops, 0, 0},
-    {MOUNT_DEVFS, &g_devfs_vfsops, 0, 0}
-};
+extern const struct vops g_devfs_vops;
 
-void
-vfs_init(void)
-{
-    struct fs_info *fs;
-    const struct vfsops *vfsops;
+int devfs_create_entry(const char *name, devmajor_t major, dev_t dev, mode_t mode);
 
-    TAILQ_INIT(&g_mountlist);
-
-    for (size_t i= 0; i < NELEM(fs_list); ++i) {
-        fs = &fs_list[i];
-        vfsops = fs->vfsops;
-
-        /* Try to initialize the filesystem */
-        if (vfsops->init != NULL) {
-            vfsops->init(fs);
-        }
-    }
-}
-
-struct fs_info *
-vfs_byname(const char *name)
-{
-    for (int i = 0; i < NELEM(fs_list); ++i) {
-        if (strcmp(fs_list[i].name, name) == 0) {
-            return &fs_list[i];
-        }
-    }
-
-    return NULL;
-}
+#endif  /* !_FS_DEVFS_H_ */
