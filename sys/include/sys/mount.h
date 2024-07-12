@@ -39,6 +39,7 @@
 #if defined(_KERNEL)
 
 #define FS_NAME_MAX 16  /* Length of fs name including nul */
+#define NAME_MAX 256    /* Max name of filename (not including nul) */
 
 /*
  * Filesystem types.
@@ -56,6 +57,7 @@ extern mountlist_t g_mountlist;
 extern const struct vfsops g_initramfs_vfsops;
 
 struct mount {
+    char *name;
     struct spinlock lock;
     struct vnode *vp;
     const struct vfsops *mnt_ops;
@@ -77,6 +79,8 @@ struct vfsops {
 };
 
 void vfs_init(void);
+int vfs_name_mount(struct mount *mp, const char *name);
+
 struct mount *vfs_alloc_mount(struct vnode *vp, struct fs_info *fip);
 struct fs_info *vfs_byname(const char *name);
 

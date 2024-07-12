@@ -74,6 +74,29 @@ vfs_alloc_mount(struct vnode *vp, struct fs_info *fip)
 }
 
 /*
+ * Assign a name to a mountpoint.
+ *
+ * @mp: Mountpoint to name.
+ * @name: Name to give.
+ */
+int
+vfs_name_mount(struct mount *mp, const char *name)
+{
+    size_t name_len = strlen(name);
+
+    if (name_len > NAME_MAX)
+        return -ENAMETOOLONG;
+
+    mp->name = dynalloc(sizeof(char) * name_len + 1);
+    if (mp->name == NULL)
+        return -ENOMEM;
+
+    memcpy(mp->name, name, name_len);
+    mp->name[name_len] = '\0';
+    return 0;
+}
+
+/*
  * Release a vnode and its resources from
  * memory.
  */
