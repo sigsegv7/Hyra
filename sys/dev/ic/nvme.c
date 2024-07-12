@@ -240,6 +240,13 @@ nvme_poll_submit_cmd(struct nvme_queue *q, struct nvme_cmd cmd)
         ++spins;
     }
 
+    ++q->cq_head;
+    if (q->cq_head >= q->size) {
+        q->cq_head = 0;
+        q->cq_phase = !q->cq_phase;
+    }
+
+    mmio_write32(q->cq_db, q->cq_head);
     return 0;
 }
 
