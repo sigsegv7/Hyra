@@ -46,8 +46,11 @@
 #define pr_trace(fmt, ...) kprintf("nvme: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
+static TAILQ_HEAD(,nvme_ns) namespaces;
 static struct pci_device *nvme_dev;
 static struct timer tmr;
+
+static int nvme_poll_submit_cmd(struct nvme_queue *q, struct nvme_cmd cmd);
 
 static inline int
 is_4k_aligned(void *ptr)
@@ -133,6 +136,40 @@ nvme_create_queue(struct nvme_bar *bar, struct nvme_queue *queue, size_t id)
     queue->sq_db = (void *)sq_db;
     queue->cq_db = (void *)cq_db;
     return 0;
+}
+
+static int
+nvme_create_ioq(struct nvme_ns *ns, size_t id)
+{
+    struct nvme_queue *ioq = &ns->ioq;
+    struct nvme_ctrl *ctrl = ns->ctrl;
+    struct nvme_bar *bar = ctrl->bar;
+    struct nvme_create_iocq_cmd *create_iocq;
+    struct nvme_create_iosq_cmd *create_iosq;
+    struct nvme_cmd cmd = {0};
+    int error;
+
+    if ((error = nvme_create_queue(bar, ioq, id)) != 0)
+        return error;
+
+    create_iocq = &cmd.create_iocq;
+    create_iocq->opcode = NVME_OP_CREATE_IOCQ;
+    create_iocq->qflags = BIT(0);   /* Physically contiguous */
+    create_iocq->qsize = ctrl->cqes;
+    create_iocq->qid = id;
+    create_iocq->prp1 = VIRT_TO_PHYS(ns->ioq.cq);
+
+    if ((error = nvme_poll_submit_cmd(&ctrl->adminq, cmd)) != 0)
+        return error;
+
+    create_iosq = &cmd.create_iosq;
+    create_iosq->opcode = NVME_OP_CREATE_IOSQ;
+    create_iosq->qflags = BIT(0);    /* Physically contiguous */
+    create_iosq->qsize = ctrl->sqes;
+    create_iosq->cqid = id;
+    create_iosq->sqid = id;
+    create_iosq->prp1 = VIRT_TO_PHYS(ns->ioq.sq);
+    return nvme_poll_submit_cmd(&ctrl->adminq, cmd);
 }
 
 /*
@@ -310,12 +347,71 @@ nvme_init_pci(void)
     pci_writel(nvme_dev, PCIREG_CMDSTATUS, tmp);
 }
 
+/*
+ * Initializes an NVMe namespace.
+ *
+ * @ctrl: Controller.
+ * @nsid: Namespace ID.
+ */
+static int
+nvme_init_ns(struct nvme_ctrl *ctrl, uint8_t nsid)
+{
+    struct nvme_ns *ns = NULL;
+    struct nvme_id_ns *idns = NULL;
+    uint8_t lba_format;
+    int status = 0;
+
+    idns = dynalloc_memalign(sizeof(*idns), 0x1000);
+    ns = dynalloc(sizeof(*ns));
+
+    if (idns == NULL) {
+        status = -ENOMEM;
+        goto done;
+    }
+
+    if (ns == NULL) {
+        status = -ENOMEM;
+        goto done;
+    }
+
+    if ((status = nvme_identify(ctrl, idns, nsid, 0)) != 0)  {
+        goto done;
+    }
+
+    /* Setup the namespace structure */
+    lba_format = idns->flbas & 0xF;
+    ns->lba_fmt = idns->lbaf[lba_format];
+    ns->nsid = nsid;
+    ns->lba_bsize = 1 << ns->lba_fmt.ds;
+    ns->size = idns->size;
+    ns->ctrl = ctrl;
+
+    if ((status = nvme_create_ioq(ns, ns->nsid)) != 0) {
+        goto done;
+    }
+
+    if (status != 0) {
+        goto done;
+    }
+
+    TAILQ_INSERT_TAIL(&namespaces, ns, link);
+done:
+    if (ns != NULL && status != 0)
+        dynfree(ns);
+    if (idns != NULL && status != 0)
+        dynfree(idns);
+
+    return status;
+}
+
 static int
 nvme_init_ctrl(struct nvme_bar *bar)
 {
     int error;
     uint64_t caps;
+    uint32_t config;
     uint16_t mqes;
+    uint8_t *nsids;
     struct nvme_ctrl ctrl = {0};
     struct nvme_queue *adminq;
     struct nvme_id *id;
@@ -345,10 +441,42 @@ nvme_init_ctrl(struct nvme_bar *bar)
         return -ENOMEM;
     }
 
+    nsids = dynalloc_memalign(0x1000, 0x1000);
+    if (nsids == NULL) {
+        dynfree(id);
+        return -ENOMEM;
+    }
+
     nvme_identify(&ctrl, id, 0, ID_CNS_CTRL);
     nvme_log_ctrl_id(id);
+    nvme_identify(&ctrl, nsids, 0, ID_CNS_NSID_LIST);
+
+    ctrl.sqes = id->sqes >> 4;
+    ctrl.cqes = id->cqes >> 4;
+
+    /*
+     * Before creating any I/O queues we need to set CC.IOCQES
+     * and CC.IOSQES... Bits 3:0 is the minimum and bits 7:4
+     * is the maximum.
+     */
+    config = mmio_read32(&bar->config);
+    config |= (ctrl.sqes << CONFIG_IOSQES_SHIFT);
+    config |= (ctrl.cqes << CONFIG_IOCQES_SHIFT);
+    mmio_write32(&bar->config, config);
+
+    /* Init all active namespaces */
+    for (size_t i = 0; i < id->nn; ++i) {
+        if (nsids[i] == 0) {
+            continue;
+        }
+
+        if (nvme_init_ns(&ctrl, nsids[i]) != 0) {
+            pr_error("Failed to initialize NSID %d\n", nsids[i]);
+        }
+    }
 
     dynfree(id);
+    dynfree(nsids);
     return 0;
 }
 

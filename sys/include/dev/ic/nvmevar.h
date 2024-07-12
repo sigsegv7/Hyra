@@ -64,9 +64,41 @@ struct nvme_cq_entry {
     uint16_t status;
 };
 
+/* Create I/O completion queue */
+struct nvme_create_iocq_cmd {
+    uint8_t opcode;
+    uint8_t flags;
+    uint16_t cid;
+    uint32_t unused1[5];
+    uint64_t prp1;
+    uint64_t unused2;
+    uint16_t qid;
+    uint16_t qsize;
+    uint16_t qflags;
+    uint16_t irqvec;
+    uint64_t unused3[2];
+};
+
+/* Create I/O submission queue */
+struct nvme_create_iosq_cmd {
+    uint8_t opcode;
+    uint8_t flags;
+    uint16_t cid;
+    uint32_t unused1[5];
+    uint64_t prp1;
+    uint64_t unused2;
+    uint16_t sqid;
+    uint16_t qsize;
+    uint16_t qflags;
+    uint16_t cqid;
+    uint64_t unused3[2];
+};
+
 struct nvme_cmd {
     union {
         struct nvme_identify_cmd identify;
+        struct nvme_create_iocq_cmd create_iocq;
+        struct nvme_create_iosq_cmd create_iosq;
     };
 };
 
@@ -126,8 +158,59 @@ struct nvme_id {
     uint8_t vs[1024];
 };
 
+struct nvme_lbaf {
+    uint16_t ms;    /* Number of metadata bytes per LBA */
+    uint8_t ds;     /* Data size */
+    uint8_t rp;
+};
+
+/* Identify namespace data */
+struct nvme_id_ns {
+    uint64_t size;
+    uint64_t capabilities;
+    uint64_t nuse;
+    uint8_t features;
+    uint8_t nlbaf;
+    uint8_t flbas;
+    uint8_t mc;
+    uint8_t dpc;
+    uint8_t dps;
+    uint8_t nmic;
+    uint8_t rescap;
+    uint8_t fpi;
+    uint8_t unused1;
+    uint16_t nawun;
+    uint16_t nawupf;
+    uint16_t nacwu;
+    uint16_t nabsn;
+    uint16_t nabo;
+    uint16_t nabspf;
+    uint16_t unused2;
+    uint64_t nvmcap[2];
+    uint64_t unusued3[5];
+    uint8_t nguid[16];
+    uint8_t eui64[8];
+    struct nvme_lbaf lbaf[16];
+    uint64_t unused3[24];
+    uint8_t vs[3712];
+};
+
+/* NVMe namespace */
+struct nvme_ns {
+    size_t nsid;                /* Namespace ID */
+    size_t lba_bsize;           /* LBA block size */
+    size_t size;                /* Size in logical blocks */
+    struct nvme_queue ioq;      /* I/O queue */
+    struct nvme_lbaf lba_fmt;   /* LBA format */
+    struct nvme_ctrl *ctrl;     /* NVMe controller */
+    TAILQ_ENTRY(nvme_ns) link;
+};
+
 struct nvme_ctrl {
     struct nvme_queue adminq;
+    struct nvme_bar *bar;
+    uint8_t sqes;
+    uint8_t cqes;
 };
 
 #endif  /* !_IC_NVMEVAR_H_ */
