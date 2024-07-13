@@ -55,6 +55,14 @@ cdevsw_read(void *devsw, dev_t dev, struct sio_txn *sio)
     return cdevsw->read(dev, sio, 0);
 }
 
+static inline int
+bdevsw_read(void *devsw, dev_t dev, struct sio_txn *sio)
+{
+    struct bdevsw *bdevsw = devsw;
+
+    return bdevsw->read(dev, sio, 0);
+}
+
 /*
  * Get a devfs node by name.
  *
@@ -134,8 +142,8 @@ devfs_read(struct vnode *vp, struct sio_txn *sio)
     if (!dnp->is_block)
         return cdevsw_read(devsw, dnp->dev, sio);
 
-    /* TODO: Block devices */
-    return -EIO;
+    /* Block device */
+    return bdevsw_read(devsw, dnp->dev, sio);
 }
 
 static int

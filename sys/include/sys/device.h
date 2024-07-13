@@ -44,6 +44,10 @@ struct cdevsw {
     int(*read)(dev_t dev, struct sio_txn *sio, int flags);
 };
 
+struct bdevsw {
+    int(*read)(dev_t dev, struct sio_txn *sio, int flags);
+};
+
 void *dev_get(devmajor_t major, dev_t dev);
 dev_t dev_alloc(devmajor_t major);
 
