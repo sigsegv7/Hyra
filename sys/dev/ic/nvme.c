@@ -390,10 +390,6 @@ nvme_init_ns(struct nvme_ctrl *ctrl, uint8_t nsid)
         goto done;
     }
 
-    if (status != 0) {
-        goto done;
-    }
-
     TAILQ_INSERT_TAIL(&namespaces, ns, link);
 done:
     if (ns != NULL && status != 0)
