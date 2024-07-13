@@ -509,6 +509,7 @@ nvme_init(void)
         return -ENODEV;
     }
 
+    TAILQ_INIT(&namespaces);
     nvme_init_pci();
 
     if ((error = pci_map_bar(nvme_dev, 0, (void *)&bar)) != 0) {
