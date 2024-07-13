@@ -408,7 +408,7 @@ nvme_init_ctrl(struct nvme_bar *bar)
     uint32_t config;
     uint16_t mqes;
     uint8_t *nsids;
-    struct nvme_ctrl ctrl = {0};
+    struct nvme_ctrl ctrl = { .bar = bar };
     struct nvme_queue *adminq;
     struct nvme_id *id;
 
