@@ -37,7 +37,7 @@
 #include <string.h>
 
 struct devfs_node {
-    const char *name;
+    char *name;
     uint8_t is_block : 1;
     mode_t mode;
     devmajor_t major;
@@ -109,8 +109,12 @@ devfs_lookup(struct vop_lookup_args *args)
 static int
 devfs_reclaim(struct vnode *vp)
 {
-    if (vp->data != NULL)
+    struct devfs_node *dnp;
+
+    if ((dnp = vp->data) != NULL) {
+        dynfree(dnp->name);
         dynfree(vp->data);
+    }
 
     vp->data = NULL;
     return 0;
@@ -166,12 +170,22 @@ int
 devfs_create_entry(const char *name, devmajor_t major, dev_t dev, mode_t mode)
 {
     struct devfs_node *dnp;
+    size_t name_len;
 
     dnp = dynalloc(sizeof(*dnp));
     if (dnp == NULL)
         return -ENOMEM;
 
-    dnp->name = name;
+    name_len = strlen(name);
+    dnp->name = dynalloc(sizeof(char) * name_len + 1);
+    if (dnp->name == NULL) {
+        dynfree(dnp);
+        return -ENOMEM;
+    }
+
+    memcpy(dnp->name, name, name_len);
+    dnp->name[name_len] = '\0';
+
     dnp->major = major;
     dnp->dev = dev;
     dnp->mode = mode;
