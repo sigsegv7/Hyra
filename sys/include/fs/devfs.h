@@ -32,6 +32,7 @@
 
 #include <sys/vnode.h>
 #include <sys/types.h>
+#include <sys/device.h>
 
 extern const struct vops g_devfs_vops;
 
