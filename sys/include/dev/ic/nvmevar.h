@@ -41,6 +41,10 @@
 #define ID_CNS_CTRL         0x01    /* Identify controller */
 #define ID_CNS_NSID_LIST    0x07    /* Active NSID list */
 
+/* I/O commands */
+#define NVME_OP_WRITE 0x01
+#define NVME_OP_READ 0x02
+
 struct nvme_identify_cmd {
     uint8_t opcode;
     uint8_t flags;
@@ -94,11 +98,32 @@ struct nvme_create_iosq_cmd {
     uint64_t unused3[2];
 };
 
+/* Read/write */
+struct nvme_rw_cmd {
+    uint8_t opcode;
+    uint8_t flags;
+    uint16_t cid;
+    uint32_t nsid;
+    uint64_t unused;
+    uint64_t metadata;
+    uint64_t prp1;
+    uint64_t prp2;
+    uint64_t slba;
+    uint16_t len;
+    uint16_t control;
+    uint32_t dsmgmt;
+    uint32_t ref;
+    uint16_t apptag;
+    uint16_t appmask;
+};
+
+
 struct nvme_cmd {
     union {
         struct nvme_identify_cmd identify;
         struct nvme_create_iocq_cmd create_iocq;
         struct nvme_create_iosq_cmd create_iosq;
+        struct nvme_rw_cmd rw;
     };
 };
 
@@ -203,6 +228,7 @@ struct nvme_ns {
     struct nvme_queue ioq;      /* I/O queue */
     struct nvme_lbaf lba_fmt;   /* LBA format */
     struct nvme_ctrl *ctrl;     /* NVMe controller */
+    dev_t dev;
     TAILQ_ENTRY(nvme_ns) link;
 };
 

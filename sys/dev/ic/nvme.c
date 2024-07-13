@@ -34,6 +34,8 @@
 #include <sys/sched.h>
 #include <sys/syslog.h>
 #include <sys/mmio.h>
+#include <sys/device.h>
+#include <fs/devfs.h>
 #include <dev/ic/nvmeregs.h>
 #include <dev/ic/nvmevar.h>
 #include <dev/pci/pci.h>
@@ -46,6 +48,7 @@
 #define pr_trace(fmt, ...) kprintf("nvme: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
+static struct bdevsw nvme_bdevsw;
 static TAILQ_HEAD(,nvme_ns) namespaces;
 static struct pci_device *nvme_dev;
 static struct timer tmr;
@@ -56,6 +59,25 @@ static inline int
 is_4k_aligned(void *ptr)
 {
     return ((uintptr_t)ptr & (0x1000 - 1)) == 0;
+}
+
+/*
+ * Fetch a namespace from its device ID
+ *
+ * @dev: Device ID of namespace to fetch.
+ */
+static struct nvme_ns *
+nvme_get_ns(dev_t dev)
+{
+    struct nvme_ns *ns;
+
+    TAILQ_FOREACH(ns, &namespaces, link) {
+        if (ns->dev == dev) {
+            return ns;
+        }
+    }
+
+    return NULL;
 }
 
 /*
@@ -348,6 +370,107 @@ nvme_init_pci(void)
 }
 
 /*
+ * Issue a read/write command for a specific
+ * namespace.
+ *
+ * `buf' must be 4k aligned.
+ */
+static int
+nvme_rw(struct nvme_ns *ns, char *buf, off_t slba, size_t count, bool write)
+{
+    struct nvme_cmd cmd = {0};
+    struct nvme_rw_cmd *rw = &cmd.rw;
+
+    if (!is_4k_aligned(buf)) {
+        return -1;
+    }
+
+    rw->opcode = write ? NVME_OP_WRITE : NVME_OP_READ;
+    rw->nsid = ns->nsid;
+    rw->slba = slba;
+    rw->len = count - 1;
+    rw->prp1 = VIRT_TO_PHYS(buf);
+    return nvme_poll_submit_cmd(&ns->ioq, cmd);
+}
+
+/*
+ * Device interface read/write helper.
+ *
+ * @dev: Device ID.
+ * @sio: SIO transaction descriptor.
+ * @write: True if this is a write operation.
+ *
+ * This routine uses an internal buffer aligned on a
+ * 4 KiB boundary to enable flexibility with the input
+ * SIO buffer. This allows the SIO buffer to be unaligned
+ * and/or sized smaller than the namespace block size.
+ */
+static int
+nvme_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
+{
+    struct nvme_ns *ns;
+    size_t block_count, len;
+    off_t block_off, read_off;
+    int status;
+    char *buf;
+
+    if (sio == NULL)
+        return -EINVAL;
+    if (sio->len == 0 || sio->buf == NULL)
+        return -EINVAL;
+
+    /*
+     * Get the NVMe namespace. This should not fail
+     * but handle if it does just in case.
+     */
+    ns = nvme_get_ns(dev);
+    if (__unlikely(ns == NULL))
+        return -EIO;
+
+    /* Calculate the block count and offset */
+    block_count = ALIGN_UP(sio->len, ns->lba_bsize);
+    block_count /= ns->lba_bsize;
+    block_off = sio->offset / ns->lba_bsize;
+
+    /* Allocate internal buffer */
+    len = block_count * ns->lba_bsize;
+    buf = dynalloc_memalign(len, 0x1000);
+    if (buf == NULL)
+        return -ENOMEM;
+
+    /*
+     * If this is a write, zero the internal buffer and copy over
+     * the contents of the SIO buffer.
+     */
+    if (write) {
+        memset(buf, 0, len);
+        memcpy(buf, sio->buf, sio->len);
+    }
+
+    /*
+     * Perform the r/w operation and copy internal buffer
+     * out if this is a read operation.
+     */
+    status = nvme_rw(ns, buf, block_off, block_count, write);
+    if (status == 0 && !write) {
+        read_off = sio->offset & (ns->lba_bsize - 1);
+        memcpy(sio->buf, buf + read_off, sio->len);
+    }
+
+    dynfree(buf);
+    return status;
+}
+
+/*
+ * Device interface read
+ */
+static int
+nvme_dev_read(dev_t dev, struct sio_txn *sio, int flags)
+{
+    return nvme_dev_rw(dev, sio, false);
+}
+
+/*
  * Initializes an NVMe namespace.
  *
  * @ctrl: Controller.
@@ -356,6 +479,8 @@ nvme_init_pci(void)
 static int
 nvme_init_ns(struct nvme_ctrl *ctrl, uint8_t nsid)
 {
+    devmajor_t major;
+    char devname[128];
     struct nvme_ns *ns = NULL;
     struct nvme_id_ns *idns = NULL;
     uint8_t lba_format;
@@ -391,6 +516,15 @@ nvme_init_ns(struct nvme_ctrl *ctrl, uint8_t nsid)
     }
 
     TAILQ_INSERT_TAIL(&namespaces, ns, link);
+    snprintf(devname, sizeof(devname), "nvme0n%d", ns->nsid);
+
+    /* Allocate major and minor */
+    major = dev_alloc_major();
+    ns->dev = dev_alloc(major);
+
+    /* Register the namespace */
+    dev_register(major, ns->dev, &nvme_bdevsw);
+    devfs_create_entry(devname, major, ns->dev, 0444);
 done:
     if (ns != NULL && status != 0)
         dynfree(ns);
@@ -518,5 +652,9 @@ nvme_init(void)
 
     return nvme_init_ctrl(bar);
 }
+
+static struct bdevsw nvme_bdevsw = {
+    .read = nvme_dev_read
+};
 
 DRIVER_EXPORT(nvme_init);
