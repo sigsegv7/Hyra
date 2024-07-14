@@ -169,7 +169,12 @@ nvme_create_ioq(struct nvme_ns *ns, size_t id)
     struct nvme_create_iocq_cmd *create_iocq;
     struct nvme_create_iosq_cmd *create_iosq;
     struct nvme_cmd cmd = {0};
+    uint32_t caps;
+    uint16_t mqes;
     int error;
+
+    caps = mmio_read32(&bar->caps);
+    mqes = CAP_MQES(caps);
 
     if ((error = nvme_create_queue(bar, ioq, id)) != 0)
         return error;
@@ -177,7 +182,7 @@ nvme_create_ioq(struct nvme_ns *ns, size_t id)
     create_iocq = &cmd.create_iocq;
     create_iocq->opcode = NVME_OP_CREATE_IOCQ;
     create_iocq->qflags = BIT(0);   /* Physically contiguous */
-    create_iocq->qsize = ctrl->cqes;
+    create_iocq->qsize = mqes;
     create_iocq->qid = id;
     create_iocq->prp1 = VIRT_TO_PHYS(ns->ioq.cq);
 
@@ -187,7 +192,7 @@ nvme_create_ioq(struct nvme_ns *ns, size_t id)
     create_iosq = &cmd.create_iosq;
     create_iosq->opcode = NVME_OP_CREATE_IOSQ;
     create_iosq->qflags = BIT(0);    /* Physically contiguous */
-    create_iosq->qsize = ctrl->sqes;
+    create_iosq->qsize = mqes;
     create_iosq->cqid = id;
     create_iosq->sqid = id;
     create_iosq->prp1 = VIRT_TO_PHYS(ns->ioq.sq);
