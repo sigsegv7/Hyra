@@ -288,12 +288,6 @@ nvme_poll_submit_cmd(struct nvme_queue *q, struct nvme_cmd cmd)
             break;
         }
 
-        /* Are any error bits set? */
-        if ((status & ~1) != 0) {
-            pr_trace("Command error (bits=0x%x)\n", status >> 1);
-            return -EIO;
-        }
-
         /* Check for timeout */
         if (spins > 5) {
             pr_error("Hang while polling phase bit, giving up\n");
