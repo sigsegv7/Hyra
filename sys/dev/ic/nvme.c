@@ -279,6 +279,8 @@ nvme_poll_submit_cmd(struct nvme_queue *q, struct nvme_cmd cmd)
     nvme_submit_cmd(q, cmd);
 
     for (;;) {
+        tmr.msleep(100);
+
         /*
          * If the phase bit matches the most recently submitted
          * command then the command has completed
@@ -294,7 +296,6 @@ nvme_poll_submit_cmd(struct nvme_queue *q, struct nvme_cmd cmd)
             return -ETIME;
         }
 
-        tmr.msleep(150);
         ++spins;
     }
 
