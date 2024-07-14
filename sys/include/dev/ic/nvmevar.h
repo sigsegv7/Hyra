@@ -39,7 +39,7 @@
 
 /* Identify CNS values */
 #define ID_CNS_CTRL         0x01    /* Identify controller */
-#define ID_CNS_NSID_LIST    0x07    /* Active NSID list */
+#define ID_CNS_NSID_LIST    0x02    /* Active NSID list */
 
 /* I/O commands */
 #define NVME_OP_WRITE 0x01
