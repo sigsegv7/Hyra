@@ -126,7 +126,7 @@
  */
 #define TRAPENTRY(ENTLABEL, TRAPNO)    \
     ENTLABEL:                          \
-        testq $0x3, 8(%rsp)          ; \
+        testq $0x3, 16(%rsp)         ; \
         jz 1f                        ; \
         lfence                       ; \
         swapgs                       ; \
@@ -134,7 +134,7 @@
         mov %rsp, %rdi               ; \
         call trap_handler            ; \
         pop_trapframe_ec             ; \
-        testq $0x3, 8(%rsp)          ; \
+        testq $0x3, 16(%rsp)         ; \
         jz 2f                        ; \
         lfence                       ; \
         swapgs                       ; \
