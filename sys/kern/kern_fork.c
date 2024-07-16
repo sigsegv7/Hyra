@@ -63,7 +63,7 @@ fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
     if (newprocp != NULL)
         *newprocp = newproc;
 
-    newproc->pid = nthreads++;
+    newproc->pid = ++nthreads;
     sched_enqueue_td(newproc);
 done:
     if (status != 0)
