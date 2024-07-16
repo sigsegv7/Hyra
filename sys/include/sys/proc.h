@@ -39,6 +39,7 @@
 #if defined(_KERNEL)
 #include <machine/frame.h>
 #include <machine/pcb.h>
+#include <vm/vm.h>
 #endif  /* _KERNEL */
 
 #if defined(_KERNEL)
