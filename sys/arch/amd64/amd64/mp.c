@@ -50,11 +50,11 @@ ap_trampoline(struct limine_smp_info *si)
     static struct spinlock lock = {0};
     struct cpu_info *ci;
 
-    spinlock_acquire(&lock);
     ci = dynalloc(sizeof(*ci));
     __assert(ci != NULL);
-
     memset(ci, 0, sizeof(*ci));
+
+    spinlock_acquire(&lock);
     cpu_startup(ci);
 
     spinlock_release(&lock);
