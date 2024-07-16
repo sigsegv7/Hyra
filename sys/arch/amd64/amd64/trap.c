@@ -35,6 +35,7 @@
 #include <sys/syscall.h>
 #include <machine/trap.h>
 #include <machine/frame.h>
+#include <machine/intr.h>
 
 #define pr_error(fmt, ...) kprintf("trap: " fmt, ##__VA_ARGS__)
 
@@ -106,6 +107,8 @@ trap_syscall(struct trapframe *tf)
 void
 trap_handler(struct trapframe *tf)
 {
+    splraise(IPL_HIGH);
+
     if (tf->trapno >= NELEM(trap_type)) {
         panic("Got unknown trap %d\n", tf->trapno);
     }
