@@ -91,7 +91,6 @@ main(void)
     memset(&proc0, 0, sizeof(proc0.tf));
     fork1(&proc0, 0, start_init, NULL);
 
-    /* Nothing left to do... halt */
-    cpu_reboot(REBOOT_HALT);
+    sched_enter();
     __builtin_unreachable();
 }
