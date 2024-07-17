@@ -36,6 +36,7 @@
 #include <sys/param.h>
 #include <sys/cdefs.h>
 #include <sys/syscall.h>
+#include <sys/exec.h>
 #if defined(_KERNEL)
 #include <machine/frame.h>
 #include <machine/pcb.h>
@@ -46,10 +47,9 @@
 #define PROC_STACK_PAGES 8
 #define PROC_STACK_SIZE  (PROC_STACK_PAGES * DEFAULT_PAGESIZE)
 
-struct exec_prog;
-
 struct proc {
     pid_t pid;
+    struct exec_prog exec;
     struct trapframe tf;
     struct pcb pcb;
     size_t priority;

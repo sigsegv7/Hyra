@@ -36,6 +36,7 @@
 #include <vm/map.h>
 #include <vm/physmem.h>
 #include <machine/pcb.h>
+#include <string.h>
 
 /*
  * Release the memory of the old stack
@@ -83,6 +84,9 @@ execve(struct proc *td, const struct execve_args *args)
     /* Release the old stack if it exists */
     if (td->stack_base != 0)
         release_stack(td);
+
+    /* Save program state */
+    memcpy(&td->exec, &prog, sizeof(td->exec));
 
     /* Set new stack and map it to userspace */
     td->stack_base = stack;

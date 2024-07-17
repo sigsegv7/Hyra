@@ -30,7 +30,7 @@
 #ifndef _SYS_EXEC_H_
 #define _SYS_EXEC_H_
 
-#include <sys/proc.h>
+#include <sys/types.h>
 
 #if defined(_KERNEL)
 
@@ -51,6 +51,8 @@
 #define AUXVAL(PTR, TAG, VAL)   \
     STACK_PUSH(PTR, VAL);       \
     STACK_PUSH(PTR, TAG);
+
+struct proc;
 
 struct exec_range {
     paddr_t start;

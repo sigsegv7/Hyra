@@ -31,6 +31,7 @@
 #include <sys/exec.h>
 #include <sys/param.h>
 #include <sys/namei.h>
+#include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/errno.h>
 #include <vm/pmap.h>
