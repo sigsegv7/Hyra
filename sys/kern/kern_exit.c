@@ -29,9 +29,43 @@
 
 #include <sys/proc.h>
 #include <sys/sched.h>
+#include <sys/syslog.h>
 #include <vm/physmem.h>
 #include <vm/dynalloc.h>
 #include <vm/vm.h>
+#include <vm/map.h>
+#include <machine/pcb.h>
+
+#define pr_trace(fmt, ...) kprintf("exit: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
+
+static void
+unload_td(struct proc *td)
+{
+    const struct auxval *auxvalp;
+    struct exec_prog *execp;
+    struct exec_range *range;
+    struct pcb *pcbp;
+    size_t len;
+
+    execp = &td->exec;
+    auxvalp = &execp->auxval;
+    pcbp = &td->pcb;
+
+    for (size_t i = 0; i < auxvalp->at_phnum; ++i) {
+        range = &execp->loadmap[i];
+        len = (range->end - range->start);
+
+        /* Attempt to unmap the range */
+        if (vm_unmap(pcbp->addrsp, range->vbase, len) != 0) {
+            pr_error("Failed to unmap %p - %p (pid=%d)\n",
+                range->start, range->end, td->pid);
+        }
+
+        /* Free the physical memory */
+        vm_free_frame(range->start, len / DEFAULT_PAGESIZE);
+    }
+}
 
 /*
  * Kill a thread and deallocate its resources.
@@ -63,7 +97,10 @@ exit1(struct proc *td)
         stack -= VM_HIGHER_HALF;
     }
 
+    unload_td(td);
+    vm_unmap(pcbp->addrsp, td->stack_base, PROC_STACK_SIZE);
     vm_free_frame(stack, PROC_STACK_PAGES);
+
     pmap_destroy_vas(pcbp->addrsp);
     dynfree(td);
 
