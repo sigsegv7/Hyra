@@ -220,6 +220,7 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
 
             loadmap[i].start = physmem;
             loadmap[i].end = physmem + map_len;
+            loadmap[i].vbase = phdr->p_vaddr;
         }
     }
 

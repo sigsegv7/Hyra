@@ -53,8 +53,9 @@
     STACK_PUSH(PTR, TAG);
 
 struct exec_range {
-    uintptr_t start;
-    uintptr_t end;
+    paddr_t start;
+    paddr_t end;
+    vaddr_t vbase;
 };
 
 struct auxval {
