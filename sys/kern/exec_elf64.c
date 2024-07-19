@@ -177,6 +177,7 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
     struct pcb *pcbp;
     struct exec_range loadmap[MAX_PHDRS];
     struct auxval *auxvalp;
+    size_t loadmap_idx = 0;
     int status = 0;
 
     if ((status = elf_get_file(pathname, &file)) != 0)
@@ -219,9 +220,9 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
             tmp = (void *)((uintptr_t)hdr + phdr->p_offset);
             memcpy(PHYS_TO_VIRT(physmem), tmp, phdr->p_filesz);
 
-            loadmap[i].start = physmem;
-            loadmap[i].end = physmem + map_len;
-            loadmap[i].vbase = phdr->p_vaddr;
+            loadmap[loadmap_idx].start = physmem;
+            loadmap[loadmap_idx].end = physmem + map_len;
+            loadmap[loadmap_idx].vbase = phdr->p_vaddr;
         }
     }
 
