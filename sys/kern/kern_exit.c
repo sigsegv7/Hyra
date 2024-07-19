@@ -56,6 +56,11 @@ unload_td(struct proc *td)
         range = &execp->loadmap[i];
         len = (range->end - range->start);
 
+        /* Drop entries with zeroed range */
+        if (range->start == 0 && range->end == 0) {
+            continue;
+        }
+
         /* Attempt to unmap the range */
         if (vm_unmap(pcbp->addrsp, range->vbase, len) != 0) {
             pr_error("Failed to unmap %p - %p (pid=%d)\n",
