@@ -170,6 +170,7 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
     Elf64_Ehdr *hdr;
     Elf64_Phdr *phdr;
     paddr_t physmem;
+    vaddr_t start, end;
     off_t misalign;
     void *tmp;
     size_t page_count, map_len;
@@ -188,6 +189,8 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
         goto done;
 
     pcbp = &td->pcb;
+    start = -1;
+    end = 0;
 
     /* Load program headers */
     for (size_t i = 0; i < hdr->e_phnum; ++i) {
@@ -223,10 +226,21 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
             loadmap[loadmap_idx].start = physmem;
             loadmap[loadmap_idx].end = physmem + map_len;
             loadmap[loadmap_idx].vbase = phdr->p_vaddr;
+
+            /* Get start/end addresses */
+            if (start == (vaddr_t)-1)
+                start = loadmap[loadmap_idx].vbase;
+            if (phdr->p_vaddr > end)
+                end = loadmap[loadmap_idx].vbase + phdr->p_memsz;
+
+            ++loadmap_idx;
         }
     }
 
     memcpy(prog->loadmap, loadmap, sizeof(loadmap));
+    prog->start = start;
+    prog->end = end;
+
     auxvalp = &prog->auxval;
     auxvalp->at_entry = hdr->e_entry;
     auxvalp->at_phent = hdr->e_phentsize;

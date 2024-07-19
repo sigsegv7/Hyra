@@ -73,6 +73,8 @@ struct exec_prog {
     struct auxval auxval;
     char **argp;
     char **envp;
+    vaddr_t start;
+    vaddr_t end;
 };
 
 struct execve_args {
