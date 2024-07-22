@@ -40,6 +40,14 @@
 #define __unlikely(exp) __builtin_expect(((exp) != 0), 0)
 #define __static_assert _Static_assert
 
+#if defined(__cplusplus)
+#define __BEGIN_DECLS   extern "C" {
+#define __END_DECLS     }
+#else
+#define __BEGIN_DECLS
+#define __END_DECLS
+#endif
+
 #if defined(_KERNEL)
 /*
  *  Align data on a cache line boundary. This is
