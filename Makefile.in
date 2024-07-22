@@ -74,7 +74,7 @@ base:
 	mkdir -p base/usr/sbin/
 	mkdir -p base/boot/
 	mkdir -p base/usr/include/sys/
-	cp sys/include/sys/*.h base/usr/include/sys/
+	cp -f sys/include/sys/*.h base/usr/include/sys/
 
 .PHONY: cross
 cross:
