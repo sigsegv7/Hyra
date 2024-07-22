@@ -95,13 +95,10 @@ sys_open(struct syscall_args *scargs)
     int error;
     const char *pathname;
     char pathbuf[PATH_MAX];
-    struct proc *td;
     struct filedesc *filedes;
     struct nameidata nd;
 
     pathname = (char *)scargs->arg0;
-    td = this_td();
-
     nd.path = pathbuf;
     nd.flags = 0;
 
