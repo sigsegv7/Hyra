@@ -37,6 +37,7 @@
 
 #define SYS_none    0
 #define SYS_exit    1
+#define SYS_open    2
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */

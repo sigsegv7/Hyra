@@ -27,15 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/syscall.h>
+#ifndef _SYS_VFS_H_
+#define _SYS_VFS_H_
+
 #include <sys/types.h>
-#include <sys/proc.h>
-#include <sys/vfs.h>
+#include <sys/syscall.h>
 
-scret_t(*g_sctab[])(struct syscall_args *) = {
-    NULL,       /* SYS_none */
-    sys_exit,   /* SYS_exit */
-    sys_open,   /* SYS_open */
-};
+#if defined(_KERNEL)
 
-const size_t MAX_SYSCALLS = NELEM(g_sctab);
+scret_t sys_open(struct syscall_args *scargs);
+
+#endif  /* _KERNEL */
+#endif  /* !_SYS_VFS_H_ */

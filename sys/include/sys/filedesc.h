@@ -27,15 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/syscall.h>
-#include <sys/types.h>
-#include <sys/proc.h>
-#include <sys/vfs.h>
+#ifndef _SYS_FILEDESC_H_
+#define _SYS_FILEDESC_H_
 
-scret_t(*g_sctab[])(struct syscall_args *) = {
-    NULL,       /* SYS_none */
-    sys_exit,   /* SYS_exit */
-    sys_open,   /* SYS_open */
+#include <sys/types.h>
+#include <sys/vnode.h>
+#include <sys/spinlock.h>
+
+struct filedesc {
+    int fdno;
+    off_t offset;
+    bool is_dir;
+    struct vnode *vp;
+    struct spinlock lock;
 };
 
-const size_t MAX_SYSCALLS = NELEM(g_sctab);
+#endif  /* !_SYS_FILEDESC_H_ */

@@ -37,6 +37,7 @@
 #include <sys/cdefs.h>
 #include <sys/syscall.h>
 #include <sys/exec.h>
+#include <sys/filedesc.h>
 #if defined(_KERNEL)
 #include <machine/frame.h>
 #include <machine/pcb.h>
@@ -46,10 +47,12 @@
 #if defined(_KERNEL)
 #define PROC_STACK_PAGES 8
 #define PROC_STACK_SIZE  (PROC_STACK_PAGES * DEFAULT_PAGESIZE)
+#define PROC_MAX_FILEDES 256
 
 struct proc {
     pid_t pid;
     struct exec_prog exec;
+    struct filedesc *fds[PROC_MAX_FILEDES];
     struct trapframe tf;
     struct pcb pcb;
     size_t priority;
