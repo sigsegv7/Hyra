@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/errno.h>
+#include <sys/sio.h>
 #include <sys/filedesc.h>
 #include <sys/namei.h>
 #include <sys/proc.h>
@@ -40,6 +41,24 @@
 #include <vm/dynalloc.h>
 #include <assert.h>
 #include <string.h>
+
+/*
+ * Fetch a file descriptor from a file descriptor
+ * number.
+ *
+ * @fdno: File descriptor to fetch
+ */
+static struct filedesc *
+fd_get(int fdno)
+{
+    struct proc *td = this_td();
+
+    if (fdno < 0 || fdno > PROC_MAX_FILEDES) {
+        return NULL;
+    }
+
+    return td->fds[fdno];
+}
 
 /*
  * Allocate a file descriptor.
@@ -117,4 +136,68 @@ sys_open(struct syscall_args *scargs)
 
     filedes->vp = nd.vp;
     return filedes->fdno;
+}
+
+/*
+ * arg0: fd
+ * arg1: buf
+ * arg2: count
+ */
+scret_t
+sys_read(struct syscall_args *scargs)
+{
+    int fd;
+    char *buf, *kbuf = NULL;
+    size_t count;
+    struct filedesc *filedes;
+    struct sio_txn sio;
+    scret_t retval = 0;
+
+    fd = scargs->arg0;
+    buf = (char *)scargs->arg1;
+    count = scargs->arg2;
+
+    if (count > SSIZE_MAX) {
+        retval = -EINVAL;
+        goto done;
+    }
+
+    filedes = fd_get(fd);
+    kbuf = dynalloc(count);
+
+    if (kbuf == NULL) {
+        retval = -ENOMEM;
+        goto done;
+    }
+
+    if (filedes == NULL) {
+        retval = -EBADF;
+        goto done;
+    }
+
+    if (filedes->is_dir) {
+        retval = -EISDIR;
+        goto done;
+    }
+
+    sio.len = count;
+    sio.buf = kbuf;
+    sio.offset = filedes->offset;
+
+    if ((count = vfs_vop_read(filedes->vp, &sio)) < 0) {
+        retval = -EIO;
+        goto done;
+    }
+
+    if (copyout(kbuf, buf, count) < 0) {
+        retval = -EFAULT;
+        goto done;
+    }
+
+    retval = count;
+done:
+    if (kbuf != NULL) {
+        dynfree(kbuf);
+    }
+    return retval;
 }

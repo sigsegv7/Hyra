@@ -36,6 +36,7 @@
 #if defined(_KERNEL)
 
 scret_t sys_open(struct syscall_args *scargs);
+scret_t sys_read(struct syscall_args *scargs);
 
 #endif  /* _KERNEL */
 #endif  /* !_SYS_VFS_H_ */
