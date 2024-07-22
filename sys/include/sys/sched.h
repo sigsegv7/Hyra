@@ -36,6 +36,7 @@
 #if defined(_KERNEL)
 
 void sched_init(void);
+void sched_yield(void);
 __dead void sched_enter(void);
 void sched_enqueue_td(struct proc *td);
 

@@ -140,6 +140,38 @@ this_td(void)
     return ci->curtd;
 }
 
+static inline void
+td_pri_raise(struct proc *td)
+{
+    if (td->priority > 0) {
+	    td->priority--;
+    }
+}
+
+static inline void
+td_pri_lower(struct proc *td)
+{
+    if (td->priority < SCHED_NQUEUE - 1) {
+        td->priority++;
+    }
+}
+
+static inline void
+td_pri_update(struct proc *td)
+{
+    switch (policy) {
+    case SCHED_POLICY_MLFQ:
+        if (td->rested) {
+            td->rested = false;
+            td_pri_raise(td);
+        } else {
+            td_pri_lower(td);
+        }
+
+        break;
+    }
+}
+
 /*
  * Perform a context switch.
  */
@@ -153,6 +185,10 @@ sched_switch(struct trapframe *tf)
 
     ci = this_cpu();
     td = ci->curtd;
+
+    if (td != NULL) {
+        td_pri_update(td);
+    }
 
     /*
      * Get the next thread and use it only if it isn't
@@ -202,6 +238,19 @@ sched_enter(void)
 {
     sched_oneshot(false);
     for (;;);
+}
+
+void
+sched_yield(void)
+{
+    struct proc *td = this_td();
+
+    if (td != NULL) {
+        td->rested = true;
+    }
+
+    sched_oneshot(false);
+    while (td->rested);
 }
 
 void

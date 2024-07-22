@@ -56,6 +56,7 @@ struct proc {
     struct trapframe tf;
     struct pcb pcb;
     size_t priority;
+    bool rested;
     uint32_t flags;
     uintptr_t stack_base;
     TAILQ_ENTRY(proc) link;
