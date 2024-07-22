@@ -31,5 +31,6 @@
 #define _SYS_LIMITS_H_
 
 #define PATH_MAX 1024
+#define SSIZE_MAX 32767
 
 #endif  /* !_SYS_LIMITS_H_ */
