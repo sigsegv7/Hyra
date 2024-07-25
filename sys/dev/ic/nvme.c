@@ -654,7 +654,8 @@ nvme_init(void)
 }
 
 static struct bdevsw nvme_bdevsw = {
-    .read = nvme_dev_read
+    .read = nvme_dev_read,
+    .write = nowrite
 };
 
 DRIVER_EXPORT(nvme_init);
