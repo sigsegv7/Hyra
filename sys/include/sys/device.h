@@ -42,10 +42,12 @@ typedef uint8_t dev_t;
 
 struct cdevsw {
     int(*read)(dev_t dev, struct sio_txn *sio, int flags);
+    int(*write)(dev_t dev, struct sio_txn *sio, int flags);
 };
 
 struct bdevsw {
     int(*read)(dev_t dev, struct sio_txn *sio, int flags);
+    int(*write)(dev_t dev, struct sio_txn *sio, int flags);
 };
 
 void *dev_get(devmajor_t major, dev_t dev);
