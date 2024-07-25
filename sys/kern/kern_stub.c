@@ -27,45 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_DEVICE_H_
-#define _SYS_DEVICE_H_
-
-#if defined(_KERNEL)
+#include <sys/device.h>
 #include <sys/types.h>
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/proc.h>
-#include <sys/sio.h>
+#include <sys/errno.h>
 
-typedef uint8_t devmajor_t;
-typedef uint8_t dev_t;
+int
+dev_noread(void)
+{
+    return -ENOTSUP;
+}
 
-/* Device operation typedefs */
-typedef int(*dev_read_t)(dev_t, struct sio_txn *, int);
-typedef int(*dev_write_t)(dev_t, struct sio_txn *, int);
-
-struct cdevsw {
-    int(*read)(dev_t dev, struct sio_txn *sio, int flags);
-    int(*write)(dev_t dev, struct sio_txn *sio, int flags);
-};
-
-struct bdevsw {
-    int(*read)(dev_t dev, struct sio_txn *sio, int flags);
-    int(*write)(dev_t dev, struct sio_txn *sio, int flags);
-};
-
-void *dev_get(devmajor_t major, dev_t dev);
-dev_t dev_alloc(devmajor_t major);
-
-devmajor_t dev_alloc_major(void);
-int dev_register(devmajor_t major, dev_t dev, void *devsw);
-
-int dev_noread(void);
-int dev_nowrite(void);
-
-/* Device operation stubs */
-#define noread ((dev_read_t)dev_noread)
-#define nowrite ((dev_write_t)dev_nowrite)
-
-#endif  /* _KERNEL */
-#endif  /* !_SYS_DEVICE_H_ */
+int
+dev_nowrite(void)
+{
+    return -ENOTSUP;
+}
