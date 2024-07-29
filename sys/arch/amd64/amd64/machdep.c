@@ -159,8 +159,7 @@ cpu_startup(struct cpu_info *ci)
     idt_load();
 
     setup_vectors();
-    amd64_write_gs_base((uintptr_t)ci);
-    __ASMV("swapgs");           /* Get kernel GS */
+    wrmsr(IA32_GS_BASE, (uintptr_t)ci);
 
     init_tss(ci);
     try_mitigate_spectre();
