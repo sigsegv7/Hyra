@@ -47,22 +47,22 @@ TRAPENTRY(bound_range, $TRAP_BOUND_RANGE)
 TRAPENTRY(invl_op, $TRAP_INVLOP)
 
     .globl double_fault
-TRAPENTRY(double_fault, $TRAP_DOUBLE_FAULT)
+TRAPENTRY_EC(double_fault, $TRAP_DOUBLE_FAULT)
 
     .globl invl_tss
-TRAPENTRY(invl_tss, $TRAP_INVLTSS)
+TRAPENTRY_EC(invl_tss, $TRAP_INVLTSS)
 
     .globl segnp
-TRAPENTRY(segnp, $TRAP_SEGNP)
+TRAPENTRY_EC(segnp, $TRAP_SEGNP)
 
     .globl general_prot
-TRAPENTRY(general_prot, $TRAP_PROTFLT)
+TRAPENTRY_EC(general_prot, $TRAP_PROTFLT)
 
     .globl page_fault
-TRAPENTRY(page_fault, $TRAP_PAGEFLT)
+TRAPENTRY_EC(page_fault, $TRAP_PAGEFLT)
 
     .globl nmi
 TRAPENTRY(nmi, $TRAP_NMI)
 
     .globl ss_fault
-TRAPENTRY(ss_fault, $TRAP_SS)
+TRAPENTRY_EC(ss_fault, $TRAP_SS)

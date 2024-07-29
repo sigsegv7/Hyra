@@ -37,47 +37,45 @@
  * XXX: A trapframe created with this must be popped with
  *      pop_trapframe_ec
  */
-.macro push_trapframe_ec trapno
-    push %r15
-    push %r14
-    push %r13
-    push %r12
-    push %r11
-    push %r10
-    push %r9
-    push %r8
-    push %rbp
-    push %rdi
-    push %rsi
-    push %rbx
-    push %rdx
-    push %rcx
-    push %rax
-    push \trapno
-.endm
+#define PUSH_TRAPFRAME_EC(TRAPNO) \
+    push %r15                   ; \
+    push %r14                   ; \
+    push %r13                   ; \
+    push %r12                   ; \
+    push %r11                   ; \
+    push %r10                   ; \
+    push %r9                    ; \
+    push %r8                    ; \
+    push %rbp                   ; \
+    push %rdi                   ; \
+    push %rsi                   ; \
+    push %rbx                   ; \
+    push %rdx                   ; \
+    push %rcx                   ; \
+    push %rax                   ; \
+    push TRAPNO
 
 /*
  * If the interrupt has an error code, this macro shall
  * be used to cleanup the trapframe.
  */
-.macro pop_trapframe_ec
-    add $8, %rsp        /* Trapno */
-    pop %rax
-    pop %rcx
-    pop %rdx
-    pop %rbx
-    pop %rsi
-    pop %rdi
-    pop %rbp
-    pop %r8
-    pop %r9
-    pop %r10
-    pop %r11
-    pop %r12
-    pop %r13
-    pop %r14
+#define POP_TRAPFRAME_EC                  \
+    add $8, %rsp        /* Trapno */    ; \
+    pop %rax                            ; \
+    pop %rcx                            ; \
+    pop %rdx                            ; \
+    pop %rbx                            ; \
+    pop %rsi                            ; \
+    pop %rdi                            ; \
+    pop %rbp                            ; \
+    pop %r8                             ; \
+    pop %r9                             ; \
+    pop %r10                            ; \
+    pop %r11                            ; \
+    pop %r12                            ; \
+    pop %r13                            ; \
+    pop %r14                            ; \
     pop %r15
-.endm
 
 /*
  * If the interrupt has no error code, this macro
@@ -86,20 +84,17 @@
  * XXX: A trapframe created with this must be popped
  *      with pop_trapframe
  */
-.macro push_trapframe trapno
-    push $0
-    push_trapframe_ec \trapno
-.endm
-
+#define PUSH_TRAPFRAME(TRAPNO)   \
+    push $0                    ; \
+    PUSH_TRAPFRAME_EC(TRAPNO)
 
 /*
  * If the interrupt has no error code, this macro shall
  * be used to cleanup the trapframe.
  */
-.macro pop_trapframe
-    pop_trapframe_ec
-    add $8, %rsp        /* Pop error code */
-.endm
+#define POP_TRAPFRAME    \
+    POP_TRAPFRAME_EC   ; \
+    add $8, %rsp
 
 /*
  * Generic interrupt entry.
@@ -110,10 +105,10 @@
         jz 1f                         ; \
         lfence                        ; \
         swapgs                        ; \
-    1:  push_trapframe $0             ; \
+    1:  PUSH_TRAPFRAME($0)            ; \
         mov %rsp, %rdi                ; \
         call HANDLER                  ; \
-        pop_trapframe                 ; \
+        POP_TRAPFRAME                 ; \
         testq $0x3, 8(%rsp)           ; \
         jz 2f                         ; \
         lfence                        ; \
@@ -124,20 +119,40 @@
  * Trap entry where an error code is on
  * the stack.
  */
-#define TRAPENTRY(ENTLABEL, TRAPNO)    \
-    ENTLABEL:                          \
-        testq $0x3, 16(%rsp)         ; \
-        jz 1f                        ; \
-        lfence                       ; \
-        swapgs                       ; \
-    1:  push_trapframe_ec TRAPNO     ; \
-        mov %rsp, %rdi               ; \
-        call trap_handler            ; \
-        pop_trapframe_ec             ; \
-        testq $0x3, 16(%rsp)         ; \
-        jz 2f                        ; \
-        lfence                       ; \
-        swapgs                       ; \
+#define TRAPENTRY_EC(ENTLABEL, TRAPNO)  \
+    ENTLABEL:                         ; \
+        testq $0x3, 16(%rsp)          ; \
+        jz 1f                         ; \
+        lfence                        ; \
+        swapgs                        ; \
+    1:  PUSH_TRAPFRAME_EC(TRAPNO)     ; \
+        mov %rsp, %rdi                ; \
+        call trap_handler             ; \
+        POP_TRAPFRAME_EC              ; \
+        testq $0x3, 16(%rsp)          ; \
+        jz 2f                         ; \
+        lfence                        ; \
+        swapgs                        ; \
+    2:  iretq
+
+/*
+ * Trap entry where no error code is on
+ * the stack.
+ */
+#define TRAPENTRY(ENTLABEL, TRAPNO)     \
+    ENTLABEL:                         ; \
+        testq $0x3, 8(%rsp)           ; \
+        jz 1f                         ; \
+        lfence                        ; \
+        swapgs                        ; \
+    1:  PUSH_TRAPFRAME(TRAPNO)        ; \
+        mov %rsp, %rdi                ; \
+        call trap_handler             ; \
+        POP_TRAPFRAME                 ; \
+        testq $0x3, 8(%rsp)           ; \
+        jz 2f                         ; \
+        lfence                        ; \
+        swapgs                        ; \
     2:  iretq
 
 #endif  /* !_MACHINE_FRAMEASM_H_ */
