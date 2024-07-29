@@ -111,6 +111,16 @@ try_mitigate_spectre(void)
 void
 cpu_halt_all(void)
 {
+    /*
+     * If we have no current 'cpu_info' structure set,
+     * we can't send IPIs, so just assume only the current
+     * processor is the only one active, clear interrupts
+     * then halt it.
+     */
+    if (rdmsr(IA32_GS_BASE) == 0) {
+        __ASMV("cli; hlt");
+    }
+
     /* Send IPI to all cores */
     lapic_send_ipi(0, IPI_SHORTHAND_ALL, halt_vector);
     for (;;);
