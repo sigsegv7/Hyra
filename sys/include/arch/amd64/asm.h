@@ -70,6 +70,18 @@ amd64_read_gs_base(void)
     return rdmsr(IA32_KERNEL_GS_BASE);
 }
 
+static inline void
+amd64_write_fs_base(uintptr_t val)
+{
+    wrmsr(IA32_FS_BASE, val);
+}
+
+static inline uintptr_t
+amd64_read_fs_base(uintptr_t val)
+{
+    return rdmsr(IA32_FS_BASE);
+}
+
 static inline uint64_t
 amd64_read_cr0(void)
 {
