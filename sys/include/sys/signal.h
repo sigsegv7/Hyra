@@ -27,51 +27,58 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/device.h>
+#ifndef _SYS_SIGNAL_H_
+#define _SYS_SIGNAL_H_
+
 #include <sys/types.h>
-#include <sys/errno.h>
-#include <sys/syslog.h>
+#include <sys/queue.h>
 #include <sys/proc.h>
-#include <sys/signal.h>
 
-void
-sigfpe_default(int signo)
-{
-    static struct proc *td;
+#define SIGFPE      8   /* Floating point exception */
+#define SIGKILL     9   /* Kill */
+#define SIGSEGV     11  /* Segmentation violation */
 
-    td = this_td();
-    kprintf("Floating point exception (pid=%d)\n", td->pid);
-    exit1(td);
-}
+typedef uint32_t sigset_t;
 
-void
-sigkill_default(int signo)
-{
-    static struct proc *td;
+typedef struct {
+    int si_signo;
+    int si_code;
+} siginfo_t;
 
-    td = this_td();
-    kprintf("Terminated (pid=%d)\n", td->pid);
-    exit1(td);
-}
+struct sigaction {
+    void(*sa_handler)(int signo);
+    sigset_t sa_mask;
+    int sa_flags;
+    void(*sa_sigaction)(int signo, siginfo_t *si, void *p);
+};
 
-void
-sigsegv_default(int signo)
-{
-    static struct proc *td;
+#if defined(_KERNEL)
+struct proc;
 
-    td = this_td();
-    kprintf("Segmentation fault (pid=%d)\n", td->pid);
-    exit1(td);
-}
+struct ksiginfo {
+    int signo;
+    int sigcode;
+    struct sigaction *si;
+    TAILQ_ENTRY(ksiginfo) link;
+};
 
-int
-dev_noread(void)
-{
-    return -ENOTSUP;
-}
+/* Signal management */
+int newsig(struct proc *td, int signo, struct ksiginfo **ksig);
+int delsig(struct proc *td, int signo);
+int sendsig(struct proc *td, const sigset_t *set);
+void dispatch_signals(struct proc *td);
+int signals_init(struct proc *td);
 
-int
-dev_nowrite(void)
-{
-    return -ENOTSUP;
-}
+/* Sigset functions */
+int sigemptyset(sigset_t *set);
+int sigfillset(sigset_t *set);
+int sigaddset(sigset_t *set, int signo);
+int sigdelset(sigset_t *set, int signo);
+int sigismember(const sigset_t *set, int signo);
+
+/* Default handlers */
+void sigfpe_default(int signo);
+void sigkill_default(int signo);
+void sigsegv_default(int signo);
+#endif  /* _KERNEL */
+#endif  /* !_SYS_SIGNAL_H_ */

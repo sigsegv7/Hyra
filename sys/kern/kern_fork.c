@@ -31,6 +31,7 @@
 #include <sys/proc.h>
 #include <sys/errno.h>
 #include <sys/sched.h>
+#include <sys/signal.h>
 #include <vm/dynalloc.h>
 #include <string.h>
 
@@ -64,6 +65,7 @@ fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
         *newprocp = newproc;
 
     newproc->pid = ++nthreads;
+    signals_init(newproc);
     sched_enqueue_td(newproc);
 done:
     if (status != 0)

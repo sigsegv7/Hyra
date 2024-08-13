@@ -32,6 +32,7 @@
 #include <sys/errno.h>
 #include <sys/proc.h>
 #include <sys/sched.h>
+#include <sys/signal.h>
 #include <vm/vm.h>
 #include <vm/map.h>
 #include <vm/physmem.h>
@@ -97,9 +98,10 @@ execve(struct proc *td, const struct execve_args *args)
     prog.envp = args->envp;
     stack_top = td->stack_base + (PROC_STACK_SIZE - 1);
 
-    /* Setup registers and stack */
+    /* Setup registers, signals and stack */
     md_td_stackinit(td, (void *)(stack_top + VM_HIGHER_HALF), &prog);
     setregs(td, &prog, stack_top);
+    signals_init(td);
 
     /* Done, reset flags and start the user thread */
     td->flags &= ~PROC_EXEC;

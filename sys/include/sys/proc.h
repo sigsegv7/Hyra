@@ -38,6 +38,7 @@
 #include <sys/syscall.h>
 #include <sys/exec.h>
 #include <sys/filedesc.h>
+#include <sys/signal.h>
 #if defined(_KERNEL)
 #include <machine/frame.h>
 #include <machine/pcb.h>
@@ -48,10 +49,12 @@
 #define PROC_STACK_PAGES 8
 #define PROC_STACK_SIZE  (PROC_STACK_PAGES * DEFAULT_PAGESIZE)
 #define PROC_MAX_FILEDES 256
+#define PROC_SIGMAX 64
 
 struct proc {
     pid_t pid;
     struct exec_prog exec;
+    struct ksiginfo *ksig_list[PROC_SIGMAX];
     struct filedesc *fds[PROC_MAX_FILEDES];
     struct trapframe tf;
     struct pcb pcb;
@@ -59,6 +62,8 @@ struct proc {
     bool rested;
     uint32_t flags;
     uintptr_t stack_base;
+    struct spinlock ksigq_lock;
+    TAILQ_HEAD(, ksiginfo) ksigq;
     TAILQ_ENTRY(proc) link;
 };
 
