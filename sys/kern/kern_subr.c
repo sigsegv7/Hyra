@@ -34,7 +34,6 @@
 #include <sys/systm.h>
 #include <string.h>
 
-
 /*
  * Check if a user address is valid.
  *
