@@ -122,8 +122,12 @@ void
 md_td_kick(struct proc *td)
 {
     struct trapframe *tfp;
+    struct cpu_info *ci;
 
     tfp = &td->tf;
+    ci = this_cpu();
+    ci->curtd = td;
+
     __ASMV(
         "push %0\n"
         "push %1\n"
