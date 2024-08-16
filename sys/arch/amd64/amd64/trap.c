@@ -33,6 +33,8 @@
 #include <sys/panic.h>
 #include <sys/syslog.h>
 #include <sys/syscall.h>
+#include <sys/sched.h>
+#include <sys/proc.h>
 #include <machine/trap.h>
 #include <machine/frame.h>
 #include <machine/intr.h>
@@ -86,6 +88,36 @@ regdump(struct trapframe *tf)
         tf->rbp, tf->rsp, tf->rip);
 }
 
+static void
+trap_user(struct trapframe *tf)
+{
+    struct proc *td = this_td();
+    sigset_t sigset;
+
+    sigemptyset(&sigset);
+
+    switch (tf->trapno) {
+    case TRAP_PROTFLT:
+    case TRAP_PAGEFLT:
+        sigaddset(&sigset, SIGSEGV);
+        break;
+    case TRAP_ARITH_ERR:
+        sigaddset(&sigset, SIGFPE);
+        break;
+    default:
+        kprintf("Got unknown user trap %d\n", tf->trapno);
+        sigaddset(&sigset, SIGKILL);
+        break;
+    }
+
+    /*
+     * Send the signal then flush the signal queue right
+     * away as these types of events are critical.
+     */
+    sendsig(td, &sigset);
+    dispatch_signals(td);
+}
+
 void
 trap_syscall(struct trapframe *tf)
 {
@@ -114,6 +146,13 @@ trap_handler(struct trapframe *tf)
     }
 
     pr_error("Got %s\n", trap_type[tf->trapno]);
+
+    /* Handle traps from userland */
+    if (ISSET(tf->cs, 3)) {
+        trap_user(tf);
+        return;
+    }
+
     regdump(tf);
     panic("Fatal trap - halting\n");
 }
