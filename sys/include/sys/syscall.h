@@ -39,6 +39,7 @@
 #define SYS_exit    1
 #define SYS_open    2
 #define SYS_read    3
+#define SYS_close   4
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */

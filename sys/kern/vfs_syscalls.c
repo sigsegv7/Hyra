@@ -34,6 +34,7 @@
 #include <sys/errno.h>
 #include <sys/sio.h>
 #include <sys/filedesc.h>
+#include <sys/atomic.h>
 #include <sys/namei.h>
 #include <sys/proc.h>
 #include <sys/limits.h>
@@ -137,6 +138,40 @@ sys_open(struct syscall_args *scargs)
 
     filedes->vp = nd.vp;
     return filedes->fdno;
+}
+
+/*
+ * arg0: fd
+ */
+scret_t
+sys_close(struct syscall_args *args)
+{
+    struct filedesc *filedes;
+    struct proc *td;
+    int fd = args->arg0;
+
+    if ((filedes = fd_get(fd)) == NULL) {
+        return -EBADF;
+    }
+
+    /* Return if other threads still hold a ref */
+    if (atomic_dec_int(&filedes->refcnt) > 0) {
+        return 0;
+    }
+
+    td = this_td();
+
+    /*
+     * Each file descriptor structure references a vnode,
+     * we want to reclaim it or at the very least drop
+     * one of its references. After we've cleaned up within
+     * the file descriptor, we can clear it from the fd table
+     * and free up the memory for it.
+     */
+    vfs_release_vnode(filedes->vp);
+    td->fds[fd] = NULL;
+    dynfree(filedes);
+    return 0;
 }
 
 /*
