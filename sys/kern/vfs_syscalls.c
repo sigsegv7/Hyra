@@ -90,6 +90,7 @@ fd_alloc(struct filedesc **fd_out)
             return -ENOMEM;
         }
 
+        fd->refcnt = 1;
         fd->fdno = i;
         td->fds[i] = fd;
 

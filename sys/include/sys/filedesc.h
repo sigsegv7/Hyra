@@ -38,6 +38,7 @@ struct filedesc {
     int fdno;
     off_t offset;
     bool is_dir;
+    int refcnt;
     struct vnode *vp;
     struct spinlock lock;
 };
