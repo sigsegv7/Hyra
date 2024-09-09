@@ -27,12 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UNISTD_H
-#define _UNISTD_H
+#include <sys/syscall.h>
+#include <unistd.h>
 
-#include <sys/types.h>
-
-ssize_t read(int fd, void *buf, size_t count);
-int close(int fd);
-
-#endif  /* !_UNISTD_H */
+int
+close(int fd)
+{
+    return syscall(SYS_close, fd);
+}
