@@ -115,6 +115,33 @@ devfs_lookup(struct vop_lookup_args *args)
 }
 
 static int
+devfs_getattr(struct vop_getattr_args *args)
+{
+    struct vnode *vp;
+    struct vattr *attr;
+    struct devfs_node *dnp;
+
+    vp = args->vp;
+    if ((dnp = vp->data) == NULL) {
+        return -EIO;
+    }
+    if ((attr = args->res) == NULL) {
+        return -EIO;
+    }
+
+    /*
+     * Set stat attributes from device node structure
+     * found within vnode data.
+     *
+     * XXX: Device files have no fixed size, hence why
+     *      size is hardwired to 0.
+     */
+    attr->mode = dnp->mode;
+    attr->size = 0;
+    return 0;
+}
+
+static int
 devfs_reclaim(struct vnode *vp)
 {
     struct devfs_node *dnp;
@@ -204,7 +231,8 @@ devfs_create_entry(const char *name, devmajor_t major, dev_t dev, mode_t mode)
 const struct vops g_devfs_vops = {
     .lookup = devfs_lookup,
     .reclaim = devfs_reclaim,
-    .read = devfs_read
+    .read = devfs_read,
+    .getattr = devfs_getattr
 };
 
 const struct vfsops g_devfs_vfsops = {
