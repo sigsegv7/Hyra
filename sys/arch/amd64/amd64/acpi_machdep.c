@@ -75,5 +75,4 @@ acpi_init_madt(void)
     }
 
     return 0;
-
 }
