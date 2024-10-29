@@ -38,7 +38,6 @@
 #include <sys/sio.h>
 
 typedef uint8_t devmajor_t;
-typedef uint8_t dev_t;
 
 /* Device operation typedefs */
 typedef int(*dev_read_t)(dev_t, struct sio_txn *, int);
