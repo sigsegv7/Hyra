@@ -61,6 +61,13 @@ typedef _Bool bool;
 typedef int pid_t;
 typedef int dev_t;
 typedef uint32_t mode_t;
+typedef uint32_t ino_t;
+typedef uint32_t nlink_t;
+typedef uint32_t uid_t;
+typedef uint32_t gid_t;
+typedef uint32_t blksize_t;
+typedef uint32_t blkcnt_t;
+typedef uint64_t time_t;
 
 #if defined(_KERNEL)
 typedef uintptr_t paddr_t;
