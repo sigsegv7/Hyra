@@ -27,18 +27,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_VFS_H_
-#define _SYS_VFS_H_
+#ifndef _SYS_STAT_H_
+#define _SYS_STAT_H_
 
 #include <sys/types.h>
-#include <sys/syscall.h>
 
-#if defined(_KERNEL)
+struct stat {
+    dev_t st_dev;
+    ino_t st_ino;
+    mode_t st_mode;
+    nlink_t st_nlink;
+    uid_t st_uid;
+    gid_t st_guid;
+    dev_t st_rdev;
+    off_t st_size;
+    time_t st_atime;
+    time_t st_mtime;
+    time_t st_ctime;
+};
 
-scret_t sys_open(struct syscall_args *scargs);
-scret_t sys_close(struct syscall_args *args);
-scret_t sys_read(struct syscall_args *scargs);
-scret_t sys_stat(struct syscall_args *scargs);
-
-#endif  /* _KERNEL */
-#endif  /* !_SYS_VFS_H_ */
+#endif  /* _SYS_STAT_H_ */

@@ -28,9 +28,60 @@
  */
 
 #include <sys/vfs.h>
+#include <sys/vnode.h>
+#include <sys/systm.h>
+#include <sys/device.h>
+#include <sys/namei.h>
+#include <sys/stat.h>
+#include <sys/limits.h>
+#include <sys/errno.h>
 #include <sys/types.h>
 #include <sys/filedesc.h>
 #include <string.h>
+
+static int
+vfs_dostat(const char *path, struct stat *sbuf)
+{
+    char pathbuf[PATH_MAX];
+    struct vattr *attr;
+    struct stat st;
+    struct vnode *vp;
+    struct vop_getattr_args gattr;
+    struct nameidata nd;
+    int error;
+
+    if (sbuf == NULL || path == NULL) {
+        return -EINVAL;
+    }
+
+    if ((copyinstr(path, pathbuf, sizeof(path))) < 0) {
+        return -EFAULT;
+    }
+
+    nd.path = path;
+    nd.flags = 0;
+
+    if ((error = namei(&nd)) != 0) {
+        return error;
+    }
+
+    vp = nd.vp;
+    gattr.vp = vp;
+    error = vfs_vop_getattr(vp, &gattr);
+
+    if (error != 0) {
+        return error;
+    }
+
+    attr = gattr.res;
+    memset(&st, VNOVAL, sizeof(st));
+
+    /* Copy stat data to userspace statbuf */
+    st.st_mode = attr->mode;
+    st.st_size = attr->size;
+    copyout(&st, sbuf, sizeof(*sbuf));
+    return 0;
+}
 
 /*
  * arg0: pathname
@@ -63,4 +114,14 @@ sys_read(struct syscall_args *scargs)
 {
     return fd_read(scargs->arg0, (void *)scargs->arg1,
         scargs->arg2);
+}
+
+/*
+ * arg0: path
+ * arg1: buf
+ */
+scret_t
+sys_stat(struct syscall_args *scargs)
+{
+    return vfs_dostat((const char *)scargs->arg0, (void *)scargs->arg1);
 }
