@@ -226,3 +226,26 @@ fd_open(const char *pathname, int flags)
     filedes->vp = nd.vp;
     return filedes->fdno;
 }
+
+/*
+ * Duplicate a file descriptor. New file descriptor
+ * points to the same vnode.
+ */
+int
+fd_dup(int fd)
+{
+    int error;
+    struct filedesc *new_desc, *tmp;
+
+    tmp = fd_get(fd);
+    if (tmp == NULL)
+        return -EBADF;
+
+    if ((error = fd_alloc(&new_desc)) != 0)
+        return error;
+
+    /* Ref that vnode before we point to it */
+    vfs_vref(tmp->vp);
+    new_desc->vp = tmp->vp;
+    return new_desc->fdno;
+}

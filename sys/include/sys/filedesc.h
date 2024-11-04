@@ -48,6 +48,8 @@ int fd_read(unsigned int fd, void *buf, size_t count);
 
 int fd_alloc(struct filedesc **fd_out);
 int fd_open(const char *pathname, int flags);
+
+int fd_dup(int fd);
 struct filedesc *fd_get(unsigned int fdno);
 
 #endif  /* !_SYS_FILEDESC_H_ */
