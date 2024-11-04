@@ -83,6 +83,18 @@ vfs_dostat(const char *path, struct stat *sbuf)
     return 0;
 }
 
+static int
+vfs_doopen(const char *pathname, int flags)
+{
+    char pathbuf[PATH_MAX];
+
+    if (copyinstr(pathname, pathbuf, PATH_MAX) < 0) {
+        return -EFAULT;
+    }
+
+    return fd_open(pathbuf, flags);
+}
+
 /*
  * arg0: pathname
  * arg1: oflags
@@ -92,7 +104,7 @@ vfs_dostat(const char *path, struct stat *sbuf)
 scret_t
 sys_open(struct syscall_args *scargs)
 {
-    return fd_open((char *)scargs->arg0, scargs->arg1);
+    return vfs_doopen((char *)scargs->arg0, scargs->arg1);
 }
 
 /*

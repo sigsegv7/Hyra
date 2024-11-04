@@ -208,16 +208,11 @@ int
 fd_open(const char *pathname, int flags)
 {
     int error;
-    char pathbuf[PATH_MAX];
     struct filedesc *filedes;
     struct nameidata nd;
 
-    nd.path = pathbuf;
+    nd.path = pathname;
     nd.flags = 0;
-
-    if (copyinstr(pathname, pathbuf, PATH_MAX) < 0) {
-        return -EFAULT;
-    }
 
     if ((error = namei(&nd)) < 0) {
         return error;
