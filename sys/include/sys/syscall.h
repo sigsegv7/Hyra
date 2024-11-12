@@ -41,6 +41,7 @@
 #define SYS_read    3
 #define SYS_close   4
 #define SYS_stat    5
+#define SYS_sysctl  6
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */

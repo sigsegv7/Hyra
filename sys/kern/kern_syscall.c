@@ -28,6 +28,7 @@
  */
 
 #include <sys/syscall.h>
+#include <sys/sysctl.h>
 #include <sys/types.h>
 #include <sys/proc.h>
 #include <sys/vfs.h>
@@ -39,6 +40,7 @@ scret_t(*g_sctab[])(struct syscall_args *) = {
     sys_read,   /* SYS_read */
     sys_close,  /* SYS_close */
     sys_stat,   /* SYS_stat */
+    sys_sysctl, /* SYS_sysctl */
 };
 
 const size_t MAX_SYSCALLS = NELEM(g_sctab);

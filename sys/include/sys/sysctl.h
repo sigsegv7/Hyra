@@ -31,6 +31,9 @@
 #define _SYS_SYSCTL_H_
 
 #include <sys/types.h>
+#if defined(_KERNEL)
+#include <sys/syscall.h>
+#endif
 #include <sys/param.h>
 
 #define KERN_OSTYPE         0
@@ -55,6 +58,8 @@ struct sysctl_entry {
     int optype;
     void *data;
 };
+
+scret_t sys_sysctl(struct syscall_args *scargs);
 #endif  /* _KERNEL */
 
 /*

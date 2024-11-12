@@ -28,7 +28,9 @@
  */
 
 #include <sys/sysctl.h>
+#include <sys/syscall.h>
 #include <sys/errno.h>
+#include <sys/systm.h>
 #include <vm/dynalloc.h>
 #include <string.h>
 
@@ -45,6 +47,76 @@ static struct sysctl_entry common_kerntab[] = {
     [KERN_OSRELEASE] = { KERN_OSRELEASE, SYSCTL_OPTYPE_STR, &osrelease },
     [KERN_VERSION] = { KERN_VERSION, SYSCTL_OPTYPE_STR, &hyra_version },
 };
+
+/*
+ * Helper for sys_sysctl()
+ */
+static int
+do_sysctl(struct sysctl_args *args)
+{
+    struct sysctl_args new_args;
+    size_t name_len, oldlenp;
+    int *name = NULL;
+    void *oldp = NULL, *newp = NULL;
+    int retval = 0;
+
+    if (args->oldlenp == NULL) {
+        return -EINVAL;
+    }
+
+    name_len = args->nlen;
+    retval = copyin(args->oldlenp, &oldlenp, sizeof(oldlenp));
+    if (retval != 0) {
+        goto done;
+    }
+
+    /* Copy in newp if it is set */
+    if (args->newp == NULL) {
+        newp = NULL;
+    } else {
+        newp = dynalloc(args->newlen);
+        retval = copyin(args->newp, newp, args->newlen);
+    }
+
+    if (retval != 0) {
+        goto done;
+    }
+
+    name = dynalloc(name_len * sizeof(int));
+    retval = copyin(args->name, name, name_len * sizeof(int));
+    if (retval != 0) {
+        return retval;
+    }
+
+    oldp = dynalloc(oldlenp);
+    retval = copyin(args->oldp, oldp, oldlenp);
+    if (retval != 0) {
+        return retval;
+    }
+
+    /* Prepare the arguments for the sysctl call */
+    new_args.name = name;
+    new_args.nlen = name_len;
+    new_args.oldp = oldp;
+    new_args.oldlenp = &oldlenp;
+    new_args.newp = newp;
+
+    retval = sysctl(&new_args);
+    if (retval != 0) {
+        goto done;
+    }
+
+    copyout(oldp, args->oldp, oldlenp);
+done:
+    if (name != NULL)
+        dynfree(name);
+    if (newp != NULL)
+        dynfree(newp);
+    if (oldp != NULL)
+        dynfree(oldp);
+
+    return retval;
+}
 
 int
 sysctl(struct sysctl_args *args)
@@ -95,4 +167,18 @@ sysctl(struct sysctl_args *args)
     oldlen = *args->oldlenp;
     memcpy(args->oldp, tmp_str, oldlen);
     return (len > oldlen) ? -ENOMEM : 0;
+}
+
+scret_t
+sys_sysctl(struct syscall_args *scargs)
+{
+    struct sysctl_args args;
+    int error;
+
+    error = copyin((void *)scargs->arg0, &args, sizeof(args));
+    if (error != 0) {
+        return error;
+    }
+
+    return do_sysctl(&args);
 }
