@@ -44,8 +44,8 @@ static const char *osrelease = HYRA_RELEASE;
 
 static struct sysctl_entry common_kerntab[] = {
     [KERN_OSTYPE] = { KERN_OSTYPE, SYSCTL_OPTYPE_STR_RO, &hyra },
-    [KERN_OSRELEASE] = { KERN_OSRELEASE, SYSCTL_OPTYPE_STR, &osrelease },
-    [KERN_VERSION] = { KERN_VERSION, SYSCTL_OPTYPE_STR, &hyra_version },
+    [KERN_OSRELEASE] = { KERN_OSRELEASE, SYSCTL_OPTYPE_STR_RO, &osrelease },
+    [KERN_VERSION] = { KERN_VERSION, SYSCTL_OPTYPE_STR_RO, &hyra_version },
 };
 
 /*
