@@ -29,6 +29,7 @@
 
 #include <sys/sysctl.h>
 #include <sys/syscall.h>
+#include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/systm.h>
 #include <vm/dynalloc.h>
@@ -38,15 +39,49 @@
         HYRA_VERSION " "              \
         HYRA_BUILDDATE
 
-static const char *hyra = "Hyra";
-static const char *hyra_version = HYRA_VERSION;
-static const char *osrelease = HYRA_RELEASE;
+static char hyra[] = "Hyra";
+static char hyra_version[] = HYRA_VERSION;
+static char osrelease[] = HYRA_RELEASE;
 
-static struct sysctl_entry common_kerntab[] = {
-    [KERN_OSTYPE] = { KERN_OSTYPE, SYSCTL_OPTYPE_STR_RO, &hyra },
+/*
+ * XXX: Readonly values can be statically allocated as they won't
+ *      ever be changed. Values that are not readonly *must* be dynamically
+ *      allocated through dynalloc(9).
+ */
+static struct sysctl_entry common_optab[] = {
+    [KERN_OSTYPE] = { KERN_OSTYPE, SYSCTL_OPTYPE_STR_RO, hyra },
     [KERN_OSRELEASE] = { KERN_OSRELEASE, SYSCTL_OPTYPE_STR_RO, &osrelease },
     [KERN_VERSION] = { KERN_VERSION, SYSCTL_OPTYPE_STR_RO, &hyra_version },
 };
+
+static int
+sysctl_write(struct sysctl_entry *entry, void *p, size_t len)
+{
+    void *tmp;
+
+    /* Allocate a new value if needed */
+    if (entry->data == NULL) {
+        entry->data = dynalloc(len);
+        goto done;
+    }
+    if (entry->data == NULL) {
+        return -ENOMEM;
+    }
+
+    /* If we already have data allocated, resize it */
+    if ((tmp = entry->data) != NULL) {
+        entry->data = dynrealloc(entry->data, len);
+        goto done;
+    }
+    if (entry->data == NULL) {
+        entry->data = tmp;
+        return -ENOMEM;
+    }
+
+done:
+    memcpy(entry->data, p, len);
+    return 0;
+}
 
 /*
  * Helper for sys_sysctl()
@@ -122,50 +157,79 @@ int
 sysctl(struct sysctl_args *args)
 {
     struct sysctl_entry *tmp;
-    char *tmp_str;
+    char *tmp_str = NULL;
+    int tmp_int = 0;
     size_t oldlen, len;
+    int name;
 
     if (args->name == NULL) {
         return -EINVAL;
     }
 
-    if (args->oldlenp == NULL) {
+    /* If oldlenp is not set, oldp must be the same */
+    if (args->oldlenp == NULL && args->oldp != NULL) {
         return -EINVAL;
     }
 
-    /* TODO: Support writable values */
-    if (args->newp != NULL) {
+    /* Get the name and make sure it is in range */
+    name = *args->name;
+    if (name >= NELEM(common_optab) || name < 0) {
+        return -EINVAL;
+    }
+
+    tmp = &common_optab[name];
+    oldlen = (args->oldlenp == NULL) ? 0 : *args->oldlenp;
+
+    /*
+     * Make sure we aren't trying to write readonly
+     * entries to avoid issues...
+     */
+    switch (tmp->optype) {
+    case SYSCTL_OPTYPE_STR_RO:
+    case SYSCTL_OPTYPE_INT_RO:
+        if (args->newp != NULL) {
+            return -EACCES;
+        }
+    }
+
+    /* If the value is unknown, bail out */
+    if (args->oldp != NULL && tmp->data == NULL) {
         return -ENOTSUP;
     }
 
     /*
-     * TODO: We only support toplevel names as of now and should
-     *       expand this in the future. As of now, users will only
-     *       be able to access kern.* entries.
+     * Now it is time to extract the value from this sysctl
+     * entry if requested by the user.
      */
-    switch (*args->name) {
-    case KERN_OSTYPE:
-        tmp = &common_kerntab[KERN_OSTYPE];
-        tmp_str = *((char **)tmp->data);
-        len = strlen(tmp_str);
-        break;
-    case KERN_OSRELEASE:
-        tmp = &common_kerntab[KERN_OSRELEASE];
-        tmp_str = *((char **)tmp->data);
-        len = strlen(tmp_str);
-        break;
-    case KERN_VERSION:
-        tmp = &common_kerntab[KERN_VERSION];
-        tmp_str = *((char **)tmp->data);
-        len = strlen(tmp_str);
-        break;
-    default:
-        return -EINVAL;
+    if (args->oldp != NULL) {
+        switch (tmp->optype) {
+        /* Check for strings */
+        case SYSCTL_OPTYPE_STR_RO:
+        case SYSCTL_OPTYPE_STR:
+            tmp_str = (char *)tmp->data;
+            len = strlen(tmp_str);
+            break;
+        /* Check for ints */
+        case SYSCTL_OPTYPE_INT_RO:
+        case SYSCTL_OPTYPE_INT:
+            tmp_int = *((int *)tmp->data);
+            len = sizeof(tmp_int);
+            break;
+        }
     }
 
-    /* Copy new data */
-    oldlen = *args->oldlenp;
-    memcpy(args->oldp, tmp_str, oldlen);
+    /* If newp is set, write the new value */
+    if (args->newp != NULL) {
+        sysctl_write(tmp, args->newp, args->newlen);
+    }
+
+    /* Copy back old value if oldp is not NULL */
+    if (args->oldp != NULL && tmp_str != NULL) {
+        memcpy(args->oldp, tmp_str, oldlen);
+    } else if (args->oldp != NULL) {
+        memcpy(args->oldp, &tmp_int, oldlen);
+    }
+
     return (len > oldlen) ? -ENOMEM : 0;
 }
 
