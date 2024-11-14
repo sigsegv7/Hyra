@@ -56,6 +56,9 @@ vfs_init(void)
             vfsops->init(fs);
         }
     }
+
+    /* Use global vcache by default */
+    vfs_vcache_migrate(VCACHE_TYPE_GLOBAL);
 }
 
 struct fs_info *

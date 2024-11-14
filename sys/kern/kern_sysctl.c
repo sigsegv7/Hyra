@@ -52,6 +52,7 @@ static struct sysctl_entry common_optab[] = {
     [KERN_OSTYPE] = { KERN_OSTYPE, SYSCTL_OPTYPE_STR_RO, hyra },
     [KERN_OSRELEASE] = { KERN_OSRELEASE, SYSCTL_OPTYPE_STR_RO, &osrelease },
     [KERN_VERSION] = { KERN_VERSION, SYSCTL_OPTYPE_STR_RO, &hyra_version },
+    [KERN_VCACHE_TYPE] = { KERN_VCACHE_TYPE, SYSCTL_OPTYPE_STR, NULL }
 };
 
 static int

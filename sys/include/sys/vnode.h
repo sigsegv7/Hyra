@@ -31,6 +31,7 @@
 #define _SYS_VNODE_H_
 
 #include <sys/types.h>
+#include <sys/queue.h>
 #include <sys/atomic.h>
 #include <sys/sio.h>
 
@@ -44,9 +45,17 @@ struct vnode {
     void *data;
     const struct vops *vops;
     uint32_t refcount;
+    TAILQ_ENTRY(vnode) vcache_link;
 };
 
 #define vfs_vref(VP) (atomic_inc_int(&(VP)->refcount))
+
+/* vcache types */
+#if defined(_KERNEL)
+#define VCACHE_TYPE_NONE   0
+#define VCACHE_TYPE_PROC   1
+#define VCACHE_TYPE_GLOBAL 2
+#endif  /* KERNEL */
 
 /* Vnode type flags */
 #define VNON    0x00    /* Uninitialized */
@@ -85,6 +94,12 @@ struct vops {
 };
 
 extern struct vnode *g_root_vnode;
+
+int vfs_vcache_type(void);
+int vfs_vcache_migrate(int newtype);
+
+int vfs_vcache_enter(struct vnode *vp);
+struct vnode *vfs_recycle_vnode(void);
 
 int vfs_alloc_vnode(struct vnode **res, int type);
 int vfs_release_vnode(struct vnode *vp);
