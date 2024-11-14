@@ -231,7 +231,11 @@ sysctl(struct sysctl_args *args)
         memcpy(args->oldp, &tmp_int, oldlen);
     }
 
-    return (len > oldlen) ? -ENOMEM : 0;
+    if (args->oldlenp != NULL && len > oldlen) {
+        return -ENOMEM;
+    }
+
+    return 0;
 }
 
 scret_t
