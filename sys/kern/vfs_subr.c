@@ -39,11 +39,16 @@ mountlist_t g_mountlist;
 int
 vfs_alloc_vnode(struct vnode **res, int type)
 {
-    struct vnode *vp = dynalloc(sizeof(struct vnode));
+    struct vnode *vp = vfs_recycle_vnode();
 
-    if (vp == NULL) {
+    /*
+     * If there are no vnodes to be recycled, attempt
+     * to allocate a new one.
+     */
+    if (vp == NULL)
+        vp = dynalloc(sizeof(struct vnode));
+    if (vp == NULL)
         return -ENOMEM;
-    }
 
     memset(vp, 0, sizeof(*vp));
     vp->type = type;
@@ -97,8 +102,9 @@ vfs_name_mount(struct mount *mp, const char *name)
 }
 
 /*
- * Release a vnode and its resources from
- * memory.
+ * Release the resources associated with a vnode and
+ * mark the vnode to *possibly* be deallocated unless
+ * recycled.
  */
 int
 vfs_release_vnode(struct vnode *vp)
@@ -130,7 +136,7 @@ vfs_release_vnode(struct vnode *vp)
     if (status != 0)
         return status;
 
-    dynfree(vp);
+    vfs_vcache_enter(vp);
     return status;
 }
 
