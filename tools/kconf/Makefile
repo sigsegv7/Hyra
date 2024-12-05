@@ -1,9 +1,9 @@
 kconf:
-	bison -d grammer.y
+	bison -d grammar.y
 	flex scan.l
-	gcc lex.yy.c grammer.tab.c -lfl -o kconf
+	gcc lex.yy.c grammar.tab.c -lfl -o kconf
 
 clean:
-	rm grammer.tab.*
+	rm grammar.tab.*
 	rm lex.yy.c
 	rm kconf

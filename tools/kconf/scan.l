@@ -30,7 +30,7 @@
 %{
     #include <stdio.h>
     #include <stdlib.h>
-    #include "grammer.tab.h"
+    #include "grammar.tab.h"
 
     int yyerror(char *e);
 %}
