@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/sysctl.h>
+#include <sys/proc.h>
 #include <sys/syslog.h>
 #include <sys/panic.h>
 #include <sys/spinlock.h>
@@ -49,6 +50,21 @@
 static int vcache_type = VCACHE_TYPE_NONE;
 static struct vcache vcache = { .size = -1 };
 __cacheline_aligned static struct spinlock vcache_lock;
+
+static inline int
+vcache_proc_new(struct proc *td)
+{
+    struct vcache *vcp;
+
+    vcp = dynalloc(sizeof(*vcp));
+    if (vcp == NULL) {
+        return -ENOMEM;
+    }
+
+    vcp->size = -1;
+    td->vcache = vcp;
+    return 0;
+}
 
 /*
  * Pull a vnode from the head of a vcache.
@@ -163,16 +179,25 @@ vfs_vcache_migrate(int newtype)
 int
 vfs_vcache_enter(struct vnode *vp)
 {
+    struct proc *td;
     int retval = 0;
 
     switch (vcache_type) {
     case VCACHE_TYPE_NONE:
         break;
     case VCACHE_TYPE_PROC:
-        /* TODO */
-        pr_trace("warn: proc vcache not supported, using global...\n");
-        vcache_type = VCACHE_TYPE_GLOBAL;
-        /* - FALL THROUGH - */
+        td = this_td();
+
+        /* Create a new vcache if needed */
+        if (td->vcache == NULL)
+            retval = vcache_proc_new(td);
+        if (retval != 0)
+            return retval;
+
+        spinlock_acquire(&td->vcache_lock);
+        retval = vcache_add(vp, td->vcache);
+        spinlock_release(&td->vcache_lock);
+        break;
     case VCACHE_TYPE_GLOBAL:
         spinlock_acquire(&vcache_lock);
         retval = vcache_add(vp, &vcache);
@@ -194,20 +219,65 @@ vfs_vcache_enter(struct vnode *vp)
 struct vnode *
 vfs_recycle_vnode(void)
 {
+    struct proc *td = this_td();
+    struct vcache *vcp = &vcache;
+    struct spinlock *vclp = &vcache_lock;
     struct vnode *vp = NULL;
 
     switch (vcache_type) {
     case VCACHE_TYPE_NONE:
         break;
     case VCACHE_TYPE_PROC:
-        /* TODO */
-        pr_trace("warn: proc vcache not supported, using global...\n");
-        vcache_type = VCACHE_TYPE_GLOBAL;
-        /* - FALL THROUGH - */
+        /* Have no vcache? Make one */
+        if (td->vcache == NULL) {
+            vcache_proc_new(td);
+            break;
+        }
+
+        vcp = td->vcache;
+        vclp = &td->vcache_lock;
+
+        /*
+         * For LZVM, if we still have entries within the
+         * global vcache, drain it.
+         */
+        if (!TAILQ_EMPTY(&vcache.q)) {
+            vcp = &vcache;
+            vclp = &vcache_lock;
+        }
+
+        spinlock_acquire(vclp);
+        vp = vcache_pull(vcp);
+        spinlock_release(vclp);
+        break;
     case VCACHE_TYPE_GLOBAL:
-        spinlock_acquire(&vcache_lock);
-        vp = vcache_pull(&vcache);
-        spinlock_release(&vcache_lock);
+        vcp = &vcache;
+        vclp = &vcache_lock;
+
+        /*
+         * If we've fully drained the local vcache during LZVM,
+         * we can deallocate and disable it.
+         */
+        if (td->vcache != NULL) {
+            if (TAILQ_EMPTY(&td->vcache->q)) {
+                dynfree(td->vcache);
+                td->vcache = NULL;
+            }
+        }
+
+        /*
+         * For LZVM, if the current process still has a vcache
+         * despite us being in global mode, just pull an entry
+         * from it instead.
+         */
+        if (td->vcache != NULL) {
+            vclp = &td->vcache_lock;
+            vcp = td->vcache;
+        }
+
+        spinlock_acquire(vclp);
+        vp = vcache_pull(vcp);
+        spinlock_release(vclp);
         break;
     default:
         pr_trace("warn: Bad vcache type, falling back to none\n");

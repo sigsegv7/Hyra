@@ -39,6 +39,7 @@
 #include <sys/exec.h>
 #include <sys/filedesc.h>
 #include <sys/signal.h>
+#include <sys/vnode.h>
 #if defined(_KERNEL)
 #include <machine/frame.h>
 #include <machine/pcb.h>
@@ -56,6 +57,8 @@ struct proc {
     struct exec_prog exec;
     struct ksiginfo *ksig_list[PROC_SIGMAX];
     struct filedesc *fds[PROC_MAX_FILEDES];
+    struct vcache *vcache;
+    struct spinlock vcache_lock;
     struct trapframe tf;
     struct pcb pcb;
     size_t priority;
