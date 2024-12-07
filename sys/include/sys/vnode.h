@@ -48,6 +48,15 @@ struct vnode {
     TAILQ_ENTRY(vnode) vcache_link;
 };
 
+/*
+ * Vnode cache, can be per-process or
+ * global.
+ */
+struct vcache {
+    TAILQ_HEAD(vcache_head, vnode) q;
+    ssize_t size;    /* In entries (-1 not set up) */
+};
+
 #define vfs_vref(VP) (atomic_inc_int(&(VP)->refcount))
 
 /* vcache types */

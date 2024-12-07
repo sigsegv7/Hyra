@@ -42,47 +42,40 @@
 
 #define pr_trace(fmt, ...) kprintf("vcache: " fmt, ##__VA_ARGS__)
 
-struct vcache {
-    TAILQ_HEAD(vcache_head, vnode) q;
-    ssize_t size;    /* In entries (-1 not set up) */
-} vcache = { .size = -1 };
-
 /*
  * Our vcache will be here if our caching type is
  * global.
  */
 static int vcache_type = VCACHE_TYPE_NONE;
+static struct vcache vcache = { .size = -1 };
 __cacheline_aligned static struct spinlock vcache_lock;
 
 /*
- * Pull a vnode from the head of the global
- * vcache. Returns NULL if none are found.
- *
- * XXX: Caller must acquire vcache_lock.
+ * Pull a vnode from the head of a vcache.
+ * Returns NULL if none are found.
  */
 static struct vnode *
-vcache_global_pull(void)
+vcache_pull(struct vcache *vcp)
 {
     struct vnode *vp;
 
-    if (vcache.size <= 0) {
+    if (vcp->size <= 0) {
         return NULL;
     }
 
-    vp = TAILQ_FIRST(&vcache.q);
-    TAILQ_REMOVE(&vcache.q, vp, vcache_link);
-    --vcache.size;
+    vp = TAILQ_FIRST(&vcp->q);
+    TAILQ_REMOVE(&vcp->q, vp, vcache_link);
+    --vcp->size;
     return vp;
 }
 
 /*
- * Add a new entry to the global vcache
+ * Add a new entry to a vcache
  *
- * XXX: Caller must acquire vcache_lock.
  * @vp: New vnode to add.
  */
 static int
-vcache_global_add(struct vnode *vp)
+vcache_add(struct vnode *vp, struct vcache *vcp)
 {
     struct vnode *tmp;
 
@@ -92,24 +85,24 @@ vcache_global_add(struct vnode *vp)
      * queue. However, if it is less than -1... Then shit,
      * good luck debugging I suppose.
      *
-     * The global vcache naturally behaves as an LRU cache.
-     * If we need more space, the tail of the queue is evicted.
+     * Vcaches naturally behave as LRU caches. If we need
+     * more space, the tail of the queue is evicted.
      */
-    if (vcache.size < 0) {
-        TAILQ_INIT(&vcache.q);
-        vcache.size = 0;
-    } else if (vcache.size < -1) {
-        panic("vcache_global_add: Bad vcache size, catching fire\n");
-    } else if (vcache.size == VCACHE_SIZE) {
+    if (vcp->size < 0) {
+        TAILQ_INIT(&vcp->q);
+        vcp->size = 0;
+    } else if (vcp->size < -1) {
+        panic("vcache_add: Bad vcache size, catching fire\n");
+    } else if (vcp->size == VCACHE_SIZE) {
         /* Evict the tail */
-        tmp = TAILQ_LAST(&vcache.q, vcache_head);
-        TAILQ_REMOVE(&vcache.q, tmp, vcache_link);
+        tmp = TAILQ_LAST(&vcp->q, vcache_head);
+        TAILQ_REMOVE(&vcp->q, tmp, vcache_link);
         dynfree(tmp);
-        --vcache.size;
+        --vcp->size;
     }
 
-    TAILQ_INSERT_TAIL(&vcache.q, vp, vcache_link);
-    ++vcache.size;
+    TAILQ_INSERT_TAIL(&vcp->q, vp, vcache_link);
+    ++vcp->size;
     return 0;
 }
 
@@ -182,7 +175,7 @@ vfs_vcache_enter(struct vnode *vp)
         /* - FALL THROUGH - */
     case VCACHE_TYPE_GLOBAL:
         spinlock_acquire(&vcache_lock);
-        retval = vcache_global_add(vp);
+        retval = vcache_add(vp, &vcache);
         spinlock_release(&vcache_lock);
         break;
     default:
@@ -213,7 +206,7 @@ vfs_recycle_vnode(void)
         /* - FALL THROUGH - */
     case VCACHE_TYPE_GLOBAL:
         spinlock_acquire(&vcache_lock);
-        vp = vcache_global_pull();
+        vp = vcache_pull(&vcache);
         spinlock_release(&vcache_lock);
         break;
     default:
