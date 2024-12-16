@@ -31,6 +31,7 @@
 #include <sys/systm.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
+#include <sys/spinlock.h>
 #include <dev/timer.h>
 
 #define pr_trace(fmt, ...) kprintf("synch: " fmt, ##__VA_ARGS__)

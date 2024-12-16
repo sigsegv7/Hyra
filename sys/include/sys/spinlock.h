@@ -40,6 +40,7 @@ struct spinlock {
 
 void spinlock_acquire(struct spinlock *lock);
 void spinlock_release(struct spinlock *lock);
+int spinlock_usleep(struct spinlock *lock, size_t usec_max);
 
 #endif
 

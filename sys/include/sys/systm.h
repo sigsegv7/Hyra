@@ -31,13 +31,10 @@
 #define _SYS_SYSTM_H_
 
 #include <sys/types.h>
-#include <sys/spinlock.h>
 
 #if defined(_KERNEL)
 int copyin(const void *uaddr, void *kaddr, size_t len);
 int copyout(const void *kaddr, void *uaddr, size_t len);
-
 int copyinstr(const void *uaddr, char *kaddr, size_t len);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
 #endif  /* _KERNEL */
 #endif  /* !_SYS_SYSTM_H_ */
