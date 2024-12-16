@@ -71,3 +71,15 @@ spinlock_usleep(struct spinlock *lock, size_t usec_max)
 
     return 0;
 }
+
+void
+spinlock_acquire(struct spinlock *lock)
+{
+    while (__atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE));
+}
+
+void
+spinlock_release(struct spinlock *lock)
+{
+    __atomic_clear(&lock->lock, __ATOMIC_RELEASE);
+}
