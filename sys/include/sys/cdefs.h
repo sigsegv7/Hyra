@@ -48,6 +48,10 @@
 #define __END_DECLS
 #endif
 
+#ifndef offsetof
+#define offsetof(st, m) ((size_t)&(((st *)0)->m))
+#endif  /* offsetof */
+
 #if defined(_KERNEL)
 /*
  *  Align data on a cache line boundary. This is
