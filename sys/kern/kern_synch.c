@@ -27,17 +27,47 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SYSTM_H_
-#define _SYS_SYSTM_H_
-
 #include <sys/types.h>
-#include <sys/spinlock.h>
+#include <sys/systm.h>
+#include <sys/errno.h>
+#include <sys/syslog.h>
+#include <dev/timer.h>
 
-#if defined(_KERNEL)
-int copyin(const void *uaddr, void *kaddr, size_t len);
-int copyout(const void *kaddr, void *uaddr, size_t len);
+#define pr_trace(fmt, ...) kprintf("synch: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
 
-int copyinstr(const void *uaddr, char *kaddr, size_t len);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
-#endif  /* _KERNEL */
-#endif  /* !_SYS_SYSTM_H_ */
+/*
+ * Returns 0 on success, returns non-zero value
+ * on timeout/failure.
+ */
+int
+spinlock_usleep(struct spinlock *lock, size_t usec_max)
+{
+    struct timer tmr;
+    size_t usec_start, usec_cur;
+    size_t usec_elap;
+    int err;
+
+    if ((err = req_timer(TIMER_GP, &tmr)) != 0) {
+        pr_error("spinlock_usleep: req_timer() returned %d\n", err);
+        pr_error("spinlock_usleep: Failed to request timer...\n");
+        return err;
+    }
+
+    if (tmr.get_time_usec == NULL) {
+        pr_error("spinlock_usleep: Timer does not have get_time_usec()\n");
+        return -ENOTSUP;
+    }
+
+    usec_start = tmr.get_time_usec();
+    while (__atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE)) {
+        usec_cur = tmr.get_time_usec();
+        usec_elap = (usec_cur - usec_start);
+
+        if (usec_elap > usec_max) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
