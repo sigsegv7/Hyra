@@ -34,6 +34,7 @@
 #include <sys/queue.h>
 #include <sys/atomic.h>
 #include <sys/sio.h>
+#include <vm/vm_obj.h>
 
 #if defined(_KERNEL)
 
@@ -44,6 +45,7 @@ struct vnode {
     int flags;
     void *data;
     const struct vops *vops;
+    struct vm_object vobj;
     uint32_t refcount;
     TAILQ_ENTRY(vnode) vcache_link;
 };
