@@ -103,7 +103,7 @@ int
 pci_map_bar(struct pci_device *dev, uint8_t barno, void **vap)
 {
     uint8_t barreg = pci_get_barreg(dev, barno);
-    uintptr_t tmp, bar;
+    uintptr_t tmp, tmp1, bar;
     uint32_t size;
 
     if (barreg == 0)
@@ -122,7 +122,21 @@ pci_map_bar(struct pci_device *dev, uint8_t barno, void **vap)
 
     /* Restore old value and map the BAR */
     pci_writel(dev, barreg, tmp);
-    bar = dev->bar[barno] & PCI_BAR_MEMMASK;
+
+    /*
+     * We'll only need to worry about using one BAR
+     * if the device has a 32-bit MMIO space. However,
+     * with 64-bit MMIO spaces, two BARs are used.
+     */
+    if (PCI_BAR_32(dev->bar[barno])) {
+        bar = dev->bar[barno] & PCI_BAR_MEMMASK;
+    } else {
+        /* Assume 64-bit */
+        tmp = dev->bar[barno] & PCI_BAR_MEMMASK;
+        tmp1 = dev->bar[barno + 1] & PCI_BAR_MEMMASK;
+        bar = COMBINE32(tmp1, tmp);
+    }
+
     return bus_map(bar, size, 0, vap);
 }
 
