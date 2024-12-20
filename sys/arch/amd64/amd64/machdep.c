@@ -132,7 +132,7 @@ backtrace_addr_to_name(uintptr_t addr, off_t *off)
 }
 
 void
-backtrace(void)
+md_backtrace(void)
 {
     uintptr_t *rbp;
     uintptr_t rip;

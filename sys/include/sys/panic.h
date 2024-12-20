@@ -33,7 +33,7 @@
 #if defined(_KERNEL)
 
 void panic(const char *fmt, ...);
-void backtrace(void);
+void md_backtrace(void);
 
 #endif  /* _KERNEL */
 #endif  /* !_SYS_PANIC_H_ */

@@ -54,7 +54,7 @@ panic(const char *fmt, ...)
     vkprintf(fmt, &ap);
 
     kprintf(OMIT_TIMESTAMP "** backtrace\n");
-    backtrace();
+    md_backtrace();
 
     cpu_reboot(REBOOT_HALT);
     __builtin_unreachable();
