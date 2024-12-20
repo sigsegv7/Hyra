@@ -33,6 +33,7 @@
 #include <sys/param.h>
 
 #define __ASMV          __asm__ __volatile__
+#define __weak          __attribute__((__weak__))
 #define __always_inline __attribute__((__always_inline__))
 #define __packed        __attribute__((__packed__))
 #define __dead          __attribute__((__noreturn__))
