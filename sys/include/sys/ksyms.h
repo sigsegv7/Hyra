@@ -27,13 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_PANIC_H_
-#define _SYS_PANIC_H_
+#ifndef _SYS_KSYMS_H_
+#define _SYS_KSYMS_H_
+
+#include <sys/cdefs.h>
 
 #if defined(_KERNEL)
+struct kernel_symbol {
+	uint64_t addr;
+	char* name;
+};
 
-void panic(const char *fmt, ...);
-void backtrace(void);
+__weak extern struct kernel_symbol g_ksym_table[];
 
-#endif  /* _KERNEL */
-#endif  /* !_SYS_PANIC_H_ */
+#endif  /* defined(_KERNEL) */
+#endif

@@ -53,6 +53,9 @@ panic(const char *fmt, ...)
     kprintf(OMIT_TIMESTAMP "panic: ");
     vkprintf(fmt, &ap);
 
+    kprintf(OMIT_TIMESTAMP "** backtrace\n");
+    backtrace();
+
     cpu_reboot(REBOOT_HALT);
     __builtin_unreachable();
 }
