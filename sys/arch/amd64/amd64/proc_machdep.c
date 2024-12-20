@@ -134,6 +134,7 @@ md_td_kick(struct proc *td)
         "pushf\n"
         "push %2\n"
         "push %3\n"
+        "lfence\n"
         "swapgs\n"
         "iretq"
         :
