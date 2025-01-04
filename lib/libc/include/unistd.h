@@ -31,8 +31,13 @@
 #define _UNISTD_H
 
 #include <sys/types.h>
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
 
 ssize_t read(int fd, void *buf, size_t count);
 int close(int fd);
+
+__END_DECLS
 
 #endif  /* !_UNISTD_H */
