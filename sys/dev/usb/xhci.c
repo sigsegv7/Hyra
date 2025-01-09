@@ -277,6 +277,8 @@ xhci_alloc_cmdring(struct xhci_hc *hc)
 
     size = XHCI_TRB_SIZE * XHCI_CMDRING_LEN;
     hc->cmdring = dynalloc_memalign(size, 0x1000);
+
+    memset(hc->cmdring, 0, size);
     __assert(hc->cmdring != NULL);
     return VIRT_TO_PHYS(hc->cmdring);
 }
