@@ -73,6 +73,7 @@ struct xhci_opregs {
 /* USBCMD bits */
 #define USBCMD_RUN      BIT(0)    /* Run/stop */
 #define USBCMD_HCRST    BIT(1)    /* xHC reset */
+#define USBCMD_INTE     BIT(2)    /* Interrupt Enable */
 
 /* USBSTS bits */
 #define USBSTS_HCH      BIT(0)    /* HC halted */
@@ -112,5 +113,9 @@ struct xhci_opregs {
 /* USBLEGSUP bits */
 #define XHCI_BIOS_SEM   BIT(16)
 #define XHCI_OS_SEM     BIT(24)
+
+/* IMAN bits */
+#define XHCI_IMAN_IP    BIT(0)
+#define XHCI_IMAN_IE    BIT(1)
 
 #endif  /* !_USB_XHCIREGS_H_ */

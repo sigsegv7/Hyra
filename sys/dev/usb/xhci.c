@@ -55,6 +55,12 @@
 static struct pci_device *hci_dev;
 static struct timer tmr;
 
+__attribute__((__interrupt__)) static void
+xhci_common_isr(void *sf)
+{
+    pr_trace("Received xHCI interrupt (via PCI MSI-X)\n");
+}
+
 /*
  * Get port status and control register for a specific
  * port.
@@ -215,6 +221,19 @@ xhci_alloc_dcbaa(struct xhci_hc *hc)
 }
 
 /*
+ * Initialize MSI-X interrupts.
+ */
+static int
+xhci_init_msix(struct xhci_hc *hc)
+{
+    struct msi_intr intr;
+
+    intr.name = "xHCI MSI-X";
+    intr.handler = xhci_common_isr;
+    return pci_enable_msix(hci_dev, &intr);
+}
+
+/*
  * Sets up the event ring.
  */
 static void
@@ -310,6 +329,27 @@ xhci_reset(struct xhci_hc *hc)
     }
 
     return 0;
+}
+
+/*
+ * Enable or disable xHC interrupts.
+ */
+static void
+xhci_set_intr(struct xhci_hc *hc, int enable)
+{
+    struct xhci_opregs *opregs = hc->opregs;
+    uint32_t usbcmd;
+
+    enable &= 1;
+    usbcmd = mmio_read32(&opregs->usbcmd);
+
+    if (enable == 1) {
+        usbcmd |= USBCMD_INTE;
+    } else {
+        usbcmd &= ~USBCMD_INTE;
+    }
+
+    mmio_write32(&opregs->usbcmd, usbcmd);
 }
 
 /*
@@ -419,9 +459,13 @@ xhci_init_hc(struct xhci_hc *hc)
     mmio_write64(&opregs->cmd_ring, cmdring);
     hc->cr_cycle = 1;
 
+    xhci_init_msix(hc);
     xhci_init_evring(hc);
     xhci_parse_ecp(hc);
     xhci_start_hc(hc);
+
+    /* Allow the xHC to generate interrupts */
+    xhci_set_intr(hc, 1);
     xhci_init_ports(hc);
     return 0;
 }

@@ -39,6 +39,7 @@
 #define XHCI_EVRING_LEN 16
 #define XHCI_TRB_SIZE 16   /* In bytes */
 #define XHCI_MAX_PROTOS 4
+#define XHCI_IMOD_DEFAULT 0
 
 /*
  * USB proto (USB 2.0 or 3.0)
