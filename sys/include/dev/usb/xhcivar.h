@@ -50,6 +50,43 @@ struct xhci_proto {
     uint8_t port_count; /* Number of ports */
 };
 
+struct xhci_nop_trb {
+    uint32_t reserved;
+    uint32_t reserved1;
+    uint32_t reserved2;
+    uint8_t cycle : 1;
+    uint16_t reserved3 : 9;
+    uint8_t type : 6;
+    uint16_t reserved4;
+};
+
+struct xhci_enableslot_trb {
+    uint32_t reserved;
+    uint32_t reserved1;
+    uint32_t reserved2;
+    uint8_t cycle : 1;
+    uint16_t reserved3 : 9;
+    uint8_t type : 6;
+    uint8_t slot_type : 5;
+    uint16_t reserved4 : 10;
+};
+
+/*
+ * xHCI Transfer Request Block
+ */
+struct xhci_trb {
+    union {
+        struct xhci_nop_trb nop;
+        struct xhci_enableslot_trb enableslot;
+        struct {
+            uint32_t dword0;
+            uint32_t dword1;
+            uint32_t dword2;
+            uint32_t dword3;
+        };
+    };
+};
+
 /*
  * xHCI event ring segment
  *
@@ -77,5 +114,9 @@ struct xhci_hc {
     struct xhci_opregs *opregs;
     struct xhci_proto protos[XHCI_MAX_PROTOS];
 };
+
+/* TRB types */
+#define XHCI_ENABLE_SLOT    9
+#define XHCI_LINK           6
 
 #endif  /* !_USB_XHCIVAR_H_ */
