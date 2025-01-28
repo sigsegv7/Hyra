@@ -57,6 +57,12 @@
 #define COMBINE16(h, l) ((uint32_t)((uint32_t)(h) << 16) | (l))
 #define COMBINE32(h, l) ((uint64_t)((uint64_t)(h) << 32) | (l))
 
+/*
+ * Checks if value, `v' is in range of least, 'l'
+ * and max, 'm'.
+ */
+#define IN_RANGE(V, L, M) (((V) >= (L)) && ((V) <= (M)))
+
 /* Gives 1 if pointer is aligned */
 #define PTR_ALIGNED(PTR, ALIGN) (!((uintptr_t)PTR & (ALIGN - 1)))
 
