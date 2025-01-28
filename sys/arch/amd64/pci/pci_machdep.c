@@ -38,6 +38,7 @@
 #include <machine/cpu.h>
 #include <machine/intr.h>
 #include <machine/idt.h>
+#include <machine/lapic.h>
 
 /* Base address masks for BARs */
 #define PCI_BAR_MEMMASK ~7
