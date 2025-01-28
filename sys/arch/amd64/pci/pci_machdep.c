@@ -140,6 +140,16 @@ pci_map_bar(struct pci_device *dev, uint8_t barno, void **vap)
     return bus_map(bar, size, 0, vap);
 }
 
+void
+pci_msix_eoi(void)
+{
+    /*
+     * On AMD64 all we need to do is send an EOI to the
+     * Local APIC onboard the current processor.
+     */
+    lapic_eoi();
+}
+
 /*
  * Enable MSI-X for a device and allocate an
  * interrupt vector.
