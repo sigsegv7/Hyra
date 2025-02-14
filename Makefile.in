@@ -15,14 +15,25 @@ override KERNEL_DEFINES = $ -DHYRA_VERSION="\"$(HYRA_VERSION)\""\
                           -DHYRA_ARCH="\"@ARCH@\"" $(shell cat sys/arch/$(ARCH)/conf/GENERIC | tools/kconf/kconf)
 
 ######################
-# Binutils stuff
+# Toolchain
 ######################
-ifeq ($(ARCH), amd64)
-	override CC = $(shell pwd)/cross/bin/x86_64-hyra-gcc
-	override LD = $(shell pwd)/cross/bin/x86_64-hyra-ld
-else
-	override CC = $(shell pwd)/cross/bin/$(ARCH)-hyra-gcc
-	override LD = $(shell pwd)/cross/bin/$(ARCH)-hyra-ld
+override TOOLCHAIN = @TOOLCHAIN@
+ifeq ($(TOOLCHAIN), clang)
+	ifeq ($(ARCH), amd64)
+		override CC = clang -target x86_64-none-elf
+		override LD = ld.lld
+	else
+		override CC = clang -target $(ARCH)-none-elf
+		override LD = ld.lld
+	endif
+else ifeq ($(TOOLCHAIN), gcc)
+	ifeq ($(ARCH), amd64)
+		override CC = $(shell pwd)/cross/bin/x86_64-hyra-gcc
+		override LD = $(shell pwd)/cross/bin/x86_64-hyra-ld
+	else
+		override CC = $(shell pwd)/cross/bin/$(ARCH)-hyra-gcc
+		override LD = $(shell pwd)/cross/bin/$(ARCH)-hyra-ld
+	endif
 endif
 
 ##########################
