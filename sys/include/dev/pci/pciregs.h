@@ -35,8 +35,10 @@
 #define PCIREG_VENDOR_ID  0x00  /* 16 bits */
 #define PCIREG_DEVICE_ID  0x02  /* 16 bits */
 #define PCIREG_CLASSREV   0x08  /* 32 bits */
+#define PCIREG_HDRTYPE    0x0e  /* 8 bits */
 #define PCIREG_BAR0       0x10  /* 32 bits */
 #define PCIREG_BAR1       0x14  /* 32 bits */
+#define PCIREG_BUSES      0x18  /* 24 bits */
 #define PCIREG_BAR2       0x18  /* 32 bits */
 #define PCIREG_BAR3       0x1C  /* 32 bits */
 #define PCIREG_BAR4       0x20  /* 32 bits */
@@ -50,6 +52,11 @@
 #define PCIREG_SUBCLASS(CLASSREV) ((CLASSREV >> 16) & 0xFF)
 #define PCIREG_REVID(CLASSREV) (CLASSREV & 0xFF)
 #define PCIREG_PROGIF(CLASSREV) ((CLASSREV >> 8) & 0xFF)
+
+/* Macros to extract PCI_BUSES bits */
+#define PCIREG_PRIBUS(BUSES) (BUSES & 0xFF)
+#define PCIREG_SECBUS(BUSES) ((BUSES >> 8) & 0xFF)
+#define PCIREG_SUBBUS(BUSES) ((BUSES >> 16) & 0xFF)
 
 /* Macros to extract PCIREG_CMDSTATUS bits */
 #define PCIREG_COMMAND(CMDSTATUS) (CMDSTATUS & 0xFFFF)
@@ -73,5 +80,9 @@
 #define PCI_BAR_TYPE(BAR) ((BAR >> 1) & 3)
 #define PCI_BAR_32(BAR) (PCI_BAR_TYPE(BAR) == 0x0)
 #define PCI_BAR_64(BAR) (PCI_BAR_TYPE(BAR) == 0x2)
+
+/* PCI header types */
+#define PCI_HDRTYPE_NORMAL 0x00
+#define PCI_HDRTYPE_BRIDGE 0x01
 
 #endif  /* _PCI_PCIREGS_H_ */

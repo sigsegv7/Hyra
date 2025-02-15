@@ -60,8 +60,15 @@ struct pci_device {
     uint8_t pci_class;
     uint8_t pci_subclass;
     uint8_t prog_if;
+    uint8_t hdr_type;
+
+    uint8_t pri_bus;
+    uint8_t sec_bus;
+    uint8_t sub_bus;
+
     uintptr_t bar[6];
     uint8_t irq_line;
+
     TAILQ_ENTRY(pci_device) link;
 };
 
