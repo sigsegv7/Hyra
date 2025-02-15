@@ -115,4 +115,4 @@ uart_init(void)
     outb(UART_REG_MCR, UART_MCR_DTR);
     return 0;
 }
- 
+
