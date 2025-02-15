@@ -78,13 +78,10 @@ newsig(struct proc *td, int signo, struct ksiginfo **ksig)
         return -EINVAL;
 
     /*
-     * Make sure we have a valid signal list. If we already
-     * have a signal registered in a slot, free up memory used
-     * for that signal descriptor so we can override it with the
-     * new one.
+     * If we already have a signal registered in a slot, free up
+     * memory used for that signal descriptor so we can override
+     * it with the new one.
      */
-    if (td->ksig_list == NULL)
-        return -EIO;
     if ((ksig_tmp = td->ksig_list[signo]) != NULL)
         dynfree(ksig_tmp);
 
