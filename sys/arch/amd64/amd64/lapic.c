@@ -206,22 +206,6 @@ lapic_reg_set(uint32_t reg, uint32_t value)
 }
 
 /*
- * Clear bits within a LAPIC register
- * without overwriting the whole thing.
- *
- * @reg: Reg with bits to be cleared.
- * @value: Value in reg will be cleared by this value.
- */
-static inline void
-lapic_reg_clear(uint32_t reg, uint32_t value)
-{
-    uint32_t old;
-
-    old = lapic_readl(reg);
-    lapic_writel(reg, old & ~(value));
-}
-
-/*
  * Hardware and software enable the Local APIC
  * through IA32_APIC_BASE_MSR and the SVR.
  */
