@@ -109,7 +109,7 @@ pci_get_cap(struct pci_device *dev, uint8_t id)
 static void
 pci_set_device_info(struct pci_device *dev)
 {
-    uint32_t classrev;
+    uint32_t classrev, buses;
     int capoff;
 
     dev->vendor_id = pci_readl(dev, PCIREG_VENDOR_ID) & 0xFFFF;
@@ -119,18 +119,35 @@ pci_set_device_info(struct pci_device *dev)
     dev->pci_class = PCIREG_CLASS(classrev);
     dev->pci_subclass = PCIREG_SUBCLASS(classrev);
     dev->prog_if = PCIREG_PROGIF(classrev);
+    dev->hdr_type = (uint8_t)pci_readl(dev, PCIREG_HDRTYPE);
 
-    dev->bar[0] = pci_readl(dev, PCIREG_BAR0);
-    dev->bar[1] = pci_readl(dev, PCIREG_BAR1);
-    dev->bar[2] = pci_readl(dev, PCIREG_BAR2);
-    dev->bar[3] = pci_readl(dev, PCIREG_BAR3);
-    dev->bar[4] = pci_readl(dev, PCIREG_BAR4);
-    dev->bar[5] = pci_readl(dev, PCIREG_BAR5);
+    /* Set type-specific data */
+    switch (dev->hdr_type & ~BIT(7)) {
+    case PCI_HDRTYPE_NORMAL:
+        dev->bar[0] = pci_readl(dev, PCIREG_BAR0);
+        dev->bar[1] = pci_readl(dev, PCIREG_BAR1);
+        dev->bar[2] = pci_readl(dev, PCIREG_BAR2);
+        dev->bar[3] = pci_readl(dev, PCIREG_BAR3);
+        dev->bar[4] = pci_readl(dev, PCIREG_BAR4);
+        dev->bar[5] = pci_readl(dev, PCIREG_BAR5);
 
-    dev->irq_line = pci_readl(dev, PCIREG_IRQLINE) & 0xFF;
-    capoff = pci_get_cap(dev, PCI_CAP_MSIX);
-    dev->msix_capoff = (capoff < 0) ? 0 : capoff;
+        dev->irq_line = pci_readl(dev, PCIREG_IRQLINE) & 0xFF;
+        capoff = pci_get_cap(dev, PCI_CAP_MSIX);
+        dev->msix_capoff = (capoff < 0) ? 0 : capoff;
+        break;
+    case PCI_HDRTYPE_BRIDGE:
+        buses = pci_readl(dev, PCIREG_BUSES);
+        dev->pri_bus = PCIREG_PRIBUS(buses);
+        dev->sec_bus = PCIREG_SECBUS(buses);
+        dev->sub_bus = PCIREG_SUBBUS(buses);
+        break;
+    default:
+        break;
+    }
 }
+
+static void
+pci_scan_bus(uint8_t bus);
 
 /*
  * Attempt to register a device.
@@ -159,14 +176,45 @@ pci_register_device(uint8_t bus, uint8_t slot, uint8_t func)
     dev->func = func;
 
     pci_set_device_info(dev);
+
+    /* Check if this is a valid bridge */
+    if (
+        (dev->hdr_type & ~BIT(7)) == PCI_HDRTYPE_BRIDGE &&
+        dev->sec_bus > dev->bus &&
+        dev->sub_bus >= dev->sec_bus
+    ) {
+        /* Scan all subordinate buses */
+        for (uint8_t bus = dev->sec_bus; bus <= dev->sub_bus; ++bus) {
+            pci_scan_bus(bus);
+        }
+    }
+
     TAILQ_INSERT_TAIL(&device_list, dev, link);
 }
 
 static void
 pci_scan_bus(uint8_t bus)
 {
-    for (int slot = 0; slot < 32; ++slot) {
-        for (int func = 0; func < 8; ++func) {
+    struct pci_device dev;
+
+    dev.bus = bus;
+    dev.func = 0;
+    for (uint8_t slot = 0; slot < 32; ++slot) {
+        dev.slot = slot;
+
+        /* Skip nonexistent device */
+        if ((uint16_t)pci_readl(&dev, PCIREG_VENDOR_ID) == 0xFFFF) {
+            continue;
+        }
+
+        /* Register single-function device */
+        if (!(pci_readl(&dev, PCIREG_HDRTYPE) & BIT(7))) {
+            pci_register_device(bus, slot, 0);
+            continue;
+        }
+
+        /* Register all functions */
+        for (uint8_t func = 0; func < 8; ++func) {
             pci_register_device(bus, slot, func);
         }
     }
@@ -220,9 +268,8 @@ pci_init(void)
     TAILQ_INIT(&device_list);
     pr_trace("Scanning each bus...\n");
 
-    for (uint16_t i = 0; i < 256; ++i) {
-        pci_scan_bus(i);
-    }
+    /* Recursively scan bus 0 */
+    pci_scan_bus(0);
 
     return 0;
 }
