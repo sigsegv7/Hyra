@@ -69,5 +69,5 @@ i8254_set_frequency(uint64_t freq_hz)
         ++divisor;
     }
 
-    i8254_set_reload(freq_hz);
+    i8254_set_reload(divisor);
 }
