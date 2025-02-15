@@ -66,10 +66,9 @@ cons_make_char(char c, uint32_t fg, uint32_t bg)
  * @y: Y position of char.
  */
 static void
-cons_render_char(struct cons_screen *scr, struct cons_char ch,
+cons_draw_char(struct cons_screen *scr, struct cons_char ch,
                  uint32_t x, uint32_t y)
 {
-    char c = ch.c;
     size_t idx;
     const uint8_t *glyph;
 
@@ -77,10 +76,10 @@ cons_render_char(struct cons_screen *scr, struct cons_char ch,
         return;
     }
 
-    glyph = &CONS_FONT[(int)c*16];
+    glyph = &CONS_FONT[(int)ch.c*16];
     for (uint32_t cy = 0; cy < FONT_HEIGHT; ++cy) {
         for (uint32_t cx = 0; cx < FONT_WIDTH; ++cx) {
-            idx = fbdev_get_index(&scr->fbdev, x+FONT_WIDTH-cx, y+cy);
+            idx = fbdev_get_index(&scr->fbdev, x + (FONT_WIDTH - 1) - cx, y + cy);
             scr->fb_mem[idx] = ISSET(glyph[cy], BIT(cx)) ? ch.fg : ch.bg;
         }
     }
@@ -89,22 +88,14 @@ cons_render_char(struct cons_screen *scr, struct cons_char ch,
 static void
 cons_draw_cursor(struct cons_screen *scr, uint32_t color)
 {
-    struct cons_char cursor_chr;
-
-    cursor_chr.fg = scr->fg;
-    cursor_chr.bg = color;
-    cursor_chr.c = ' ';
-    cons_render_char(scr, cursor_chr, scr->curs_col * FONT_WIDTH,
-        scr->curs_row * FONT_HEIGHT);
-}
-
-static void
-cons_move_cursor(struct cons_screen *scr, uint32_t col, uint32_t row)
-{
-    cons_draw_cursor(scr, scr->bg);
-    scr->curs_col = col;
-    scr->curs_row = row;
-    cons_draw_cursor(scr, scr->last_chr.fg);
+    size_t idx;
+    
+    for (uint32_t cy = 0; cy < FONT_HEIGHT; ++cy) {
+        for (uint32_t cx = 0; cx < FONT_WIDTH; ++cx) {
+            idx = fbdev_get_index(&scr->fbdev, (scr->curs_col * FONT_WIDTH) + cx, (scr->curs_row * FONT_HEIGHT) + cy);
+            scr->fb_mem[idx] = color;
+        }
+    }
 }
 
 /*
@@ -139,7 +130,11 @@ cons_handle_special(struct cons_screen *scr, char c)
         /* Make a newline */
         scr->ch_col = 0;
         ++scr->ch_row;
-        cons_move_cursor(scr, 0, scr->curs_row + 1);
+
+        cons_draw_cursor(scr, scr->bg);
+        scr->curs_col = 0;
+        scr->curs_row++;
+        cons_draw_cursor(scr, scr->last_chr.fg);
         return 0;
     }
 
@@ -166,10 +161,14 @@ cons_putch(struct cons_screen *scr, char c)
 
     if (scr->curs_row >= scr->nrows) {
         /* Went over the screen size */
+        /* TODO: Scroll instead of just clearing the screen */
         scr->ch_col = 0;
         scr->ch_row = 0;
         cons_clear_scr(scr, scr->bg);
-        cons_move_cursor(scr, 0, 0);
+
+        scr->curs_col = 0;
+        scr->curs_row = 0;
+        cons_draw_cursor(scr, scr->last_chr.fg);
     }
 
     /*
@@ -184,8 +183,9 @@ cons_putch(struct cons_screen *scr, char c)
     scr->last_chr = cons_chr;
 
     /* Draw cursor and character */
-    cons_move_cursor(scr, scr->curs_col + 1, scr->curs_row);
-    cons_render_char(scr, cons_chr, scr->ch_col * FONT_WIDTH,
+    scr->curs_col++;
+    cons_draw_cursor(scr, scr->last_chr.fg);
+    cons_draw_char(scr, cons_chr, scr->ch_col * FONT_WIDTH,
         scr->ch_row * FONT_HEIGHT);
 
     ++scr->ch_col;
