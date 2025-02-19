@@ -31,9 +31,10 @@
 #include <sys/driver.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
+#include <sys/mmio.h>
 #include <dev/pci/pci.h>
 #include <dev/ic/ahcivar.h>
-#include <sys/mmio.h>
+#include <dev/ic/ahciregs.h>
 
 #define pr_trace(fmt, ...) kprintf("ahci: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
