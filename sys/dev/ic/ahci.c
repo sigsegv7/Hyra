@@ -65,7 +65,6 @@ ahci_init(void)
     struct pci_lookup lookup;
     int status;
     struct ahci_hba hba;
-
     void *abar_vap = NULL;
 
     lookup.pci_class = 0x01;
@@ -103,7 +102,6 @@ ahci_init(void)
     }
 
     pr_trace("Successfully performed a hard reset.\n");
-
     return 0;
 }
 
