@@ -1,0 +1,75 @@
+#!/bin/bash
+#
+# Copyright (c) 2023-2025 Ian Marco Moffett and the Osmora Team.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of Hyra nor the names of its contributors may be used
+#    to endorse or promote products derived from this software without
+#    specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+#
+# Description:
+#       Lists contributors and the amount of lines
+#       added/deleted by them.
+#
+# Author: Ian Marco Moffett
+#
+
+# Returns the input with a removed substring.
+# $1 -> Substring to remove.
+filter() {
+    while read line
+    do
+        echo $line | awk "{ if (/$1/ && !yes) { yes = 1 } else print }"
+    done
+}
+
+# Logs the stat of a user.
+# $1 -> Username of user to fetch.
+logstats() {
+    while read line
+    do
+        author=$(cut -d' ' -f1 <<< "$line")
+        stats=$(git log --author="$author" --pretty=tformat: --numstat |
+            awk '{ added += $1; removed += $2 } END { print added, removed }')
+
+        added=$(echo $stats | awk '{print $1}')
+        removed=$(echo $stats | awk '{print $2}')
+
+        # If nothing changed, default to 0
+        added=${added:-0}
+        removed=${removed:-0}
+        printf "%s [%s++/%s--]\n" "$line" "$added" "$removed"
+    done
+}
+
+# Fetch the contributors and stats
+echo "Fetching contributors..."
+logfile=$(mktemp)
+git shortlog --summary --numbered --email | cut -c 7- | awk '{$1=$1;print}' | \
+    filter 'ian <ian>' | filter 'emilia' | sort -u | logstats &>$logfile
+
+echo "----------------------------------"
+cat $logfile
+echo "----------------------------------"
