@@ -32,16 +32,41 @@
 #include <sys/errno.h>
 #include <sys/syslog.h>
 #include <dev/pci/pci.h>
+#include <dev/ic/ahcivar.h>
+#include <sys/mmio.h>
 
 #define pr_trace(fmt, ...) kprintf("ahci: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
 static struct pci_device *ahci_dev;
 
+/*
+ * Poll for at most 1 second, to see if GHC.HR is 0.
+ *
+ * @memspace: A pointer the HBA MMIO space.
+ */
+static int
+poll_ghc_hr(struct hba_memspace *memspace)
+{
+    int count;
+
+    for (count = 0; count < 10000000; count++) {
+        if ((mmio_read32(&(memspace->ghc)) & 1) == 0) {
+	    return 0;
+        }
+    }
+
+    return 1;
+}
+
 static int
 ahci_init(void)
 {
     struct pci_lookup lookup;
+    int status;
+    struct ahci_hba hba;
+
+    void *abar_vap = NULL;
 
     lookup.pci_class = 0x01;
     lookup.pci_subclass = 0x06;
@@ -59,6 +84,25 @@ ahci_init(void)
     pr_trace("Detected AHCI HBA (%x:%x.%x, slot=%d)\n",
         ahci_dev->bus, ahci_dev->device_id, ahci_dev->func,
         ahci_dev->slot);
+
+    /*
+     * Map the AHCI Base Address Register (ABAR) from the
+     * ahci_dev struct, so that we can perform MMIO and then issue
+     * a hard reset.
+     */
+
+    if ((status = pci_map_bar(ahci_dev, 5, &abar_vap)) != 0) {
+        return status;
+    }
+
+    hba.io = (struct hba_memspace*) abar_vap;
+    mmio_write32(&(hba.io->ghc), mmio_read32(&(hba.io->ghc)) | 1);
+
+    if (poll_ghc_hr(hba.io) != 0) {
+      return 1;
+    }
+
+    pr_trace("Successfully performed a hard reset.\n");
 
     return 0;
 }
