@@ -56,11 +56,12 @@ logstats() {
 
         added=$(echo $stats | awk '{print $1}')
         removed=$(echo $stats | awk '{print $2}')
+        sum=$((${added:-0}+ ${removed:-0}))
 
         # If nothing changed, default to 0
         added=${added:-0}
         removed=${removed:-0}
-        printf "%s [%s++/%s--]\n" "$line" "$added" "$removed"
+        printf "%s %s [%s++/%s--]\n" "$sum" "$line" "$added" "$removed"
     done
 }
 
@@ -71,5 +72,5 @@ git shortlog --summary --numbered --email | cut -c 7- | awk '{$1=$1;print}' | \
     filter 'ian <ian>' | filter 'emilia' | sort -u | logstats &>$logfile
 
 echo "----------------------------------"
-cat $logfile
+sort -nr $logfile | cut -d' ' -f2-
 echo "----------------------------------"
