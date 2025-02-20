@@ -36,4 +36,6 @@ struct ahci_hba {
     struct hba_memspace *io;
 };
 
+#define AHCI_TIMEOUT 500    /* In ms */
+
 #endif  /* !_IC_AHCIVAR_H_ */
