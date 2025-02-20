@@ -90,7 +90,6 @@ ahci_init(void)
      * ahci_dev struct, so that we can perform MMIO and then issue
      * a hard reset.
      */
-
     if ((status = pci_map_bar(ahci_dev, 5, &abar_vap)) != 0) {
         return status;
     }
