@@ -31,7 +31,7 @@
 #define _IC_AHCIREGS_H_
 
 #include <sys/types.h>
-#include <sys/cdefs.h>
+#include <sys/param.h>
 
 struct hba_port {
     volatile uint64_t clb;      /* Command list base (1k-byte aligned) */
@@ -71,9 +71,9 @@ struct hba_memspace {
 };
 
 /* Global host control bits */
-#define AHCI_GHC_AE __BIT(31)   /* AHCI enable */
-#define AHCI_GHC_IE __BIT(1)    /* Interrupt enable */
-#define AHCI_GHC_HR __BIT(0)    /* HBA reset */
+#define AHCI_GHC_AE BIT(31)   /* AHCI enable */
+#define AHCI_GHC_IE BIT(1)    /* Interrupt enable */
+#define AHCI_GHC_HR BIT(0)    /* HBA reset */
 
 /* AHCI port signatures */
 #define AHCI_SIG_ATA    0x00000101
@@ -97,24 +97,24 @@ struct hba_memspace {
  * Port command and status bits
  * See section 3.3.7 of the AHCI spec.
  */
-#define AHCI_PXCMD_ST   __BIT(0)    /* Start */
-#define AHCI_PXCMD_FRE  __BIT(4)    /* FIS Receive Enable */
-#define AHCI_PXCMD_FR   __BIT(14)   /* FIS Receive Running  */
-#define AHCI_PXCMD_CR   __BIT(15)   /* Command List Running */
+#define AHCI_PXCMD_ST   BIT(0)    /* Start */
+#define AHCI_PXCMD_FRE  BIT(4)    /* FIS Receive Enable */
+#define AHCI_PXCMD_FR   BIT(14)   /* FIS Receive Running  */
+#define AHCI_PXCMD_CR   BIT(15)   /* Command List Running */
 
 /*
  * Interrupt status bits
  * See section 3.3.5 of the AHCI spec.
  */
-#define AHCI_PXIS_TFES __BIT(31)
+#define AHCI_PXIS_TFES BIT(31)
 
 /*
  * Task file data bits
  * See section 3.3.8 of the AHCI spec.
  */
-#define AHCI_PXTFD_ERR __BIT(0)
-#define AHCI_PXTFD_DRQ __BIT(3)
-#define AHCI_PXTFD_BSY __BIT(7)
+#define AHCI_PXTFD_ERR BIT(0)
+#define AHCI_PXTFD_DRQ BIT(3)
+#define AHCI_PXTFD_BSY BIT(7)
 
 /*
  * Capability bits
