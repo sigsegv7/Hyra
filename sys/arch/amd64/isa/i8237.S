@@ -99,9 +99,9 @@ i8237_set_mode:
     andb $3, %al
 
     /* Set channel mode bits */
-    mov %sil, %dl
-    shlb $2, %dl
-    or %dl, %al
+    mov %si, %bx
+    shlw $2, %bx
+    or %bl, %al
 
     /* Write the mode then we are done */
     outb %al, $0x0B
