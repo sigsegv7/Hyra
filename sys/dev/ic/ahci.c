@@ -33,6 +33,7 @@
 #include <sys/syslog.h>
 #include <sys/mmio.h>
 #include <dev/pci/pci.h>
+#include <dev/timer.h>
 #include <dev/ic/ahcivar.h>
 #include <dev/ic/ahciregs.h>
 
@@ -40,24 +41,96 @@
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
 static struct pci_device *ahci_dev;
+static struct timer tmr;
 
 /*
- * Poll for at most 1 second, to see if GHC.HR is 0.
+ * Poll register to have 'bits' set/unset.
  *
- * @memspace: A pointer the HBA MMIO space.
+ * @reg: Register to poll.
+ * @bits: Bits to be checked.
+ * @pollset: True to poll as set.
  */
 static int
-poll_ghc_hr(struct hba_memspace *memspace)
+ahci_poll_reg(volatile uint32_t *reg, uint32_t bits, bool pollset)
 {
-    int count;
+    size_t usec_start, usec;
+    size_t elapsed_msec;
+    uint32_t val;
+    bool tmp;
 
-    for (count = 0; count < 10000000; count++) {
-        if ((mmio_read32(&(memspace->ghc)) & 1) == 0) {
-	    return 0;
+    usec_start = tmr.get_time_usec();
+
+    for (;;) {
+        val = mmio_read32(reg);
+        tmp = (pollset) ? ISSET(val, bits) : !ISSET(val, bits);
+
+        usec = tmr.get_time_usec();
+        elapsed_msec = (usec - usec_start) / 1000;
+
+        /* If tmp is set, the register updated in time */
+        if (tmp) {
+            break;
+        }
+
+        /* Exit with an error if we timeout */
+        if (elapsed_msec > AHCI_TIMEOUT) {
+            return -ETIME;
         }
     }
 
-    return 1;
+    return val;
+}
+
+static int
+ahci_hba_reset(struct ahci_hba *hba)
+{
+    struct hba_memspace *abar = hba->io;
+    uint32_t tmp;
+    int error;
+
+    /*
+     * Begin the actual reset process, results in all
+     * HBA state and ports being reset.
+     *
+     * XXX: All ports will need be to brought back up
+     *      through a COMRESET...
+     */
+    tmp = mmio_read32(&abar->ghc);
+    tmp |= AHCI_GHC_HR;
+    mmio_write32(&abar->ghc, tmp);
+
+    /*
+     * This should usually work with no problem but we cannot
+     * guarantee anything. Especially if it comes to quirky
+     * hardware. The GHC.HR bit should be flipped back by the
+     * HBA once the reset is complete.
+     */
+    error = ahci_poll_reg(&abar->ghc, AHCI_GHC_HR, false);
+    if (error < 0) {
+        pr_error("HBA reset failed\n");
+        return error;
+    }
+
+    return 0;
+}
+
+static int
+ahci_hba_init(struct ahci_hba *hba)
+{
+    int error;
+
+    /*
+     * God knows what state the HBA is in by the time
+     * BIOS/UEFI passes control to us... Because of this,
+     * we need to *reset* everything to ensure it is
+     * as we expect.
+     */
+    if ((error = ahci_hba_reset(hba)) < 0) {
+        return error;
+    }
+
+    pr_trace("Successfully performed a hard reset.\n");
+    return 0;
 }
 
 static int
@@ -85,6 +158,24 @@ ahci_init(void)
         ahci_dev->bus, ahci_dev->device_id, ahci_dev->func,
         ahci_dev->slot);
 
+    /* Try to request a general purpose timer */
+    if (req_timer(TIMER_GP, &tmr) != TMRR_SUCCESS) {
+        pr_error("Failed to fetch general purpose timer\n");
+        return -ENODEV;
+    }
+
+    /* Ensure it has get_time_usec() */
+    if (tmr.get_time_usec == NULL) {
+        pr_error("General purpose timer has no get_time_usec()\n");
+        return -ENODEV;
+    }
+
+    /* We also need msleep() */
+    if (tmr.msleep == NULL) {
+        pr_error("General purpose timer has no msleep()\n");
+        return -ENODEV;
+    }
+
     /*
      * Map the AHCI Base Address Register (ABAR) from the
      * ahci_dev struct, so that we can perform MMIO and then issue
@@ -94,14 +185,8 @@ ahci_init(void)
         return status;
     }
 
-    hba.io = (struct hba_memspace*) abar_vap;
-    mmio_write32(&(hba.io->ghc), mmio_read32(&(hba.io->ghc)) | 1);
-
-    if (poll_ghc_hr(hba.io) != 0) {
-      return 1;
-    }
-
-    pr_trace("Successfully performed a hard reset.\n");
+    hba.io = (struct hba_memspace*)abar_vap;
+    ahci_hba_init(&hba);
     return 0;
 }
 
