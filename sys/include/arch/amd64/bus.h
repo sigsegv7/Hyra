@@ -31,6 +31,10 @@
 #define _MACHINE_BUS_H_
 
 #include <sys/types.h>
+#include <sys/spinlock.h>
+#include <sys/param.h>
+
+struct bus_resource;
 
 /*
  * Hyra assumes that the bootloader uses PDE[256] for some
@@ -40,8 +44,61 @@
  */
 #define MMIO_OFFSET (VM_HIGHER_HALF + 0x8000000000)
 
+/* Resource signature size max */
+#define RSIG_MAX 16
+
+/*
+ * Basic bus resource semantics
+ *
+ * BUS_PIO: If set, this resource uses port I/O
+ * BUS_MMIO: If set, this resource uses memory-mapped I/O
+ * BUS_WRITABLE: If unset, this resource is read-only
+ * BUS_DMA: If set, this resource is DMA-capable
+ */
+#define BUS_PIO       BIT(0)
+#define BUS_MMIO      BIT(1)
+#define BUS_WRITABLE  BIT(2)
+#define BUS_DMA       BIT(3)
+
+/*
+ * Common bus types.
+ *
+ * bus_addr_t: Physical MMIO address
+ * bus_sem_t: Resource semantics
+ */
 typedef uint64_t bus_addr_t;
+typedef uint64_t bus_sem_t;
+
+struct bus_op {
+    /* Enable/disable DMA */
+    int(*enable_dma)(struct bus_resource *brp, void *arg);
+    int(*disable_dma)(struct bus_resource *brp, void *arg);
+
+    /* Set/unset flags */
+    int(*set_sem)(struct bus_resource *brp, bus_sem_t sem);
+    int(*clr_sem)(struct bus_resource *brp, bus_sem_t sem);
+
+    /* DMA buffer related operations */
+    int(*dma_alloc)(struct bus_resource *brp, void *res);
+    int(*dma_free)(struct bus_resource *brp, void *p);
+
+    /* DMA transfer related operations */
+    ssize_t(*dma_in)(struct bus_resource *brp, void *p);
+    ssize_t(*dma_out)(struct bus_resource *brp, void *p);
+};
+
+struct bus_resource {
+    char signature[RSIG_MAX];   /* e.g., "PCI\0", "ISA\0", "LPC\0", etc */
+    off_t align;                /* Alignment required (0: none) */
+    bus_addr_t dma_max;         /* Maximum address possible for DMA */
+    bus_addr_t dma_min;         /* Minimum address possible for DMA */
+    bus_addr_t base;            /* Resource base [physical] address */
+    bus_sem_t sem;              /* Resource semantics */
+    struct bus_op io;           /* I/O operations */
+    struct spinlock lock;       /* Protects this structure */
+};
 
 int bus_map(bus_addr_t addr, size_t size, int flags, void **vap);
+struct bus_resource *bus_establish(const char *name);
 
 #endif  /* !_MACHINE_BUS_H_ */

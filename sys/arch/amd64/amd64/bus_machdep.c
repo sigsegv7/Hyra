@@ -34,6 +34,52 @@
 #include <vm/vm.h>
 #include <vm/map.h>
 #include <vm/pmap.h>
+#include <vm/dynalloc.h>
+#include <dev/pci/resource.h>
+#include <string.h>
+
+#define BUS_PCI "PCI"
+#define BUS_LPC "LPC"
+
+/*
+ * Set bus specific fields
+ *
+ * @brp: Bus resource pointer.
+ * @type: Bus name/signature
+ *
+ * XXX: Assumes brp->base has already been set to
+ *      a valid bus address.
+ */
+static int
+bus_set(struct bus_resource *brp, const char *type)
+{
+    struct bus_op *io = &brp->io;
+
+    switch (*type) {
+    case 'P':
+        if (strcmp(type, BUS_PCI) == 0) {
+            /*
+             * Bus addresses for 64-bit PCI can theoretically
+             * span 2^64 bytes (i.e., the full 64-bit address space)
+             */
+            brp->dma_max = (bus_addr_t)-1;
+            brp->dma_min = 0;
+
+            /* Set hooks */
+            io->enable_dma = pcir_enable_dma;
+            io->disable_dma = pcir_disable_dma;
+            io->set_sem = pcir_set_sem;
+            io->clr_sem = pcir_clr_sem;
+            io->dma_alloc = pcir_dma_alloc;
+            io->dma_free = pcir_dma_free;
+            io->dma_in = pcir_dma_in;
+            io->dma_out = pcir_dma_out;
+            return 0;
+        }
+    }
+
+    return -ENODEV;
+}
 
 /*
  * Map a physical device address into the kernel address
@@ -77,4 +123,32 @@ bus_map(bus_addr_t addr, size_t size, int flags, void **vap)
 
     *vap = (void *)va;
     return 0;
+}
+
+/*
+ * Associate a specific bus with a 'bus_resource`
+ * structure.
+ *
+ * @name: Signature.
+ */
+struct bus_resource *
+bus_establish(const char *name)
+{
+    struct bus_resource *brp;
+    size_t siglen;
+
+    siglen = strlen(name);
+    if (siglen > RSIG_MAX) {
+        return NULL;
+    }
+
+    /* Allocate a new bus resource handle */
+    if ((brp = dynalloc(sizeof(*brp))) == NULL) {
+        return NULL;
+    }
+
+    memset(brp, 0, sizeof(*brp));
+    memcpy(brp->signature, name, siglen);
+    bus_set(brp, name);
+    return brp;
 }
