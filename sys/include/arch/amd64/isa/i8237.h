@@ -30,10 +30,23 @@
 #ifndef _ISA_I8237_H_
 #define _ISA_I8237_H_
 
+#if !defined(__ASSEMBLER__)
 #include <sys/types.h>
+#endif  /* !__ASSEMBLER__ */
 
+#define DMA_ADDR_0   0x0000
+#define DMA_COUNT_0  0x0001
+#define DMA_ADDR_1   0x0002
+#define DMA_COUNT_1  0x0003
+#define DMA_ADDR_2   0x0004
+#define DMA_COUNT_2  0x0005
+#define DMA_ADDR_3   0x0006
+#define DMA_COUNT_3  0x0007
+
+#if !defined(__ASSEMBLER__)
 int i8237_set_addr(uint8_t channel, uint16_t addr);
 int i8237_set_count(uint8_t channel, uint16_t count);
 int i8237_set_mode(uint8_t mode);
+#endif  /* !__ASSEMBLER__ */
 
 #endif  /* !_ISA_I8237_H_ */
