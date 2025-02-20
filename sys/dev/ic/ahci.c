@@ -117,7 +117,9 @@ ahci_hba_reset(struct ahci_hba *hba)
 static int
 ahci_hba_init(struct ahci_hba *hba)
 {
+    struct hba_memspace *abar = hba->io;
     int error;
+    uint32_t tmp;
 
     /*
      * God knows what state the HBA is in by the time
@@ -130,6 +132,16 @@ ahci_hba_init(struct ahci_hba *hba)
     }
 
     pr_trace("Successfully performed a hard reset.\n");
+
+    /*
+     * The HBA provides backwards compatibility with
+     * legacy ATA mechanisms (e.g., SFF-8038i), therefore
+     * in order for this driver to work we need to ensure
+     * the HBA is AHCI aware.
+     */
+    tmp = mmio_read32(&abar->ghc);
+    tmp |= AHCI_GHC_AE;
+    mmio_write32(&abar->ghc, tmp);
     return 0;
 }
 
