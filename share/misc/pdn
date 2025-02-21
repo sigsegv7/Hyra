@@ -1,3 +1,7 @@
+--------------------------------------------
+| Peripheral Description Notation Examples |
+--------------------------------------------
+
 hba0 at pci0: HBA instance 0 is connected to PCI bus 0
 
 ... can be more specific (with BDF + slot)
