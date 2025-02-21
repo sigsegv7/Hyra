@@ -1,0 +1,78 @@
+.\" Copyright (c) 2023-2024 Ian Marco Moffett and the Osmora Team.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions are met:
+.\"
+.\" 1. Redistributions of source code must retain the above copyright notice,
+.\"    this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of Hyra nor the names of its
+.\"    contributors may be used to endorse or promote products derived from
+.\"    this software without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+.\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+.\" LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+.\" CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+.\" SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+.\" INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+.\" CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+.\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+.\" POSSIBILITY OF SUCH DAMAGE.
+.Dd Feb 20 2024
+.Dt PCI_CONF 9
+.Os Hyra
+.Sh NAME
+.Nm pci_conf - PCI config space interface
+.Sh SYNOPSIS
+.In dev/pci/pci.h
+
+.Ft pcireg_t
+.Fn pci_readl "struct pci_device *dev" "uint32_t offset"
+
+.Ft void
+.Fn pci_writel "struct pci_device *dev" "uint32_t offset" "pcireg_t val"
+
+.Sh DESCRIPTION
+The PCI configuration space is a 256-byte region implemented
+per device, consisting of registers used for host-to-device
+communication and device-specific configuration.
+
+The Hyra PCI driver provides an API for interfacing
+with a device's configuration space.
+
+The
+.Ft pci_readl()
+function returns a 32-bit value from the
+configuration space of the device pointed
+to by the
+.Ft dev
+argument. The
+.Ft offset
+argument describes how far into the configuration
+space should be read from.
+
+The
+.Ft pci_writel()
+function writes a 32-bit value into the configuration
+space of the device pointed to by the
+.Ft dev
+argument. The
+.Ft offset
+argument describes how far into the configuration space
+.Ft val
+should be written to.
+
+For more information, refer to section 6 of the PCI Local Bus
+Specification 3.0
+
+.Sh AUTHORS
+.An Ian Moffett Aq Mt ian@osmora.org
+
+.Sh HISTORY
+First appeared in Hyra v1.2
