@@ -219,7 +219,7 @@ nvme_stop_ctrl(struct nvme_bar *bar)
     mmio_write32(&bar->config, config);
 
     if (nvme_poll_reg(bar, &bar->status, STATUS_RDY, false) < 0) {
-        pr_error("Controller reset timeout\n");
+        pr_error("controller reset timeout\n");
         return -ETIME;
     }
 
@@ -246,7 +246,7 @@ nvme_start_ctrl(struct nvme_bar *bar)
     mmio_write32(&bar->config, config);
 
     if (nvme_poll_reg(bar, &bar->status, STATUS_RDY, true) < 0) {
-        pr_error("Controller startup timeout\n");
+        pr_error("controller startup timeout\n");
         return -ETIME;
     }
 
@@ -292,7 +292,7 @@ nvme_poll_submit_cmd(struct nvme_queue *q, struct nvme_cmd cmd)
 
         /* Check for timeout */
         if (spins > 5) {
-            pr_error("Hang while polling phase bit, giving up\n");
+            pr_error("hang while polling phase bit, giving up\n");
             return -ETIME;
         }
 
@@ -350,9 +350,9 @@ nvme_log_ctrl_id(struct nvme_id *id)
         sn[i] = id->sn[i];
     }
 
-    pr_trace("Model number: %s\n", mn);
-    pr_trace("Serial number: %s\n", sn);
-    pr_trace("Firmware revision: %s\n", fr);
+    pr_trace("model number: %s\n", mn);
+    pr_trace("serial number: %s\n", sn);
+    pr_trace("firmware revision: %s\n", fr);
 }
 
 /*
@@ -601,7 +601,7 @@ nvme_init_ctrl(struct nvme_bar *bar)
         }
 
         if (nvme_init_ns(&ctrl, nsids[i]) != 0) {
-            pr_error("Failed to initialize NSID %d\n", nsids[i]);
+            pr_error("failed to initialize NSID %d\n", nsids[i]);
         }
     }
 
@@ -627,19 +627,19 @@ nvme_init(void)
 
     /* Try to request a general purpose timer */
     if (req_timer(TIMER_GP, &tmr) != TMRR_SUCCESS) {
-        pr_error("Failed to fetch general purpose timer\n");
+        pr_error("failed to fetch general purpose timer\n");
         return -ENODEV;
     }
 
     /* Ensure it has get_time_usec() */
     if (tmr.get_time_usec == NULL) {
-        pr_error("General purpose timer has no get_time_usec()\n");
+        pr_error("general purpose timer has no get_time_usec()\n");
         return -ENODEV;
     }
 
     /* We also need msleep() */
     if (tmr.msleep == NULL) {
-        pr_error("General purpose timer has no msleep()\n");
+        pr_error("general purpose timer has no msleep()\n");
         return -ENODEV;
     }
 

@@ -54,7 +54,7 @@ acpi_init_hpet(void)
 {
 #if defined(__x86_64__)
     if (hpet_init() != 0) {
-        panic("Could not init HPET\n");
+        panic("could not init HPET\n");
     }
 #endif
 }
@@ -107,14 +107,14 @@ acpi_init(void)
     /* Fetch the root SDT */
     if (rsdp->revision >= 2) {
         root_sdt = PHYS_TO_VIRT(rsdp->xsdt_addr);
-        pr_trace("Using XSDT as root SDT\n");
+        pr_trace("using XSDT as root SDT\n");
     } else {
         root_sdt = PHYS_TO_VIRT(rsdp->rsdt_addr);
-        pr_trace("Using RSDT as root SDT\n");
+        pr_trace("using RSDT as root SDT\n");
     }
 
     if (acpi_checksum(&root_sdt->hdr) != 0) {
-        panic("Root SDT checksum is invalid!\n");
+        panic("root SDT checksum is invalid!\n");
     }
 
     root_sdt_entries = (root_sdt->hdr.length - sizeof(root_sdt->hdr)) / 4;

@@ -63,7 +63,7 @@ unload_td(struct proc *td)
 
         /* Attempt to unmap the range */
         if (vm_unmap(pcbp->addrsp, range->vbase, len) != 0) {
-            pr_error("Failed to unmap %p - %p (pid=%d)\n",
+            pr_error("failed to unmap %p - %p (pid=%d)\n",
                 range->start, range->end, td->pid);
         }
 

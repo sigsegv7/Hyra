@@ -131,7 +131,7 @@ ahci_hba_init(struct ahci_hba *hba)
         return error;
     }
 
-    pr_trace("Successfully performed a hard reset.\n");
+    pr_trace("successfully performed a hard reset\n");
 
     /*
      * The HBA provides backwards compatibility with
@@ -166,25 +166,25 @@ ahci_init(void)
      * devices to the PCI bus, acting as an interface
      * between them.
      */
-    pr_trace("Detected AHCI HBA (%x:%x.%x, slot=%d)\n",
+    pr_trace("IDE storage ctrl <hba? at pci%d:%x.%x.%d>\n",
         ahci_dev->bus, ahci_dev->device_id, ahci_dev->func,
         ahci_dev->slot);
 
     /* Try to request a general purpose timer */
     if (req_timer(TIMER_GP, &tmr) != TMRR_SUCCESS) {
-        pr_error("Failed to fetch general purpose timer\n");
+        pr_error("failed to fetch general purpose timer\n");
         return -ENODEV;
     }
 
     /* Ensure it has get_time_usec() */
     if (tmr.get_time_usec == NULL) {
-        pr_error("General purpose timer has no get_time_usec()\n");
+        pr_error("general purpose timer has no get_time_usec()\n");
         return -ENODEV;
     }
 
     /* We also need msleep() */
     if (tmr.msleep == NULL) {
-        pr_error("General purpose timer has no msleep()\n");
+        pr_error("general purpose timer has no msleep()\n");
         return -ENODEV;
     }
 

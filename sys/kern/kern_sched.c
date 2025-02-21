@@ -262,6 +262,6 @@ sched_init(void)
         TAILQ_INIT(&qlist[i].q);
     }
 
-    pr_trace("Prepared %d queues (policy=0x%x)\n",
+    pr_trace("prepared %d queues (policy=0x%x)\n",
         SCHED_NQUEUE, policy);
 }

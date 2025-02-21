@@ -105,7 +105,7 @@ trap_user(struct trapframe *tf)
         sigaddset(&sigset, SIGFPE);
         break;
     default:
-        kprintf("Got unknown user trap %d\n", tf->trapno);
+        kprintf("got unknown user trap %d\n", tf->trapno);
         sigaddset(&sigset, SIGKILL);
         break;
     }
@@ -142,10 +142,10 @@ trap_handler(struct trapframe *tf)
     splraise(IPL_HIGH);
 
     if (tf->trapno >= NELEM(trap_type)) {
-        panic("Got unknown trap %d\n", tf->trapno);
+        panic("got unknown trap %d\n", tf->trapno);
     }
 
-    pr_error("Got %s\n", trap_type[tf->trapno]);
+    pr_error("got %s\n", trap_type[tf->trapno]);
 
     /* Handle traps from userland */
     if (ISSET(tf->cs, 3)) {
@@ -154,5 +154,5 @@ trap_handler(struct trapframe *tf)
     }
 
     regdump(tf);
-    panic("Fatal trap - halting\n");
+    panic("fatal trap - halting\n");
 }

@@ -57,14 +57,14 @@ alloc_resources(struct cpu_info *ci)
         tss = dynalloc(sizeof(*tss));
 
         if (tss == NULL) {
-            panic("Failed to alloc TSS\n");
+            panic("failed to alloc TSS\n");
         }
 
         memset(tss, 0, sizeof(*tss));
         rsp0_base = vm_alloc_frame(1) + VM_HIGHER_HALF;
 
         if (rsp0_base == 0) {
-            panic("Could not allocate RSP0 base\n");
+            panic("could not allocate RSP0 base\n");
         }
 
         rsp0 = rsp0_base + STACK_SIZE;

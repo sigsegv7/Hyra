@@ -46,7 +46,7 @@ acpi_init_madt(void)
     uint8_t *cur, *end;
 
     if (madt == NULL) {
-        panic("Could not find MADT!\n");
+        panic("could not find MADT!\n");
     }
 
     cur = (uint8_t *)(madt + 1);
@@ -60,15 +60,12 @@ acpi_init_madt(void)
              * TODO: Figure out how to use multiple I/O APICs
              */
             if (ioapic != NULL) {
-                pr_trace("Skipping I/O APIC with ID %d\n", ioapic->ioapic_id);
+                pr_trace("skipping I/O APIC with ID %d\n", ioapic->ioapic_id);
                 break;
             }
 
             ioapic = (struct ioapic *)cur;
-            pr_trace("Detected I/O APIC (id=%d, gsi_base=%d)\n",
-                ioapic->ioapic_id, ioapic->gsi_base);
-
-            ioapic_init((void *)(uintptr_t)ioapic->ioapic_addr);
+            ioapic_init(ioapic);
         }
 
         cur += apichdr->length;

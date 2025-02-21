@@ -35,7 +35,7 @@
 
 #define __assert(condition)                                         \
     if ((uintptr_t)(condition) == 0) {                              \
-        panic("Assert \"%s\" failed (%s() at %s:%d)\n", #condition, \
+        panic("assert \"%s\" failed (%s() at %s:%d)\n", #condition, \
               __func__, __FILE__, __LINE__);                        \
     }
 

@@ -81,10 +81,10 @@ mp_bootstrap_aps(struct cpu_info *ci)
         return;
     }
 
-    pr_trace("Bootstrapping %d cores...\n", cpu_init_counter);
+    pr_trace("bootstrapping %d cores...\n", cpu_init_counter);
     for (size_t i = 0; i < resp->cpu_count; ++i) {
         if (ci->apicid == cpus[i]->lapic_id) {
-            pr_trace("Skip %d (BSP)... continue\n", ci->apicid);
+            pr_trace("skip %d (BSP)... continue\n", ci->apicid);
             continue;
         }
 
