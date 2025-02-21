@@ -265,11 +265,12 @@ pci_get_device(struct pci_lookup lookup, uint16_t lookup_type)
 int
 pci_init(void)
 {
+    size_t ndev;
     TAILQ_INIT(&device_list);
-    pr_trace("Scanning each bus...\n");
 
     /* Recursively scan bus 0 */
     pci_scan_bus(0);
-
+    ndev = TAILQ_NELEM(&device_list);
+    pr_trace("detected %d devices at pci*\n", ndev);
     return 0;
 }

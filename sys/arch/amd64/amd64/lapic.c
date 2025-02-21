@@ -321,18 +321,19 @@ lapic_init(void)
 {
     struct cpu_info *ci = this_cpu();
     union tss_stack tmr_stack;
+    char *modestr;
 
     /*
      * Hyra currently depends on the existance
      * of a Local APIC.
      */
     if (!lapic_supported()) {
-        panic("This machine does not support LAPIC!\n");
+        panic("this machine does not support LAPIC!\n");
     }
 
     /* Try to allocate LAPIC timer interrupt stack */
     if (tss_alloc_stack(&tmr_stack, DEFAULT_PAGESIZE) != 0) {
-        panic("Failed to allocate LAPIC TMR stack!\n");
+        panic("failed to allocate LAPIC TMR stack!\n");
     }
 
     tss_update_ist(ci, tmr_stack, IST_SCHED);
@@ -346,7 +347,7 @@ lapic_init(void)
 
     /* Ensure the LAPIC base is valid */
     if (g_lapic_base == 0) {
-        panic("Invalid LAPIC base\n");
+        panic("invalid LAPIC base\n");
     }
 
     ci->has_x2apic = lapic_has_x2apic();
@@ -354,8 +355,10 @@ lapic_init(void)
 
     ci->apicid = lapic_read_id(ci);
     ci->lapic_tmr_freq = lapic_timer_init();
-    bsp_trace("BSP LAPIC enabled in %s mode (id=%d)\n",
-        ci->has_x2apic ? "x2APIC" : "xAPIC", ci->apicid);
+    modestr = ci->has_x2apic ? "x2apic" : "xapic";
+
+    bsp_trace("lapic0 at cpu0: apicid %d\n");
+    bsp_trace("lapic0 in %s mode\n", modestr);
 
     /* Try to register the timer */
     lapic_timer.name = "LAPIC_INTEGRATED_TIMER";

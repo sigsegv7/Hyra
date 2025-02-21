@@ -59,7 +59,7 @@ irq_to_gsi(uint8_t irq)
     if (madt == NULL)
         madt = acpi_query("APIC");
     if (madt == NULL)
-        panic("Failed to fetch MADT\n");
+        panic("failed to fetch MADT\n");
 
     cur = (uint8_t *)(madt + 1);
     end = (uint8_t *)madt + madt->hdr.length;
@@ -211,20 +211,20 @@ ioapic_set_vec(uint8_t irq, uint8_t vector)
 }
 
 void
-ioapic_init(void *base)
+ioapic_init(struct ioapic *p)
 {
     size_t tmp;
     uint8_t redir_ent_cnt, ver;
 
-    ioapic_base = base;
+    ioapic_base = (void *)((uintptr_t)p->ioapic_addr);
     tmp = ioapic_readl(IOAPICVER);
     ver = tmp & 0xFF;
     redir_ent_cnt = ((tmp >> 16) & 0xFF) + 1;
 
-    pr_trace("version=%d, address=0x%x\n", ver, base);
-    pr_trace("Masking %d GSIs...\n", redir_ent_cnt);
-
     for (uint8_t i = 0; i < redir_ent_cnt; ++i) {
         ioapic_gsi_mask(i);
     }
+
+    pr_trace("ioapic0 at mainbus0: ver %d, addr %p\n", ver, ioapic_base);
+    pr_trace("%d GSIs masked\n", redir_ent_cnt);
 }

@@ -55,7 +55,7 @@ start_init(void)
     execve_args.argv = argv;
     execve_args.envp = envp;
     if (execve(td, &execve_args) != 0)
-        panic("Failed to load init\n");
+        panic("failed to load init\n");
 }
 
 int

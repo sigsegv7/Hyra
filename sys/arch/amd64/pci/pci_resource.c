@@ -73,7 +73,7 @@ pcir_enable_dma(struct bus_resource *brp, void *devp)
      * is disabled.
      */
     if (!ISSET(brp->sem, BUS_DMA)) {
-        pr_trace("Bus marked non DMA capable, DMA not enabled\n");
+        pr_trace("bus marked non DMA capable, DMA not enabled\n");
         return -EACCES;
     }
 

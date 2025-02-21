@@ -31,8 +31,9 @@
 #define _MACHINE_IOAPIC_H_
 
 #include <sys/types.h>
+#include <dev/acpi/tables.h>
 
-void ioapic_init(void *base);
+void ioapic_init(struct ioapic *p);
 void ioapic_gsi_mask(uint8_t gsi);
 
 void ioapic_gsi_unmask(uint8_t gsi);

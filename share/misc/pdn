@@ -1,0 +1,14 @@
+--------------------------------------------
+| Peripheral Description Notation Examples |
+--------------------------------------------
+
+hba0 at pci0: HBA instance 0 is connected to PCI bus 0
+
+... can be more specific (with BDF + slot)
+
+hba0 at pci0:2922.00.3
+           ^    ^  ^  ^
+           bus dev func slot
+
+hba* at pci0: (hba<wildcard>) All HBA instances on PCI bus 0
+hba0 at pci?: (* .. <pci:unknown>) HBA instance 0 on PCI bus ? (could be any)

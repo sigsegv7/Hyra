@@ -95,14 +95,13 @@ i8237_set_mode:
     jg 1f
 
     /* Set channel select bits */
-    mov %dil, %bl
-    andb $3, %bl
-    mov %bl, %al
+    mov %dil, %al
+    andb $3, %al
 
     /* Set channel mode bits */
-    mov %sil, %dl
-    shlb $2, %dl
-    or %dl, %al
+    mov %si, %bx
+    shlw $2, %bx
+    or %bl, %al
 
     /* Write the mode then we are done */
     outb %al, $0x0B

@@ -61,7 +61,7 @@ vm_init(void)
     vm_ctx.dynalloc_pool_sz = DYNALLOC_POOL_SZ;
     vm_ctx.dynalloc_pool_pa = vm_alloc_frame(DYNALLOC_POOL_PAGES);
     if (vm_ctx.dynalloc_pool_pa == 0) {
-        panic("Failed to allocate dynamic pool\n");
+        panic("failed to allocate dynamic pool\n");
     }
 
     pool = PHYS_TO_VIRT(vm_ctx.dynalloc_pool_pa);

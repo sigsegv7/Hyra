@@ -157,7 +157,7 @@ hpet_init(void)
     /* Ensure caps aren't bogus */
     caps = hpet_read(HPET_REG_CAPS);
     if (CAP_REV_ID(caps) == 0) {
-        pr_error("Found bogus revision, assuming faulty\n");
+        pr_error("found bogus revision, assuming faulty\n");
         return -1;
     }
     if (CAP_CLK_PERIOD(caps) > 0x05F5E100) {
@@ -166,7 +166,7 @@ hpet_init(void)
          * be <= 0x05F5E100. So we'll consider it as bogus
          * if it exceeds this value
          */
-        pr_error("Found bogus COUNTER_CLK_PERIOD, assuming faulty\n");
+        pr_error("found bogus COUNTER_CLK_PERIOD, assuming faulty\n");
         return 1;
     }
 

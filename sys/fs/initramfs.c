@@ -258,12 +258,12 @@ initramfs_init(struct fs_info *fip)
 
     initramfs = get_module("/boot/ramfs.cpio", &initramfs_size);
     if (initramfs == NULL) {
-        panic("Failed to open initramfs cpio image\n");
+        panic("failed to open initramfs cpio image\n");
     }
 
     status = vfs_alloc_vnode(&g_root_vnode, VDIR);
     if (__unlikely(status != 0)) {
-        panic("Failed to create root vnode for ramfs\n");
+        panic("failed to create root vnode for ramfs\n");
     }
 
     g_root_vnode->vops = &g_initramfs_vops;

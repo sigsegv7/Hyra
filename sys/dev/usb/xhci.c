@@ -58,7 +58,7 @@ static struct timer tmr;
 __attribute__((__interrupt__)) static void
 xhci_common_isr(void *sf)
 {
-    pr_trace("Received xHCI interrupt (via PCI MSI-X)\n");
+    pr_trace("received xHCI interrupt (via PCI MSI-X)\n");
 }
 
 /*
@@ -145,7 +145,7 @@ xhci_parse_ecp(struct xhci_hc *hc)
             break;
         case XHCI_ECAP_USBLEGSUP:
             /* Begin xHC BIOS handoff to us */
-            pr_trace("Establishing xHC ownership...\n");
+            pr_trace("establishing xHC ownership...\n");
             val |= XHCI_OS_SEM;
             mmio_write32(p, val);
 
@@ -184,10 +184,10 @@ xhci_init_scratchpads(struct xhci_hc *hc)
         return 0;
     }
 
-    pr_trace("Using %d pages for xHC scratchpads\n");
+    pr_trace("using %d pages for xHC scratchpads\n");
     bufarr = dynalloc_memalign(sizeof(uintptr_t)*max_bufs, 0x1000);
     if (bufarr == NULL) {
-        pr_error("Failed to allocate scratchpad buffer array\n");
+        pr_error("failed to allocate scratchpad buffer array\n");
         return -1;
     }
 
@@ -196,7 +196,7 @@ xhci_init_scratchpads(struct xhci_hc *hc)
         memset(PHYS_TO_VIRT(tmp), 0, 0x1000);
         if (tmp == 0) {
             /* TODO: Shutdown, free memory */
-            pr_error("Failed to fill scratchpad buffer array\n");
+            pr_error("failed to fill scratchpad buffer array\n");
             return -1;
         }
         bufarr[i] = tmp;
@@ -392,8 +392,8 @@ xhci_init_ports(struct xhci_hc *hc)
             devtype = (ISSET(portsc, XHCI_PORTSC_DR))
                 ? "removable" : "non-removable";
 
-            pr_trace("Detected %s USB device on port %d\n", devtype, i);
-            pr_trace("Resetting port %d...\n", i);
+            pr_trace("detected %s USB device on port %d\n", devtype, i);
+            pr_trace("resetting port %d...\n", i);
             portsc |= XHCI_PORTSC_PR;
             mmio_write32(portsc_p, portsc);
         }
@@ -432,7 +432,7 @@ xhci_init_hc(struct xhci_hc *hc)
         return -1;
     }
 
-    pr_trace("Resetting xHC chip...\n");
+    pr_trace("resetting xHC chip...\n");
     if ((error = xhci_reset(hc)) != 0) {
         return error;
     }
@@ -492,13 +492,13 @@ xhci_init(void)
 
     /* Try to request a general purpose timer */
     if (req_timer(TIMER_GP, &tmr) != TMRR_SUCCESS) {
-        pr_error("Failed to fetch general purpose timer\n");
+        pr_error("failed to fetch general purpose timer\n");
         return -ENODEV;
     }
 
     /* Ensure it has get_time_usec() */
     if (tmr.get_time_usec == NULL) {
-        pr_error("General purpose timer has no get_time_usec()\n");
+        pr_error("general purpose timer has no get_time_usec()\n");
         return -ENODEV;
     }
 
