@@ -31,6 +31,7 @@
 #define _DEV_CONS_H_
 
 #include <sys/types.h>
+#include <sys/spinlock.h>
 #include <dev/video/fbdev.h>
 
 struct cons_char {
@@ -53,6 +54,7 @@ struct cons_screen {
     uint32_t curs_col;  /* Cursor col */
     uint32_t curs_row;  /* Cursor row */
     struct cons_char last_chr;
+    struct spinlock lock;
 };
 
 void cons_init(void);

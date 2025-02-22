@@ -150,12 +150,16 @@ cons_handle_special(struct cons_screen *scr, char c)
 static int
 dev_write(dev_t dev, struct sio_txn *sio, int flags)
 {
-    char *p = sio->buf;
+    char *p;
+
+    p = sio->buf;
+    spinlock_acquire(&g_root_scr.lock);
 
     for (size_t i = 0; i < sio->len; ++i) {
         cons_putch(&g_root_scr, p[i]);
     }
 
+    spinlock_release(&g_root_scr.lock);
     return sio->len;
 }
 
@@ -220,6 +224,7 @@ cons_init(void)
     g_root_scr.nrows = fbdev.height / FONT_HEIGHT;
     g_root_scr.ncols = fbdev.width / FONT_WIDTH;
     g_root_scr.fbdev = fbdev;
+    memset(&g_root_scr.lock, 0, sizeof(g_root_scr.lock));
 }
 
 /*
