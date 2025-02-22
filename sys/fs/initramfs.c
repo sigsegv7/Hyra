@@ -275,6 +275,7 @@ initramfs_init(struct fs_info *fip)
 const struct vops g_initramfs_vops = {
     .lookup = initramfs_lookup,
     .read = initramfs_read,
+    .write = NULL,
     .reclaim = initramfs_reclaim,
     .getattr = initramfs_getattr
 };

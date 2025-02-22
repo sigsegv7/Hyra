@@ -27,16 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_FCTNL_H_
-#define _SYS_FCTNL_H_
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#define O_RDONLY    0x0000
-#define O_WRONLY    0x0001
-#define O_RDWR      0x0002
-
-/* Makes seal checking easier */
-#if defined(_KERNEL)
-#define O_ALLOW_WR (O_RDWR | O_WRONLY)
-#endif
-
-#endif  /* !_SYS_FCTNL_H_ */
+ssize_t
+write(int fd, const void *buf, size_t count)
+{
+    return syscall(SYS_write, fd, (uintptr_t)buf, count);
+}
