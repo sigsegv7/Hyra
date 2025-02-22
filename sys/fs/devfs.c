@@ -63,6 +63,22 @@ bdevsw_read(void *devsw, dev_t dev, struct sio_txn *sio)
     return bdevsw->read(dev, sio, 0);
 }
 
+static inline int
+cdevsw_write(void *devsw, dev_t dev, struct sio_txn *sio)
+{
+    struct cdevsw *cdevsw = devsw;
+
+    return cdevsw->write(dev, sio, 0);
+}
+
+static inline int
+bdevsw_write(void *devsw, dev_t dev, struct sio_txn *sio)
+{
+    struct bdevsw *bdevsw = devsw;
+
+    return bdevsw->write(dev, sio, 0);
+}
+
 /*
  * Get a devfs node by name.
  *
@@ -174,6 +190,25 @@ devfs_read(struct vnode *vp, struct sio_txn *sio)
 }
 
 static int
+devfs_write(struct vnode *vp, struct sio_txn *sio)
+{
+    struct devfs_node *dnp;
+    void *devsw;
+
+    if ((dnp = vp->data) == NULL)
+        return -EIO;
+
+    devsw = dev_get(dnp->major, dnp->dev);
+
+    if (!dnp->is_block) {
+        return cdevsw_write(devsw, dnp->dev, sio);
+    }
+
+    /* Block device */
+    return bdevsw_write(devsw, dnp->dev, sio);
+}
+
+static int
 devfs_init(struct fs_info *fip)
 {
     struct vnode *vp;
@@ -232,6 +267,7 @@ const struct vops g_devfs_vops = {
     .lookup = devfs_lookup,
     .reclaim = devfs_reclaim,
     .read = devfs_read,
+    .write = devfs_write,
     .getattr = devfs_getattr
 };
 
