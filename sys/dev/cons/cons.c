@@ -30,13 +30,16 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/ascii.h>
+#include <sys/device.h>
 #include <dev/video/fbdev.h>
 #include <dev/cons/font.h>
 #include <dev/cons/cons.h>
+#include <fs/devfs.h>
 #include <vm/dynalloc.h>
 #include <string.h>
 
 struct cons_screen g_root_scr = {0};
+static struct cdevsw cons_cdevsw;
 
 /*
  * Create a chracter descriptor for drawing
@@ -89,7 +92,7 @@ static void
 cons_draw_cursor(struct cons_screen *scr, uint32_t color)
 {
     size_t idx;
-    
+
     for (uint32_t cy = 0; cy < FONT_HEIGHT; ++cy) {
         for (uint32_t cx = 0; cx < FONT_WIDTH; ++cx) {
             idx = fbdev_get_index(&scr->fbdev, (scr->curs_col * FONT_WIDTH) + cx, (scr->curs_row * FONT_HEIGHT) + cy);
@@ -141,6 +144,20 @@ cons_handle_special(struct cons_screen *scr, char c)
     return -1;
 }
 
+/*
+ * Character device function.
+ */
+static int
+dev_write(dev_t dev, struct sio_txn *sio, int flags)
+{
+    char *p = sio->buf;
+
+    for (size_t i = 0; i < sio->len; ++i) {
+        cons_putch(&g_root_scr, p[i]);
+    }
+
+    return sio->len;
+}
 
 /*
  * Put a character on the screen.
@@ -204,3 +221,32 @@ cons_init(void)
     g_root_scr.ncols = fbdev.width / FONT_WIDTH;
     g_root_scr.fbdev = fbdev;
 }
+
+/*
+ * Expose the console to /dev/console
+ */
+void
+cons_expose(void)
+{
+    static int once = 0;
+    char devname[] = "console";
+    devmajor_t major;
+    dev_t dev;
+
+    /* Only run once */
+    if (once) {
+        return;
+    }
+
+    /* Register the device here */
+    major = dev_alloc_major();
+    dev = dev_alloc(major);
+    dev_register(major, dev, &cons_cdevsw);
+    devfs_create_entry(devname, major, dev, 0444);
+    once ^= 1;
+}
+
+static struct cdevsw cons_cdevsw = {
+    .read = noread,
+    .write = dev_write
+};
