@@ -48,7 +48,7 @@ struct termios {
     tcflag_t c_oflag;   /* Output flags */
     tcflag_t c_cflag;   /* Control flags */
     tcflag_t c_lflag;   /* Local flags */
-    c_cc[NCCS];
+    cc_t c_cc[NCCS];
 };
 
 #endif  /* _TERMIOS_H_ */
