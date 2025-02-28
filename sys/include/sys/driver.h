@@ -55,4 +55,3 @@ extern char __drivers_init_end[];
     }
 #endif  /* _KERNEL */
 #endif  /* !_SYS_DRIVER_H_ */
-
