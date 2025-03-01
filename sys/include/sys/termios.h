@@ -35,7 +35,6 @@
  */
 #define ISTRIP 0x00000000
 #define ICRNL  0x00000001
-#define ISTRIP 0x00000002
 
 #define NCCS 20
 
