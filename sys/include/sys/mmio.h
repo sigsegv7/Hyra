@@ -67,7 +67,7 @@
             tmp += VM_HIGHER_HALF;                      \
         }                                               \
         *(volatile TYPE *)tmp = val;                    \
-        __ASMV("" ::: "memory");                        \
+        __barrier();                                    \
     }
 
 /*
@@ -86,7 +86,7 @@
             tmp += VM_HIGHER_HALF;                      \
         }                                               \
                                                         \
-        __ASMV("" ::: "memory");                        \
+        __barrier();                                    \
         return *(volatile TYPE *)tmp;                   \
     }
 
