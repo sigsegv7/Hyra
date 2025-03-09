@@ -12,11 +12,12 @@ jobs:
         uses: actions/checkout@v2
       - name: Update system
         run: sudo apt-get update
+      - name: Export envs
+        run: export TERM="headless"
       - name: Install libs
         run:  sudo apt-get install -y flex bison libfl-dev
       - name: Install tools
-        run:  lld clang xorriso
-        run:  sudo apt-get update && sudo apt-get install -y flex bison libfl-dev
+        run:  sudo apt-get install -y lld clang xorriso
       - name: Bootstrap and configure
         run: ./bootstrap && ./configure
       - name: Build world with clang
