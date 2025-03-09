@@ -22,5 +22,3 @@ jobs:
         run: ./bootstrap && ./configure
       - name: Build world with clang
         run: make
-      - name: Build toolchain
-        run: make cross
