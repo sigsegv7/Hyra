@@ -22,5 +22,5 @@ jobs:
         run: ./bootstrap && ./configure
       - name: Build world with clang
         run: make
-      - name: Test <arch>-hyra-gcc and binutils
+      - name: Build toolchain
         run: make cross
