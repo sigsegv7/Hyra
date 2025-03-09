@@ -94,8 +94,8 @@ vm_map_modify(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot, bool unmap
  * @prot: Protection flags.
  * @count: Count of bytes to be mapped (aligned to page granularity).
  *
- *  Returns 0 on success, and a less than zero errno
- *  on failure.
+ * Returns 0 on success, and a less than zero errno
+ * on failure.
  */
 int
 vm_map(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot, size_t count)
