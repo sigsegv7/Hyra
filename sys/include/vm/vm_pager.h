@@ -35,6 +35,10 @@
 #include <vm/vm_obj.h>
 
 struct vm_object;
+struct vm_pagerops;
+
+extern const struct vm_pagerops vm_vnops;
+
 
 /*
  * Pager operations.
