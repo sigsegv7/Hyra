@@ -1,0 +1,25 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+      - expt
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Update system
+        run: sudo apt-get update
+      - name: Install libs
+        run:  sudo apt-get install -y flex bison libfl-dev
+      - name: Install tools
+        run:  lld clang xorriso
+        run:  sudo apt-get update && sudo apt-get install -y flex bison libfl-dev
+      - name: Bootstrap and configure
+        run: ./bootstrap && ./configure
+      - name: Build world with clang
+        run: make
+      - name: Test <arch>-hyra-gcc and binutils
+        run: make cross
