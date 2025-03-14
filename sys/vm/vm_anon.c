@@ -87,6 +87,8 @@ anon_get(struct vm_object *obp, struct vm_page **pgs, off_t off, size_t len)
             continue;
         }
 
+        *pgres = *pgtmp;
+
         /*
          * We are *just* populating `pgs' and therefore nobody
          * should even attempt to acquire this lock... Shit
@@ -99,9 +101,6 @@ anon_get(struct vm_object *obp, struct vm_page **pgs, off_t off, size_t len)
             return -ETIMEDOUT;
         }
 
-        /* Hold pgres before configuring it */
-        spinlock_acquire(&pgres->lock);
-        *pgres = *pgtmp;
         pgres->flags |= (PG_VALID | PG_CLEAN);
         spinlock_release(&pgres->lock);
 
