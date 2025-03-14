@@ -50,8 +50,6 @@
 #define pr_debug(...) __nothing
 #endif  /* PR_DEBUG */
 
-const struct vm_pagerops vm_vnops;
-
 /*
  * Perform read/write operation on vnode to/from pages.
  *

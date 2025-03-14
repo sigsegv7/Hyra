@@ -129,6 +129,18 @@ sys_read(struct syscall_args *scargs)
 }
 
 /*
+ * arg0: fd
+ * arg1: buf
+ * arg2: count
+ */
+scret_t
+sys_write(struct syscall_args *scargs)
+{
+    return fd_write(scargs->arg0, (void *)scargs->arg1,
+        scargs->arg2);
+}
+
+/*
  * arg0: path
  * arg1: buf
  */

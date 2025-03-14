@@ -27,31 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_DRIVER_H_
-#define _SYS_DRIVER_H_
-
-#include <sys/cdefs.h>
-
-#if defined(_KERNEL)
-
-struct driver {
-    int(*init)(void);
-};
-
-extern char __drivers_init_start[];
-extern char __drivers_init_end[];
-
-#define DRIVER_EXPORT(INIT)                         \
-    __attribute__((used, section(".drivers")))      \
-    static struct driver __driver_desc = {          \
-        .init = INIT,                               \
-    }
-
-#define DRIVERS_INIT() \
-    for (struct driver *__d = (struct driver *)__drivers_init_start;    \
-         (uintptr_t)__d < (uintptr_t)__drivers_init_end; ++__d)         \
-    {                                                                   \
-        __d->init();                                                    \
-    }
-#endif  /* _KERNEL */
-#endif  /* !_SYS_DRIVER_H_ */
+__attribute__((noreturn)) void
+__stack_chk_fail(void)
+{
+    /* TODO: Write a message here, don't hang */
+    for (;;);
+}

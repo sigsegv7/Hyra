@@ -31,6 +31,7 @@
 #include <sys/errno.h>
 #include <sys/proc.h>
 #include <sys/limits.h>
+#include <sys/fcntl.h>
 #include <sys/namei.h>
 #include <sys/filedesc.h>
 #include <sys/systm.h>
@@ -135,15 +136,16 @@ fd_close(unsigned int fd)
 }
 
 /*
- * Read bytes from a file using a file
+ * Read/write bytes to/from a file using a file
  * descriptor number.
  *
  * @fd: File descriptor number.
- * @buf: Buffer to read into.
+ * @buf: Buffer with data to read/write
  * @count: Number of bytes to read.
+ * @write: Set to 1 for writes
  */
-int
-fd_read(unsigned int fd, void *buf, size_t count)
+static int
+fd_rw(unsigned int fd, void *buf, size_t count, uint8_t write)
 {
     char *kbuf = NULL;
     struct filedesc *filedes;
@@ -173,13 +175,34 @@ fd_read(unsigned int fd, void *buf, size_t count)
         goto done;
     }
 
+    /* Check if this violates the file seal */
+    if (!ISSET(filedes->flags, O_ALLOW_WR) && write) {
+        return -EPERM;
+    } else if (ISSET(O_RDONLY, filedes->flags) && write) {
+        return -EPERM;
+    }
+
     sio.len = count;
     sio.buf = kbuf;
     sio.offset = filedes->offset;
 
-    if ((count = vfs_vop_read(filedes->vp, &sio)) < 0) {
-        retval = -EIO;
-        goto done;
+    if (write) {
+        /* Copy in user buffer */
+        if (copyin(buf, kbuf, count) < 0) {
+            retval = -EFAULT;
+            goto done;
+        }
+
+        /* Call VFS write hook */
+        if ((count = vfs_vop_write(filedes->vp, &sio)) < 0) {
+            retval = -EIO;
+            goto done;
+        }
+    } else {
+        if ((count = vfs_vop_read(filedes->vp, &sio)) < 0) {
+            retval = -EIO;
+            goto done;
+        }
     }
 
     if (copyout(kbuf, buf, count) < 0) {
@@ -193,6 +216,18 @@ done:
         dynfree(kbuf);
     }
     return retval;
+}
+
+int
+fd_read(unsigned int fd, void *buf, size_t count)
+{
+    return fd_rw(fd, buf, count, 0);
+}
+
+int
+fd_write(unsigned int fd, void *buf, size_t count)
+{
+    return fd_rw(fd, buf, count, 1);
 }
 
 /*
@@ -224,6 +259,7 @@ fd_open(const char *pathname, int flags)
     }
 
     filedes->vp = nd.vp;
+    filedes->flags = flags;
     return filedes->fdno;
 }
 

@@ -83,6 +83,9 @@ main(void)
 
     DRIVERS_INIT();
 
+    /* Expose the console to devfs */
+    cons_expose();
+
     /* Start scheduler and bootstrap APs */
     sched_init();
     mp_bootstrap_aps(&g_bsp_ci);

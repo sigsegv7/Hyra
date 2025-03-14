@@ -106,7 +106,6 @@ echo "Removing previous builds..."
 rm -rf build-gcc build-binutils
 
 # Binutils build
-clear
 mkdir build-binutils
 
 echo "Applying binutils patch"
@@ -126,7 +125,6 @@ cd ..
 rm -rf $BINUTILS_NAME build-binutils
 
 # GCC build
-clear
 echo "Downloading prerequisites for $GCC_NAME..."
 cd $GCC_NAME
 contrib/download_prerequisites
@@ -157,7 +155,6 @@ rm -rf $GCC_NAME build-gcc
 # Cleanup
 ################################################################
 
-clear
 "$TARGET"-ld -v
 "$TARGET"-gcc --version | head -n1
 echo "Build complete, binaries are in $PREFIX"

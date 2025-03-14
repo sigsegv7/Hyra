@@ -101,6 +101,7 @@ struct vops {
     int(*lookup)(struct vop_lookup_args *args);
     int(*getattr)(struct vop_getattr_args *args);
     int(*read)(struct vnode *vp, struct sio_txn *sio);
+    int(*write)(struct vnode *vp, struct sio_txn *sio);
     int(*reclaim)(struct vnode *vp);
 };
 
@@ -117,6 +118,7 @@ int vfs_release_vnode(struct vnode *vp);
 
 int vfs_vop_lookup(struct vnode *vp, struct vop_lookup_args *args);
 int vfs_vop_read(struct vnode *vp, struct sio_txn *sio);
+int vfs_vop_write(struct vnode *vp, struct sio_txn *sio);
 int vfs_vop_getattr(struct vnode *vp, struct vop_getattr_args *args);
 
 #endif  /* _KERNEL */

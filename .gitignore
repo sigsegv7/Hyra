@@ -11,4 +11,5 @@
 /stand
 /base
 /sys/include/machine
+/share/misc/hwdoc
 autom4te.cache

@@ -39,12 +39,14 @@ struct filedesc {
     off_t offset;
     bool is_dir;
     int refcnt;
+    int flags;
     struct vnode *vp;
     struct spinlock lock;
 };
 
 int fd_close(unsigned int fd);
 int fd_read(unsigned int fd, void *buf, size_t count);
+int fd_write(unsigned int fd, void *buf, size_t count);
 
 int fd_alloc(struct filedesc **fd_out);
 int fd_open(const char *pathname, int flags);

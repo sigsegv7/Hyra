@@ -167,6 +167,19 @@ vfs_vop_read(struct vnode *vp, struct sio_txn *sio)
 }
 
 int
+vfs_vop_write(struct vnode *vp, struct sio_txn *sio)
+{
+    const struct vops *vops = vp->vops;
+
+    if (vops == NULL)
+        return -EIO;
+    if (vops->write == NULL)
+        return -EIO;
+
+    return vops->write(vp, sio);
+}
+
+int
 vfs_vop_getattr(struct vnode *vp, struct vop_getattr_args *args)
 {
     const struct vops *vops = vp->vops;

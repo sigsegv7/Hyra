@@ -27,31 +27,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_DRIVER_H_
-#define _SYS_DRIVER_H_
+#ifndef _TERMIOS_H_
+#define _TERMIOS_H_
 
-#include <sys/cdefs.h>
+/*
+ * c_iflag: Input flags
+ */
+#define ISTRIP 0x00000000
+#define ICRNL  0x00000001
 
-#if defined(_KERNEL)
+#define NCCS 20
 
-struct driver {
-    int(*init)(void);
+typedef unsigned int cc_t;
+typedef unsigned int speed_t;
+typedef unsigned int tcflag_t;
+
+struct termios {
+    tcflag_t c_iflag;   /* Input flags */
+    tcflag_t c_oflag;   /* Output flags */
+    tcflag_t c_cflag;   /* Control flags */
+    tcflag_t c_lflag;   /* Local flags */
+    cc_t c_cc[NCCS];
 };
 
-extern char __drivers_init_start[];
-extern char __drivers_init_end[];
-
-#define DRIVER_EXPORT(INIT)                         \
-    __attribute__((used, section(".drivers")))      \
-    static struct driver __driver_desc = {          \
-        .init = INIT,                               \
-    }
-
-#define DRIVERS_INIT() \
-    for (struct driver *__d = (struct driver *)__drivers_init_start;    \
-         (uintptr_t)__d < (uintptr_t)__drivers_init_end; ++__d)         \
-    {                                                                   \
-        __d->init();                                                    \
-    }
-#endif  /* _KERNEL */
-#endif  /* !_SYS_DRIVER_H_ */
+#endif  /* _TERMIOS_H_ */

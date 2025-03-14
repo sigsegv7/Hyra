@@ -42,6 +42,7 @@
 #define __likely(exp)   __builtin_expect(((exp) != 0), 1)
 #define __unlikely(exp) __builtin_expect(((exp) != 0), 0)
 #define __static_assert _Static_assert
+#define __barrier()     __ASMV("" ::: "memory")
 
 #if defined(__cplusplus)
 #define __BEGIN_DECLS   extern "C" {

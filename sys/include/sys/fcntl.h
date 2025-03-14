@@ -34,4 +34,9 @@
 #define O_WRONLY    0x0001
 #define O_RDWR      0x0002
 
+/* Makes seal checking easier */
+#if defined(_KERNEL)
+#define O_ALLOW_WR (O_RDWR | O_WRONLY)
+#endif
+
 #endif  /* !_SYS_FCTNL_H_ */
