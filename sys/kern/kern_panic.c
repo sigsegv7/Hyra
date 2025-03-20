@@ -33,6 +33,29 @@
 #include <sys/reboot.h>
 
 /*
+ * Burn and sizzle - the core logic that really ends
+ * things ::)
+ *
+ * @do_trace: If true, a backtrace will be printed
+ * @reboot_type: REBOOT_* defines
+ */
+static void
+bas(bool do_trace, int reboot_type)
+{
+    static struct spinlock lock = {0};
+
+    spinlock_acquire(&lock);    /* Never released */
+
+    if (do_trace) {
+        kprintf(OMIT_TIMESTAMP "** backtrace\n");
+        md_backtrace();
+    }
+
+    cpu_reboot(reboot_type);
+    __builtin_unreachable();
+}
+
+/*
  * Tells the user something terribly wrong happened then
  * halting the system as soon as possible.
  *
@@ -45,17 +68,34 @@ void
 panic(const char *fmt, ...)
 {
     va_list ap;
-    static struct spinlock lock = {0};
 
-    spinlock_acquire(&lock);    /* Never released */
     va_start(ap, fmt);
-
     kprintf(OMIT_TIMESTAMP "panic: ");
     vkprintf(fmt, &ap);
+    bas(true, REBOOT_HALT);
 
-    kprintf(OMIT_TIMESTAMP "** backtrace\n");
-    md_backtrace();
+    __builtin_unreachable();
+}
 
-    cpu_reboot(REBOOT_HALT);
+/*
+ * Halt and catch fire - immediately ceases all system activity
+ * with an optional message.
+ *
+ * @fmt: printf() format string, NULL to not
+ *       specify any message (not recommended)
+ */
+void
+hcf(const char *fmt, ...)
+{
+    va_list ap;
+
+
+    if (fmt != NULL) {
+        va_start(ap, fmt);
+        kprintf(OMIT_TIMESTAMP);
+        vkprintf(fmt, &ap);
+    }
+
+    bas(true, REBOOT_HALT);
     __builtin_unreachable();
 }

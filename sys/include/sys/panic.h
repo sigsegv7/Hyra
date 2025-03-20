@@ -30,9 +30,12 @@
 #ifndef _SYS_PANIC_H_
 #define _SYS_PANIC_H_
 
+#include <sys/cdefs.h>
+
 #if defined(_KERNEL)
 
-void panic(const char *fmt, ...);
+__dead_cold void panic(const char *fmt, ...);
+__dead_cold void hcf(const char *fmt, ...);
 void md_backtrace(void);
 
 #endif  /* _KERNEL */
