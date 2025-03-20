@@ -149,6 +149,9 @@ bus_establish(const char *name)
 
     memset(brp, 0, sizeof(*brp));
     memcpy(brp->signature, name, siglen);
-    bus_set(brp, name);
+    if (bus_set(brp, name) < 0) {
+        dynfree(brp);
+        return NULL;
+    }
     return brp;
 }
