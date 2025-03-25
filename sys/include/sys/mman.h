@@ -27,61 +27,68 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/mman.h>
-#include <sys/tree.h>
-#include <sys/types.h>
-#include <sys/proc.h>
-#include <sys/errno.h>
-#include <sys/sched.h>
-#include <sys/signal.h>
-#include <vm/dynalloc.h>
-#include <string.h>
+#ifndef _SYS_MMAN_H_
+#define _SYS_MMAN_H_
 
-static size_t nthreads = 0;
+#include <sys/types.h>
+#include <sys/syscall.h>
+#if defined(_KERNEL)
+#include <sys/tree.h>
+#include <vm/vm_obj.h>
+#endif  /* _KERNEL */
 
 /*
- * Fork1 - fork and direct a thread to 'ip'
- *
- * @cur: Current process.
- * @flags: Flags to set.
- * @ip: Location for new thread to start at.
- * @newprocp: Will contain new thread if not NULL.
+ * If we are in kernel space, all defines we want are
+ * in vm/pmap.h
  */
-int
-fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
-{
-    struct proc *newproc;
-    struct mmap_lgdr *mlgdr;
-    int status = 0;
+#if !defined(_KERNEL)
+#define PROT_WRITE 0x00000001
+#define PROT_EXEC  0x00000002
+#define PROT_NONE  0x00000004
+#define PROT_READ  PROT_NONE
+#endif  /* !_KERNEL */
 
-    newproc = dynalloc(sizeof(*newproc));
-    if (newproc == NULL)
-        return -ENOMEM;
+/* mmap() flags */
+#define MAP_SHARED  0x0001
+#define MAP_PRIVATE 0x0002
+#define MAP_FIXED   0x0004
+#define MAP_ANON    0x0008
 
-    mlgdr = dynalloc(sizeof(*mlgdr));
-    if (mlgdr == NULL)
-        return -ENOMEM;
+#if defined(_KERNEL)
+/*
+ * The mmap ledger entry
+ *
+ * @va_start: Starting virtual address.
+ * @obj: VM object representing this entry.
+ */
+struct mmap_entry {
+    vaddr_t va_start;
+    struct vm_object *obj;
+    size_t size;
+    RBT_ENTRY(mmap_entry) hd;
+};
 
-    memset(newproc, 0, sizeof(*newproc));
-    status = md_fork(newproc, cur, (uintptr_t)ip);
-    if (status != 0)
-        goto done;
+/*
+ * The mmap ledger is a per-process structure that
+ * describes memory mappings made using mmap()
+ *
+ * @hd: Red-black tree of mmap_entry structures
+ * @nbytes: Total bytes mapped.
+ */
+struct mmap_lgdr {
+    RBT_HEAD(lgdr_entries, mmap_entry) hd;
+    size_t nbytes;
+};
 
-    /* Set proc output if we can */
-    if (newprocp != NULL)
-        *newprocp = newproc;
+/* Kernel mmap() routine */
+void *mmap_at(void *addr, size_t len, int prot, int flags,
+              int fildes, off_t off);
 
-    /* Initialize the mmap ledger */
-    mlgdr->nbytes = 0;
-    RBT_INIT(lgdr_entries, &mlgdr->hd);
-    newproc->mlgdr = mlgdr;
+int mmap_entrycmp(const struct mmap_entry *a, const struct mmap_entry *b);
+RBT_PROTOTYPE(lgdr_entries, mmap_entry, hd, mmap_entrycmp)
+#endif  /* _KERNEL */
 
-    newproc->pid = ++nthreads;
-    signals_init(newproc);
-    sched_enqueue_td(newproc);
-done:
-    if (status != 0)
-        dynfree(newproc);
+/* Syscall layer */
+scret_t mmap(struct syscall_args *scargs);
 
-    return status;
-}
+#endif  /* !_SYS_MMAN_H_ */

@@ -34,6 +34,7 @@
 #include <sys/spinlock.h>
 #include <sys/queue.h>
 #include <sys/param.h>
+#include <sys/mman.h>
 #include <sys/cdefs.h>
 #include <sys/syscall.h>
 #include <sys/exec.h>
@@ -57,6 +58,7 @@ struct proc {
     struct exec_prog exec;
     struct ksiginfo *ksig_list[PROC_SIGMAX];
     struct filedesc *fds[PROC_MAX_FILEDES];
+    struct mmap_lgdr *mlgdr;
     struct vcache *vcache;
     struct spinlock vcache_lock;
     struct trapframe tf;

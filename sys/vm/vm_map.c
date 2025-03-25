@@ -30,9 +30,51 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/errno.h>
+#include <sys/proc.h>
+#include <sys/syscall.h>
+#include <sys/syslog.h>
+#include <sys/mman.h>
+#include <vm/dynalloc.h>
+#include <vm/vm_pager.h>
 #include <vm/pmap.h>
 #include <vm/map.h>
 #include <vm/vm.h>
+#include <assert.h>
+
+#define pr_trace(fmt, ...) kprintf("vm_map: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
+
+RBT_GENERATE(lgdr_entries, mmap_entry, hd, mmap_entrycmp);
+
+static inline void
+mmap_dbg(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
+{
+    pr_trace("addr=%p, len=%d, prot=%x\nflags=%x, fildes=%d, off=%d\n",
+        addr, len, prot, flags, fildes, off);
+}
+
+/*
+ * Add a memory mapping to the mmap ledger.
+ *
+ * @td: Process to add mapping to.
+ * @ep: Memory map entry to add.
+ * @len: Length of memory mapping in bytes.
+ */
+static inline int
+mmap_add(struct proc *td, struct mmap_entry *ep)
+{
+    struct mmap_entry *tmp;
+    struct mmap_lgdr *lp = td->mlgdr;
+
+    if (ep->size == 0) {
+        return -EINVAL;
+    }
+
+    tmp = RBT_INSERT(lgdr_entries, &lp->hd, ep);
+    __assert(tmp == NULL);
+    lp->nbytes += ep->size;
+    return 0;
+}
 
 /*
  * Create/destroy virtual memory mappings in a specific
@@ -85,6 +127,123 @@ vm_map_modify(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot, bool unmap
 }
 
 /*
+ * Create a physical to virtual memory mapping.
+ *
+ * @addr: Virtual address to map (NULL to be any).
+ * @len: The amount of bytes to map (must be page aligned)
+ * @prot: Protection flags (PROT_*)
+ * @fildes: File descriptor.
+ * @off: Offset.
+ *
+ * TODO: Fields to use: `fildes' and `off'
+ * XXX: Must be called after pid 1 is up and running to avoid
+ *      crashes.
+ */
+void *
+mmap_at(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
+{
+    struct vm_object *map_obj;
+    struct vm_page *pg;
+    struct mmap_entry *ep;
+    struct proc *td;
+    struct vas vas;
+    int error, npgs;
+    paddr_t pa;
+    vaddr_t va;
+    size_t misalign;
+
+    misalign = len & (DEFAULT_PAGESIZE - 1);
+    len = ALIGN_UP(len + misalign, DEFAULT_PAGESIZE);
+    npgs = len / DEFAULT_PAGESIZE;
+
+    if (addr == NULL) {
+        pr_error("mmap: NULL addr not supported\n");
+        return NULL;
+    }
+
+    /* Validate flags */
+    if (ISSET(flags, MAP_FIXED | MAP_SHARED)) {
+        pr_error("mmap: fixed/shared mappings not yet supported\n");
+        mmap_dbg(addr, len, prot, flags, fildes, off);
+        return NULL;
+    }
+    map_obj = dynalloc(sizeof(*map_obj));
+    if (map_obj == NULL) {
+        kprintf("mmap: failed to allocate map object\n");
+        return NULL;
+    }
+    error = vm_obj_init(map_obj, &vm_anonops, 1);
+    if (error < 0) {
+        kprintf("mmap: vm_obj_init() returned %d\n", error);
+        kprintf("mmap: failed to init object\n");
+        return NULL;
+    }
+
+    /* XXX: Assuming private */
+    vas = pmap_read_vas();
+    va = ALIGN_DOWN((vaddr_t)addr, DEFAULT_PAGESIZE);
+
+    for (int i = 0; i < npgs; ++i) {
+        pg = vm_pagealloc(map_obj, PALLOC_ZERO);
+
+        if (pg == NULL) {
+            /* TODO */
+            pr_error("mmap: failed to allocate page %d\n");
+            return NULL;
+        }
+
+        pa = pg->phys_addr;
+        error = vm_map(vas, va, pa, prot, len);
+        pr_trace("va=%p, len=%d\n", va, len);
+        if (error < 0) {
+            pr_error("mmap: failed to map page (retval=%x)\n", error);
+            return NULL;
+        }
+    }
+
+    /* Add entry to ledger */
+    td = this_td();
+    ep = dynalloc(sizeof(*ep));
+    if (ep == NULL) {
+        pr_error("mmap: failed to allocate mmap ledger entry\n");
+        return NULL;
+    }
+
+    ep->va_start = va;
+    ep->obj = map_obj;
+    ep->size = len;
+    mmap_add(td, ep);
+    return addr;
+}
+
+/*
+ * mmap() syscall
+ *
+ * arg0 -> addr
+ * arg1 -> len
+ * arg2 -> prot
+ * arg3 -> flags
+ * arg4 -> fildes
+ * arg5 -> off
+ */
+scret_t
+mmap(struct syscall_args *scargs)
+{
+    void *addr;
+    size_t len;
+    int prot, flags;
+    int fildes, off;
+
+    addr = (void *)scargs->arg0;
+    len = scargs->arg1;
+    prot = scargs->arg2;
+    flags = scargs->arg3;
+    fildes = scargs->arg4;
+    off = scargs->arg5;
+    return (scret_t)mmap_at(addr, len, prot, flags, fildes, off);
+}
+
+/*
  * Create a virtual memory mapping in a specific
  * address space.
  *
@@ -129,4 +288,13 @@ int
 vm_unmap(struct vas vas, vaddr_t va, size_t count)
 {
     return vm_map_modify(vas, va, 0, 0, true, count);
+}
+
+/*
+ * Helper for tree(3) and the mmap ledger.
+ */
+int
+mmap_entrycmp(const struct mmap_entry *a, const struct mmap_entry *b)
+{
+    return (a->va_start < b->va_start) ? -1 : a->va_start > b->va_start;
 }
