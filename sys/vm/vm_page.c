@@ -43,11 +43,12 @@ RBT_GENERATE(vm_objtree, vm_page, objt, vm_pagecmp);
 static inline void
 vm_pageinsert(struct vm_page *pg, struct vm_object *obp)
 {
-   struct vm_page *tmp;
+    struct vm_page *tmp;
 
-   tmp = RBT_INSERT(vm_objtree, &obp->objt, pg);
-   __assert(tmp == NULL);
-   ++obp->npages;
+    tmp = RBT_INSERT(vm_objtree, &obp->objt, pg);
+    if (tmp != NULL)
+        return;
+    ++obp->npages;
 }
 
 static inline void
@@ -79,6 +80,7 @@ vm_pagealloc(struct vm_object *obj, int flags)
     memset(tmp, 0, sizeof(*tmp));
     tmp->phys_addr = vm_alloc_frame(1);
     tmp->flags |= (PG_VALID | PG_CLEAN);
+    tmp->offset = tmp->phys_addr >> 12;
     __assert(tmp->phys_addr != 0);
 
     if (ISSET(flags, PALLOC_ZERO)) {
