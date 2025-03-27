@@ -58,7 +58,7 @@ my $tmp = get_line($fhand);
 
 # Is there a newline at the start of the file?
 if ($tmp =~ /^\n/) {
-    print "Found redundant newline at start of file\n";
+    print STDERR "Found redundant newline at start of file\n";
     $clean = 0;
 }
 
@@ -66,7 +66,7 @@ while (!eof($fhand)) {
     my $cur = get_line($fhand);
 
     if ($cur =~ /^\n$/ && $tmp =~ /^\n$/) {
-        print "Found redundant newline @ $lineno\n";
+        print STDERR "Found redundant newline @ $lineno\n";
         $clean = 0;
     }
 
@@ -76,10 +76,12 @@ while (!eof($fhand)) {
 
 # What about at the end?
 if ($tmp =~ /^\n/) {
-    print "Found redundant newline at end of file\n";
+    print STDERR "Found redundant newline at end of file\n";
     $clean = 0;
 }
 
-if ($clean) {
-    print "File is clean\n"
+if (!$clean) {
+    exit(1);
 }
+
+print STDOUT "File is clean\n"
