@@ -31,10 +31,28 @@
 #define _SYS_SYSTM_H_
 
 #include <sys/types.h>
+#include <sys/signal.h>
+#include <sys/proc.h>
 
 #if defined(_KERNEL)
 int copyin(const void *uaddr, void *kaddr, size_t len);
 int copyout(const void *kaddr, void *uaddr, size_t len);
 int copyinstr(const void *uaddr, char *kaddr, size_t len);
+
+__always_inline static inline void
+__sigraise(int signo)
+{
+    struct proc *td;
+    sigset_t sigs;
+
+    td = this_td();
+    __assert(td != NULL && "pid 1 not running");
+    sigemptyset(&sigs);
+
+    sigaddset(&sigs, signo);
+    sendsig(td, &sigs);
+    dispatch_signals(td);
+}
+
 #endif  /* _KERNEL */
 #endif  /* !_SYS_SYSTM_H_ */
