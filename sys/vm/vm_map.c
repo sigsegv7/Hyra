@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <sys/errno.h>
 #include <sys/proc.h>
+#include <sys/systm.h>
 #include <sys/syscall.h>
 #include <sys/syslog.h>
 #include <sys/mman.h>
@@ -74,6 +75,22 @@ mmap_add(struct proc *td, struct mmap_entry *ep)
     __assert(tmp == NULL);
     lp->nbytes += ep->size;
     return 0;
+}
+
+/*
+ * Remove memory mapping from mmap ledger
+ *
+ * @td: Process to remove mapping from.
+ * @ep: Memory map entry to remove.
+ */
+static inline void
+mmap_remove(struct proc *td, struct mmap_entry *ep)
+{
+    struct mmap_lgdr *lp = td->mlgdr;
+
+    RBT_REMOVE(lgdr_entries, &lp->hd, ep);
+    lp->nbytes -= ep->size;
+    dynfree(ep);
 }
 
 /*
@@ -217,6 +234,61 @@ mmap_at(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 }
 
 /*
+ * Remove mappings for entire pages that
+ * belong to the current process.
+ *
+ * XXX: POSIX munmap(3) requires `addr' to be page-aligned
+ *      and will return -EINVAL if otherwise. However, with
+ *      OUSI munmap(3), `addr' is rounded down to the nearest
+ *      multiple of the machine page size.
+ */
+int
+munmap_at(void *addr, size_t len)
+{
+    int pgno;
+    vaddr_t va;
+    struct proc *td;
+    struct mmap_lgdr *lp;
+    struct mmap_entry find, *res;
+    struct vas vas;
+
+    if (addr == NULL || len == 0) {
+        return -EINVAL;
+    }
+
+    /* Apply machine specific addr/len adjustments */
+    va = ALIGN_DOWN((vaddr_t)addr, DEFAULT_PAGESIZE);
+    len = ALIGN_UP(len, DEFAULT_PAGESIZE);
+    pgno = va >> 12;
+
+    td = this_td();
+    __assert(td != NULL && "no pid 1");
+    vas = pmap_read_vas();
+
+    /*
+     * Try to get the mmap ledger, should not run into
+     * any issues as long as the PCB isn't borked. However,
+     * if it somehow is, just segfault ourselves.
+     */
+    if ((lp = td->mlgdr) == NULL) {
+        __sigraise(SIGSEGV);
+        return -EFAULT;     /* Unreachable */
+    }
+
+    /* Lookup entry in ledger with virtual address */
+    find.va_start = va;
+    res = RBT_FIND(lgdr_entries, &lp->hd, &find);
+    if (res == NULL) {
+        pr_error("munmap: page %d not in ledger\n", pgno);
+        return -EINVAL;
+    }
+
+    vm_unmap(vas, va, len);
+    mmap_remove(td, res);
+    return 0;
+}
+
+/*
  * mmap() syscall
  *
  * arg0 -> addr
@@ -241,6 +313,23 @@ mmap(struct syscall_args *scargs)
     fildes = scargs->arg4;
     off = scargs->arg5;
     return (scret_t)mmap_at(addr, len, prot, flags, fildes, off);
+}
+
+/*
+ * munmap() syscall
+ *
+ * arg0 -> addr
+ * arg1 -> len
+ */
+scret_t
+munmap(struct syscall_args *scargs)
+{
+    void *addr;
+    size_t len;
+
+    addr = (void *)scargs->arg0;
+    len = scargs->arg1;
+    return (scret_t)munmap_at(addr, len);
 }
 
 /*

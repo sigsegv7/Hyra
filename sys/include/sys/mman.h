@@ -80,6 +80,9 @@ struct mmap_lgdr {
     size_t nbytes;
 };
 
+/* Kernel munmap() routine */
+int munmap_at(void *addr, size_t len);
+
 /* Kernel mmap() routine */
 void *mmap_at(void *addr, size_t len, int prot, int flags,
               int fildes, off_t off);
@@ -90,5 +93,6 @@ RBT_PROTOTYPE(lgdr_entries, mmap_entry, hd, mmap_entrycmp)
 
 /* Syscall layer */
 scret_t mmap(struct syscall_args *scargs);
+scret_t munmap(struct syscall_args *scargs);
 
 #endif  /* !_SYS_MMAN_H_ */
