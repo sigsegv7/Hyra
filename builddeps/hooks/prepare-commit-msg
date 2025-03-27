@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Do we have whitespace errors?
+files=$(git diff --cached --name-only)
+
+for file in $files
+do
+    perl tools/checknl.pl $file 1>/dev/null
+    if [[ $? -ne 0 ]]
+    then
+        echo "** Failed to commit"
+        echo "** Whitespace error in $file"
+        exit 1
+    fi
+done
