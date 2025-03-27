@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <sys/proc.h>
+#include <assert.h>
 
 #if defined(_KERNEL)
 int copyin(const void *uaddr, void *kaddr, size_t len);
