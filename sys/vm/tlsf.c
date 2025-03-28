@@ -1,7 +1,8 @@
 #include <sys/syslog.h>
+#define _HAVE_PTRDIFF_T
 #include <sys/types.h>
+#include <sys/limits.h>
 #include <assert.h>
-#include <limits.h>
 #include <string.h>
 #include <vm/tlsf.h>
 
