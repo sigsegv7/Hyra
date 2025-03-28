@@ -30,34 +30,75 @@
 #ifndef _SYS_TYPES_H_
 #define _SYS_TYPES_H_
 
+#ifndef _HAVE_STYPES
+#define _HAVE_STYPES
+#endif
+
+/* Compat */
+#if defined(_KERNEL)
 #define true 1
 #define false 0
+#if !defined(NULL)
 #define NULL ((void *)0)
+#endif  /* !NULL */
+#endif  /* _KERNEL */
 
-typedef signed char     int8_t;
-typedef unsigned char   uint8_t;
-typedef short           int16_t;
-typedef unsigned short  uint16_t;
-typedef int             int32_t;
-typedef unsigned int    uint32_t;
+/* Fixed width integer types */
+typedef long                __ptrdiff_t;
+typedef unsigned char       __uint8_t;
+typedef unsigned short      __uint16_t;
+typedef unsigned int        __uint32_t;
+typedef unsigned long long  __uint64_t;
+
+typedef signed char         __int8_t;
+typedef short               __int16_t;
+typedef int                 __int32_t;
+typedef long long           __int64_t;
+
+/* Fixed width integer type limits */
+#define __INT8_MIN        (-0x7F - 1)
+#define __INT16_MIN       (-0x7FFF - 1)
+#define __INT32_MIN       (-0x7FFFFFFF - 1)
+#define __INT64_MIN       (-0x7FFFFFFFFFFFFFFFLL - 1)
+
+#define __INT8_MAX        0x7F
+#define __INT16_MAX       0x7FFF
+#define __INT32_MAX       0x7FFFFFFF
+#define __INT64_MAX       0x7FFFFFFFFFFFFFFFLL
+
+#define __UINT8_MAX       0xFF
+#define __UINT16_MAX      0xFFFF
+#define __UINT32_MAX      0xFFFFFFFFU
+#define __UINT64_MAX      0xFFFFFFFFFFFFFFFFULL
+
+typedef __int8_t        int8_t;
+typedef __uint8_t       uint8_t;
+typedef __int16_t       int16_t;
+typedef __uint16_t      uint16_t;
+typedef __int32_t       int32_t;
+typedef __uint32_t      uint32_t;
 #if __SIZEOF_LONG__ == 8
-typedef long            int64_t;
-typedef unsigned long   uint64_t;
+typedef __int64_t       int64_t;
+typedef __uint64_t      uint64_t;
 #endif
 
 #if __SIZEOF_SIZE_T__ == 8
-typedef uint64_t    size_t;
-typedef int64_t     ssize_t;       /* Byte count or error */
+typedef uint64_t    __size_t;
+typedef int64_t     __ssize_t;       /* Byte count or error */
 #elif __SIZEOF_SIZE_T__ == 4
-typedef uint32_t    size_t;
-typedef int32_t     ssize_t;        /* Byte count or error */
+typedef uint32_t    __size_t;
+typedef int32_t     __ssize_t;       /* Byte count or error */
 #else
 #error "Unsupported size_t size"
 #endif
 
-typedef size_t uintptr_t;
-typedef size_t off_t;
-typedef _Bool bool;
+#if defined(_KERNEL) || defined(_HYRA)
+typedef __size_t    size_t;
+#endif
+typedef __ssize_t   ssize_t;
+
+typedef __size_t uintptr_t;
+typedef __size_t off_t;
 typedef int pid_t;
 typedef int dev_t;
 typedef uint32_t mode_t;
@@ -68,6 +109,14 @@ typedef uint32_t gid_t;
 typedef uint32_t blksize_t;
 typedef uint32_t blkcnt_t;
 typedef uint64_t time_t;
+#if defined(_HAVE_PTRDIFF_T)
+typedef __ptrdiff_t ptrdiff_t;
+#endif  /* _HAVE_PTRDIFF_T */
+
+/* Compat */
+#if defined(_KERNEL)
+typedef _Bool bool;
+#endif
 
 #if defined(_KERNEL)
 typedef uintptr_t paddr_t;

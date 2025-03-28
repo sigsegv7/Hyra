@@ -38,7 +38,7 @@
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stddef.h>
+#include <sys/types.h>
 
 #if defined(__cplusplus)
 extern "C" {

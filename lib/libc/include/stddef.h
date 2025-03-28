@@ -30,7 +30,7 @@
 #ifndef _STDDEF_H
 #define _STDDEF_H
 
-#include <bits/types.h>
+#include <sys/types.h>
 
 #if __cplusplus >= 201103L
 #define NULL nullptr

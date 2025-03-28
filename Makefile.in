@@ -20,10 +20,10 @@ override KERNEL_DEFINES = $ -DHYRA_VERSION="\"$(HYRA_VERSION)\""\
 override TOOLCHAIN = @TOOLCHAIN@
 ifeq ($(TOOLCHAIN), clang)
 	ifeq ($(ARCH), amd64)
-		override CC = clang -target x86_64-none-elf
+		override CC = clang -target x86_64-none-elf -ffreestanding -nostdlib
 		override LD = ld.lld
 	else
-		override CC = clang -target $(ARCH)-none-elf
+		override CC = clang -target $(ARCH)-none-elf -ffreestanding -nostdlib
 		override LD = ld.lld
 	endif
 else ifeq ($(TOOLCHAIN), gcc)

@@ -30,32 +30,6 @@
 #ifndef _STDINT_H
 #define _STDINT_H
 
-#include <bits/types.h>
-
-typedef __uint8_t uint8_t;
-typedef __uint16_t uint16_t;
-typedef __uint32_t uint32_t;
-typedef __uint64_t uint64_t;
-typedef __size_t uintptr_t;
-
-typedef __int8_t int8_t;
-typedef __int16_t int16_t;
-typedef __int32_t int32_t;
-typedef __int64_t int64_t;
-
-#define INT8_MIN    __INT8_MIN
-#define INT16_MIN   __INT16_MIN
-#define INT32_MIN   __INT32_MIN
-#define INT64_MIN   __INT64_MIN
-
-#define INT8_MAX    __INT8_MAX
-#define INT16_MAX   __INT16_MAX
-#define INT32_MAX   __INT32_MAX
-#define INT64_MAX   __INT64_MAX
-
-#define UINT8_MAX    __UINT8_MAX
-#define UINT16_MAX   __UINT16_MAX
-#define UINT32_MAX   __UINT32_MAX
-#define UINT64_MAX   __UINT64_MAX
+#include <sys/types.h>
 
 #endif  /* !_STDINT_H */

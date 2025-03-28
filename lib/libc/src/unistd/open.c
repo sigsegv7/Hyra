@@ -28,6 +28,7 @@
  */
 
 #include <sys/syscall.h>
+#include <sys/types.h>
 #include <fcntl.h>
 
 int

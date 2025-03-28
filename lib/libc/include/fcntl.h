@@ -30,9 +30,8 @@
 #ifndef _FCNTL_H
 #define _FCNTL_H
 
-#include <sys/types.h>
-#include <sys/fcntl.h>
 #include <sys/cdefs.h>
+#include <sys/fcntl.h>
 
 __BEGIN_DECLS
 
