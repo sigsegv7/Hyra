@@ -1,0 +1,5 @@
+// Kernel options
+option SERIAL_DEBUG yes
+
+// Kernel constants
+setval SCHED_NQUEUE 4

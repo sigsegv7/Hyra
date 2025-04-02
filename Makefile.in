@@ -4,6 +4,7 @@ override PROMPT := printf "%s\t\t%s\n"
 ###############################
 # CFLAGS, QEMU flags + misc
 ###############################
+override BOOT_FW = @BOOT_FW@
 override ARCH = @ARCH@
 override HYRA_VERSION = @PACKAGE_VERSION@
 override PROMPT := printf "%s\t\t%s\n"
@@ -110,7 +111,7 @@ clean:
 iso:
 	mkdir -p iso_root/boot/
 	mkdir -p iso_root/EFI/BOOT/
-	cp stand/limine/BOOTX64.EFI iso_root/EFI/BOOT/
+	cp stand/limine/$(BOOT_FW) iso_root/EFI/BOOT/
 	mv ramfs.cpio iso_root/boot/
 	cp builddeps/limine.cfg stand/limine/limine-bios.sys \
 		stand/limine/limine-bios-cd.bin stand/limine/limine-uefi-cd.bin iso_root/
