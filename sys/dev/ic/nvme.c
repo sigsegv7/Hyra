@@ -625,6 +625,10 @@ nvme_init(void)
         return -ENODEV;
     }
 
+    pr_trace("NVMe storage ctrl <hba? at pci%d:%x.%x.%d>\n",
+        nvme_dev->bus, nvme_dev->device_id, nvme_dev->func,
+        nvme_dev->slot);
+
     /* Try to request a general purpose timer */
     if (req_timer(TIMER_GP, &tmr) != TMRR_SUCCESS) {
         pr_error("failed to fetch general purpose timer\n");
