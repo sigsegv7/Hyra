@@ -30,6 +30,9 @@
 #ifndef _MACHINE_PIO_H_
 #define _MACHINE_PIO_H_
 
+/* We support AMD64 PIO */
+#define _MACHINE_HAVE_PIO 1
+
 #include <sys/types.h>
 
 uint8_t inb(uint16_t port);
