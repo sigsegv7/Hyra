@@ -33,6 +33,9 @@
 #include <sys/param.h>
 
 #define __ASMV          __asm__ __volatile__
+#if defined(_KERNEL)
+#define __isr           __attribute__((__interrupt__))
+#endif  /* _KERNEL */
 #define __weak          __attribute__((__weak__))
 #define __always_inline __attribute__((__always_inline__))
 #define __packed        __attribute__((__packed__))
