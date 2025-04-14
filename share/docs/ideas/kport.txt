@@ -73,4 +73,7 @@ Description: KPORT facilitates seamless low-latency access to dedicated
                 - The kport pool MUST have no low-level memory caching
              Notes:
                 The shadow layer exists as a sandbox to isolate the backing resource
-                between itself and the kport layer.
+                between itself and the kport layer. It SHOULD contain a "shadow byte region"
+                (SBR), that is, an area reserved for shadow bytes used to detect clobbering
+                and allowing the kernel to respond accordingly (i.e., defer next write-back
+                and kill the process, among other things...)
