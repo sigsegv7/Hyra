@@ -33,6 +33,7 @@
 #include <sys/cdefs.h>
 #include <sys/queue.h>
 #include <sys/proc.h>
+#include <machine/cdefs.h>
 
 #if defined(_KERNEL)
 #define DEFAULT_TIMESLICE_USEC 1050

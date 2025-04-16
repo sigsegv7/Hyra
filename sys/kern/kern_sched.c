@@ -237,8 +237,10 @@ sched_switch(struct trapframe *tf)
 void
 sched_enter(void)
 {
-    sched_oneshot(false);
-    for (;;);
+    for (;;) {
+        sched_oneshot(false);
+        md_pause();
+    }
 }
 
 void
