@@ -38,6 +38,7 @@
 #include <dev/cons/cons.h>
 #include <dev/acpi/acpi.h>
 #include <machine/cpu.h>
+#include <machine/cdefs.h>
 #include <vm/vm.h>
 #include <string.h>
 
@@ -46,6 +47,7 @@ static struct proc proc0;
 static void
 start_init(void)
 {
+#if 0
     struct proc *td = this_td();
     struct execve_args execve_args;
     char *argv[] = { "/usr/sbin/init", NULL };
@@ -56,6 +58,8 @@ start_init(void)
     execve_args.envp = envp;
     if (execve(td, &execve_args) != 0)
         panic("failed to load init\n");
+#endif
+    for (;;);
 }
 
 int
@@ -81,19 +85,22 @@ main(void)
     /* Init the virtual file system */
     vfs_init();
 
-    DRIVERS_INIT();
-
     /* Expose the console to devfs */
     cons_expose();
 
     /* Start scheduler and bootstrap APs */
+    md_intoff();
     sched_init();
-    mp_bootstrap_aps(&g_bsp_ci);
 
-    /* Startup init */
+    /* Startup pid 1 */
     memset(&proc0, 0, sizeof(proc0.tf));
     fork1(&proc0, 0, start_init, NULL);
 
+    /* Load all drivers */
+    DRIVERS_INIT();
+
+    /* Bootstrap APs and here we go! */
+    mp_bootstrap_aps(&g_bsp_ci);
     sched_enter();
     __builtin_unreachable();
 }
