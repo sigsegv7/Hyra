@@ -38,6 +38,21 @@
 #include <vm/dynalloc.h>
 #include <string.h>
 
+/* Console background from kconf */
+#if defined(__CONSOLE_BG)
+#define CONSOLE_BG __CONSOLE_BG
+#else
+#define CONSOLE_BG 0x000000
+#endif /* __CONSOLE_BG */
+
+/* Console foreground from kconf */
+#if defined(__CONSOLE_FG)
+#define CONSOLE_FG __CONSOLE_FG
+#else
+#define CONSOLE_FG 0x00AA00
+#endif  /* __CONSOLE_FG */
+
+
 struct cons_screen g_root_scr = {0};
 static struct cdevsw cons_cdevsw;
 
@@ -218,8 +233,8 @@ cons_init(void)
 {
     struct fbdev fbdev = fbdev_get();
 
-    g_root_scr.fg = 0x00AA00;
-    g_root_scr.bg = 0x000000;
+    g_root_scr.fg = CONSOLE_FG;
+    g_root_scr.bg = CONSOLE_BG;
     g_root_scr.fb_mem = fbdev.mem;
     g_root_scr.nrows = fbdev.height / FONT_HEIGHT;
     g_root_scr.ncols = fbdev.width / FONT_WIDTH;
