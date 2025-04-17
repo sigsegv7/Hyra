@@ -45,6 +45,13 @@
 static struct proc proc0;
 
 static void
+copyright(void)
+{
+    kprintf(OMIT_TIMESTAMP
+           "Copyright (c) 2023-2025 Ian Marco Moffett and the OSMORA team\n");
+}
+
+static void
 start_init(void)
 {
 #if 0
@@ -70,6 +77,7 @@ main(void)
 
     /* Startup the console */
     cons_init();
+    copyright();
     kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
         HYRA_BUILDDATE);
 
