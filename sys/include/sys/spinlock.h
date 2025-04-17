@@ -44,6 +44,9 @@ void spinlock_release(struct spinlock *lock);
 int spinlock_try_acquire(struct spinlock *lock);
 int spinlock_usleep(struct spinlock *lock, size_t usec_max);
 
+/* System-wide locking (be careful!!) */
+int syslock(void);
+void sysrel(void);
 #endif
 
 #endif  /* !_SYS_SPINLOCK_H_ */
