@@ -33,8 +33,10 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/syslog.h>
+#include <sys/atomic.h>
 #include <machine/frame.h>
 #include <machine/cpu.h>
+#include <machine/cdefs.h>
 #include <vm/pmap.h>
 #include <dev/timer.h>
 #include <assert.h>
@@ -239,6 +241,18 @@ sched_switch(struct trapframe *tf)
 void
 sched_enter(void)
 {
+    static int nenter = 0;
+
+    /*
+     * Enable interrupts for all processors and
+     * sync on first entry.
+     */
+    md_inton();
+    if (nenter == 0) {
+        md_sync_all();
+        atomic_inc_int(&nenter);
+    }
+
     for (;;) {
         sched_oneshot(false);
         md_pause();

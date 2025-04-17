@@ -27,12 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _AMD64_CDEFS_H_
-#define _AMD64_CDEFS_H_
+#ifndef _MACHINE_SYNC_H_
+#define _MACHINE_SYNC_H_
 
-#include <sys/cdefs.h>
-#include <machine/sync.h>
+int md_sync_all(void);
 
-#define md_pause() __ASMV("rep; nop")
-
-#endif  /* !_AMD64_CDEFS_H_ */
+#endif  /* !_MACHINE_SYNC_H_ */
