@@ -40,6 +40,7 @@
 #include <machine/cpuid.h>
 #include <machine/lapic.h>
 #include <machine/uart.h>
+#include <machine/sync.h>
 #include <machine/intr.h>
 
 #if defined(__SPECTRE_IBRS)
