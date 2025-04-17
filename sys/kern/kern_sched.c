@@ -46,7 +46,7 @@
 
 void sched_switch(struct trapframe *tf);
 
-static sched_policy_t policy = SCHED_POLICY_RR;
+static sched_policy_t policy = SCHED_POLICY_MLFQ;
 
 /*
  * Thread ready queues - all threads ready to be
