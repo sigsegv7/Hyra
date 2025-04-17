@@ -36,12 +36,14 @@
 #include <dev/acpi/acpivar.h>
 #include <dev/pci/pci.h>
 #include <vm/vm.h>
+#include <string.h>
 #if defined(__x86_64__)
 #include <machine/hpet.h>
 #endif  /* __x86_64__ */
 
 #define pr_trace(fmt, ...) kprintf("acpi: " fmt, ##__VA_ARGS__)
 
+static char oemid[OEMID_SIZE];
 static struct acpi_root_sdt *root_sdt = NULL;
 static size_t root_sdt_entries = 0;
 static volatile struct limine_rsdp_request rsdp_req = {
@@ -91,6 +93,12 @@ acpi_get_root_sdt_len(void)
     return root_sdt_entries;
 }
 
+const char *
+acpi_oemid(void)
+{
+    return oemid;
+}
+
 void
 acpi_init(void)
 {
@@ -103,6 +111,7 @@ acpi_init(void)
     /* Fetch the RSDP */
     rsdp = rsdp_req.response->address;
     acpi_print_oemid("RSDP", rsdp->oemid);
+    memcpy(oemid, rsdp->oemid, OEMID_SIZE);
 
     /* Fetch the root SDT */
     if (rsdp->revision >= 2) {
