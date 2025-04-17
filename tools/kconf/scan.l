@@ -42,6 +42,7 @@
 "yes"                       { return YES; }
 "no"                        { return NO;  }
 \"([^\"])*\"                { yylval.str = strdup(yytext); return STRING; }
+0[xX][0-9a-fA-F]+           { yylval.str = strdup(yytext); return STRING; }
 [a-zA-Z_][a-zA-Z0-9_]+      { yylval.str = strdup(yytext); return IDENTIFIER; }
 [0-9]+                      { yylval.num = atoi(yytext); return NUMBER; }
 [ \t]                       { /* Ignore */ }
