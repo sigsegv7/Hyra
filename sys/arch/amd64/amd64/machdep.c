@@ -42,6 +42,7 @@
 #include <machine/uart.h>
 #include <machine/sync.h>
 #include <machine/intr.h>
+#include <machine/isa/i8042var.h>
 
 #if defined(__SPECTRE_IBRS)
 #define SPECTRE_IBRS  __SPECTRE_IBRS
@@ -215,6 +216,7 @@ int
 md_sync_all(void)
 {
     lapic_eoi();
+    i8042_sync();
     return 0;
 }
 

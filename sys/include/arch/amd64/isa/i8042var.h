@@ -27,13 +27,62 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <machine/frameasm.h>
+#ifndef _I8042VAR_H_
+#define _I8042VAR_H_
 
-    .text
-    .globl lapic_tmr_isr
-INTRENTRY(lapic_tmr_isr, handle_lapic_tmr)
-handle_lapic_tmr:
-    call sched_switch       // Context switch per every timer IRQ
-    call i8042_sync         // Sometimes needed depending on i8042 quirks
-    call lapic_eoi          // Done! Signal that we finished to the Local APIC
-    retq
+#include <sys/param.h>
+
+/* I/O bus ports */
+#define I8042_CMD       0x64
+#define I8042_DATA      0x60
+#define I8042_STATUS    0x64
+
+#define KB_IRQ      1       /* Keyboard IRQ */
+#define I8042_DELAY 20      /* Poll delay (in ms) */
+
+/* i8042 status */
+#define I8042_OBUFF BIT(0)  /* Output buffer full */
+#define I8042_IBUFF BIT(1)  /* Input buffer full */
+#define I8042_TTO   BIT(5)  /* Transmit timeout */
+#define I8042_RTO   BIT(6)  /* Receive timeout */
+#define I8042_PAR   BIT(7)  /* Parity error */
+
+/* i8042 commands */
+#define I8042_SELF_TEST     0xAA
+#define I8042_DISABLE_PORT0 0xAD
+#define I8042_DISABLE_PORT1 0xA7
+#define I8042_ENABLE_PORT0  0xAE
+#define I8042_ENABLE_PORT1  0xA8
+#define I8042_GET_CONFB     0x20
+#define I8042_SET_CONFB     0x60
+#define I8042_PORT1_SEND    0xD4
+
+/* i8042 config bits */
+#define I8042_PORT0_INTR    BIT(0)
+#define I8042_PORT1_INTR    BIT(1)
+#define I8042_PORT0_CLK     BIT(4)
+#define I8042_PORT1_CLK     BIT(5)
+
+/* Aux commands */
+#define I8042_AUX_DEFAULTS 0xF5
+#define I8042_AUX_ENABLE   0xF4
+#define I8042_AUX_DISABLE  0xF5
+#define I8042_AUX_RESET    0xFF
+
+/* LED bits */
+#define I8042_LED_SCROLL    BIT(0)
+#define I8042_LED_NUM       BIT(1)
+#define I8042_LED_CAPS      BIT(2)
+
+/* Quirks */
+#define I8042_HOSTILE       BIT(0)      /* If EC likes throwing NMIs */
+
+/* Apply a quirk to i8042 */
+void i8042_quirk(int mask);
+
+/* Internal - do not use */
+void i8042_sync(void);
+void i8042_kb_isr(void);
+void i8042_kb_event(void);
+
+#endif  /* _I8042VAR_H_ */
