@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/errno.h>
+#include <sys/atomic.h>
 #include <sys/syslog.h>
 #include <sys/spinlock.h>
 #include <dev/timer.h>
@@ -77,6 +78,31 @@ void
 spinlock_acquire(struct spinlock *lock)
 {
     while (__atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE));
+}
+
+/*
+ * Lazy acquire a spinlock
+ *
+ * spinlock_try_acquire() may only spin one thread
+ * at a time, threads that want to spin too must
+ * explicity do it on their own.
+ *
+ * This function returns 1 (a value that may be
+ * spinned on) when the lock is acquired and a
+ * thread is already spinning on it.
+ */
+int
+spinlock_try_acquire(struct spinlock *lock)
+{
+    volatile int locked;
+
+    locked = atomic_load_int(&lock->lock);
+    if (locked != 0) {
+        return 1;
+    }
+
+    while (__atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE));
+    return 0;
 }
 
 void

@@ -33,13 +33,15 @@
 #include <sys/types.h>
 
 struct spinlock {
-    volatile bool lock;
+    volatile int lock;
 };
 
 #if defined(_KERNEL)
 
 void spinlock_acquire(struct spinlock *lock);
 void spinlock_release(struct spinlock *lock);
+
+int spinlock_try_acquire(struct spinlock *lock);
 int spinlock_usleep(struct spinlock *lock, size_t usec_max);
 
 #endif
