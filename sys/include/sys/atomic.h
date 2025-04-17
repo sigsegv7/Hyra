@@ -79,7 +79,7 @@ atomic_store_long_nv(volatile unsigned long *p, long nv, unsigned int v)
 }
 
 /* Atomic increment (and fetch) operations */
-#define atoimc_inc_long(P) atomic_add_long_nv((P), 1)
+#define atomic_inc_long(P) atomic_add_long_nv((P), 1)
 #define atomic_inc_int(P) atomic_add_int_nv((P), 1)
 
 /* Atomic decrement (and fetch) operations */
