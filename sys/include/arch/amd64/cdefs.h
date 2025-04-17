@@ -33,6 +33,13 @@
 #include <sys/cdefs.h>
 #include <machine/sync.h>
 
-#define md_pause() __ASMV("rep; nop")
+/*
+ * Please use CLI wisely, it is a good idea to use
+ * md_sync_all() after using STI to ensure stable
+ * system operation.
+ */
+#define md_pause()  __ASMV("rep; nop")      /* (F3 90) PAUSE */
+#define md_intoff() __ASMV("cli")           /* Clear interrupts */
+#define md_inton()  __ASMV("sti")           /* Enable interrupts */
 
 #endif  /* !_AMD64_CDEFS_H_ */
