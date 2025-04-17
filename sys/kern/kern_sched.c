@@ -105,12 +105,14 @@ sched_dequeue_td(void)
         if (!TAILQ_EMPTY(&queue->q)) {
             td = TAILQ_FIRST(&queue->q);
             TAILQ_REMOVE(&queue->q, td, link);
-            break;
+            spinlock_release(&tdq_lock);
+            return td;
         }
     }
 
+    /* We got nothing */
     spinlock_release(&tdq_lock);
-    return td;
+    return NULL;
 }
 
 /*
