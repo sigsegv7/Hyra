@@ -241,18 +241,8 @@ sched_switch(struct trapframe *tf)
 void
 sched_enter(void)
 {
-    static int nenter = 0;
-
-    /*
-     * Enable interrupts for all processors and
-     * sync on first entry.
-     */
     md_inton();
-    if (nenter == 0) {
-        md_sync_all();
-        atomic_inc_int(&nenter);
-    }
-
+    md_sync_all();
     for (;;) {
         sched_oneshot(false);
         md_pause();
