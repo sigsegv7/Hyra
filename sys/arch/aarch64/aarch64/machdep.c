@@ -30,6 +30,7 @@
 #include <sys/syslog.h>
 #include <sys/panic.h>
 #include <machine/cpu.h>
+#include <machine/sync.h>
 
 struct cpu_info g_bsp_ci = {0};
 
@@ -59,6 +60,13 @@ serial_putc(char c)
 {
     /* TODO: STUB */
     return;
+}
+
+int
+md_sync_all(void)
+{
+    /* TODO: STUB */
+    return 0;
 }
 
 /*
