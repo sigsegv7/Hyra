@@ -33,9 +33,8 @@
 #if !defined(__ASSEMBLER__)
 #include <sys/types.h>
 #include <sys/cdefs.h>
-#else
 #include <machine/syscall.h>
-#endif  /* !__ASSEMBLER__ */
+#endif
 
 #define SYS_none    0
 #define SYS_exit    1
