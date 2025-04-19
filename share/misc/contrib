@@ -87,6 +87,14 @@ a pointer, like, for example:
 
 uint8_t *ptr = NULL;
 ...
+--
+The preferred pointer style is:
+
+void *p = ...;
+
+-- Not:
+
+void* p = ...;
 
 -- or if you have for example, some sort of counter value
    that must have a start:
