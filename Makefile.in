@@ -84,7 +84,7 @@ bin: $(BIN_MAKEDIRS)
 .PHONY: libc
 libc:
 	$(MAKE) -C lib/libc/ -I$(shell pwd)/builddeps \
-		USRDIR=$(USRDIR)
+		USRDIR=$(USRDIR) ARCH=$(ARCH)
 	cp lib/libc/build/libc.a base/usr/lib/
 
 .PHONY: base
