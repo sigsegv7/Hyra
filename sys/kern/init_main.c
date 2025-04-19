@@ -75,14 +75,14 @@ main(void)
     /* Setup serial driver */
     serial_init();
 
+    /* Init the virtual memory subsystem */
+    vm_init();
+
     /* Startup the console */
     cons_init();
     copyright();
     kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
         HYRA_BUILDDATE);
-
-    /* Init the virtual memory subsystem */
-    vm_init();
 
     /* Start the ACPI subsystem */
     acpi_init();
