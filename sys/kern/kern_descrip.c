@@ -148,6 +148,7 @@ static int
 fd_rw(unsigned int fd, void *buf, size_t count, uint8_t write)
 {
     char *kbuf = NULL;
+    ssize_t n;
     struct filedesc *filedes;
     struct sio_txn sio;
     scret_t retval = 0;
@@ -194,22 +195,21 @@ fd_rw(unsigned int fd, void *buf, size_t count, uint8_t write)
         }
 
         /* Call VFS write hook */
-        if ((count = vfs_vop_write(filedes->vp, &sio)) < 0) {
-            retval = -EIO;
+        if ((n = vfs_vop_write(filedes->vp, &sio)) < 0) {
+            retval = n;
             goto done;
         }
     } else {
-        if ((count = vfs_vop_read(filedes->vp, &sio)) < 0) {
-            retval = -EIO;
+        if ((n = vfs_vop_read(filedes->vp, &sio)) < 0) {
+            retval = n;
+            goto done;
+        }
+
+        if (copyout(kbuf, buf, count) < 0) {
+            retval = -EFAULT;
             goto done;
         }
     }
-
-    if (copyout(kbuf, buf, count) < 0) {
-        retval = -EFAULT;
-        goto done;
-    }
-
     retval = count;
 done:
     if (kbuf != NULL) {
