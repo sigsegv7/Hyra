@@ -60,10 +60,11 @@ override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
 # Userland
 ########################
 override SBIN_MAKEDIRS = $(shell find usr.sbin/ -type d -name "*" | awk '!/usr.sbin\/$$/')
+override BIN_MAKEDIRS = $(shell find usr.bin/ -type d -name "*" | awk '!/usr.bin\/$$/')
 override USRDIR = $(shell pwd)/base/usr
 
 .PHONY: all
-all: base libc sbin base/boot/hyra-kernel ramfs iso
+all: base libc sbin bin base/boot/hyra-kernel ramfs iso
 		rm -f sys/include/machine
 		rm -rf iso_root
 
@@ -72,6 +73,12 @@ sbin: $(SBIN_MAKEDIRS)
 	$(MAKE) -C $^ -I$(shell pwd)/builddeps \
 		LDSCRIPT=$(shell pwd)/usr.sbin/link.ld USRDIR=$(USRDIR)
 	find $^ -type f -executable -exec mv {} base/usr/sbin/ \;
+
+.PHONY: bin
+bin: $(BIN_MAKEDIRS)
+	$(MAKE) -C $^ -I$(shell pwd)/builddeps \
+		LDSCRIPT=$(shell pwd)/usr.bin/link.ld USRDIR=$(USRDIR)
+	find $^ -type f -executable -exec mv {} base/usr/bin/ \;
 
 .PHONY: libc
 libc:
@@ -83,6 +90,7 @@ libc:
 base:
 	mkdir -p base/usr/lib/
 	mkdir -p base/usr/sbin/
+	mkdir -p base/usr/bin/
 	mkdir -p base/boot/
 	mkdir -p base/usr/include/sys/
 	cp -f sys/include/sys/*.h base/usr/include/sys/
