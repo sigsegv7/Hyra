@@ -27,45 +27,58 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DEV_CONS_H_
-#define _DEV_CONS_H_
+#ifndef _DEV_CONSVAR_H_
+#define _DEV_CONSVAR_H_
 
 #include <sys/types.h>
-#include <sys/spinlock.h>
-#include <dev/video/fbdev.h>
-#include <dev/cons/consvar.h>
+#include <sys/param.h>
 
-struct cons_char {
-    char c;
-    uint32_t fg;
-    uint32_t bg;
-    uint32_t x;
-    uint32_t y;
+/* Buffer types */
+#define CONS_BUF_INPUT   0
+#define CONS_BUF_OUTPUT  1
+
+/* Buffer flags */
+#define CONS_BUF_CLEAN   BIT(0)     /* Not recently written to */
+
+extern struct cons_screen scr;
+
+/*
+ * The keyboard packet is two bytes
+ * and the bits are as follows:
+ *
+ * - 0:7  ~ ASCII character
+ * - 8:15 ~ Scancode
+ */
+struct cons_input {
+    union {
+        uint8_t chr;
+        uint8_t scancode;
+    };
+    uint16_t data;
 };
 
-struct cons_screen {
-    struct fbdev fbdev;
-    uint32_t fg;
-    uint32_t bg;
-
-    /* Private */
-    uint32_t *fb_mem;
-    uint32_t nrows;
-    uint32_t ncols;
-    uint32_t ch_col;    /* Current col */
-    uint32_t ch_row;    /* Current row */
-    uint32_t curs_col;  /* Cursor col */
-    uint32_t curs_row;  /* Cursor row */
-    struct cons_buf *ib;  /* Input buffer */
-    struct cons_buf **ob; /* Output buffers */
-    struct cons_char last_chr;
-    struct spinlock lock;
+/*
+ * A circular buffer for buffering
+ * keyboard input or console output.
+ */
+struct cons_buf {
+    union {
+        struct cons_input *ibuf;
+        struct cons_char *obuf;
+        void *raw;
+    };
+    uint8_t tail;
+    uint8_t head;
+    uint8_t type;
+    uint8_t flags;
+    size_t len;
 };
 
-void cons_init(void);
-void cons_expose(void);
-int cons_putch(struct cons_screen *scr, char c);
+struct cons_buf *cons_new_buf(uint8_t type, size_t len);
+int cons_obuf_push(struct cons_buf *bp, struct cons_char c);
+int cons_obuf_pop(struct cons_buf *bp, struct cons_char *res);
 
-extern struct cons_screen g_root_scr;
+int cons_ibuf_push(struct cons_screen *scr, struct cons_input input);
+int cons_ibuf_pop(struct cons_screen *scr, struct cons_input *res);
 
-#endif  /* !_DEV_CONS_H_ */
+#endif  /* !_DEV_CONSVAR_H_ */
