@@ -54,10 +54,9 @@ copyright(void)
 static void
 start_init(void)
 {
-#if 0
     struct proc *td = this_td();
     struct execve_args execve_args;
-    char *argv[] = { "/usr/sbin/init", NULL };
+    char *argv[] = { "/usr/bin/osh", NULL };
     char *envp[] = { NULL };
 
     execve_args.pathname = argv[0];
@@ -65,8 +64,8 @@ start_init(void)
     execve_args.envp = envp;
     if (execve(td, &execve_args) != 0)
         panic("failed to load init\n");
-#endif
-    for (;;);
+
+    __builtin_unreachable();
 }
 
 int
