@@ -27,26 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SPINLOCK_H_
-#define _SYS_SPINLOCK_H_
+#ifndef _MACHINE_SYNC_H_
+#define _MACHINE_SYNC_H_
 
-#include <sys/types.h>
+int md_sync_all(void);
 
-struct spinlock {
-    volatile int lock;
-};
-
-#if defined(_KERNEL)
-
-void spinlock_acquire(struct spinlock *lock);
-void spinlock_release(struct spinlock *lock);
-
-int spinlock_try_acquire(struct spinlock *lock);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
-
-/* System-wide locking (be careful!!) */
-int syslock(void);
-void sysrel(void);
-#endif
-
-#endif  /* !_SYS_SPINLOCK_H_ */
+#endif  /* !_MACHINE_SYNC_H_ */

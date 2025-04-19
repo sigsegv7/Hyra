@@ -27,26 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SPINLOCK_H_
-#define _SYS_SPINLOCK_H_
+#include <string.h>
 
-#include <sys/types.h>
+size_t
+strlen(const char *s)
+{
+    size_t len;
 
-struct spinlock {
-    volatile int lock;
-};
-
-#if defined(_KERNEL)
-
-void spinlock_acquire(struct spinlock *lock);
-void spinlock_release(struct spinlock *lock);
-
-int spinlock_try_acquire(struct spinlock *lock);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
-
-/* System-wide locking (be careful!!) */
-int syslock(void);
-void sysrel(void);
-#endif
-
-#endif  /* !_SYS_SPINLOCK_H_ */
+    len = 0;
+    while (s[len++]);
+    return len - 1;
+}

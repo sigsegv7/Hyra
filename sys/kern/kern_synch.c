@@ -30,12 +30,16 @@
 #include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/errno.h>
+#include <sys/atomic.h>
 #include <sys/syslog.h>
 #include <sys/spinlock.h>
 #include <dev/timer.h>
 
 #define pr_trace(fmt, ...) kprintf("synch: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
+
+/* XXX: Be very careful with this */
+static struct spinlock __syslock;
 
 /*
  * Returns 0 on success, returns non-zero value
@@ -79,8 +83,56 @@ spinlock_acquire(struct spinlock *lock)
     while (__atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE));
 }
 
+/*
+ * Lazy acquire a spinlock
+ *
+ * spinlock_try_acquire() may only spin one thread
+ * at a time, threads that want to spin too must
+ * explicity do it on their own.
+ *
+ * This function returns 1 (a value that may be
+ * spinned on) when the lock is acquired and a
+ * thread is already spinning on it.
+ */
+int
+spinlock_try_acquire(struct spinlock *lock)
+{
+    volatile int locked;
+
+    locked = atomic_load_int(&lock->lock);
+    if (locked != 0) {
+        return 1;
+    }
+
+    while (__atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE));
+    return 0;
+}
+
 void
 spinlock_release(struct spinlock *lock)
 {
     __atomic_clear(&lock->lock, __ATOMIC_RELEASE);
+}
+
+/*
+ * Attempt to hold the system-wide lock, returns 1
+ * if already held.
+ *
+ * XXX: Only use for CRITICAL code sections.
+ */
+int
+syslock(void)
+{
+    return spinlock_try_acquire(&__syslock);
+}
+
+/*
+ * Release the system-wide lock
+ *
+ * XXX: Only use for CRITICAL code sections.
+ */
+void
+sysrel(void)
+{
+    spinlock_release(&__syslock);
 }

@@ -48,5 +48,6 @@ fbdev_get(void)
     ret.width = FRAMEBUFFER->width;
     ret.height = FRAMEBUFFER->height;
     ret.pitch = FRAMEBUFFER->pitch;
+    ret.bpp = FRAMEBUFFER->bpp;
     return ret;
 }

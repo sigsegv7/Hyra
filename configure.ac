@@ -8,7 +8,6 @@ AC_ARG_ENABLE([aarch64],
               []
 )
 
-
 KERN_CFLAGS_AMD64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protector -fno-pic \\
 	-Werror=implicit -Werror=implicit-function-declaration \\
 	-Werror=implicit-int -Werror=int-conversion \\

@@ -27,26 +27,58 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SPINLOCK_H_
-#define _SYS_SPINLOCK_H_
+#ifndef _DEV_CONSVAR_H_
+#define _DEV_CONSVAR_H_
 
 #include <sys/types.h>
+#include <sys/param.h>
 
-struct spinlock {
-    volatile int lock;
+/* Buffer types */
+#define CONS_BUF_INPUT   0
+#define CONS_BUF_OUTPUT  1
+
+/* Buffer flags */
+#define CONS_BUF_CLEAN   BIT(0)     /* Not recently written to */
+
+extern struct cons_screen scr;
+
+/*
+ * The keyboard packet is two bytes
+ * and the bits are as follows:
+ *
+ * - 0:7  ~ ASCII character
+ * - 8:15 ~ Scancode
+ */
+struct cons_input {
+    union {
+        uint8_t chr;
+        uint8_t scancode;
+    };
+    uint16_t data;
 };
 
-#if defined(_KERNEL)
+/*
+ * A circular buffer for buffering
+ * keyboard input or console output.
+ */
+struct cons_buf {
+    union {
+        struct cons_input *ibuf;
+        struct cons_char *obuf;
+        void *raw;
+    };
+    uint8_t tail;
+    uint8_t head;
+    uint8_t type;
+    uint8_t flags;
+    size_t len;
+};
 
-void spinlock_acquire(struct spinlock *lock);
-void spinlock_release(struct spinlock *lock);
+struct cons_buf *cons_new_buf(uint8_t type, size_t len);
+int cons_obuf_push(struct cons_buf *bp, struct cons_char c);
+int cons_obuf_pop(struct cons_buf *bp, struct cons_char *res);
 
-int spinlock_try_acquire(struct spinlock *lock);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
+int cons_ibuf_push(struct cons_screen *scr, struct cons_input input);
+int cons_ibuf_pop(struct cons_screen *scr, struct cons_input *res);
 
-/* System-wide locking (be careful!!) */
-int syslock(void);
-void sysrel(void);
-#endif
-
-#endif  /* !_SYS_SPINLOCK_H_ */
+#endif  /* !_DEV_CONSVAR_H_ */

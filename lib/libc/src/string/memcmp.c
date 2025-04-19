@@ -27,26 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SPINLOCK_H_
-#define _SYS_SPINLOCK_H_
+#include <string.h>
 
-#include <sys/types.h>
+int
+memcmp(const void *s1, const void *s2, size_t n)
+{
+	if (n != 0) {
+        const unsigned char *p1 = s1, *p2 = s2;
 
-struct spinlock {
-    volatile int lock;
-};
-
-#if defined(_KERNEL)
-
-void spinlock_acquire(struct spinlock *lock);
-void spinlock_release(struct spinlock *lock);
-
-int spinlock_try_acquire(struct spinlock *lock);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
-
-/* System-wide locking (be careful!!) */
-int syslock(void);
-void sysrel(void);
-#endif
-
-#endif  /* !_SYS_SPINLOCK_H_ */
+		do {
+			if (*p1++ != *p2++) {
+				return (*--p1 - *--p2);
+            }
+		} while (--n != 0);
+    }
+	return 0;
+}

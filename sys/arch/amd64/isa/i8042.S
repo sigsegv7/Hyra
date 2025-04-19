@@ -27,26 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SPINLOCK_H_
-#define _SYS_SPINLOCK_H_
+#include <machine/frameasm.h>
 
-#include <sys/types.h>
-
-struct spinlock {
-    volatile int lock;
-};
-
-#if defined(_KERNEL)
-
-void spinlock_acquire(struct spinlock *lock);
-void spinlock_release(struct spinlock *lock);
-
-int spinlock_try_acquire(struct spinlock *lock);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
-
-/* System-wide locking (be careful!!) */
-int syslock(void);
-void sysrel(void);
-#endif
-
-#endif  /* !_SYS_SPINLOCK_H_ */
+    .text
+    .globl i8042_kb_isr
+INTRENTRY(i8042_kb_isr, handle_kb)
+handle_kb:
+    call i8042_kb_event
+    retq

@@ -27,26 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SPINLOCK_H_
-#define _SYS_SPINLOCK_H_
+#ifndef _ERRNO_BRIDGE_H_
+#define _ERRNO_BRIDGE_H_
 
-#include <sys/types.h>
-
-struct spinlock {
-    volatile int lock;
-};
-
-#if defined(_KERNEL)
-
-void spinlock_acquire(struct spinlock *lock);
-void spinlock_release(struct spinlock *lock);
-
-int spinlock_try_acquire(struct spinlock *lock);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
-
-/* System-wide locking (be careful!!) */
-int syslock(void);
-void sysrel(void);
+#if !defined(_POSIXSHIM)
+#include <ousi/errno.h>
+#else
+#include <sys/errno.h>
 #endif
 
-#endif  /* !_SYS_SPINLOCK_H_ */
+#endif  /* _ERRNO_BRIDGE_H_ */

@@ -35,11 +35,14 @@
 #include <sys/proc.h>
 #include <machine/tss.h>
 
+#define CPU_IRQ(IRQ_N) (BIT((IRQ_N)) & 0xFF)
+
 struct cpu_info {
     uint32_t apicid;
     uint8_t has_x2apic : 1;
     uint8_t ipl;
     size_t lapic_tmr_freq;
+    uint8_t irq_mask;
     struct tss_entry *tss;
     struct proc *curtd;
     struct cpu_info *self;

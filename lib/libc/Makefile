@@ -21,6 +21,8 @@ headers:
 	mkdir -p include/sys/
 	cp -f $(USRDIR)/include/sys/*.h include/sys
 	cp -f include/*.h $(USRDIR)/include/
+	cp -f include/stdlib/*.h $(USRDIR)/include/
+	cp -rf include/ousi $(USRDIR)/include/
 
 .PHONY:
 build/:

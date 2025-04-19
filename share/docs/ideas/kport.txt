@@ -1,0 +1,79 @@
+Copyright(c) Mon Apr 14 02:17:02 AM EDT 2025    Ian M. Moffett, OSMORA
+---------------------------------------------------------------------------
+***************************************************************************
+All use of any articles/subjects from this doucment MUST retain ALL and ANY
+forms of credit included. ALL Corporate and Government entities MUST
+contact ian@osmora.org WITH intent of use BEFORE consideration of usage.
+***************************************************************************
+
+Author: Ian M. Moffett
+Description: KPORT facilitates seamless low-latency access to dedicated
+             kernel structures securely, while bypassing the need for
+             syscalls.
+---------------------------------------------------------------------------
+                 ubuf
+                  |
+                kport
+                  |
+                shadow
+                  |
+                scache        [write-through shadow cache]
+                  |
+               resource
+
+
+
+               resource (write)
+                     \
+                      \
+                       [write]
+                         \
+                          \
+                           scache
+                          /
+                         /
+                   shadow
+                       /
+                      /
+                    kport [r/w]
+                    /
+                ubuf
+
+
+            struct resource_ops {
+                void(*read)(...);
+                void(*write)(...)
+            };
+
+
+            struct resource {
+                void *data;
+                size_t size;
+                ...
+                struct resource_ops rops;  /* not the spooky kind! */
+            };
+
+---------------------------------------------------------------------------
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+---------------------------------------------------------------------------
+     * configurable in sys/arch/<arch>/conf/ *
+                       |
+                       |
+            kport_allocz(page_count)
+                     \
+                      [pool]
+
+             Semantics:
+                - All accesses MUST be aligned by the machine word size (-EFAULT otherwise)
+                - The size of each access MUST be compared with the kport pool size (-EFAULT otherwise)
+                - The kport pool MUST have no low-level memory caching
+             Notes:
+                The shadow layer exists as a sandbox to isolate the backing resource
+                between itself and the kport layer. It SHOULD contain a "shadow byte region"
+                (SBR), that is, an area reserved for shadow bytes used to detect clobbering
+                and allowing the kernel to respond accordingly (i.e., defer next write-back
+                and kill the process, among other things...)

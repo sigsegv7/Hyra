@@ -33,8 +33,10 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/syslog.h>
+#include <sys/atomic.h>
 #include <machine/frame.h>
 #include <machine/cpu.h>
+#include <machine/cdefs.h>
 #include <vm/pmap.h>
 #include <dev/timer.h>
 #include <assert.h>
@@ -44,7 +46,7 @@
 
 void sched_switch(struct trapframe *tf);
 
-static sched_policy_t policy = SCHED_POLICY_RR;
+static sched_policy_t policy = SCHED_POLICY_MLFQ;
 
 /*
  * Thread ready queues - all threads ready to be
@@ -105,12 +107,14 @@ sched_dequeue_td(void)
         if (!TAILQ_EMPTY(&queue->q)) {
             td = TAILQ_FIRST(&queue->q);
             TAILQ_REMOVE(&queue->q, td, link);
-            break;
+            spinlock_release(&tdq_lock);
+            return td;
         }
     }
 
+    /* We got nothing */
     spinlock_release(&tdq_lock);
-    return td;
+    return NULL;
 }
 
 /*
@@ -237,8 +241,12 @@ sched_switch(struct trapframe *tf)
 void
 sched_enter(void)
 {
-    sched_oneshot(false);
-    for (;;);
+    md_inton();
+    md_sync_all();
+    for (;;) {
+        sched_oneshot(false);
+        md_pause();
+    }
 }
 
 void

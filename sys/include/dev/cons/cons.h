@@ -33,11 +33,14 @@
 #include <sys/types.h>
 #include <sys/spinlock.h>
 #include <dev/video/fbdev.h>
+#include <dev/cons/consvar.h>
 
 struct cons_char {
     char c;
     uint32_t fg;
     uint32_t bg;
+    uint32_t x;
+    uint32_t y;
 };
 
 struct cons_screen {
@@ -53,6 +56,8 @@ struct cons_screen {
     uint32_t ch_row;    /* Current row */
     uint32_t curs_col;  /* Cursor col */
     uint32_t curs_row;  /* Cursor row */
+    struct cons_buf *ib;  /* Input buffer */
+    struct cons_buf **ob; /* Output buffers */
     struct cons_char last_chr;
     struct spinlock lock;
 };

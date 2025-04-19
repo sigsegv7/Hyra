@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Ian Marco Moffett and the Osmora Team.
+ * Copyright (c) 2023-2024 Ian Marco Moffett and the Osmora Team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,26 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SPINLOCK_H_
-#define _SYS_SPINLOCK_H_
+#ifndef _ISA_SPKR_H_
+#define _ISA_SPKR_H_
 
 #include <sys/types.h>
 
-struct spinlock {
-    volatile int lock;
-};
+int pcspkr_tone(uint16_t freq, uint32_t msec);
 
-#if defined(_KERNEL)
-
-void spinlock_acquire(struct spinlock *lock);
-void spinlock_release(struct spinlock *lock);
-
-int spinlock_try_acquire(struct spinlock *lock);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
-
-/* System-wide locking (be careful!!) */
-int syslock(void);
-void sysrel(void);
 #endif
-
-#endif  /* !_SYS_SPINLOCK_H_ */

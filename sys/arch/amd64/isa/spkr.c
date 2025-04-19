@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Ian Marco Moffett and the Osmora Team.
+ * Copyright (c) 2023-2024 Ian Marco Moffett and the Osmora Team.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,26 +27,43 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SPINLOCK_H_
-#define _SYS_SPINLOCK_H_
+#include <sys/cdefs.h>
+#include <sys/errno.h>
+#include <sys/param.h>
+#include <dev/timer.h>
+#include <machine/isa/spkr.h>
+#include <machine/isa/i8254.h>
+#include <machine/pio.h>
 
-#include <sys/types.h>
+#define DIVIDEND 1193180
+#define CTRL_PORT 0x61
 
-struct spinlock {
-    volatile int lock;
-};
+int
+pcspkr_tone(uint16_t freq, uint32_t msec)
+{
+    uint32_t divisor;
+    uint8_t tmp;
+    struct timer tmr;
 
-#if defined(_KERNEL)
+    if (req_timer(TIMER_GP, &tmr) != TMRR_SUCCESS)
+        return -ENOTSUP;
+    if (__unlikely(tmr.msleep == NULL))
+        return -ENOTSUP;
 
-void spinlock_acquire(struct spinlock *lock);
-void spinlock_release(struct spinlock *lock);
+    divisor = DIVIDEND / freq;
+    outb(I8254_COMMAND, 0xB6);
+    outb(I8254_CHANNEL_2, divisor & 0xFF);
+    outb(I8254_CHANNEL_2, (divisor >> 8) & 0xFF);
 
-int spinlock_try_acquire(struct spinlock *lock);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
+    /* Oscillate the speaker */
+    tmp = inb(CTRL_PORT);
+    if (!ISSET(tmp, 3)) {
+        tmp |= 3;
+        outb(CTRL_PORT, tmp);
+    }
 
-/* System-wide locking (be careful!!) */
-int syslock(void);
-void sysrel(void);
-#endif
-
-#endif  /* !_SYS_SPINLOCK_H_ */
+    /* Sleep then turn off the speaker */
+    tmr.msleep(msec);
+    outb(CTRL_PORT, tmp & ~3);
+    return 0;
+}

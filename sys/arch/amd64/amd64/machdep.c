@@ -40,7 +40,9 @@
 #include <machine/cpuid.h>
 #include <machine/lapic.h>
 #include <machine/uart.h>
+#include <machine/sync.h>
 #include <machine/intr.h>
+#include <machine/isa/i8042var.h>
 
 #if defined(__SPECTRE_IBRS)
 #define SPECTRE_IBRS  __SPECTRE_IBRS
@@ -207,6 +209,17 @@ this_cpu(void)
     return ci;
 }
 
+/*
+ * Sync all system operation
+ */
+int
+md_sync_all(void)
+{
+    lapic_eoi();
+    i8042_sync();
+    return 0;
+}
+
 void
 cpu_startup(struct cpu_info *ci)
 {
@@ -220,6 +233,5 @@ cpu_startup(struct cpu_info *ci)
     init_tss(ci);
     try_mitigate_spectre();
 
-    __ASMV("sti");              /* Unmask interrupts */
     lapic_init();
 }

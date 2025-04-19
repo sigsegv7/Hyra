@@ -33,9 +33,10 @@
 #include <sys/cdefs.h>
 #include <sys/queue.h>
 #include <sys/proc.h>
+#include <machine/cdefs.h>
 
 #if defined(_KERNEL)
-#define DEFAULT_TIMESLICE_USEC 1050
+#define DEFAULT_TIMESLICE_USEC 500
 #define SHORT_TIMESLICE_USEC 10
 
 #define SCHED_POLICY_MLFQ 0x00U   /* Multilevel feedback queue */

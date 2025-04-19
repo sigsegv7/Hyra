@@ -27,26 +27,62 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SPINLOCK_H_
-#define _SYS_SPINLOCK_H_
+#ifndef _I8042VAR_H_
+#define _I8042VAR_H_
 
-#include <sys/types.h>
+#include <sys/param.h>
 
-struct spinlock {
-    volatile int lock;
-};
+/* I/O bus ports */
+#define I8042_CMD       0x64
+#define I8042_DATA      0x60
+#define I8042_STATUS    0x64
 
-#if defined(_KERNEL)
+#define KB_IRQ      1       /* Keyboard IRQ */
+#define I8042_DELAY 20      /* Poll delay (in ms) */
 
-void spinlock_acquire(struct spinlock *lock);
-void spinlock_release(struct spinlock *lock);
+/* i8042 status */
+#define I8042_OBUFF BIT(0)  /* Output buffer full */
+#define I8042_IBUFF BIT(1)  /* Input buffer full */
+#define I8042_TTO   BIT(5)  /* Transmit timeout */
+#define I8042_RTO   BIT(6)  /* Receive timeout */
+#define I8042_PAR   BIT(7)  /* Parity error */
 
-int spinlock_try_acquire(struct spinlock *lock);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
+/* i8042 commands */
+#define I8042_SELF_TEST     0xAA
+#define I8042_DISABLE_PORT0 0xAD
+#define I8042_DISABLE_PORT1 0xA7
+#define I8042_ENABLE_PORT0  0xAE
+#define I8042_ENABLE_PORT1  0xA8
+#define I8042_GET_CONFB     0x20
+#define I8042_SET_CONFB     0x60
+#define I8042_PORT1_SEND    0xD4
 
-/* System-wide locking (be careful!!) */
-int syslock(void);
-void sysrel(void);
-#endif
+/* i8042 config bits */
+#define I8042_PORT0_INTR    BIT(0)
+#define I8042_PORT1_INTR    BIT(1)
+#define I8042_PORT0_CLK     BIT(4)
+#define I8042_PORT1_CLK     BIT(5)
 
-#endif  /* !_SYS_SPINLOCK_H_ */
+/* Aux commands */
+#define I8042_AUX_DEFAULTS 0xF5
+#define I8042_AUX_ENABLE   0xF4
+#define I8042_AUX_DISABLE  0xF5
+#define I8042_AUX_RESET    0xFF
+
+/* LED bits */
+#define I8042_LED_SCROLL    BIT(0)
+#define I8042_LED_NUM       BIT(1)
+#define I8042_LED_CAPS      BIT(2)
+
+/* Quirks */
+#define I8042_HOSTILE       BIT(0)      /* If EC likes throwing NMIs */
+
+/* Apply a quirk to i8042 */
+void i8042_quirk(int mask);
+
+/* Internal - do not use */
+void i8042_sync(void);
+void i8042_kb_isr(void);
+void i8042_kb_event(void);
+
+#endif  /* _I8042VAR_H_ */

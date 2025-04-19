@@ -27,26 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SPINLOCK_H_
-#define _SYS_SPINLOCK_H_
+#ifndef _AMD64_CDEFS_H_
+#define _AMD64_CDEFS_H_
 
-#include <sys/types.h>
+#include <sys/cdefs.h>
+#include <machine/sync.h>
 
-struct spinlock {
-    volatile int lock;
-};
+/*
+ * Please use CLI wisely, it is a good idea to use
+ * md_sync_all() after using STI to ensure stable
+ * system operation.
+ */
+#define md_pause()  __ASMV("rep; nop")      /* (F3 90) PAUSE */
+#define md_intoff() __ASMV("cli")           /* Clear interrupts */
+#define md_inton()  __ASMV("sti")           /* Enable interrupts */
 
-#if defined(_KERNEL)
-
-void spinlock_acquire(struct spinlock *lock);
-void spinlock_release(struct spinlock *lock);
-
-int spinlock_try_acquire(struct spinlock *lock);
-int spinlock_usleep(struct spinlock *lock, size_t usec_max);
-
-/* System-wide locking (be careful!!) */
-int syslock(void);
-void sysrel(void);
-#endif
-
-#endif  /* !_SYS_SPINLOCK_H_ */
+#endif  /* !_AMD64_CDEFS_H_ */
