@@ -360,6 +360,10 @@ i8042_kb_getc(uint8_t sc, char *chr)
 static void
 i8042_sync_loop(void)
 {
+    /* Wake up the bus */
+    outb(I8042_DATA, 0x00);
+    i8042_drain();
+
     for (;;) {
         i8042_sync();
         md_pause();
