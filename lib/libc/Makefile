@@ -5,7 +5,7 @@ LIBC_ASMFILES = $(shell find src/ -name "*.S")
 LIBC_OBJ = $(LIBC_CFILES:.c=.o)
 LIBC_ASMOBJ = $(LIBC_ASMFILES:.S=.S.o)
 
-all: headers $(LIBC_ASMOBJ) $(LIBC_OBJ) build/libc.a
+all: sys/include/machine headers $(LIBC_ASMOBJ) $(LIBC_OBJ) build/libc.a
 
 build/libc.a: build/
 	ar rcs build/libc.a $(LIBC_OBJ) $(LIBC_ASMOBJ)
@@ -16,8 +16,12 @@ build/libc.a: build/
 %.S.o: %.S
 	$(CC) $(CFLAGS) -Iinclude/ $< -o $@
 
+sys/include/machine:
+	mkdir -p include/machine/
+	cp include/arch/$(ARCH)/*.h include/machine/
+
 .PHONY: headers
-headers:
+headers: sys/include/machine
 	mkdir -p include/sys/
 	cp -f $(USRDIR)/include/sys/*.h include/sys
 	cp -f include/*.h $(USRDIR)/include/
@@ -31,4 +35,5 @@ build/:
 .PHONY: clean
 clean:
 	rm -f $(LIBC_OBJ) $(LIBC_ASMOBJ)
+	rm -rf include/machine/
 	rm -rf build/
