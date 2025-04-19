@@ -57,15 +57,6 @@
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
 #define IO_NOP() inb(0x80)
-#define OBUF_WAIT() do {                                    \
-        i8042_statpoll(I8042_OBUFF, false, NULL);           \
-        IO_NOP();                                           \
-    } while (0);
-
-#define IBUF_WAIT() do {                                    \
-        i8042_statpoll(I8042_IBUFF, false, NULL);           \
-        IO_NOP();                                           \
-    } while (0);
 
 static struct spinlock data_lock;
 static struct spinlock isr_lock;
@@ -117,11 +108,9 @@ kbd_set_leds(uint8_t mask)
  *
  * @bits: Status bits.
  * @pollset: True to poll if set
- * @io: Routine to invoke per iter (NULL if none)
- * @flush: True to flush i8042 data per iter
  */
 static int
-i8042_statpoll(uint8_t bits, bool pollset, bool flush)
+i8042_statpoll(uint8_t bits, bool pollset)
 {
     size_t usec_start, usec;
     size_t elapsed_msec;
@@ -158,7 +147,9 @@ static void
 i8042_drain(void)
 {
     spinlock_acquire(&data_lock);
-    i8042_statpoll(I8042_OBUFF, false, true);
+    while (ISSET(inb(I8042_STATUS), I8042_OBUFF)) {
+        inb(I8042_DATA);
+    }
     spinlock_release(&data_lock);
 }
 
@@ -171,7 +162,7 @@ i8042_drain(void)
 static void
 i8042_write(uint16_t port, uint8_t val)
 {
-    IBUF_WAIT();
+    i8042_statpoll(I8042_IBUFF, false);
     outb(port, val);
 }
 
@@ -183,7 +174,7 @@ i8042_read_conf(void)
 {
     i8042_drain();
     i8042_write(I8042_CMD, I8042_GET_CONFB);
-    OBUF_WAIT();
+    i8042_statpoll(I8042_OBUFF, true);
     return inb(I8042_DATA);
 }
 
@@ -194,10 +185,11 @@ static void
 i8042_write_conf(uint8_t value)
 {
     i8042_drain();
-    IBUF_WAIT();
+    i8042_statpoll(I8042_IBUFF, false);
     i8042_write(I8042_CMD, I8042_SET_CONFB);
-    IBUF_WAIT();
+    i8042_statpoll(I8042_IBUFF, false);
     i8042_write(I8042_DATA, value);
+    i8042_drain();
 }
 
 /*
@@ -213,9 +205,9 @@ dev_send(bool aux, uint8_t data)
         i8042_write(I8042_CMD, I8042_PORT1_SEND);
     }
 
-    IBUF_WAIT();
+    i8042_statpoll(I8042_IBUFF, false);
     i8042_write(I8042_DATA, data);
-    OBUF_WAIT();
+    i8042_statpoll(I8042_OBUFF, true);
     return inb(I8042_DATA);
 }
 
@@ -223,6 +215,7 @@ void
 i8042_kb_event(void)
 {
     struct cpu_info *ci;
+    struct cons_input input;
     uint8_t data;
     char c;
 
@@ -235,8 +228,9 @@ i8042_kb_event(void)
         /* No data useful */
         goto done;
     }
-    cons_putch(&g_root_scr, c);
-    /* TODO */
+    input.scancode = data;
+    input.chr = c;
+    cons_ibuf_push(&g_root_scr, input);
 done:
     ci->irq_mask &= CPU_IRQ(1);
     spinlock_release(&isr_lock);
@@ -379,6 +373,7 @@ void
 i8042_sync(void)
 {
     static struct spinlock lock;
+    struct cons_input input;
     uint8_t data;
     char c;
 
@@ -387,16 +382,17 @@ i8042_sync(void)
     }
 
     if (ISSET(quirks, I8042_HOSTILE) && is_init) {
-        if (i8042_statpoll(I8042_OBUFF, true, NULL) < 0) {
+        if (i8042_statpoll(I8042_OBUFF, true) < 0) {
             /* No data ready */
             goto done;
         }
         data = inb(I8042_DATA);
 
         if (i8042_kb_getc(data, &c) == 0) {
-            cons_putch(&g_root_scr, c);
+            input.scancode = data;
+            input.chr = c;
+            cons_ibuf_push(&g_root_scr, input);
         }
-        md_pause();
     }
 done:
     spinlock_release(&lock);
