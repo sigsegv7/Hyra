@@ -21,6 +21,22 @@ is_power_of_two(uint8_t n)
     return ((n & 0x01) == 0);
 }
 
+--
+When defining local variables in functions, they
+must be declared at the top:
+
+static void
+foo(void)
+{
+    uint8_t byte;
+    uint16_t pair;
+    uint32_t quad;
+    uint64_t oct;
+
+    ...
+}
+--
+
 When checking if an integer is 0 or not, *be explicit* unless it is a bool!
 Do not do this:
 
