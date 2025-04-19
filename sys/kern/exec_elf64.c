@@ -30,6 +30,7 @@
 #include <sys/elf.h>
 #include <sys/exec.h>
 #include <sys/param.h>
+#include <sys/syslog.h>
 #include <sys/namei.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
@@ -41,6 +42,9 @@
 #include <vm/map.h>
 #include <string.h>
 #include <machine/pcb.h>
+
+#define pr_trace(fmt, ...) kprintf("elf64: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
 
 #define PHDR(HDRP, IDX) \
     (void *)((uintptr_t)HDRP + (HDRP)->e_phoff + (HDRP->e_phentsize * IDX))
@@ -209,6 +213,7 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
             /* Try to allocate page frames */
             physmem = vm_alloc_frame(page_count);
             if (physmem == 0) {
+                pr_error("out of physical memory\n");
                 status = -ENOMEM;
                 break;
             }
