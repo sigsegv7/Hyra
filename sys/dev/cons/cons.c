@@ -150,12 +150,25 @@ cons_flush(struct cons_screen *scr)
 static int
 cons_handle_special(struct cons_screen *scr, char c)
 {
+    struct cons_buf *bp;
+
     if (scr->ch_col >= scr->ncols - 20) {
         scr->ch_col = 0;
         cons_handle_special(scr, '\n');
     }
 
     switch (c) {
+    case ASCII_BS:
+        bp = scr->ob[scr->ch_row];
+        if (bp->head > bp->tail) {
+            --bp->head;
+        }
+
+        HIDE_CURSOR(scr);
+        --scr->ch_col;
+        --scr->curs_col;
+        SHOW_CURSOR(scr);
+        return 0;
     case ASCII_LF:
         HIDE_CURSOR(scr);
 
