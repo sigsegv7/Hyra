@@ -62,6 +62,37 @@ if (!blah) {
 
 --
 
+When writing switch statements, no indentation is needed
+before the "case" statement, do this:
+
+switch (v) {
+case 0:
+    ...
+    break;
+case 1:
+    ...
+    break;
+case 2:
+    ...
+    break;
+}
+
+Not this:
+
+
+switch (v) {
+case 0:
+    ...
+    break;
+case 1:
+    ...
+    break;
+case 2:
+    ...
+    break;
+}
+
+--
 Now, only use predefined integer types in sys/cdefs.h like so:
 
 uint8_t a;
