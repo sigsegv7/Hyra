@@ -42,46 +42,126 @@
     ":: ..... Proceed with purpose .....  ::\n" \
     ":::::::::::::::::::::::::::::::::::::::\n"
 
-#define CMD_ECHO "echo"
+#define HELP \
+    "Default commands:\n" \
+    "help    - Display this help message\n" \
+    "echo    - Print the arguments to the console\n" \
+    "exit    - Exit the shell\n"
+
+#define PROMPT "[root::osmora]~ "
 
 static char buf[64];
 static uint8_t i;
+static int running;
 
-static void
-cmd_run(int fd)
+struct command {
+    const char *name;
+    void (*func)(int fd, int argc, char *argv[]);
+};
+
+void
+cmd_help(int fd, int argc, char *argv[])
 {
-    int cmp;
-    char *p = buf;
-    size_t len;
-    int valid_cmd = 1;
+    prcons(fd, HELP);
+}
 
-    switch (buf[0]) {
-    case 'e':
-        len = strlen(CMD_ECHO);
-        if (memcmp(buf, CMD_ECHO, len) == 0) {
-            p += len + 1;
-            prcons(fd, "\n");
-            prcons(fd, p);
-            break;
-        }
+void
+cmd_exit(int fd, int argc, char *argv[])
+{
+    running = 0;
+}
 
-        valid_cmd = 0;
-        break;
-    default:
-        valid_cmd = 0;
-        break;
+void
+cmd_echo(int fd, int argc, char *argv[])
+{
+    for (i = 1; i < argc; i++) {
+        prcons(fd, argv[i]);
+        prcons(fd, " ");
     }
-
-    if (!valid_cmd) {
-        prcons(fd, "\nunrecognized command\n");
-    }
+    prcons(fd, "\n");
 }
 
 int
-main(int argc, char **argv)
+parse_args(char *input, char *argv[], int max_args)
 {
-    int fd;
-    uint16_t input;
+    int argc = 0;
+
+    while (*input != '\0') {
+        /* skip leading spaces */
+        while (*input == ' ') {
+            input++;
+        }
+
+        /* check if empty */
+        if (*input == '\0') {
+            break;
+        }
+
+        if (argc < max_args) {
+            argv[argc++] = input; /* mark start of the argument */
+        }
+        /* move forward until next space or end */
+        while (*input != '\0' && *input != ' ') {
+            input++;
+        }
+
+        /* end */
+        if (*input != '\0') {
+            *input = '\0';
+            input++;
+        }
+    }
+
+    return argc;
+}
+
+static char *
+getstr(int fd)
+{
+    char c;
+    uint8_t input;
+    i = 0;
+
+    for (;;) {
+        if (read(fd, &input, 2) <= 0) {
+            continue;
+        }
+
+        c = input & 0xFF;
+
+        /* return on newline */
+        if (c == '\n') {
+            buf[i] = '\0';
+            write(fd, "\n", 1);
+            return buf;
+        }
+
+        /* handle backspaces and DEL */
+        if (c == '\b' || c == 127) {
+            if (i > 0) {
+                i--;
+                write(fd, "\b \b", 3);
+            }
+        } else if (is_ascii(c) && i < sizeof(buf) - 1) {
+            /* write to fd and add to buffer */
+            buf[i++] = c;
+            write(fd, &c, 1);
+        }
+    }
+}
+
+struct command cmds[] = {
+    {"help", cmd_help},
+    {"echo", cmd_echo},
+    {"exit", cmd_exit},
+    {NULL, NULL}
+};
+
+int
+main(void)
+{
+    int fd, found, argc;
+    char *input, *argv[16];
     char c;
 
     if ((fd = open("/dev/console", O_RDWR)) < 0) {
@@ -89,30 +169,37 @@ main(int argc, char **argv)
     }
 
     i = 0;
+    running = 1;
+    found = 0;
+
     prcons(fd, WELCOME);
-    prcons(fd, "[root::osmora]~ ");
-    for (;;) {
-        if (read(fd, &input, 2) <= 0) {
+    while (running) {
+        prcons(fd, PROMPT);
+
+        input = getstr(fd);
+        if (input[0] == '\0') {
             continue;
         }
 
-        c = input & 0xFF;
-        if (!is_ascii(c)) {
+        argc = parse_args(input, argv, sizeof(argv));
+        if (argc == 0) {
             continue;
         }
 
-        if (i < sizeof(buf)) {
-            buf[i++] = c;
-            buf[i] = 0;
+        for (i = 0; cmds[i].name != NULL; i++) {
+            if (strcmp(input, cmds[i].name) == 0) {
+                cmds[i].func(fd, argc, argv);
+                found = 1;
+                break;
+            }
         }
-        if (c == '\n') {
-            cmd_run(fd);
-            i = 0;
-            buf[i] = 0;
-            prcons(fd, "[root::osmora]~ ");
-        } else {
-            write(fd, &c, 1);
+
+        if (found == 0) {
+            prcons(fd, "Unrecognized command\n");
         }
+
+        found = 0;
+        buf[0] = '\0';
     }
     return 0;
 }
