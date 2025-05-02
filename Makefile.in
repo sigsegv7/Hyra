@@ -9,7 +9,7 @@ override ARCH = @ARCH@
 override HYRA_VERSION = @PACKAGE_VERSION@
 override PROMPT := printf "%s\t\t%s\n"
 override KERNEL_CFLAGS = @KERNEL_CFLAGS@ $(KERNEL_DEFINES)
-override KERNEL_LDFLAGS = -nostdlib -znoexecstack -zmax-page-size=0x1000 -static -Tsys/arch/$(ARCH)/conf/link.ld
+override KERNEL_LDFLAGS = -no-pie -nostdlib -znoexecstack -zmax-page-size=0x1000 -static -Tsys/arch/$(ARCH)/conf/link.ld
 override QEMU_FLAGS = @QEMU_FLAGS@
 override KERNEL_DEFINES = $ -DHYRA_VERSION="\"$(HYRA_VERSION)\""\
                           -DHYRA_BUILDDATE="\"@HYRA_BUILDDATE@\""\
