@@ -29,8 +29,8 @@
 
 #include <sys/syscall.h>
 
-.text
-.globl _start
+    .section .init
+    .globl _start
 _start:
     // Mark end of callstack
     xor %rbp, %rbp

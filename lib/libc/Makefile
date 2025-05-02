@@ -9,6 +9,9 @@ all: sys/include/machine headers $(LIBC_ASMOBJ) $(LIBC_OBJ) build/libc.a
 
 build/libc.a: build/
 	ar rcs build/libc.a $(LIBC_OBJ) $(LIBC_ASMOBJ)
+	mv $(LIBC_ASMOBJ) build/   # For initial bootstrapping
+	mv build/crti.S.o build/crti.o
+	mv build/*.o build/*.a $(ROOT)/base/usr/lib/
 
 %.o: %.c
 	$(CC) $(CFLAGS) -Iinclude/ $< -o $@
