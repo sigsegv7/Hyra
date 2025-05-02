@@ -3,6 +3,19 @@ set -e
 
 mkdir -p lib/
 
+SYSTEM_NAME="$(uname -s)"
+MAKE="make"
+GIT="git"
+GCC="gcc"
+CLANG="clang"
+
+
+if [ "$SYSTEM_NAME" = "OpenBSD" ]
+then
+    MAKE="$(which gmake)"
+fi
+
+
 # arg0: Output path.
 # arg1: Command for downloading
 try_fetch() {
@@ -27,11 +40,11 @@ fetch() {
 }
 
 build_limine() {
-    make -C stand/limine/
+    $MAKE -C stand/limine/
 }
 
 build_kconf() {
-    make -C tools/kconf/
+    $MAKE -C tools/kconf/
 }
 
 build() {
