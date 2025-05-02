@@ -4,6 +4,7 @@ override PROMPT := printf "%s\t\t%s\n"
 ###############################
 # CFLAGS, QEMU flags + misc
 ###############################
+override PROJECT_ROOT = @PROJECT_ROOT@
 override BOOT_FW = @BOOT_FW@
 override ARCH = @ARCH@
 override HYRA_VERSION = @PACKAGE_VERSION@

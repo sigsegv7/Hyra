@@ -1,6 +1,7 @@
 AC_INIT([Hyra], [1.6], [ian@osmora.org])
 
 TARGET="amd64"
+PROJECT_ROOT=`pwd`
 BOOT_FW="BOOTX64.EFI"
 AC_ARG_ENABLE([aarch64],
               [AS_HELP_STRING([--enable-aarch64], [Enable AARCH64 Support])],
@@ -53,6 +54,7 @@ AC_SUBST(QEMU_FLAGS, [$QEMU_FLAGS_AMD64])
 AC_SUBST(QEMU, [qemu-system-x86_64])
 AC_SUBST(BOOT_FW, [$BOOT_FW])
 AC_SUBST(ARCH, [$TARGET])
+AC_SUBST(PROJECT_ROOT, [$PROJECT_ROOT])
 AC_SUBST(TOOLCHAIN, [clang])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
