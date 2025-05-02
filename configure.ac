@@ -17,7 +17,7 @@ KERN_CFLAGS_AMD64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protector 
 	-Werror=return-type -Wunused -mabi=sysv -mno-80387 -mno-mmx -mno-3dnow \\
 	-mno-sse -mno-sse2 -mno-red-zone -mcmodel=kernel -pedantic \\
 	-I sys/include/ -I sys/include/lib/ -D_KERNEL -Wno-pointer-sign -MMD \\
-	-Wno-gnu-zero-variadic-macro-arguments -Wno-language-extension-token -Wno-tautological-constant-out-of-range-compare -Wno-c23-extensions"
+	-Wno-gnu-zero-variadic-macro-arguments -Wno-language-extension-token -Wno-tautological-constant-out-of-range-compare"
 
 
 KERN_CFLAGS_AARCH64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protector -fno-pic \\
@@ -27,7 +27,7 @@ KERN_CFLAGS_AARCH64="-fexceptions --std=gnu11 -ffreestanding -fno-stack-protecto
 	-Werror=incompatible-pointer-types -Werror=int-to-pointer-cast \\
 	-Werror=return-type -Wunused -pedantic \\
 	-I sys/include/ -I sys/include/lib/ -D_KERNEL -Wno-pointer-sign -MMD \\
-	-Wno-gnu-zero-variadic-macro-arguments -Wno-language-extension-token -Wno-tautological-constant-out-of-range-compare -Wno-c23-extensions"
+	-Wno-gnu-zero-variadic-macro-arguments -Wno-language-extension-token -Wno-tautological-constant-out-of-range-compare"
 
 
 QEMU_FLAGS_AMD64="--enable-kvm -monitor stdio 	\\
