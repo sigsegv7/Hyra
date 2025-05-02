@@ -1,0 +1,9 @@
+------------------------------
+OMAR - OSMORA Archive Format
+------------------------------
+
+OMAR is a minimal, bullshit free archive format aimed to replace
+the old and outdated CPIO (copy in/out) format.
+
+OMAR is designed for readonly in-memory filesystems (such as initramfs),
+with simplicity, clarity and "getting it done" in mind.

@@ -12,5 +12,6 @@
 /base
 /sys/include/machine
 /lib/libc/include/machine/
+/tools/omar/bin/
 /share/misc/hwdoc
 autom4te.cache
