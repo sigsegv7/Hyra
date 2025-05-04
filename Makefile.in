@@ -4,16 +4,22 @@ override PROMPT := printf "%s\t\t%s\n"
 ###############################
 # CFLAGS, QEMU flags + misc
 ###############################
+override PROJECT_ROOT = @PROJECT_ROOT@
 override BOOT_FW = @BOOT_FW@
 override ARCH = @ARCH@
 override HYRA_VERSION = @PACKAGE_VERSION@
 override PROMPT := printf "%s\t\t%s\n"
 override KERNEL_CFLAGS = @KERNEL_CFLAGS@ $(KERNEL_DEFINES)
-override KERNEL_LDFLAGS = -nostdlib -znoexecstack -zmax-page-size=0x1000 -static -Tsys/arch/$(ARCH)/conf/link.ld
+override KERNEL_LDFLAGS = -no-pie -nostdlib -znoexecstack -zmax-page-size=0x1000 -static -Tsys/arch/$(ARCH)/conf/link.ld
 override QEMU_FLAGS = @QEMU_FLAGS@
 override KERNEL_DEFINES = $ -DHYRA_VERSION="\"$(HYRA_VERSION)\""\
                           -DHYRA_BUILDDATE="\"@HYRA_BUILDDATE@\""\
                           -DHYRA_ARCH="\"@ARCH@\"" $(shell cat sys/arch/$(ARCH)/conf/GENERIC | tools/kconf/kconf)
+######################
+# Initramfs config
+######################
+override RAMFS_TOOL = @RAMFS_TOOL@
+override RAMFS_LOC = ramfs.omar
 
 ######################
 # Toolchain
@@ -72,20 +78,19 @@ all: base libc sbin bin base/boot/hyra-kernel ramfs iso
 .PHONY: sbin
 sbin: $(SBIN_MAKEDIRS)
 	$(MAKE) -C $^ -I$(shell pwd)/builddeps \
-		LDSCRIPT=$(shell pwd)/usr.sbin/link.ld USRDIR=$(USRDIR)
-	find $^ -type f -executable -exec mv {} base/usr/sbin/ \;
+		LDSCRIPT=$(shell pwd)/usr.sbin/link.ld USRDIR=$(USRDIR)\
+		ROOT=$(PROJECT_ROOT)
 
 .PHONY: bin
 bin: $(BIN_MAKEDIRS)
 	$(MAKE) -C $^ -I$(shell pwd)/builddeps \
-		LDSCRIPT=$(shell pwd)/usr.bin/link.ld USRDIR=$(USRDIR)
-	find $^ -type f -executable -exec mv {} base/usr/bin/ \;
+		LDSCRIPT=$(shell pwd)/usr.bin/link.ld USRDIR=$(USRDIR) \
+		ROOT=$(PROJECT_ROOT)
 
 .PHONY: libc
 libc:
 	$(MAKE) -C lib/libc/ -I$(shell pwd)/builddeps \
-		USRDIR=$(USRDIR) ARCH=$(ARCH)
-	cp lib/libc/build/libc.a base/usr/lib/
+		USRDIR=$(USRDIR) ARCH=$(ARCH) ROOT=$(PROJECT_ROOT)
 
 .PHONY: base
 base:
@@ -106,9 +111,8 @@ run:
 
 .PHONY: ramfs
 ramfs:
-	cd base/; find . -name "*" | cpio --create --format=odc \
-		--no-absolute-filenames > ../ramfs.cpio
-	$(PROMPT) " RAMFS " $(shell pwd)/ramfs.cpio
+	$(RAMFS_TOOL) -i base/ -o ramfs.omar
+	$(PROMPT) " RAMFS " $(shell pwd)/ramfs.omar
 
 .PHONY: clean
 clean:
@@ -120,7 +124,7 @@ iso:
 	mkdir -p iso_root/boot/
 	mkdir -p iso_root/EFI/BOOT/
 	cp stand/limine/$(BOOT_FW) iso_root/EFI/BOOT/
-	mv ramfs.cpio iso_root/boot/
+	mv $(RAMFS_LOC) iso_root/boot/
 	cp builddeps/limine.conf stand/limine/limine-bios.sys \
 		stand/limine/limine-bios-cd.bin stand/limine/limine-uefi-cd.bin iso_root/
 	cp base/boot/* iso_root/boot/

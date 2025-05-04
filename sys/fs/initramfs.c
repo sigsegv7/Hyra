@@ -33,12 +33,16 @@
 #include <sys/errno.h>
 #include <sys/limine.h>
 #include <sys/panic.h>
+#include <sys/param.h>
 #include <sys/vnode.h>
 #include <fs/initramfs.h>
 #include <vm/dynalloc.h>
 #include <string.h>
 
-#define CPIO_TRAILER "TRAILER!!!"
+#define OMAR_EOF "RAMO"
+#define OMAR_REG    0
+#define OMAR_DIR    1
+#define BLOCK_SIZE 512
 
 /*
  * File or directory.
@@ -51,20 +55,18 @@ struct initramfs_node {
 };
 
 /*
- * ODC CPIO header
+ * The OMAR file header, describes the basics
+ * of a file.
+ *
+ * @magic: Header magic ("OMAR")
+ * @len: Length of the file
+ * @namelen: Length of the filename
  */
-struct cpio_hdr {
-    char c_magic[6];
-    char c_dev[6];
-    char c_ino[6];
-    char c_mode[6];
-    char c_uid[6];
-    char c_gid[6];
-    char c_nlink[6];
-    char c_rdev[6];
-    char c_mtime[11];
-    char c_namesize[6];
-    char c_filesize[11];
+struct __packed omar_hdr {
+    char magic[4];
+    uint8_t type;
+    uint8_t namelen;
+    uint32_t len;
 };
 
 static volatile struct limine_module_request mod_req = {
@@ -92,21 +94,6 @@ get_module(const char *path, uint64_t *size) {
 }
 
 /*
- * Convert octal to base 10
- */
-static uint32_t
-oct2dec(const char *in, size_t sz)
-{
-    size_t val = 0;
-
-    for (size_t i = 0; i < sz; ++i) {
-        val = val * 8 + (in[i] - '0');
-    }
-
-    return val;
-}
-
-/*
  * Get a file from initramfs
  *
  * @path: Path of file to get.
@@ -115,41 +102,54 @@ oct2dec(const char *in, size_t sz)
 static int
 initramfs_get_file(const char *path, struct initramfs_node *res)
 {
-    const struct cpio_hdr *hdr;
     struct initramfs_node node;
-    uintptr_t addr;
-    size_t namesize, filesize;
-    mode_t mode;
+    const struct omar_hdr *hdr;
+    const char *p, *name;
+    char namebuf[256];
+    off_t off;
 
-    addr = (uintptr_t)initramfs;
+    p = initramfs;
     for (;;) {
-        hdr = (void *)addr;
-        namesize = oct2dec(hdr->c_namesize, sizeof(hdr->c_namesize));
-        filesize = oct2dec(hdr->c_filesize, sizeof(hdr->c_filesize));
-        mode = oct2dec(hdr->c_mode, sizeof(hdr->c_mode));
+        hdr = (struct omar_hdr *)p;
+        if (strncmp(hdr->magic, OMAR_EOF, sizeof(OMAR_EOF)) == 0) {
+            break;
+        }
 
-        /* Make sure the magic is correct */
-        if (strncmp(hdr->c_magic, "070707", 6) != 0) {
+        /* Ensure the file is valid */
+        if (strncmp(hdr->magic, "OMAR", 4) != 0) {
+            /* Bad magic */
+            return -EINVAL;
+        }
+        if (hdr->namelen > sizeof(namebuf) - 1) {
             return -EINVAL;
         }
 
-        addr += sizeof(struct cpio_hdr);
-        node.path = (const char *)addr;
+        name = (char *)p + sizeof(struct omar_hdr);
+        memcpy(namebuf, name, hdr->namelen);
+        namebuf[hdr->namelen] = '\0';
 
-        /* Is this the requested file? */
-        if (strcmp(node.path, path) == 0) {
-            node.data = (void *)(addr + namesize);
-            node.size = filesize;
-            node.mode = mode;
+        /* Compute offset to next block */
+        if (hdr->type == OMAR_DIR) {
+            off = 512;
+        } else {
+            off = ALIGN_UP(sizeof(*hdr) + hdr->namelen + hdr->len, BLOCK_SIZE);
+        }
+
+        /* Skip header and name, right to the data */
+        p = (char *)hdr + sizeof(struct omar_hdr);
+        p += hdr->namelen;
+
+        if (strcmp(namebuf, path) == 0) {
+            node.mode = 0700;
+            node.size = hdr->len;
+            node.data = (void *)p;
             *res = node;
             return 0;
         }
 
-        /* Get next header and see if we are at the end */
-        addr += (namesize + filesize);
-        if (strcmp(node.path, CPIO_TRAILER) == 0) {
-            break;
-        }
+        hdr = (struct omar_hdr *)((char *)hdr + off);
+        p = (char *)hdr;
+        memset(namebuf, 0, sizeof(namebuf));
     }
 
     return -ENOENT;
@@ -256,9 +256,9 @@ initramfs_init(struct fs_info *fip)
     struct mount *mp;
     int status;
 
-    initramfs = get_module("/boot/ramfs.cpio", &initramfs_size);
+    initramfs = get_module("/boot/ramfs.omar", &initramfs_size);
     if (initramfs == NULL) {
-        panic("failed to open initramfs cpio image\n");
+        panic("failed to open initramfs OMAR image\n");
     }
 
     status = vfs_alloc_vnode(&g_root_vnode, VDIR);
