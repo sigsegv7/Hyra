@@ -31,10 +31,12 @@
 #include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/driver.h>
+#include <sys/device.h>
 #include <dev/pci/pci.h>
 #include <dev/phy/rt8139.h>
 #include <dev/timer.h>
 #include <dev/pci/pciregs.h>
+#include <net/if_ether.h>
 #include <vm/physmem.h>
 #include <vm/vm.h>
 #include <machine/pio.h>
@@ -65,6 +67,7 @@
 
 static struct pci_device *dev;
 static struct timer tmr;
+static struct etherdev wire;
 static uint16_t ioport;
 static paddr_t rxbuf, txbuf;
 
@@ -218,6 +221,10 @@ rt_init_pci(void)
 static int
 rt_init_mac(void)
 {
+    uint8_t conf;
+    uint32_t tmp;
+    int error;
+
     /*
      * First step is ensuring the MAC is in known
      * and consistent state by resetting it. God
@@ -226,7 +233,52 @@ rt_init_mac(void)
     ioport = dev->bar[0] & ~1;
     pr_trace("resetting MAC...\n");
     rt_write(RT_CHIPCMD, 1, RT_RST);
-    rt_poll(RT_CHIPCMD, 1, RT_RST, 0);
+    error = rt_poll(RT_CHIPCMD, 1, RT_RST, 0);
+    if (error < 0) {
+        pr_error("RTL8139 reset timeout\n");
+        return error;
+    }
+
+    /*
+     * Tell the RTL8139 to load config data from
+     * the 93C46. This is done by clearing EEM1
+     * and setting EEM0. This whole process should
+     * take roughly 2 milliseconds.
+     *
+     * XXX: EEPROM autoloads *should* happen during a hardware
+     *      reset but some cards might not follow spec so force
+     *      it.
+     */
+    conf = rt_read(RT_CFG9346, 1);
+    conf &= ~RT_EEM1;
+    conf |= RT_EEM0;
+    rt_write(RT_CFG9346, 1, conf);
+
+    /* MAC address dword 0 */
+    tmp = rt_read(RT_IDR0, 4);
+    wire.mac_addr[0] = tmp & 0xFF;
+    wire.mac_addr[1] = (tmp >> 8) & 0xFF;
+    wire.mac_addr[2] = (tmp >> 16) & 0xFF;
+    wire.mac_addr[3] = (tmp >> 24) & 0xFF;
+
+    /* MAC address word 1 */
+    tmp = rt_read(RT_IDR2, 4);
+    wire.mac_addr[4] = (tmp >> 16) & 0xFF;
+    wire.mac_addr[5] = (tmp >> 24) & 0xFF;
+
+    pr_trace("MAC address: %x:%x:%x:%x:%x:%x\n",
+        (uint64_t)wire.mac_addr[0], (uint64_t)wire.mac_addr[1],
+        (uint64_t)wire.mac_addr[2], (uint64_t)wire.mac_addr[3],
+        (uint64_t)wire.mac_addr[4], (uint64_t)wire.mac_addr[5]);
+
+    /*
+     * Alright, now we don't want those EEM bits
+     * sticking lopsided so lets put the RTL8139
+     * back into normal operation...
+     */
+    conf = rt_read(RT_CFG9346, 1);
+    conf &= ~(RT_EEM1 | RT_EEM0);
+    rt_write(RT_CFG9346, 1, conf);
 
     rxbuf = vm_alloc_frame(RX_BUF_SIZE);
     txbuf = vm_alloc_frame(RX_BUF_SIZE);

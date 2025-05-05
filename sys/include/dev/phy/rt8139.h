@@ -33,7 +33,14 @@
 #include <sys/types.h>
 #include <sys/param.h>
 
-#define RT_IDR0         0x00    /* MAC address */
+/* MAC address */
+#define RT_IDR0         0x00
+#define RT_IDR1         0x00
+#define RT_IDR2         0x02
+#define RT_IDR3         0x03
+#define RT_IDR4         0x04
+#define RT_IDR5         0x05
+
 #define RT_MAR0         0x08    /* Multicast filter */
 #define RT_TXSTATUS0    0x10    /* Transmit status (4 32bit regs) */
 #define RT_TXADDR0      0x20    /* Tx descriptors (also 4 32bit) */
@@ -69,6 +76,10 @@
 #define RT_TE    BIT(2)         /* Transmitter enable */
 #define RT_RE    BIT(3)         /* Receiver enable */
 #define RT_RST   BIT(4)         /* Reset */
+
+/* 93C46 EEPROM mode bits */
+#define RT_EEM0  BIT(6)
+#define RT_EEM1  BIT(7)
 
 /* Receive register bits */
 #define RT_AAP   BIT(0)         /* Accept all packets */
