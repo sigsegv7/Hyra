@@ -37,6 +37,7 @@
 #include <dev/usb/xhciregs.h>
 #include <dev/usb/xhcivar.h>
 #include <dev/pci/pci.h>
+#include <dev/acpi/acpi.h>
 #include <vm/physmem.h>
 #include <vm/dynalloc.h>
 #include <assert.h>
@@ -145,15 +146,17 @@ xhci_parse_ecp(struct xhci_hc *hc)
             break;
         case XHCI_ECAP_USBLEGSUP:
             /* Begin xHC BIOS handoff to us */
-            pr_trace("establishing xHC ownership...\n");
-            val |= XHCI_OS_SEM;
-            mmio_write32(p, val);
+            if (!ISSET(hc->quirks, XHCI_QUIRK_HANDOFF)) {
+                pr_trace("establishing xHC ownership...\n");
+                val |= XHCI_OS_SEM;
+                mmio_write32(p, val);
 
-            /* Ensure the xHC responded correctly */
-            if (xhci_poll32(p, XHCI_OS_SEM, 1) < 0)
-                return -EIO;
-            if (xhci_poll32(p, XHCI_BIOS_SEM, 0) < 0)
-                return -EIO;
+                /* Ensure the xHC responded correctly */
+                if (xhci_poll32(p, XHCI_OS_SEM, 1) < 0)
+                    return -EIO;
+                if (xhci_poll32(p, XHCI_BIOS_SEM, 0) < 0)
+                    return -EIO;
+            }
 
             break;
         }
@@ -414,6 +417,28 @@ xhci_init_hc(struct xhci_hc *hc)
     uintptr_t dcbaap, cmdring;
     struct xhci_caps *caps;
     struct xhci_opregs *opregs;
+    const char *vendor;
+
+    /*
+     * The firmware on some Dell machines handle the
+     * xHCI BIOS/OS handoff very poorly. Updating the
+     * the OS semaphore in the USBLEGSUP register will
+     * result in the chipset firing off an SMI which is
+     * supposed to perform the actual handoff.
+     *
+     * However, Dell is stupid as always and the machine
+     * can get stuck in SMM which results in the machine
+     * locking up in a *very* bad way. In other words, the
+     * OS execution is literally halted and further SMIs like
+     * thermal, power, and fan events are deferred forever
+     * (no bueno!!). The best thing to do is to not perform
+     * a handoff if the host board is by Dell (bad Dell!!).
+     */
+    vendor = acpi_oemid();
+    if (memcmp(vendor, "DELL", 4) == 0) {
+        pr_trace("detected xhc handoff quirk\n");
+        hc->quirks |= XHCI_QUIRK_HANDOFF;
+    }
 
     caps = (struct xhci_caps *)hc->base;
     caplength = mmio_read8(&caps->caplength);

@@ -32,6 +32,7 @@
 
 #include <sys/types.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <dev/usb/xhciregs.h>
 
 #define XHCI_TIMEOUT 500    /* In ms */
@@ -40,6 +41,9 @@
 #define XHCI_TRB_SIZE 16   /* In bytes */
 #define XHCI_MAX_PROTOS 4
 #define XHCI_IMOD_DEFAULT 0
+
+/* Quirks */
+#define XHCI_QUIRK_HANDOFF BIT(0)
 
 /*
  * USB proto (USB 2.0 or 3.0)
@@ -108,6 +112,7 @@ struct xhci_hc {
     uint32_t *evring;
     uint8_t maxslots;
     uint8_t cr_cycle : 1;
+    uint16_t quirks;
     size_t maxports;
     size_t protocnt;
     struct xhci_caps *caps;
