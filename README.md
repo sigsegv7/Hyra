@@ -5,7 +5,9 @@ Welcome to the Hyra Operating System project!
 
 Project Goal:
 --------------
-The goal of this project is to create a modern operating system, taking inspiration from NetBSD and incorporating new ideas and design plans. Our mission is to design a new modernized POSIX-like standard to provide a robust and versatile environment for developers and users.
+The goal of this project is to redefine what modern operating systems are while taking inspiration from BSD. Hyra does not use
+POSIX by default and instead uses the [OSMORA Uniform System Interface (OUSI)](https://osmora.org/oap/oap-0002). Hyra also does
+not use CPIO for its initramfs like other operating systems typically would and instead uses the [OSMORA Archive Format (OMAR)](https://osmora.org/oap/oap-0005).
 
 Getting Started:
 ----------------
