@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2023-2025 Ian Marco Moffett and the Osmora Team.
  * All rights reserved.
@@ -27,14 +28,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STRING_H_
-#define _STRING_H_ 1
+#include <string.h>
 
-#include <stddef.h>
+void *
+memset(void *dst, int c, size_t n)
+{
+    char *p = dst;
 
-size_t strlen(const char *s);
-void *memset(void *dst, int c, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
-int strcmp(const char *s1, const char *s2);
+    if (n != 0) {
+        do {
+            *p++ = (unsigned char)c;
+        } while (--n != 0);
+    }
 
-#endif  /* !_STRING_H_ */
+    return dst;
+}
