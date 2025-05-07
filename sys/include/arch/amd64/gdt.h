@@ -27,22 +27,22 @@ struct __packed gdtr {
 __always_inline static inline void
 gdt_load(struct gdtr *gdtr)
 {
-        __ASMV("lgdt %0\n"
-               "push $8\n"               /* Push CS */
-               "lea 1f(%%rip), %%rax\n"  /* Load 1 label address into RAX */
-               "push %%rax\n"            /* Push the return address (label 1) */
-               "lretq\n"                 /* Far return to update CS */
-               "1:\n"
-               "  mov $0x10, %%eax\n"
-               "  mov %%eax, %%ds\n"
-               "  mov %%eax, %%es\n"
-               "  mov %%eax, %%fs\n"
-               "  mov %%eax, %%gs\n"
-               "  mov %%eax, %%ss\n"
-               :
-               : "m" (*gdtr)
-               : "rax", "memory"
-        );
+    __ASMV("lgdt %0\n"
+           "push $8\n"               /* Push CS */
+           "lea 1f(%%rip), %%rax\n"  /* Load 1 label address into RAX */
+           "push %%rax\n"            /* Push the return address (label 1) */
+           "lretq\n"                 /* Far return to update CS */
+           "1:\n"
+           "  mov $0x10, %%eax\n"
+           "  mov %%eax, %%ds\n"
+           "  mov %%eax, %%es\n"
+           "  mov %%eax, %%fs\n"
+           "  mov %%eax, %%gs\n"
+           "  mov %%eax, %%ss\n"
+           :
+           : "m" (*gdtr)
+           : "rax", "memory"
+    );
 }
 
 extern struct gdt_entry g_gdt_data[256];
