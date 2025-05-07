@@ -122,6 +122,8 @@ struct hba_memspace {
  */
 #define AHCI_CAP_NP(CAP) (CAP & 0x1F)           /* Number of ports */
 #define AHCI_CAP_NCS(CAP) ((CAP >> 8) & 0x1F)   /* Number of command slots */
+#define AHCI_CAP_EMS(CAP) ((CAP >> 6) & 1)      /* Enclosure management support */
+#define AHCI_CAP_SAL(CAP) ((CAP >> 25) & 1)     /* Supports activity LED */
 
 /*
  * Device detection (DET) and Interface power

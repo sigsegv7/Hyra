@@ -30,10 +30,40 @@
 #ifndef _IC_AHCIVAR_H_
 #define _IC_AHCIVAR_H_
 
+#include <sys/param.h>
+#include <sys/types.h>
 #include <dev/ic/ahciregs.h>
 
+/*
+ * AHCI Host Bus Adapter
+ *
+ * @io: HBA MMIO
+ * @maxports: Max number of HBA ports
+ * @nports: Number of implemented HBA ports.
+ * @nslots: Number of command slots
+ * @ems: Enclosure management support
+ * @sal: Supports activity LED
+ */
 struct ahci_hba {
     struct hba_memspace *io;
+    uint32_t maxports;
+    uint32_t nports;
+    uint32_t nslots;
+    uint8_t ems  : 1;
+    uint8_t sal  : 1;
+};
+
+/*
+ * A device attached to a physical HBA port.
+ *
+ * @io: Memory mapped port registers
+ * @hba: HBA descriptor
+ * @dev: Device minor number.
+ */
+struct hba_device {
+    struct hba_port *io;
+    struct ahci_hba *hba;
+    dev_t dev;
 };
 
 #define AHCI_TIMEOUT 500    /* In ms */

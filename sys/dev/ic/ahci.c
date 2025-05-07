@@ -31,6 +31,7 @@
 #include <sys/driver.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
+#include <sys/bitops.h>
 #include <sys/mmio.h>
 #include <dev/pci/pci.h>
 #include <dev/timer.h>
@@ -114,12 +115,86 @@ ahci_hba_reset(struct ahci_hba *hba)
     return 0;
 }
 
+/*
+ * Stop an HBA port's command list and FIS
+ * engine.
+ */
+static int
+hba_port_stop(struct hba_port *port)
+{
+    uint32_t cmd, tmp;
+
+    /* Stop the port */
+    cmd = mmio_read32(&port->cmd);
+    cmd &= ~(AHCI_PXCMD_ST | AHCI_PXCMD_FRE);
+    mmio_write32(&port->cmd, cmd);
+
+    /*
+     * The spec states that once the port is stopped,
+     * PxCMD.CR and PxCMD.FR become unset
+     */
+    tmp = AHCI_PXCMD_FR | AHCI_PXCMD_CR;
+    if (ahci_poll_reg(&port->cmd, tmp, false) < 0) {
+        return -EAGAIN;
+    }
+
+    return 0;
+}
+
+/*
+ * Initialize a drive on an HBA port
+ *
+ * @hba: HBA descriptor
+ * @portno: Port number
+ */
+static int
+ahci_init_port(struct ahci_hba *hba, uint32_t portno)
+{
+    struct hba_memspace *abar = hba->io;
+    struct hba_port *port;
+    int error;
+
+    pr_trace("found device @ port %d\n", portno);
+    port = &abar->ports[portno];
+
+    if ((error = hba_port_stop(port)) < 0) {
+        pr_trace("failed to stop port %d\n", portno);
+        return error;
+    }
+
+    /* TODO */
+    return 0;
+}
+
+/*
+ * Scan the HBA for implemented ports
+ */
+static int
+ahci_hba_scan(struct ahci_hba *hba)
+{
+    struct hba_memspace *abar = hba->io;
+    uint32_t pi, i = 0;
+
+    pi = mmio_read32(&abar->pi);
+    while (pi != 0) {
+        if ((pi & 1) != 0) {
+            ahci_init_port(hba, i);
+        }
+
+        ++i;
+        pi >>= 1;
+    }
+
+    return 0;
+}
+
 static int
 ahci_hba_init(struct ahci_hba *hba)
 {
     struct hba_memspace *abar = hba->io;
     int error;
     uint32_t tmp;
+    uint32_t cap, pi;
 
     /*
      * God knows what state the HBA is in by the time
@@ -132,6 +207,11 @@ ahci_hba_init(struct ahci_hba *hba)
     }
 
     pr_trace("successfully performed a hard reset\n");
+    cap = mmio_read32(&abar->cap);
+    hba->maxports = AHCI_CAP_NP(cap);
+    hba->nslots = AHCI_CAP_NCS(cap);
+    hba->ems = AHCI_CAP_EMS(cap);
+    hba->sal = AHCI_CAP_SAL(cap);
 
     /*
      * The HBA provides backwards compatibility with
@@ -142,6 +222,26 @@ ahci_hba_init(struct ahci_hba *hba)
     tmp = mmio_read32(&abar->ghc);
     tmp |= AHCI_GHC_AE;
     mmio_write32(&abar->ghc, tmp);
+
+    /*
+     * CAP.NCS reports the maximum number of ports the
+     * HBA silicon supports but a lot of hardware will
+     * not implement the full number of ports supported.
+     *
+     * the `PI' register is a bit-significant register
+     * used to determine which ports are implemented,
+     * therefore we can just count how many bits are
+     * set in this register and that would be how many
+     * ports are implemented total.
+     */
+    pi = mmio_read32(&abar->pi);
+    hba->nports = popcnt(pi);
+    pr_trace("hba implements %d ports\n", hba->nports);
+
+    if ((error = ahci_hba_scan(hba)) != 0) {
+        return error;
+    }
+
     return 0;
 }
 
