@@ -78,7 +78,7 @@ ahci_poll_reg(volatile uint32_t *reg, uint32_t bits, bool pollset)
         }
     }
 
-    return val;
+    return 0;
 }
 
 static int
