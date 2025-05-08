@@ -66,6 +66,82 @@ struct hba_device {
     dev_t dev;
 };
 
+/*
+ * Command header
+ *
+ * @cfl: Command FIS length
+ * @a: ATAPI
+ * @w: Write
+ * @p: Prefetchable
+ * @r: Reset
+ * @c: Clear busy upon R_OK
+ * @rsvd0: Reserved
+ * @pmp: Port multiplier port
+ * @prdtl: PRDT length (in entries)
+ * @prdbc: PRDT bytes transferred count
+ * @ctba: Command table descriptor base addr
+ * @rsvd1: Reserved
+ */
+struct ahci_cmd_hdr {
+    uint8_t cfl : 5;
+    uint8_t a   : 1;
+    uint8_t w   : 1;
+    uint8_t p   : 1;
+    uint8_t r   : 1;
+    uint8_t c   : 1;
+    uint8_t rsvd0 : 1;
+    uint8_t pmp   : 4;
+    uint16_t prdtl;
+    volatile uint32_t prdbc;
+    uintptr_t ctba;
+    uint32_t rsvd1[4];
+};
+
+/*
+ * Host to device FIS
+ *
+ * [h]: Set by host
+ * [d]: Set by device
+ * [srb]: Shadow register block
+ *
+ * @type: Must be 0x27 for H2D [h]
+ * @pmp: Port multiplier port [h]
+ * @c: Set to denote command FIS [h]
+ * @command: Command type [h/srb]
+ * @feature1: Features register (7:0) [h/srb]
+ * @lba0: LBA low [h/srb]
+ * @lba1: LBA mid [h/srb]
+ * @lba2: LBA hi  [h/srb]
+ * @device: Set bit 7 for LBA [h/srb]
+ * @lba3: LBA (31:24) [h/srb]
+ * @lba4: LBA (39:32) [h/srb]
+ * @lba5: LBA (47:40) [h/srb]
+ * @featureh: Features high [h/srb]
+ * @countl: Count low (block aligned) [h/srb]
+ * @counth: Count high (block aligned) [h/srb]
+ */
+struct ahci_fis_h2d {
+    uint8_t type;
+    uint8_t pmp : 4;
+    uint8_t rsvd0 : 3;
+    uint8_t c : 1;
+    uint8_t command;
+    uint8_t featurel;
+    uint8_t lba0;
+    uint8_t lba1;
+    uint8_t lba2;
+    uint8_t device;
+    uint8_t lba3;
+    uint8_t lba4;
+    uint8_t lba5;
+    uint8_t featureh;
+    uint8_t countl;
+    uint8_t counth;
+    uint8_t icc;
+    uint8_t control;
+    uint8_t rsvd1[4];
+};
+
 #define AHCI_TIMEOUT 500    /* In ms */
 
 #endif  /* !_IC_AHCIVAR_H_ */
