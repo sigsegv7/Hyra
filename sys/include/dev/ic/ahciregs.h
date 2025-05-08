@@ -34,8 +34,10 @@
 #include <sys/param.h>
 
 struct hba_port {
-    volatile uint64_t clb;      /* Command list base (1k-byte aligned) */
-    volatile uint64_t fb;       /* FIS base (256-byte aligned) */
+    volatile uint32_t clb;      /* Command list base low (1k-byte aligned) */
+    volatile uint32_t clbu;     /* Command list base upper */
+    volatile uint32_t fb;       /* FIS base (256-byte aligned) */
+    volatile uint32_t fbu;      /* FIS base upper */
     volatile uint32_t is;       /* Interrupt status */
     volatile uint32_t ie;       /* Interrupt enable */
     volatile uint32_t cmd;      /* Command and status */
