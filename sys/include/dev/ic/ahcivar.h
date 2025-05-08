@@ -34,6 +34,8 @@
 #include <sys/types.h>
 #include <dev/ic/ahciregs.h>
 
+struct ahci_cmd_hdr;
+
 /*
  * AHCI Host Bus Adapter
  *
@@ -56,13 +58,20 @@ struct ahci_hba {
 /*
  * A device attached to a physical HBA port.
  *
+ * [d]: Dynalloc'd memory
+ * [p]: Paged memory (allocated pageframe)
+ *
  * @io: Memory mapped port registers
  * @hba: HBA descriptor
+ * @cmdlist: Command list [p]
+ * @fra: FIS receive area [p]
  * @dev: Device minor number.
  */
 struct hba_device {
     struct hba_port *io;
     struct ahci_hba *hba;
+    struct ahci_cmd_hdr *cmdlist;
+    void *fra;
     dev_t dev;
 };
 

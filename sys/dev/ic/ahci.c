@@ -31,16 +31,21 @@
 #include <sys/driver.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
+#include <sys/param.h>
 #include <sys/bitops.h>
 #include <sys/mmio.h>
 #include <dev/pci/pci.h>
 #include <dev/timer.h>
 #include <dev/ic/ahcivar.h>
 #include <dev/ic/ahciregs.h>
+#include <vm/dynalloc.h>
+#include <vm/physmem.h>
+#include <string.h>
 
 #define pr_trace(fmt, ...) kprintf("ahci: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
+static struct hba_device *devs;
 static struct pci_device *ahci_dev;
 static struct timer tmr;
 
@@ -142,6 +147,28 @@ hba_port_stop(struct hba_port *port)
 }
 
 /*
+ * Bring up an HBA port's command list
+ * and FIS engine.
+ */
+static int
+hba_port_start(struct hba_port *port)
+{
+    uint32_t cmd, tmp;
+
+    /* Bring up the port */
+    cmd = mmio_read32(&port->cmd);
+    cmd |= AHCI_PXCMD_ST | AHCI_PXCMD_FRE;
+    mmio_write32(&port->cmd, cmd);
+
+    tmp = AHCI_PXCMD_FR | AHCI_PXCMD_CR;
+    if (ahci_poll_reg(&port->cmd, tmp, true) < 0) {
+        return -EAGAIN;
+    }
+
+    return 0;
+}
+
+/*
  * Initialize a drive on an HBA port
  *
  * @hba: HBA descriptor
@@ -152,9 +179,14 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
 {
     struct hba_memspace *abar = hba->io;
     struct hba_port *port;
+    struct hba_device *dp;
+    size_t clen, pagesz;
+    uint32_t lo, hi;
+    paddr_t fra, cmdlist, tmp;
     int error;
 
     pr_trace("found device @ port %d\n", portno);
+    pagesz = DEFAULT_PAGESIZE;
     port = &abar->ports[portno];
 
     if ((error = hba_port_stop(port)) < 0) {
@@ -162,7 +194,62 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
         return error;
     }
 
-    /* TODO */
+    dp = &devs[portno];
+    dp->io = port;
+    dp->hba = hba;
+    dp->dev = portno;
+
+    /* Allocate a command list */
+    clen = ALIGN_UP(hba->nslots * AHCI_CMDENTRY_SIZE, pagesz);
+    clen /= pagesz;
+    cmdlist = vm_alloc_frame(clen);
+    if (cmdlist == 0) {
+        pr_trace("failed to alloc command list\n");
+        return -ENOMEM;
+    }
+
+    /* Allocate FIS receive area */
+    dp->cmdlist = PHYS_TO_VIRT(cmdlist);
+    fra = vm_alloc_frame(1);
+    if (fra == 0) {
+        pr_trace("failed to allocate FIS receive area\n");
+        vm_free_frame(cmdlist, clen);
+        return -ENOMEM;
+    }
+
+    dp->fra = PHYS_TO_VIRT(fra);
+    memset(dp->cmdlist, 0, clen * pagesz);
+    memset(dp->fra, 0, pagesz);
+
+    /* Write the command list */
+    lo = cmdlist & 0xFFFFFFFF;
+    hi = cmdlist >> 32;
+    mmio_write32(&port->clb, lo);
+    mmio_write32(&port->clbu, hi);
+
+    /* Write the FIS receive area */
+    lo = fra & 0xFFFFFFFF;
+    hi = fra >> 32;
+    mmio_write32(&port->fb, lo);
+    mmio_write32(&port->fbu, hi);
+
+    /* Each command header has a H2D FIS area */
+    for (int i = 0; i < hba->nslots; ++i) {
+        tmp = vm_alloc_frame(1);
+        dp->cmdlist[i].prdtl = 1;
+        dp->cmdlist[i].ctba = tmp;
+        memset(PHYS_TO_VIRT(tmp), 0, pagesz);
+    }
+
+    if ((error = hba_port_start(port)) < 0) {
+        for (int i = 0; i < hba->nslots; ++i) {
+            vm_free_frame(dp->cmdlist[i].ctba, 1);
+        }
+        vm_free_frame(cmdlist, clen);
+        vm_free_frame(fra, 1);
+        pr_trace("failed to start port %d\n", portno);
+        return error;
+    }
     return 0;
 }
 
@@ -174,7 +261,15 @@ ahci_hba_scan(struct ahci_hba *hba)
 {
     struct hba_memspace *abar = hba->io;
     uint32_t pi, i = 0;
+    size_t len;
 
+    len = hba->nports * sizeof(struct hba_device);
+    if ((devs = dynalloc(len)) == NULL) {
+        pr_trace("failed to allocate dev descriptors\n");
+        return -ENOMEM;
+    }
+
+    memset(devs, 0, len);
     pi = mmio_read32(&abar->pi);
     while (pi != 0) {
         if ((pi & 1) != 0) {
