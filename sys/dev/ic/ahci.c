@@ -236,7 +236,7 @@ ahci_hba_init(struct ahci_hba *hba)
      */
     pi = mmio_read32(&abar->pi);
     hba->nports = popcnt(pi);
-    pr_trace("hba implements %d ports\n", hba->nports);
+    pr_trace("hba implements %d port(s)\n", hba->nports);
 
     if ((error = ahci_hba_scan(hba)) != 0) {
         return error;
