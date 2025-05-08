@@ -144,4 +144,19 @@ struct ahci_fis_h2d {
 
 #define AHCI_TIMEOUT 500    /* In ms */
 
+/* AHCI size constants */
+#define AHCI_FIS_SIZE 256
+#define AHCI_CMDTAB_SIZE 256
+#define AHCI_CMDENTRY_SIZE 32
+
+/* AHCI FIS types */
+#define FIS_TYPE_H2D 0x27
+#define FIS_TYPE_D2H 0x34
+
+/* ATA commands */
+#define ATA_CMD_NOP         0x00
+#define ATA_CMD_IDENTIFY    0xEC
+#define ATA_CMD_READ_DMA    0x25
+#define ATA_CMD_WRITE_DMA   0x35
+
 #endif  /* !_IC_AHCIVAR_H_ */
