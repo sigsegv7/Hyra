@@ -241,6 +241,8 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
         memset(PHYS_TO_VIRT(tmp), 0, pagesz);
     }
 
+    mmio_write32(&port->serr, 0xFFFFFFFF);
+
     if ((error = hba_port_start(port)) < 0) {
         for (int i = 0; i < hba->nslots; ++i) {
             vm_free_frame(dp->cmdlist[i].ctba, 1);
