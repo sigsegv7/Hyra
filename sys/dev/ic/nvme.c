@@ -425,7 +425,7 @@ nvme_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
      */
     ns = nvme_get_ns(dev);
     if (__unlikely(ns == NULL))
-        return -EIO;
+        return -ENODEV;
 
     /* Calculate the block count and offset */
     block_count = ALIGN_UP(sio->len, ns->lba_bsize);
