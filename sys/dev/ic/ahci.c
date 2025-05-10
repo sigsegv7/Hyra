@@ -187,7 +187,6 @@ ahci_dump_identity(struct ata_identity *identity)
         model_number[i + 1] = tmp;
     }
 
-    pr_trace("drive attached\n");
     pr_trace("model number: %s\n", model_number);
 }
 
