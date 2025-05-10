@@ -31,6 +31,7 @@
 #include <sys/driver.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
+#include <sys/sio.h>
 #include <sys/param.h>
 #include <sys/bitops.h>
 #include <sys/mmio.h>
@@ -458,6 +459,145 @@ ahci_identify(struct ahci_hba *hba, struct hba_port *port)
     ahci_dump_identity(PHYS_TO_VIRT(buf));
 done:
     vm_free_frame(buf, 1);
+    return status;
+}
+
+/*
+ * Send a read/write command to a SATA drive
+ *
+ * @hba: Host bus adapter of target port
+ * @port: Port to send over
+ * @sio: System I/O descriptor
+ * @write: If true, data pointed to by `sio` will be written
+ *
+ * XXX: - The `len` field in `sio` is block relative, in other words,
+ *        set to 1 to read one block (512 bytes per block), etc.
+ *
+ *      - The `offset` field in `sio` is the LBA address.
+ */
+static int
+ahci_sata_rw(struct ahci_hba *hba, struct hba_port *port, struct sio_txn *sio,
+    bool write)
+{
+    paddr_t base, buf;
+    struct ahci_cmd_hdr *cmdhdr;
+    struct ahci_cmdtab *cmdtbl;
+    struct ahci_fis_h2d *fis;
+    int cmdslot, status;
+
+    if (sio == NULL) {
+        return -EINVAL;
+    }
+    if (sio->len == 0 || sio->buf == NULL) {
+        return -EINVAL;
+    }
+
+    buf = VIRT_TO_PHYS(sio->buf);
+    cmdslot = ahci_alloc_cmdslot(hba, port);
+    if (cmdslot < 0) {
+        pr_trace("failed to alloc cmdslot\n");
+        return cmdslot;
+    }
+
+    base = ahci_cmdbase(port);
+    base += cmdslot * sizeof(*cmdhdr);
+
+    /* Setup the command header */
+    cmdhdr = PHYS_TO_VIRT(base);
+    cmdhdr->w = write;
+    cmdhdr->cfl = sizeof(struct ahci_fis_h2d) / 4;
+    cmdhdr->prdtl = 1;
+
+    cmdtbl = PHYS_TO_VIRT(cmdhdr->ctba);
+    cmdtbl->prdt[0].dba = buf;
+    cmdtbl->prdt[0].dbc = (sio->len << 9) - 1;
+    cmdtbl->prdt[0].i = 0;
+
+    fis = (void *)&cmdtbl->cfis;
+    fis->command = write ? ATA_CMD_WRITE_DMA : ATA_CMD_READ_DMA;
+    fis->c = 1;
+    fis->type = FIS_TYPE_H2D;
+    fis->device = (1 << 6); /* LBA */
+
+    /* Setup LBA */
+    fis->lba0 = sio->offset & 0xFF;
+    fis->lba1 = (sio->offset >> 8) & 0xFF;
+    fis->lba2 = (sio->offset >> 16) & 0xFF;
+    fis->lba3 = (sio->offset >> 24) & 0xFF;
+    fis->lba4 = (sio->offset >> 32) & 0xFF;
+    fis->lba5 = (sio->offset >> 40) & 0xFF;
+
+    /* Setup count */
+    fis->countl = sio->len & 0xFF;
+    fis->counth = (sio->len >> 8) & 0xFF;
+
+    pr_trace("SUBMIT: RIGHT!\n");
+    if ((status = ahci_submit_cmd(hba, port, cmdslot)) != 0) {
+        return status;
+    }
+
+    return 0;
+}
+
+static int
+sata_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
+{
+    const size_t BSIZE = 512;
+    struct sio_txn wr_sio;
+    struct hba_device *devp;
+    struct ahci_hba *hba;
+    size_t block_count, len;
+    off_t block_off, read_off;
+    char *buf;
+    int status;
+
+    if (sio == NULL) {
+        return -EINVAL;
+    }
+    if (sio->len == 0 || sio->buf == NULL) {
+        return -EINVAL;
+    }
+    if (dev >= devs_max) {
+        return -ENODEV;
+    }
+
+    devp = &devs[dev];
+    if (__unlikely(devp == NULL)) {
+        return -ENODEV;
+    }
+
+    /* Compute block count and offset */
+    block_count = ALIGN_UP(sio->len, BSIZE);
+    block_count /= BSIZE;
+    block_off = sio->offset / BSIZE;
+
+    /* Allocate internal buffer */
+    len = block_count * BSIZE;
+    buf = dynalloc_memalign(len, 0x1000);
+    if (buf == NULL) {
+        return -ENOMEM;
+    }
+
+    /* Copy SIO buffer if write */
+    if (write) {
+        memset(buf, 0, len);
+        memcpy(buf, sio->buf, sio->len);
+    }
+
+    /*
+     * Perform the r/w operation and copy internal buffer
+     * out if this is a read operation.
+     */
+    wr_sio.buf = buf;
+    wr_sio.len = block_count;
+    wr_sio.offset = block_off;
+    status = ahci_sata_rw(hba, devp->io, &wr_sio, write);
+    if (status == 0 && !write) {
+        read_off = sio->offset & (BSIZE - 1);
+        memcpy(sio->buf, buf + read_off, sio->len);
+    }
+
+    dynfree(buf);
     return status;
 }
 
