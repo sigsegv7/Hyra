@@ -190,7 +190,6 @@ ahci_dump_identity(struct ata_identity *identity)
     pr_trace("model number: %s\n", model_number);
 }
 
-
 /*
  * Stop an HBA port's command list and FIS
  * engine.
