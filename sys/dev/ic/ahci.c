@@ -216,6 +216,73 @@ hba_port_start(struct hba_port *port)
 }
 
 /*
+ * Reset a port on the HBA
+ *
+ * XXX: This function stops the port once the
+ *      COMRESET is complete.
+ */
+static int
+hba_port_reset(struct hba_port *port)
+{
+    uint32_t sctl, ssts;
+    uint8_t det, ipm;
+    int error;
+
+    /*
+     * The port must not be in an idle state when a
+     * COMRESET is sent over the interface as some
+     * chipsets do not know how to handle this...
+     *
+     * After bringing up the port, send a COMRESET
+     * over the interface for roughly ~2ms.
+     */
+    hba_port_start(port);
+    sctl = mmio_read32(&port->sctl);
+    sctl = (sctl & ~0x0F) | AHCI_DET_COMRESET;
+    mmio_write32(&port->sctl, sctl);
+
+    /*
+     * Wait for the link to become reestablished
+     * between the port and the HBA.
+     */
+    tmr.msleep(150);
+    sctl &= ~AHCI_DET_COMRESET;
+    mmio_write32(&port->sctl,  sctl);
+
+    /*
+     * Now we'll need to grab some power management
+     * and detection flags as the port must have
+     * a device present along with an active
+     * interface.
+     */
+    ssts = mmio_read32(&port->ssts);
+    det = AHCI_PXSCTL_DET(ssts);
+    ipm = AHCI_PXSSTS_IPM(ssts);
+
+    /* If there is no device, fake success */
+    if (det == AHCI_DET_NULL) {
+        return 0;
+    }
+
+    if (det != AHCI_DET_COMM) {
+        pr_trace("failed to establish link\n");
+        return -EAGAIN;
+    }
+
+    if (ipm != AHCI_IPM_ACTIVE) {
+        pr_trace("device interface not active\n");
+        return -EAGAIN;
+    }
+
+    if ((error = hba_port_stop(port)) < 0) {
+        pr_trace("failed to stop port\n");
+        return error;
+    }
+
+    return 0;
+}
+
+/*
  * Initialize a drive on an HBA port
  *
  * @hba: HBA descriptor
