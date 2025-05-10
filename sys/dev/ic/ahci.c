@@ -273,7 +273,7 @@ static int
 ahci_hba_scan(struct ahci_hba *hba)
 {
     struct hba_memspace *abar = hba->io;
-    uint32_t pi, i = 0;
+    uint32_t pi;
     size_t len;
 
     len = hba->nports * sizeof(struct hba_device);
@@ -284,13 +284,10 @@ ahci_hba_scan(struct ahci_hba *hba)
 
     memset(devs, 0, len);
     pi = mmio_read32(&abar->pi);
-    while (pi != 0) {
-        if ((pi & 1) != 0) {
+    for (int i = 0; i < sizeof(pi) * 8; ++i) {
+        if (ISSET(pi, BIT(i))) {
             ahci_init_port(hba, i);
         }
-
-        ++i;
-        pi >>= 1;
     }
 
     return 0;
