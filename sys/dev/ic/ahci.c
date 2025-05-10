@@ -423,19 +423,26 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
     struct hba_port *port;
     struct hba_device *dp;
     size_t clen, pagesz;
-    uint32_t lo, hi;
+    uint32_t lo, hi, ssts;
     paddr_t fra, cmdlist, tmp;
     int error;
 
-    pr_trace("found device @ port %d\n", portno);
     pagesz = DEFAULT_PAGESIZE;
     port = &abar->ports[portno];
 
-    if ((error = hba_port_stop(port)) < 0) {
-        pr_trace("failed to stop port %d\n", portno);
+    /* Reset and stop the port */
+    if ((error = hba_port_reset(port)) < 0) {
+        pr_trace("failed to reset port %d\n", portno);
         return error;
     }
 
+    /* Is anything on the port? */
+    ssts = mmio_read32(&port->ssts);
+    if (AHCI_PXSCTL_DET(ssts) == AHCI_DET_NULL) {
+        return 0;
+    }
+
+    pr_trace("found device @ port %d\n", portno);
     dp = &devs[portno];
     dp->io = port;
     dp->hba = hba;
