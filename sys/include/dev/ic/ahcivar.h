@@ -45,6 +45,7 @@ struct ahci_cmd_hdr;
  * @nslots: Number of command slots
  * @ems: Enclosure management support
  * @sal: Supports activity LED
+ * @sss: Supports staggered spin up
  */
 struct ahci_hba {
     struct hba_memspace *io;
@@ -53,6 +54,7 @@ struct ahci_hba {
     uint32_t nslots;
     uint8_t ems  : 1;
     uint8_t sal  : 1;
+    uint8_t sss  : 1;
 };
 
 /*

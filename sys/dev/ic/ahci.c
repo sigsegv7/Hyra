@@ -317,6 +317,7 @@ ahci_hba_init(struct ahci_hba *hba)
     hba->nslots = AHCI_CAP_NCS(cap);
     hba->ems = AHCI_CAP_EMS(cap);
     hba->sal = AHCI_CAP_SAL(cap);
+    hba->sss = AHCI_CAP_SSS(cap);
 
     /*
      * The HBA provides backwards compatibility with
