@@ -157,6 +157,42 @@ ahci_hba_reset(struct ahci_hba *hba)
 }
 
 /*
+ * Dump identify structure for debugging
+ * purposes.
+ */
+static void
+ahci_dump_identity(struct ata_identity *identity)
+{
+    char serial_number[20];
+    char model_number[40];
+    char tmp;
+
+    memcpy(serial_number, identity->serial_number, sizeof(serial_number));
+    memcpy(model_number, identity->model_number, sizeof(model_number));
+
+    serial_number[sizeof(serial_number) - 1] = '\0';
+    model_number[sizeof(model_number) - 1] = '\0';
+
+    /* Fixup endianess for serial number */
+    for (size_t i = 0; i < sizeof(serial_number); i += 2) {
+        tmp = serial_number[i];
+        serial_number[i] = serial_number[i + 1];
+        serial_number[i + 1] = tmp;
+    }
+
+    /* Fixup endianess for model number */
+    for (size_t i = 0; i < sizeof(model_number); i += 2) {
+        tmp = model_number[i];
+        model_number[i] = model_number[i + 1];
+        model_number[i + 1] = tmp;
+    }
+
+    pr_trace("drive attached\n");
+    pr_trace("model number: %s\n", model_number);
+}
+
+
+/*
  * Stop an HBA port's command list and FIS
  * engine.
  */
@@ -280,6 +316,99 @@ hba_port_reset(struct hba_port *port)
     }
 
     return 0;
+}
+
+static int
+ahci_submit_cmd(struct ahci_hba *hba, struct hba_port *port, uint8_t slot)
+{
+    const uint32_t BUSY_BITS = (AHCI_PXTFD_BSY | AHCI_PXTFD_DRQ);
+    const uint8_t MAX_ATTEMPTS = 3;
+    uint32_t ci;
+    uint8_t attempts = 0;
+    int status = 0;
+
+    /*
+     * Spin on `TFD.BSY` and `TFD.DRQ` to ensure
+     * that the port is not busy before we send
+     * any commands.
+     */
+    if (ahci_poll_reg(&port->tfd, BUSY_BITS, false) < 0) {
+        pr_trace("cmd failed, port busy (slot=%d)\n", slot);
+        return -EBUSY;
+    }
+
+    /*
+     * Submit and wait for completion, this may take
+     * a bit so give it several attempts.
+     */
+    ci = mmio_read32(&port->ci);
+    mmio_write32(&port->ci, ci | BIT(slot));
+    while ((attempts++) < MAX_ATTEMPTS) {
+        status = ahci_poll_reg(&port->ci, BIT(slot), false);
+        if (status == 0) {
+            break;
+        }
+    }
+    if (status != 0) {
+        return status;
+    }
+
+    return 0;
+}
+
+/*
+ * Send an ATA IDENTIFY command to a
+ * SATA device.
+ */
+static int
+ahci_identify(struct ahci_hba *hba, struct hba_port *port)
+{
+    paddr_t base, buf;
+    struct ahci_cmd_hdr *cmdhdr;
+    struct ahci_cmdtab *cmdtbl;
+    struct ahci_fis_h2d *fis;
+    int cmdslot, status;
+
+    buf = vm_alloc_frame(1);
+    if (buf == 0) {
+        pr_trace("failed to alloc frame\n");
+        return -ENOMEM;
+    }
+
+    cmdslot = ahci_alloc_cmdslot(hba, port);
+    if (cmdslot < 0) {
+        pr_trace("failed to alloc cmdslot\n");
+        vm_free_frame(buf, 1);
+        return cmdslot;
+    }
+
+    base = ahci_cmdbase(port);
+    base += cmdslot * sizeof(*cmdhdr);
+
+    /* Setup the command header */
+    cmdhdr = PHYS_TO_VIRT(base);
+    cmdhdr->w = 0;
+    cmdhdr->cfl = sizeof(struct ahci_fis_h2d) / 4;
+    cmdhdr->prdtl = 1;
+
+    cmdtbl = PHYS_TO_VIRT(cmdhdr->ctba);
+    cmdtbl->prdt[0].dba = buf;
+    cmdtbl->prdt[0].dbc = 511;
+    cmdtbl->prdt[0].i = 0;
+
+    fis = (void *)&cmdtbl->cfis;
+    fis->command = ATA_CMD_IDENTIFY;
+    fis->c = 1;
+    fis->type = FIS_TYPE_H2D;
+
+    if ((status = ahci_submit_cmd(hba, port, cmdslot)) != 0) {
+        goto done;
+    }
+
+    ahci_dump_identity(PHYS_TO_VIRT(buf));
+done:
+    vm_free_frame(buf, 1);
+    return status;
 }
 
 /*
