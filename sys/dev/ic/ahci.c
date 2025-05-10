@@ -46,6 +46,7 @@
 #define pr_trace(fmt, ...) kprintf("ahci: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
+static uint32_t devs_max = 0;
 static struct hba_device *devs;
 static struct pci_device *ahci_dev;
 static struct timer tmr;
@@ -567,6 +568,7 @@ ahci_hba_scan(struct ahci_hba *hba)
     size_t len;
 
     len = hba->nports * sizeof(struct hba_device);
+    devs_max = hba->nports;
     if ((devs = dynalloc(len)) == NULL) {
         pr_trace("failed to allocate dev descriptors\n");
         return -ENOMEM;
