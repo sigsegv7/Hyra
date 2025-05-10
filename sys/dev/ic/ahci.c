@@ -501,6 +501,8 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
         pr_trace("failed to start port %d\n", portno);
         return error;
     }
+
+    ahci_identify(hba, port);
     return 0;
 }
 
