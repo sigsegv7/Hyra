@@ -665,6 +665,7 @@ ahci_init(void)
     struct ahci_hba hba;
     void *abar_vap = NULL;
 
+    hba.major = 0;
     lookup.pci_class = 0x01;
     lookup.pci_subclass = 0x06;
 

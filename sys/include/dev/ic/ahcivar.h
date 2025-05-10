@@ -78,6 +78,7 @@ struct ahci_hba {
     uint8_t ems  : 1;
     uint8_t sal  : 1;
     uint8_t sss  : 1;
+    devmajor_t major;
 };
 
 /*
