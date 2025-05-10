@@ -312,7 +312,7 @@ hba_port_chkerr(struct hba_port *port)
  *      COMRESET is complete.
  */
 static int
-hba_port_reset(struct hba_port *port)
+hba_port_reset(struct ahci_hba *hba, struct hba_port *port)
 {
     uint32_t sctl, ssts;
     uint8_t det, ipm;
@@ -335,7 +335,7 @@ hba_port_reset(struct hba_port *port)
      * Wait for the link to become reestablished
      * between the port and the HBA.
      */
-    tmr.msleep(150);
+    tmr.msleep(300);
     sctl &= ~AHCI_DET_COMRESET;
     mmio_write32(&port->sctl,  sctl);
 
@@ -628,23 +628,26 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
     struct hba_device *dp;
     size_t clen, pagesz;
     uint32_t lo, hi, ssts;
+    uint8_t det;
     paddr_t fra, cmdlist, tmp;
-    devmajor_t major;
     int error;
 
     pagesz = DEFAULT_PAGESIZE;
     port = &abar->ports[portno];
 
-    /* Reset and stop the port */
-    if ((error = hba_port_reset(port)) < 0) {
-        pr_trace("failed to reset port %d\n", portno);
-        return error;
-    }
-
     /* Is anything on the port? */
     ssts = mmio_read32(&port->ssts);
-    if (AHCI_PXSCTL_DET(ssts) == AHCI_DET_NULL) {
+    det = AHCI_PXSCTL_DET(ssts);
+    switch (det) {
+    case AHCI_DET_NULL:
+        /* No device attached */
         return 0;
+    case AHCI_DET_PRESENT:
+        if ((error = hba_port_reset(hba, port)) < 0) {
+            pr_trace("failed to reset port %d\n", portno);
+            return error;
+        }
+        break;
     }
 
     pr_trace("found device @ port %d\n", portno);
