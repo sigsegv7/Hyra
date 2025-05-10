@@ -127,10 +127,15 @@ ahci_hba_reset(struct ahci_hba *hba)
 static int
 hba_port_stop(struct hba_port *port)
 {
+    const uint32_t RUN_MASK = (AHCI_PXCMD_FR | AHCI_PXCMD_CR);
     uint32_t cmd, tmp;
 
-    /* Stop the port */
+    /* Ensure the port is running */
     cmd = mmio_read32(&port->cmd);
+    if (!ISSET(cmd, RUN_MASK)) {
+        return 0;
+    }
+
     cmd &= ~(AHCI_PXCMD_ST | AHCI_PXCMD_FRE);
     mmio_write32(&port->cmd, cmd);
 
@@ -153,10 +158,16 @@ hba_port_stop(struct hba_port *port)
 static int
 hba_port_start(struct hba_port *port)
 {
+    const uint32_t RUN_MASK = (AHCI_PXCMD_FR | AHCI_PXCMD_CR);
     uint32_t cmd, tmp;
 
-    /* Bring up the port */
+    /* Ensure the port is not running */
     cmd = mmio_read32(&port->cmd);
+    if (ISSET(cmd, RUN_MASK)) {
+        return 0;
+    }
+
+    /* Bring up the port */
     cmd |= AHCI_PXCMD_ST | AHCI_PXCMD_FRE;
     mmio_write32(&port->cmd, cmd);
 
