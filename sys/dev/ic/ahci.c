@@ -35,6 +35,7 @@
 #include <sys/bitops.h>
 #include <sys/mmio.h>
 #include <dev/pci/pci.h>
+#include <dev/pci/pciregs.h>
 #include <dev/timer.h>
 #include <dev/ic/ahcivar.h>
 #include <dev/ic/ahciregs.h>
@@ -590,6 +591,20 @@ ahci_hba_init(struct ahci_hba *hba)
     return 0;
 }
 
+/*
+ * Init PCI related controller bits
+ */
+static void
+ahci_init_pci(void)
+{
+    uint32_t tmp;
+
+    /* Enable bus mastering and MMIO */
+    tmp = pci_readl(ahci_dev, PCIREG_CMDSTATUS);
+    tmp |= (PCI_BUS_MASTERING | PCI_MEM_SPACE);
+    pci_writel(ahci_dev, PCIREG_CMDSTATUS, tmp);
+}
+
 static int
 ahci_init(void)
 {
@@ -642,6 +657,7 @@ ahci_init(void)
         return status;
     }
 
+    ahci_init_pci();
     hba.io = (struct hba_memspace*)abar_vap;
     ahci_hba_init(&hba);
     return 0;
