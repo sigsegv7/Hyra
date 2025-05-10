@@ -87,6 +87,42 @@ ahci_poll_reg(volatile uint32_t *reg, uint32_t bits, bool pollset)
     return 0;
 }
 
+/*
+ * Allocate a command slot for a port on
+ * the HBA.
+ */
+static int
+ahci_alloc_cmdslot(struct ahci_hba *hba, struct hba_port *port)
+{
+    uint32_t slotlist;
+
+    slotlist = port->ci | port->sact;
+    slotlist = mmio_read32(&port->ci);
+    slotlist |= mmio_read32(&port->sact);
+
+    for (int i = 0; i < hba->nslots; ++i) {
+        if (!ISSET(slotlist, i)) {
+            return i;
+        }
+    }
+
+    return -EAGAIN;
+}
+
+/*
+ * Get the command list base.
+ */
+static paddr_t
+ahci_cmdbase(struct hba_port *port)
+{
+    paddr_t basel, baseh, base;
+
+    basel = mmio_read32(&port->clb);
+    baseh = mmio_read32(&port->clbu);
+    base = COMBINE32(baseh, basel);
+    return base;
+}
+
 static int
 ahci_hba_reset(struct ahci_hba *hba)
 {
