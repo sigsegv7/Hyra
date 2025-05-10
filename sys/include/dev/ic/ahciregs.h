@@ -139,6 +139,26 @@ struct hba_memspace {
 #define AHCI_IPM_ACTIVE     1
 
 /*
+ * PxSERR bits
+ * See section 3.3.12 of the AHCI spec
+ */
+#define AHCI_SERR_I BIT(0)  /* Recovered data integrity error */
+#define AHCI_SERR_M BIT(1)  /* Recovered comms error */
+#define AHCI_SERR_T BIT(8)  /* Transient data integrity error */
+#define AHCI_SERR_C BIT(9)  /* Persistent comms error */
+#define AHCI_SERR_P BIT(10) /* Protocol error ("oh fuck!" bit) */
+#define AHCI_SERR_E BIT(11) /* Internal error (only God knows, just pray) */
+#define AHCI_DIAG_N BIT(16) /* PhyRdy change */
+#define AHCI_DIAG_I BIT(17) /* PHY internal error */
+#define AHCI_DIAG_W BIT(18) /* Comm wake */
+#define AHCI_DIAG_B BIT(19) /* 10B to 8B decode error */
+#define AHCI_DIAG_C BIT(21) /* CRC error */
+#define AHCI_DIAG_H BIT(22) /* Handshake error */
+#define AHCI_DIAG_S BIT(23) /* Link sequence error */
+#define AHCI_DIAG_T BIT(24) /* Transport state transition error */
+#define AHCI_DIAG_F BIT(25) /* Unknown FIS type */
+
+/*
  * Device detection initialization values
  * See section 3.3.11 of the AHCI spec.
  */

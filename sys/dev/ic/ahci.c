@@ -251,6 +251,56 @@ hba_port_start(struct hba_port *port)
 }
 
 /*
+ * Check for interface errors, returns
+ * 0 on success (i.e., no errors), otherwise
+ * the "ERR" word of PxSERR.
+ */
+static int
+hba_port_chkerr(struct hba_port *port)
+{
+    uint32_t serr;
+    uint16_t err;
+    uint8_t critical = 0;
+
+    serr = mmio_read32(&port->serr);
+    err = serr & 0xFFFF;
+    if (err == 0) {
+        return 0;
+    }
+
+    if (ISSET(err, AHCI_SERR_I)) {
+        pr_error("recovered data integrity error\n");
+    }
+    if (ISSET(err, AHCI_SERR_M)) {
+        pr_error("recovered comms error\n");
+    }
+    if (ISSET(err, AHCI_SERR_T)) {
+        pr_error("transient data integrity error\n");
+    }
+    if (ISSET(err, AHCI_SERR_C)) {
+        pr_error("persistent comms error\n");
+        critical = 1;
+    }
+    if (ISSET(err, AHCI_SERR_P)) {
+        pr_error("protocol error\n");
+        critical = 1;
+    }
+    if (ISSET(err, AHCI_SERR_E)) {
+        pr_error("internal hba error\n");
+        critical = 1;
+    }
+    if (critical) {
+        pr_error("CRITICAL - DISABLING PORT **\n");
+        hba_port_stop(port);
+        return err;
+    }
+
+    mmio_write32(&port->serr, 0xFFFFFFFF);
+    return err;
+
+}
+
+/*
  * Reset a port on the HBA
  *
  * XXX: This function stops the port once the
@@ -352,7 +402,7 @@ ahci_submit_cmd(struct ahci_hba *hba, struct hba_port *port, uint8_t slot)
         return status;
     }
 
-    return 0;
+    return hba_port_chkerr(port);
 }
 
 /*
