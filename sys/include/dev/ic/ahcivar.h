@@ -36,6 +36,29 @@
 
 struct ahci_cmd_hdr;
 
+struct ata_identity {
+    uint16_t rsvd0      : 1;
+    uint16_t unused0    : 1;
+    uint16_t incomplete : 1;
+    uint16_t unused1    : 3;
+    uint16_t fixed_dev  : 1;
+    uint16_t removable  : 1;
+    uint16_t unused2    : 7;
+    uint16_t device_type : 1;
+    uint16_t ncylinders;
+    uint16_t specific_config;
+    uint16_t nheads;
+    uint16_t unused3[2];
+    uint16_t sectors_per_track;
+    uint16_t vendor[3];
+    char serial_number[20];
+    uint16_t unused4[2];
+    uint16_t unused5;
+    char firmware_rev[8];
+    char model_number[40];
+    char pad[256];
+};
+
 /*
  * AHCI Host Bus Adapter
  *
