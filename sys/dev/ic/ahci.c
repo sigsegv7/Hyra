@@ -29,6 +29,7 @@
 
 #include <sys/types.h>
 #include <sys/driver.h>
+#include <sys/device.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/sio.h>
@@ -40,6 +41,7 @@
 #include <dev/timer.h>
 #include <dev/ic/ahcivar.h>
 #include <dev/ic/ahciregs.h>
+#include <fs/devfs.h>
 #include <vm/dynalloc.h>
 #include <vm/physmem.h>
 #include <string.h>
@@ -48,6 +50,7 @@
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
 static uint32_t devs_max = 0;
+static struct bdevsw ahci_bdevsw;
 static struct hba_device *devs;
 static struct pci_device *ahci_dev;
 static struct timer tmr;
@@ -602,6 +605,15 @@ sata_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
 }
 
 /*
+ * Device interface read
+ */
+static int
+ahci_dev_read(dev_t dev, struct sio_txn *sio, int flags)
+{
+    return sata_dev_rw(dev, sio, false);
+}
+
+/*
  * Initialize a drive on an HBA port
  *
  * @hba: HBA descriptor
@@ -610,12 +622,14 @@ sata_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
 static int
 ahci_init_port(struct ahci_hba *hba, uint32_t portno)
 {
+    char devname[128];
     struct hba_memspace *abar = hba->io;
     struct hba_port *port;
     struct hba_device *dp;
     size_t clen, pagesz;
     uint32_t lo, hi, ssts;
     paddr_t fra, cmdlist, tmp;
+    devmajor_t major;
     int error;
 
     pagesz = DEFAULT_PAGESIZE;
@@ -694,7 +708,17 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
     }
 
     ahci_identify(hba, port);
-    return 0;
+
+    if (hba->major == 0) {
+        hba->major = dev_alloc_major();
+    }
+    dp->dev = dev_alloc(hba->major);
+    snprintf(devname, sizeof(devname), "sd%d", dp->dev);
+
+    /* Register the device */
+    dev_register(hba->major, dp->dev, &ahci_bdevsw);
+    pr_trace("drive @ /dev/%s\n", devname);
+    return devfs_create_entry(devname, hba->major, dp->dev, 0444);
 }
 
 /*
@@ -855,5 +879,10 @@ ahci_init(void)
     ahci_hba_init(&hba);
     return 0;
 }
+
+static struct bdevsw ahci_bdevsw = {
+    .read = ahci_dev_read,
+    .write = nowrite
+};
 
 DRIVER_EXPORT(ahci_init);
