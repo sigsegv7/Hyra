@@ -107,6 +107,38 @@ struct ahci_cmd_hdr {
 };
 
 /*
+ * Physical region descriptor
+ *
+ * @dba: Data base address
+ * @rsvd0: Reserved
+ * @dbc: Count
+ * @rsvd1: Reserved
+ * @i: Interrupt on completion
+ */
+struct ahci_prdt_entry {
+    uintptr_t dba;
+    uint32_t rsvd0;
+    uint32_t dbc : 22;
+    uint16_t rsvd1 : 9;
+    uint8_t i : 1;
+};
+
+/*
+ * Command table
+ *
+ * @cfis: Command FIS
+ * @acmd: ATAPI command
+ * @rsvd: Reserved
+ * @prdt: Physical region descriptors
+ */
+struct ahci_cmdtab {
+    uint8_t cfis[64];
+    uint8_t acmd[16];
+    uint8_t rsvd[48];
+    struct ahci_prdt_entry prdt[1];
+};
+
+/*
  * Host to device FIS
  *
  * [h]: Set by host
