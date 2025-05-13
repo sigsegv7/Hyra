@@ -268,10 +268,10 @@ static void
 esckey_reboot(void)
 {
     syslock();
-    kprintf("** Machine going down for a reboot");
+    kprintf(OMIT_TIMESTAMP "** Machine going down for a reboot\f");
 
     for (size_t i = 0; i < 3; ++i) {
-        kprintf(OMIT_TIMESTAMP ".");
+        kprintf(OMIT_TIMESTAMP ".\f");
         tmr.msleep(1000);
     }
 
