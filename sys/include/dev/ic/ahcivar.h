@@ -32,6 +32,7 @@
 
 #include <sys/param.h>
 #include <sys/types.h>
+#include <sys/device.h>
 #include <dev/ic/ahciregs.h>
 
 struct ahci_cmd_hdr;
