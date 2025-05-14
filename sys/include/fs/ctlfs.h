@@ -30,6 +30,8 @@
 #ifndef _FS_CTLFS_H_
 #define _FS_CTLFS_H_
 
+#include <sys/sio.h>
+
 struct ctlfs_dev;
 
 struct ctlops {
