@@ -27,66 +27,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MOUNT_H_
-#define _SYS_MOUNT_H_
+#ifndef _FS_CTLFS_H_
+#define _FS_CTLFS_H_
 
-#include <sys/types.h>
-#include <sys/queue.h>
-#include <sys/namei.h>
-#include <sys/vnode.h>
-#include <sys/spinlock.h>
+struct ctlfs_dev;
 
-#if defined(_KERNEL)
-
-#define FS_NAME_MAX 16  /* Length of fs name including nul */
-#define NAME_MAX 256    /* Max name of filename (not including nul) */
+struct ctlops {
+    int(*read)(struct ctlfs_dev *cdp, struct sio_txn *sio);
+    int(*write)(struct ctlfs_dev *cdp, struct sio_txn *sio);
+};
 
 /*
- * Filesystem types.
+ * Ctlfs op arguments
+ *
+ * @devname: Device name.
+ * @major: Device major
+ * @minor: Device minor.
+ * @mode: Access flags.
+ * @devname [1]: Device name (node name)
+ * @ctlname: [1]: Control name (node entry name)
  */
-#define MOUNT_RAMFS "initramfs"
-#define MOUNT_DEVFS "devfs"
-#define MOUNT_CTLFS "ctlfs"
-
-struct vfsops;
-struct mount;
-
-/* Mount list */
-typedef TAILQ_HEAD(, mount) mountlist_t;
-extern mountlist_t g_mountlist;
-
-/* Filesystem operations */
-extern const struct vfsops g_initramfs_vfsops;
-extern const struct vfsops g_devfs_vfsops;
-extern const struct vfsops g_ctlfs_vfsops;
-
-struct mount {
-    char *name;
-    struct spinlock lock;
-    struct vnode *vp;
-    const struct vfsops *mnt_ops;
-    void *data;
-    TAILQ_ENTRY(mount) mnt_list;
+struct ctlfs_dev {
+    union {
+        const char *devname;
+        const char *ctlname;
+    };
+    const struct ctlops *ops;
+    mode_t mode;
 };
 
-struct fs_info {
-    char name[FS_NAME_MAX];         /* FS Type name */
-    const struct vfsops *vfsops;    /* Operations vector */
-    int flags;                      /* Flags for this filesystem */
-    int refcount;                   /* Mount count of this type */
-};
+int ctlfs_create_node(const char *name, const struct ctlfs_dev *dp);
+int ctlfs_create_entry(const char *name, const struct ctlfs_dev *dp);
 
-struct vfsops {
-    int(*init)(struct fs_info *fip);
-    int(*mount)(struct mount *mp, const char *path, void *data,
-        struct nameidata *ndp);
-};
-
-void vfs_init(void);
-int vfs_name_mount(struct mount *mp, const char *name);
-
-struct mount *vfs_alloc_mount(struct vnode *vp, struct fs_info *fip);
-struct fs_info *vfs_byname(const char *name);
-
-#endif  /* _KERNEL */
-#endif  /* _SYS_MOUNT_H_ */
+#endif  /* !_FS_CTLFS_H_ */
