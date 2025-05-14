@@ -143,11 +143,12 @@ namei_mp_search(struct mount *mp, const char *path)
         status = vfs_vop_lookup(vp, &lookup_args);
         dynfree(name);
 
-        if (status == 0)
-            return vp;
+        if (status != 0) {
+            return NULL;
+        }
     }
 
-    return NULL;
+    return vp;
 }
 
 /*
