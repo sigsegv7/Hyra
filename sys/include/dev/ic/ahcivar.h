@@ -34,8 +34,10 @@
 #include <sys/types.h>
 #include <sys/device.h>
 #include <dev/ic/ahciregs.h>
+#include <fs/ctlfs.h>
 
 struct ahci_cmd_hdr;
+extern const struct ctlops g_sata_bsize_ops;
 
 struct ata_identity {
     uint16_t rsvd0      : 1;
@@ -216,6 +218,7 @@ struct ahci_fis_h2d {
 #define AHCI_FIS_SIZE 256
 #define AHCI_CMDTAB_SIZE 256
 #define AHCI_CMDENTRY_SIZE 32
+#define AHCI_SECTOR_SIZE 512
 
 /* AHCI FIS types */
 #define FIS_TYPE_H2D 0x27

@@ -42,6 +42,7 @@
 #include <dev/ic/ahcivar.h>
 #include <dev/ic/ahciregs.h>
 #include <fs/devfs.h>
+#include <fs/ctlfs.h>
 #include <vm/dynalloc.h>
 #include <vm/physmem.h>
 #include <string.h>
@@ -626,6 +627,7 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
     struct hba_memspace *abar = hba->io;
     struct hba_port *port;
     struct hba_device *dp;
+    struct ctlfs_dev dev;
     size_t clen, pagesz;
     uint32_t lo, hi, ssts;
     uint8_t det;
@@ -721,6 +723,16 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
     /* Register the device */
     dev_register(hba->major, dp->dev, &ahci_bdevsw);
     pr_trace("drive @ /dev/%s\n", devname);
+
+    /* Register a control node */
+    dev.mode = 0444;
+    ctlfs_create_node(devname, &dev);
+    pr_trace("drive control @ /ctl/%s/\n", devname);
+
+    /* Register control files */
+    dev.devname = devname;
+    dev.ops = &g_sata_bsize_ops;
+    ctlfs_create_entry("bsize", &dev);
     return devfs_create_entry(devname, hba->major, dp->dev, 0444);
 }
 
