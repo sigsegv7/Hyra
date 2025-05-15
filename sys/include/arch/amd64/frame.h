@@ -58,4 +58,6 @@ struct trapframe {
     uint64_t ss;
 };
 
+#define TF_IP(TFP) ((TFP)->rip)
+
 #endif  /* !_MACHINE_FRAME_H_ */

@@ -93,4 +93,6 @@ struct trapframe {
     lreg_t pc;
 };
 
+#define TF_IP(TFP) ((TFP)->pc)
+
 #endif  /* !_MACHINE_FRAME_H_ */
