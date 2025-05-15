@@ -33,7 +33,9 @@
 #if !defined(__ASSEMBLER__)
 #include <sys/types.h>
 #include <sys/cdefs.h>
+#if defined(_KERNEL) || defined(_OLIBC)
 #include <machine/syscall.h>
+#endif  /* _KERNEL || _OLIBC */
 #endif
 
 #define SYS_none    0
