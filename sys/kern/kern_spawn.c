@@ -27,49 +27,62 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/mman.h>
-#include <sys/tree.h>
-#include <sys/types.h>
 #include <sys/proc.h>
+#include <sys/mman.h>
 #include <sys/errno.h>
-#include <sys/sched.h>
+#include <sys/syslog.h>
+#include <sys/atomic.h>
 #include <sys/signal.h>
+#include <sys/sched.h>
 #include <vm/dynalloc.h>
 #include <string.h>
 
-static size_t nthreads = 0;
+#define pr_trace(fmt, ...) kprintf("spawn: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
+
+static volatile size_t nthreads = 0;
 
 /*
- * Fork1 - fork and direct a thread to 'ip'
+ * Spawn a new process
  *
- * @cur: Current process.
- * @flags: Flags to set.
- * @ip: Location for new thread to start at.
- * @newprocp: Will contain new thread if not NULL.
+ * @cur: Parent (current) process.
+ * @flags: Spawn flags.
+ * @ip: Location for process to start
+ * @newprocp: If not NULL, will contain the new process.
  */
 int
-fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
+spawn(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
 {
     struct proc *newproc;
     struct mmap_lgdr *mlgdr;
-    int status = 0;
+    int error;
 
     newproc = dynalloc(sizeof(*newproc));
-    if (newproc == NULL)
+    if (newproc == NULL) {
+        pr_error("could not alloc proc (-ENOMEM)\n");
         return -ENOMEM;
+    }
 
     mlgdr = dynalloc(sizeof(*mlgdr));
-    if (mlgdr == NULL)
+    if (mlgdr == NULL) {
+        dynfree(newproc);
+        pr_error("could not alloc proc mlgdr (-ENOMEM)\n");
         return -ENOMEM;
+    }
 
     memset(newproc, 0, sizeof(*newproc));
-    status = md_fork(newproc, cur, (uintptr_t)ip);
-    if (status != 0)
-        goto done;
+    error = md_spawn(newproc, cur, (uintptr_t)ip);
+    if (error < 0) {
+        dynfree(newproc);
+        dynfree(mlgdr);
+        pr_error("error initializing proc\n");
+        return error;
+    }
 
     /* Set proc output if we can */
-    if (newprocp != NULL)
+    if (newprocp != NULL) {
         *newprocp = newproc;
+    }
 
     /* Initialize the mmap ledger */
     mlgdr->nbytes = 0;
@@ -79,9 +92,5 @@ fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
     newproc->pid = ++nthreads;
     signals_init(newproc);
     sched_enqueue_td(newproc);
-done:
-    if (status != 0)
-        dynfree(newproc);
-
-    return status;
+    return 0;
 }

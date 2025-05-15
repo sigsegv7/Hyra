@@ -436,7 +436,7 @@ i8042_init(void)
         quirks |= I8042_HOSTILE;
         pr_trace("lenovo device, assuming hostile\n");
         pr_trace("disabling irq 1, polling as fallback\n");
-        fork1(&polltd, 0, i8042_sync_loop, NULL);
+        spawn(&polltd, 0, i8042_sync_loop, NULL);
     }
 
     if (!ISSET(quirks, I8042_HOSTILE)) {

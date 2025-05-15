@@ -155,7 +155,7 @@ md_td_kick(struct proc *td)
  * @ip: Instruction pointer.
  */
 int
-md_fork(struct proc *p, struct proc *parent, uintptr_t ip)
+md_spawn(struct proc *p, struct proc *parent, uintptr_t ip)
 {
     uintptr_t stack_base;
     struct trapframe *tfp;
