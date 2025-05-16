@@ -77,15 +77,13 @@ all: base libc sbin bin base/boot/hyra-kernel ramfs iso
 
 .PHONY: sbin
 sbin: $(SBIN_MAKEDIRS)
-	$(MAKE) -C $^ -I$(shell pwd)/builddeps \
-		LDSCRIPT=$(shell pwd)/usr.sbin/link.ld USRDIR=$(USRDIR)\
-		ROOT=$(PROJECT_ROOT)
+	make -C usr.sbin/ LDSCRIPT=$(shell pwd)/usr.sbin/link.ld USRDIR=$(USRDIR)\
+			ROOT=$(PROJECT_ROOT)\
 
 .PHONY: bin
 bin: $(BIN_MAKEDIRS)
-	$(MAKE) -C $^ -I$(shell pwd)/builddeps \
-		LDSCRIPT=$(shell pwd)/usr.bin/link.ld USRDIR=$(USRDIR) \
-		ROOT=$(PROJECT_ROOT)
+	make -C usr.bin/ LDSCRIPT=$(shell pwd)/usr.bin/link.ld USRDIR=$(USRDIR)\
+			ROOT=$(PROJECT_ROOT)
 
 .PHONY: libc
 libc:
