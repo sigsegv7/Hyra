@@ -112,7 +112,6 @@ exit1(struct proc *td)
     unload_td(td);
     vm_unmap(pcbp->addrsp, td->stack_base, PROC_STACK_SIZE);
     vm_free_frame(stack, PROC_STACK_PAGES);
-
     pmap_destroy_vas(pcbp->addrsp);
 
     /*
