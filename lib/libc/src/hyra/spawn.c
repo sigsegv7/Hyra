@@ -27,45 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SYSCALL_H_
-#define _SYS_SYSCALL_H_
-
-#if !defined(__ASSEMBLER__)
+#include <sys/spawn.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
-#include <sys/cdefs.h>
-#if defined(_KERNEL) || defined(_OLIBC)
-#include <machine/syscall.h>
-#endif  /* _KERNEL || _OLIBC */
-#endif
 
-#define SYS_none    0
-#define SYS_exit    1
-#define SYS_open    2
-#define SYS_read    3
-#define SYS_close   4
-#define SYS_stat    5
-#define SYS_sysctl  6
-#define SYS_write   7
-#define SYS_spawn   8
-
-#if defined(_KERNEL)
-/* Syscall return value and arg type */
-typedef ssize_t scret_t;
-typedef ssize_t scarg_t;
-
-struct syscall_args {
-    scarg_t arg0;
-    scarg_t arg1;
-    scarg_t arg2;
-    scarg_t arg3;
-    scarg_t arg4;
-    scarg_t arg5;
-    scarg_t arg6;
-    struct trapframe *tf;
-};
-
-extern const size_t MAX_SYSCALLS;
-extern scret_t(*g_sctab[])(struct syscall_args *);
-#endif  /* _KERNEL */
-
-#endif  /* _SYS_SYSCALL_H_ */
+/*
+ * Spawn a process
+ *
+ * @pathname: Path to executable.
+ * @flags: Spawn flags.
+ */
+pid_t
+spawn(const char *pathname, int flags)
+{
+    return syscall(SYS_spawn, (uintptr_t)pathname, flags);
+}

@@ -28,11 +28,15 @@
  */
 
 #include <sys/proc.h>
+#include <sys/exec.h>
 #include <sys/mman.h>
+#include <sys/systm.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
+#include <sys/syscall.h>
 #include <sys/atomic.h>
 #include <sys/signal.h>
+#include <sys/limits.h>
 #include <sys/sched.h>
 #include <vm/dynalloc.h>
 #include <string.h>
@@ -42,16 +46,62 @@
 
 static volatile size_t nthreads = 0;
 
+struct spawn_args {
+    char path[PATH_MAX];
+};
+
+static inline void
+try_free_data(void *p)
+{
+    if (p != NULL) {
+        dynfree(p);
+    }
+}
+
+static void
+spawn_thunk(void)
+{
+    const char *path;
+    char pathbuf[PATH_MAX];
+    struct proc *cur;
+    struct execve_args execve_args;
+    struct spawn_args *args;
+    char *argv[] = { NULL, NULL };
+    char *envp[] = { NULL };
+
+    cur = this_td();
+    args = cur->spawn_data;
+    path = args->path;
+    memcpy(pathbuf, path, strlen(path));
+
+    argv[0] = (char *)pathbuf;
+    execve_args.pathname = argv[0];
+    execve_args.argv = argv;
+    execve_args.envp = envp;
+
+    path = NULL;
+    dynfree(args);
+    execve(cur, &execve_args);
+    __builtin_unreachable();
+}
+
 /*
  * Spawn a new process
  *
  * @cur: Parent (current) process.
+ * @func: Address of start code.
+ * @p: Data to pass to new process (used for user procs)
  * @flags: Spawn flags.
- * @ip: Location for process to start
  * @newprocp: If not NULL, will contain the new process.
+ *
+ * Returns the PID of the child on success, otherwise an
+ * errno value that is less than zero.
+ *
+ * XXX: `p` is only used by sys_spawn and should be set
+ *      to NULL if called in the kernel.
  */
-int
-spawn(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
+pid_t
+spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **newprocp)
 {
     struct proc *newproc;
     struct mmap_lgdr *mlgdr;
@@ -60,21 +110,24 @@ spawn(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
     newproc = dynalloc(sizeof(*newproc));
     if (newproc == NULL) {
         pr_error("could not alloc proc (-ENOMEM)\n");
+        try_free_data(p);
         return -ENOMEM;
     }
 
     mlgdr = dynalloc(sizeof(*mlgdr));
     if (mlgdr == NULL) {
         dynfree(newproc);
+        try_free_data(p);
         pr_error("could not alloc proc mlgdr (-ENOMEM)\n");
         return -ENOMEM;
     }
 
     memset(newproc, 0, sizeof(*newproc));
-    error = md_spawn(newproc, cur, (uintptr_t)ip);
+    error = md_spawn(newproc, cur, (uintptr_t)func);
     if (error < 0) {
         dynfree(newproc);
         dynfree(mlgdr);
+        try_free_data(p);
         pr_error("error initializing proc\n");
         return error;
     }
@@ -84,6 +137,17 @@ spawn(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
         *newprocp = newproc;
     }
 
+    if (!ISSET(cur->flags, PROC_LEAFQ)) {
+        TAILQ_INIT(&cur->leafq);
+        cur->flags |= PROC_LEAFQ;
+    }
+
+    /* Add to parent leafq */
+    TAILQ_INSERT_TAIL(&cur->leafq, newproc, leaf_link);
+    atomic_inc_int(&cur->nleaves);
+    newproc->parent = cur;
+    newproc->spawn_data = p;
+
     /* Initialize the mmap ledger */
     mlgdr->nbytes = 0;
     RBT_INIT(lgdr_entries, &mlgdr->hd);
@@ -92,5 +156,57 @@ spawn(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp)
     newproc->pid = ++nthreads;
     signals_init(newproc);
     sched_enqueue_td(newproc);
-    return 0;
+    return newproc->pid;
+}
+
+/*
+ * Get the child of a process by PID.
+ *
+ * @cur: Parent process.
+ * @pid: Child PID.
+ *
+ * Returns NULL if no child was found.
+ */
+struct proc *
+get_child(struct proc *cur, pid_t pid)
+{
+    struct proc *procp;
+
+    TAILQ_FOREACH(procp, &cur->leafq, leaf_link) {
+        if (procp->pid == pid) {
+            return procp;
+        }
+    }
+
+    return NULL;
+}
+
+/*
+ * arg0: The file /path/to/executable
+ * arg1: Optional flags (`flags')
+ */
+scret_t
+sys_spawn(struct syscall_args *scargs)
+{
+    struct spawn_args *args;
+    const char *u_path;
+    struct proc *td;
+    int flags, error;
+
+    td = this_td();
+    flags = scargs->arg1;
+    u_path = (const char *)scargs->arg0;
+
+    args = dynalloc(sizeof(*args));
+    if (args == NULL) {
+        return -ENOMEM;
+    }
+
+    error = copyinstr(u_path, args->path, sizeof(args->path));
+    if (error < 0) {
+        dynfree(args);
+        return error;
+    }
+
+    return spawn(td, spawn_thunk, args, flags, NULL);
 }

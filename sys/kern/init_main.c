@@ -101,7 +101,7 @@ main(void)
 
     /* Startup pid 1 */
     memset(&proc0, 0, sizeof(proc0.tf));
-    spawn(&proc0, 0, start_init, NULL);
+    spawn(&proc0, start_init, NULL, 0, NULL);
 
     /* Load all drivers */
     DRIVERS_INIT();

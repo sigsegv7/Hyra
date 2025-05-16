@@ -64,6 +64,7 @@ struct proc {
     struct trapframe tf;
     struct pcb pcb;
     struct proc *parent;
+    void *spawn_data;
     size_t priority;
     int exit_status;
     bool rested;
@@ -84,6 +85,7 @@ struct proc {
 #define PROC_WAITED     BIT(4)  /* Being waited on by parent */
 
 struct proc *this_td(void);
+struct proc *get_child(struct proc *cur, pid_t pid);
 int md_spawn(struct proc *p, struct proc *parent, uintptr_t ip);
 
 scret_t sys_spawn(struct syscall_args *scargs);
