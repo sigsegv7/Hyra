@@ -63,21 +63,31 @@ struct proc {
     struct spinlock vcache_lock;
     struct trapframe tf;
     struct pcb pcb;
+    struct proc *parent;
     size_t priority;
+    int exit_status;
     bool rested;
     uint32_t flags;
+    uint32_t nleaves;
     uintptr_t stack_base;
     struct spinlock ksigq_lock;
+    TAILQ_HEAD(, proc) leafq;
+    TAILQ_ENTRY(proc) leaf_link;
     TAILQ_HEAD(, ksiginfo) ksigq;
     TAILQ_ENTRY(proc) link;
 };
 
 #define PROC_EXITING    BIT(0)  /* Exiting */
 #define PROC_EXEC       BIT(1)  /* Exec called (cleared by sched) */
+#define PROC_ZOMB       BIT(2)  /* Zombie (dead but not deallocated) */
+#define PROC_LEAFQ      BIT(3)  /* Leaf queue is active */
+#define PROC_WAITED     BIT(4)  /* Being waited on by parent */
 
 struct proc *this_td(void);
 int md_spawn(struct proc *p, struct proc *parent, uintptr_t ip);
-int spawn(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp);
+
+scret_t sys_spawn(struct syscall_args *scargs);
+pid_t spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **newprocp);
 
 void md_td_stackinit(struct proc *td, void *stack_top, struct exec_prog *prog);
 __dead void md_td_kick(struct proc *td);

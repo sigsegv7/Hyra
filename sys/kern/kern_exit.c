@@ -81,7 +81,7 @@ int
 exit1(struct proc *td)
 {
     struct pcb *pcbp;
-    struct proc *curtd;
+    struct proc *curtd, *procp;
     uintptr_t stack;
     pid_t target_pid, curpid;
 
@@ -92,6 +92,13 @@ exit1(struct proc *td)
     curpid = curtd->pid;
     stack = td->stack_base;
     td->flags |= PROC_EXITING;
+
+    /* If we have any children, kill them too */
+    if (td->nleaves > 0) {
+        TAILQ_FOREACH(procp, &td->leafq, leaf_link) {
+            exit1(procp);
+        }
+    }
 
     /*
      * If this is on the higher half, it is kernel
@@ -107,7 +114,17 @@ exit1(struct proc *td)
     vm_free_frame(stack, PROC_STACK_PAGES);
 
     pmap_destroy_vas(pcbp->addrsp);
-    dynfree(td);
+
+    /*
+     * Only free the process structure if we aren't
+     * being waited on, otherwise let it be so the
+     * parent can examine what's left of it.
+     */
+    if (!ISSET(td->flags, PROC_WAITED)) {
+        dynfree(td);
+    } else {
+        td->flags |= PROC_ZOMB;
+    }
 
     /*
      * If we are the thread exiting, reenter the scheduler
@@ -119,9 +136,15 @@ exit1(struct proc *td)
     return 0;
 }
 
+/*
+ * arg0: Exit status.
+ */
 scret_t
 sys_exit(struct syscall_args *scargs)
 {
-    exit1(this_td());
+    struct proc *td = this_td();
+
+    td->exit_status = scargs->arg0;
+    exit1(td);
     __builtin_unreachable();
 }
