@@ -54,7 +54,7 @@ vfs_dostat(const char *path, struct stat *sbuf)
         return -EINVAL;
     }
 
-    if ((copyinstr(path, pathbuf, sizeof(path))) < 0) {
+    if ((copyinstr(path, pathbuf, sizeof(pathbuf))) < 0) {
         return -EFAULT;
     }
 
