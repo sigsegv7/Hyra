@@ -120,20 +120,6 @@ trap_user(struct trapframe *tf)
     dispatch_signals(td);
 }
 
-static void
-trap_quirks(struct cpu_info *ci)
-{
-    static uint8_t count;
-
-    if (ISSET(ci->irq_mask, CPU_IRQ(1)) && count < 1) {
-        ++count;
-        pr_error("detected buggy i8042\n");
-        pr_error("applying I8042_HOSTILE quirk\n");
-        i8042_quirk(I8042_HOSTILE);
-        return;
-    }
-}
-
 void
 trap_syscall(struct trapframe *tf)
 {
@@ -155,8 +141,6 @@ trap_syscall(struct trapframe *tf)
 void
 trap_handler(struct trapframe *tf)
 {
-    struct cpu_info *ci;
-
     splraise(IPL_HIGH);
 
     if (tf->trapno >= NELEM(trap_type)) {
@@ -164,8 +148,6 @@ trap_handler(struct trapframe *tf)
     }
 
     pr_error("got %s\n", trap_type[tf->trapno]);
-    ci = this_cpu();
-    trap_quirks(ci);
 
     /* Handle traps from userland */
     if (ISSET(tf->cs, 3)) {
