@@ -81,7 +81,11 @@ spawn_thunk(void)
 
     path = NULL;
     dynfree(args);
-    execve(cur, &execve_args);
+
+    if (execve(cur, &execve_args) != 0) {
+        pr_error("execve failed, aborting\n");
+        exit1(this_td());
+    }
     __builtin_unreachable();
 }
 
