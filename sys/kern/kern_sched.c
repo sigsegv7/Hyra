@@ -257,10 +257,8 @@ sched_yield(void)
 
     if (td != NULL) {
         td->rested = true;
+        sched_switch(&td->tf);
     }
-
-    sched_oneshot(false);
-    while (td->rested);
 }
 
 void
