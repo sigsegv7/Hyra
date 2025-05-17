@@ -262,6 +262,18 @@ sched_yield(void)
 }
 
 void
+sched_detach(struct proc *td)
+{
+    struct sched_queue *queue;
+
+    spinlock_acquire(&tdq_lock);
+    queue = &qlist[td->priority];
+
+    TAILQ_REMOVE(&queue->q, td, link);
+    spinlock_release(&tdq_lock);
+}
+
+void
 sched_init(void)
 {
     /* Setup the queues */

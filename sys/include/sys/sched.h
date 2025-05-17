@@ -37,6 +37,8 @@
 
 void sched_init(void);
 void sched_yield(void);
+void sched_detach(struct proc *td);
+
 __dead void sched_enter(void);
 void sched_enqueue_td(struct proc *td);
 
