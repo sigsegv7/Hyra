@@ -81,20 +81,26 @@ int
 cons_obuf_push(struct cons_buf *bp, struct cons_char c)
 {
     uint8_t next;
+    int retval = 0;
 
     if (bp == NULL) {
         return -EINVAL;
     }
 
+    spinlock_acquire(&bp->lock);
     __assert(bp->type == CONS_BUF_OUTPUT);
     next = bp->head + 1;
     if (next > bp->len) {
-        return -ENOSPC;
+        retval = -ENOSPC;
+        goto done;
     }
 
     bp->obuf[bp->head] = c;
     bp->head = next;
-    return 0;
+
+done:
+    spinlock_release(&bp->lock);
+    return retval;
 }
 
 /*
@@ -108,18 +114,21 @@ int
 cons_obuf_pop(struct cons_buf *bp, struct cons_char *res)
 {
     uint8_t next;
+    int retval = 0;
 
     if (bp == NULL || res == NULL) {
         return -EINVAL;
     }
 
     __assert(bp->type == CONS_BUF_OUTPUT);
+    spinlock_acquire(&bp->lock);
 
     /* Do we have any data left? */
     if (bp->head == bp->tail) {
         bp->head = 0;
         bp->tail = 0;
-        return -EAGAIN;
+        retval = -EAGAIN;
+        goto done;
     }
 
     next = bp->tail + 1;
@@ -129,7 +138,10 @@ cons_obuf_pop(struct cons_buf *bp, struct cons_char *res)
 
     *res = bp->obuf[bp->tail];
     bp->tail = next;
-    return 0;
+
+done:
+    spinlock_release(&bp->lock);
+    return retval;
 }
 
 int
@@ -137,22 +149,28 @@ cons_ibuf_push(struct cons_screen *scr, struct cons_input in)
 {
     struct cons_buf *bp;
     uint8_t head_next;
+    int retval = 0;
 
     if (scr == NULL) {
         return -EINVAL;
     }
 
     bp = scr->ib;
+    spinlock_acquire(&bp->lock);
     __assert(bp->type == CONS_BUF_INPUT);
 
     head_next = bp->head + 1;
     if (head_next > bp->len) {
-        return -ENOSPC;
+        retval = -ENOSPC;
+        goto done;
     }
 
     bp->ibuf[bp->head] = in;
     bp->head = head_next;
-    return 0;
+
+done:
+    spinlock_release(&bp->lock);
+    return retval;
 }
 
 int
@@ -160,6 +178,7 @@ cons_ibuf_pop(struct cons_screen *scr, struct cons_input *res)
 {
     uint8_t tail_next;
     struct cons_buf *bp;
+    int retval = 0;
 
     if (scr == NULL || res == NULL) {
         return -EINVAL;
@@ -167,12 +186,14 @@ cons_ibuf_pop(struct cons_screen *scr, struct cons_input *res)
 
     bp = scr->ib;
     __assert(bp->type == CONS_BUF_INPUT);
+    spinlock_acquire(&bp->lock);
 
     /* Do we have any data left? */
     if (bp->head == bp->tail) {
         bp->head = 0;
         bp->tail = 0;
-        return -EAGAIN;
+        retval = -EAGAIN;
+        goto done;
     }
 
     tail_next = bp->tail + 1;
@@ -182,5 +203,8 @@ cons_ibuf_pop(struct cons_screen *scr, struct cons_input *res)
 
     *res = bp->ibuf[bp->tail];
     bp->tail = tail_next;
-    return 0;
+
+done:
+    spinlock_release(&bp->lock);
+    return retval;
 }

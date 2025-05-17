@@ -32,6 +32,7 @@
 
 #include <sys/types.h>
 #include <sys/param.h>
+#include <sys/spinlock.h>
 
 /* Buffer types */
 #define CONS_BUF_INPUT   0
@@ -62,6 +63,7 @@ struct cons_input {
  * keyboard input or console output.
  */
 struct cons_buf {
+    struct spinlock lock;
     union {
         struct cons_input *ibuf;
         struct cons_char *obuf;
