@@ -48,6 +48,7 @@ unload_td(struct proc *td)
     struct pcb *pcbp;
     size_t len;
 
+    sched_detach(td);
     execp = &td->exec;
     auxvalp = &execp->auxval;
     pcbp = &td->pcb;
