@@ -121,6 +121,7 @@
  */
 #define TRAPENTRY_EC(ENTLABEL, TRAPNO)  \
     ENTLABEL:                         ; \
+        cli                           ; \
         testq $0x3, 16(%rsp)          ; \
         jz 1f                         ; \
         lfence                        ; \
@@ -133,7 +134,8 @@
         jz 2f                         ; \
         lfence                        ; \
         swapgs                        ; \
-    2:  iretq
+    2:  sti                           ; \
+        iretq
 
 /*
  * Trap entry where no error code is on
@@ -141,6 +143,7 @@
  */
 #define TRAPENTRY(ENTLABEL, TRAPNO)     \
     ENTLABEL:                         ; \
+        cli                           ; \
         testq $0x3, 8(%rsp)           ; \
         jz 1f                         ; \
         lfence                        ; \
@@ -153,6 +156,7 @@
         jz 2f                         ; \
         lfence                        ; \
         swapgs                        ; \
-    2:  iretq
+    2:  sti                           ; \
+        iretq
 
 #endif  /* !_MACHINE_FRAMEASM_H_ */
