@@ -185,7 +185,7 @@ sched_switch(struct trapframe *tf)
     struct cpu_info *ci;
     struct pcb *pcbp;
     struct proc *next_td, *td;
-    bool use_current = true;
+    bool use_current;
 
     ci = this_cpu();
     td = ci->curtd;
@@ -200,6 +200,7 @@ sched_switch(struct trapframe *tf)
      * in the middle of an exit, exec, or whatever.
      */
     do {
+        use_current = true;
         if ((next_td = sched_dequeue_td()) == NULL) {
             sched_oneshot(false);
             return;
