@@ -42,6 +42,13 @@ cpu_startup(struct cpu_info *ci)
 }
 
 void
+cpu_halt_others(void)
+{
+    /* TODO: STUB */
+    return;
+}
+
+void
 serial_init(void)
 {
     /* TODO: STUB */

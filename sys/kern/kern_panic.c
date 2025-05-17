@@ -31,6 +31,8 @@
 #include <sys/spinlock.h>
 #include <sys/syslog.h>
 #include <sys/reboot.h>
+#include <machine/cdefs.h>
+#include <machine/cpu.h>
 
 /*
  * Burn and sizzle - the core logic that really ends
@@ -69,8 +71,12 @@ panic(const char *fmt, ...)
 {
     va_list ap;
 
+    /* Shut everything else up */
+    md_intoff();
+    cpu_halt_others();
+
     va_start(ap, fmt);
-    kprintf(OMIT_TIMESTAMP "panic: ");
+    kprintf(OMIT_TIMESTAMP "\npanic: ");
     vkprintf(fmt, &ap);
     bas(true, REBOOT_HALT);
 

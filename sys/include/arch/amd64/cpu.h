@@ -49,6 +49,7 @@ struct cpu_info {
 };
 
 __dead void cpu_halt_all(void);
+void cpu_halt_others(void);
 void cpu_startup(struct cpu_info *ci);
 
 struct cpu_info *this_cpu(void);

@@ -40,6 +40,8 @@ struct cpu_info {
 };
 
 void cpu_startup(struct cpu_info *ci);
+void cpu_halt_others(void);
+
 void mp_bootstrap_aps(struct cpu_info *ci);
 struct cpu_info *this_cpu(void);
 

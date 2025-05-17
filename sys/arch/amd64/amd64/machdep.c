@@ -174,6 +174,21 @@ cpu_halt_all(void)
     for (;;);
 }
 
+/*
+ * Same as cpu_halt_all() but for all other
+ * cores but ourselves.
+ */
+void
+cpu_halt_others(void)
+{
+    if (rdmsr(IA32_GS_BASE) == 0) {
+        __ASMV("cli; hlt");
+    }
+
+    /* Send IPI to all cores */
+    lapic_send_ipi(0, IPI_SHORTHAND_OTHERS, halt_vector);
+}
+
 void
 serial_init(void)
 {
