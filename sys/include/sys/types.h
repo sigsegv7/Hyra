@@ -36,8 +36,7 @@
 
 /* Compat */
 #if defined(_KERNEL)
-#define true 1
-#define false 0
+#include <stdbool.h>
 #if !defined(NULL)
 #define NULL ((void *)0)
 #endif  /* !NULL */
@@ -112,11 +111,6 @@ typedef uint64_t time_t;
 #if defined(_HAVE_PTRDIFF_T)
 typedef __ptrdiff_t ptrdiff_t;
 #endif  /* _HAVE_PTRDIFF_T */
-
-/* Compat */
-#if defined(_KERNEL)
-typedef _Bool bool;
-#endif
 
 #if defined(_KERNEL)
 typedef uintptr_t paddr_t;
