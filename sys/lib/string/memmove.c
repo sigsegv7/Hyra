@@ -27,26 +27,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _LIB_STRING_H_
-#define _LIB_STRING_H_
+#include <string.h>
 
-#include <sys/types.h>
-#include <stdarg.h>
+void *
+memmove(void *s1, const void *s2, size_t n)
+{
+	const char *f = s2;
+	char *t = s1;
 
-size_t strlen(const char *s);
-char *itoa(int64_t value, char *buf, int base);
-
-int vsnprintf(char *s, size_t size, const char *fmt, va_list ap);
-int snprintf(char *s, size_t size, const char *fmt, ...);
-
-void *memcpy(void *dest, const void *src, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
-
-void *memset(void *s, int c, size_t n);
-int strcmp(const char *s1, const char *s2);
-
-int strncmp(const char *s1, const char *s2, size_t n);
-int atoi(char *s);
-void *memmove(void *s1, const void *s2, size_t n);
-
-#endif  /* !_LIB_STRING_H_ */
+	if (f < t) {
+		f += n;
+		t += n;
+		while (n-- > 0) {
+			*--t = *--f;
+        }
+	} else {
+		while (n-- > 0) {
+			*t++ = *f++;
+        }
+    }
+	return s1;
+}
