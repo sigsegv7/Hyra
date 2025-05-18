@@ -35,6 +35,7 @@
 #include <sys/exec.h>
 #include <sys/driver.h>
 #include <sys/panic.h>
+#include <dev/acpi/uacpi.h>
 #include <dev/cons/cons.h>
 #include <dev/acpi/acpi.h>
 #include <machine/cpu.h>
@@ -94,6 +95,8 @@ main(void)
 
     /* Expose the console to devfs */
     cons_expose();
+
+    uacpi_init();
 
     /* Start scheduler and bootstrap APs */
     md_intoff();
