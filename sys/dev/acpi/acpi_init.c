@@ -46,6 +46,7 @@
 static char oemid[OEMID_SIZE];
 static struct acpi_root_sdt *root_sdt = NULL;
 static size_t root_sdt_entries = 0;
+static paddr_t rsdp_pa = 0;
 static volatile struct limine_rsdp_request rsdp_req = {
     .id = LIMINE_RSDP_REQUEST,
     .revision = 0
@@ -99,6 +100,12 @@ acpi_oemid(void)
     return oemid;
 }
 
+paddr_t
+acpi_rsdp(void)
+{
+    return rsdp_pa;
+}
+
 void
 acpi_init(void)
 {
@@ -112,6 +119,7 @@ acpi_init(void)
     rsdp = rsdp_req.response->address;
     acpi_print_oemid("RSDP", rsdp->oemid);
     memcpy(oemid, rsdp->oemid, OEMID_SIZE);
+    rsdp_pa = VIRT_TO_PHYS(rsdp);
 
     /* Fetch the root SDT */
     if (rsdp->revision >= 2) {

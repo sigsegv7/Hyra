@@ -30,8 +30,12 @@
 #ifndef _ACPI_H_
 #define _ACPI_H_
 
+#include <sys/types.h>
+
 const char *acpi_oemid(void);
 void *acpi_query(const char *query);
+
+paddr_t acpi_rsdp(void);
 void acpi_init(void);
 
 #endif  /* !_ACPI_H_ */
