@@ -85,6 +85,8 @@ int pci_map_bar(struct pci_device *dev, uint8_t barno, void **vap);
 void pci_writel(struct pci_device *dev, uint32_t offset, pcireg_t val);
 
 int pci_enable_msix(struct pci_device *dev, const struct msi_intr *intr);
+void pci_add_device(struct pci_device *dev);
+
 void pci_msix_eoi(void);
 int pci_init(void);
 

@@ -31,6 +31,7 @@
 #include <sys/queue.h>
 #include <sys/syslog.h>
 #include <sys/errno.h>
+#include <sys/spinlock.h>
 #include <dev/pci/pci.h>
 #include <dev/pci/pciregs.h>
 #include <vm/dynalloc.h>
@@ -39,6 +40,7 @@
 #define pr_trace(fmt, ...) kprintf("pci: " fmt, ##__VA_ARGS__)
 
 static TAILQ_HEAD(, pci_device) device_list;
+static struct spinlock devlist_lock = {0};
 
 static bool
 pci_dev_exists(uint8_t bus, uint8_t slot, uint8_t func)
@@ -260,6 +262,15 @@ pci_get_device(struct pci_lookup lookup, uint16_t lookup_type)
     }
 
     return NULL;
+}
+
+
+void
+pci_add_device(struct pci_device *dev)
+{
+    spinlock_acquire(&devlist_lock);
+    TAILQ_INSERT_TAIL(&device_list, dev, link);
+    spinlock_release(&devlist_lock);
 }
 
 int
