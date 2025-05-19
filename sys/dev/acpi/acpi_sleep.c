@@ -27,18 +27,54 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ACPI_H_
-#define _ACPI_H_
+#include <sys/errno.h>
+#include <sys/syslog.h>
+#include <machine/cdefs.h>
+#include <machine/cpu.h>
+#include <dev/acpi/acpi.h>
+#include <uacpi/sleep.h>
 
-#include <sys/types.h>
+#define pr_trace(fmt, ...) kprintf("acpi: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
 
-#define ACPI_SLEEP_S5 0x00000000
+int
+acpi_sleep(int type)
+{
+    uacpi_status error;
+    uacpi_sleep_state state;
+    const uacpi_char *error_str;
 
-const char *acpi_oemid(void);
-void *acpi_query(const char *query);
+    switch (type) {
+    case ACPI_SLEEP_S5:
+        state = UACPI_SLEEP_STATE_S5;
+        break;
+    default:
+        return -EINVAL;
+    }
 
-paddr_t acpi_rsdp(void);
-int acpi_sleep(int type);
-void acpi_init(void);
+    error = uacpi_prepare_for_sleep_state(state);
+    if (uacpi_unlikely_error(error)) {
+        error_str = uacpi_status_to_string(error);
+        pr_error("failed to prep sleep: %s\n", error_str);
+        return -EIO;
+    }
 
-#endif  /* !_ACPI_H_ */
+    /*
+     * If we are entering the S5 sleep state, bring
+     * everything down first.
+     */
+    if (type == ACPI_SLEEP_S5) {
+        pr_trace("powering off, halting all cores...\n");
+        cpu_halt_others();
+        md_intoff();
+    }
+
+    error = uacpi_enter_sleep_state(UACPI_SLEEP_STATE_S5);
+    if (uacpi_unlikely_error(error)) {
+        error_str = uacpi_status_to_string(error);
+        pr_error("could not enter S5 state: %s\n", error_str);
+        return -EIO;
+    }
+
+    return 0;
+}
