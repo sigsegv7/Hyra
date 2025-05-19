@@ -32,6 +32,7 @@
 #include <sys/syslog.h>
 #include <sys/spinlock.h>
 #include <sys/sched.h>
+#include <sys/atomic.h>
 #include <machine/cpu.h>
 #include <vm/dynalloc.h>
 #include <assert.h>
@@ -44,22 +45,20 @@ static volatile struct limine_smp_request g_smp_req = {
     .revision = 0
 };
 
+static volatile uint32_t ncpu_up = 0;
+
 static void
 ap_trampoline(struct limine_smp_info *si)
 {
-    static struct spinlock lock = {0};
     struct cpu_info *ci;
 
     ci = dynalloc(sizeof(*ci));
     __assert(ci != NULL);
     memset(ci, 0, sizeof(*ci));
 
-    spinlock_acquire(&lock);
     cpu_startup(ci);
-
-    spinlock_release(&lock);
+    atomic_inc_int(&ncpu_up);
     sched_enter();
-
     while (1);
 }
 
@@ -90,4 +89,7 @@ mp_bootstrap_aps(struct cpu_info *ci)
 
         cpus[i]->goto_address = ap_trampoline;
     }
+
+    /* Wait for all cores to be ready */
+    while (ncpu_up < cpu_init_counter);
 }
