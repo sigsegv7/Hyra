@@ -40,6 +40,7 @@
 #include <uacpi/sleep.h>
 #include <machine/cdefs.h>
 #include <machine/pio.h>
+#include <machine/cpu.h>
 #if defined(__x86_64__)
 #include <machine/idt.h>
 #include <machine/ioapic.h>
@@ -56,6 +57,19 @@ typedef struct {
     uacpi_io_addr base;
     uacpi_size length;
 } io_range_t;
+
+/*
+ * TODO: Schedule a system shutdown
+ */
+static uacpi_interrupt_ret
+power_button_handler(uacpi_handle ctx)
+{
+    md_intoff();
+    kprintf("power button pressed\n");
+    kprintf("halting machine...\n");
+    cpu_halt_all();
+    return UACPI_INTERRUPT_HANDLED;
+}
 
 void *
 uacpi_kernel_alloc(uacpi_size size)
@@ -538,6 +552,18 @@ uacpi_init(void)
     ret = uacpi_finalize_gpe_initialization();
     if (uacpi_unlikely_error(ret)) {
         kprintf("uacpi GPE init error: %s\n", uacpi_status_to_string(ret));
+        return -1;
+    }
+
+    ret = uacpi_install_fixed_event_handler(
+        UACPI_FIXED_EVENT_POWER_BUTTON,
+        power_button_handler, UACPI_NULL
+    );
+
+    if (uacpi_unlikely_error(ret)) {
+        kprintf("failed to install power button event: %s\n",
+            uacpi_status_to_string(ret)
+        );
         return -1;
     }
 
