@@ -47,6 +47,7 @@
 #define SYS_sysctl  6
 #define SYS_write   7
 #define SYS_spawn   8
+#define SYS_reboot  9
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */

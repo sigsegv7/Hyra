@@ -32,13 +32,15 @@
 
 #include <sys/param.h>
 #include <sys/cdefs.h>
+#include <sys/syscall.h>
 
-#if defined(_KERNEL)
 #define REBOOT_RESET    0x00000000
 #define REBOOT_HALT     BIT(0)  /* Halt instead of rebooting */
 #define REBOOT_POWEROFF BIT(1)  /* Power off (needs REBOOT_HALT set too) */
 
 void cpu_reboot(int method);
 
+#if defined(_KERNEL)
+scret_t sys_reboot(struct syscall_args *scargs);
 #endif  /* _KERNEL */
 #endif  /* _SYS_REBOOT_H_ */

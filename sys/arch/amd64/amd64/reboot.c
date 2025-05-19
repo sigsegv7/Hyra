@@ -50,3 +50,13 @@ cpu_reboot(int method)
         outb(0x64, 0xFE);
     }
 }
+
+/*
+ * arg0: Method bits
+ */
+scret_t
+sys_reboot(struct syscall_args *scargs)
+{
+    cpu_reboot(scargs->arg0);
+    __builtin_unreachable();
+}
