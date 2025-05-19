@@ -185,7 +185,6 @@ sched_switch(struct trapframe *tf)
     struct cpu_info *ci;
     struct pcb *pcbp;
     struct proc *next_td, *td;
-    bool use_current;
 
     ci = this_cpu();
     td = ci->curtd;
@@ -193,39 +192,12 @@ sched_switch(struct trapframe *tf)
     if (td != NULL) {
         dispatch_signals(td);
         td_pri_update(td);
+        sched_save_td(td, tf);
     }
 
-    /*
-     * Get the next thread and use it only if it isn't
-     * in the middle of an exit, exec, or whatever.
-     */
-    do {
-        use_current = true;
-        if ((next_td = sched_dequeue_td()) == NULL) {
-            sched_oneshot(false);
-            return;
-        }
-
-        /*
-         * If we are in the middle of an exec, don't use this
-         * thread.
-         */
-        if (ISSET(next_td->flags, PROC_EXEC)) {
-            use_current = false;
-        }
-
-        /*
-         * Don't use this thread if we are currently
-         * exiting.
-         */
-        if (ISSET(next_td->flags, PROC_EXITING)) {
-            use_current = false;
-        }
-    } while (!use_current);
-
-    /* Save the previous thread */
-    if (td != NULL) {
-        sched_save_td(td, tf);
+    if ((next_td = sched_dequeue_td()) == NULL) {
+        sched_oneshot(false);
+        return;
     }
 
     memcpy(tf, &next_td->tf, sizeof(*tf));
@@ -243,9 +215,8 @@ void
 sched_enter(void)
 {
     md_inton();
-    md_sync_all();
+    sched_oneshot(false);
     for (;;) {
-        sched_oneshot(false);
         md_pause();
     }
 }
