@@ -32,10 +32,15 @@
 #include <sys/cdefs.h>
 #include <machine/pio.h>
 #include <machine/cpu.h>
+#include <dev/acpi/acpi.h>
 
 void
 cpu_reboot(int method)
 {
+    if (ISSET(method, REBOOT_POWEROFF)) {
+        acpi_sleep(ACPI_SLEEP_S5);
+    }
+
     if (ISSET(method, REBOOT_HALT)) {
         cpu_halt_all();
     }
