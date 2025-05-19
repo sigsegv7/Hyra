@@ -29,6 +29,7 @@
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
+#include <sys/reboot.h>
 #include <fcntl.h>
 #include <stddef.h>
 #include <unistd.h>
@@ -44,9 +45,11 @@
 
 #define HELP \
     "Default commands:\n" \
-    "help    - Display this help message\n" \
-    "echo    - Print the arguments to the console\n" \
-    "exit    - Exit the shell\n"
+    "help     - Display this help message\n" \
+    "echo     - Print the arguments to the console\n" \
+    "reboot   - Reboot the machine\n" \
+    "shutdown - Power off the machine\n" \
+    "exit     - Exit the shell\n"
 
 #define PROMPT "[root::osmora]~ "
 
@@ -69,6 +72,18 @@ void
 cmd_exit(int fd, int argc, char *argv[])
 {
     running = 0;
+}
+
+void
+cmd_reboot(int fd, int argc, char *argv[])
+{
+    cpu_reboot(REBOOT_RESET);
+}
+
+void
+cmd_shutdown(int fd, int argc, char *argv[])
+{
+    cpu_reboot(REBOOT_POWEROFF | REBOOT_HALT);
 }
 
 void
@@ -154,6 +169,8 @@ struct command cmds[] = {
     {"help", cmd_help},
     {"echo", cmd_echo},
     {"exit", cmd_exit},
+    {"reboot", cmd_reboot},
+    {"shutdown", cmd_shutdown},
     {NULL, NULL}
 };
 
