@@ -243,25 +243,20 @@ i8042_en_intr(void)
     uint8_t conf;
     int vec;
 
-    pr_trace("ENTER -> i8042_en_intr\n");
     i8042_write(I8042_CMD, I8042_DISABLE_PORT0);
-    pr_trace("port 0 disabled\n");
 
     vec = intr_alloc_vector("i8042-kb", IPL_BIO);
     idt_set_desc(vec, IDT_INT_GATE, ISR(i8042_kb_isr), IST_HW_IRQ);
     ioapic_set_vec(KB_IRQ, vec);
     ioapic_irq_unmask(KB_IRQ);
-    pr_trace("irq 1 -> vec[%x]\n", vec);
 
     /* Setup config bits */
     conf = i8042_read_conf();
     conf |= I8042_PORT0_INTR;
     conf &= ~I8042_PORT1_INTR;
     i8042_write_conf(conf);
-    pr_trace("conf written\n");
 
     i8042_write(I8042_CMD, I8042_ENABLE_PORT0);
-    pr_trace("port 0 enabled\n");
 }
 
 static void
