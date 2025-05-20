@@ -7,4 +7,4 @@ setval SCHED_NQUEUE 4
 
 // Console attributes
 setval CONSOLE_BG 0x000000
-setval CONSOLE_FG 0XB57614
+setval CONSOLE_FG 0x009800
