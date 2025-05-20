@@ -51,7 +51,39 @@ struct intr_entry {
     int priority;
 };
 
-int intr_alloc_vector(const char *name, uint8_t priority);
+/*
+ * Interrupt handler
+ *
+ * [r]: Required for intr_register()
+ * [o]: Not required for intr_register()
+ * [v]: Returned by intr_register()
+ *
+ * @func: The actual handler        [r]
+ * @name: Interrupt name            [v]
+ * @priority: Interrupt priority    [r]
+ * @irq: Interrupt request number   [o]
+ * @vector: Interrupt vector        [v]
+ *
+ * XXX: `irq` can be set to -1 for MSI/MSI-X
+ *      interrupts.
+ *
+ * XXX: `func` must be the first field in this
+ *      structure so that it may be called through
+ *      assembly.
+ *
+ * XXX: `ist' should usually be set to -1 but can be
+ *      used if an interrupt requires its own stack.
+ */
+struct intr_hand {
+    int(*func)(void *);
+    char *name;
+    int priority;
+    int irq;
+    int vector;
+};
+
+void *intr_register(const char *name, const struct intr_hand *ih);
+
 int splraise(uint8_t s);
 void splx(uint8_t s);
 

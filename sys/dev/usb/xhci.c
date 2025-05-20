@@ -43,6 +43,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <machine/lapic.h>
+
 #define pr_trace(fmt, ...) kprintf("xhci: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
@@ -56,10 +58,11 @@
 static struct pci_device *hci_dev;
 static struct timer tmr;
 
-__attribute__((__interrupt__)) static void
-xhci_common_isr(void *sf)
+static int
+xhci_intr(void *sf)
 {
     pr_trace("received xHCI interrupt (via PCI MSI-X)\n");
+    return 1;   /* handled */
 }
 
 /*
@@ -232,7 +235,7 @@ xhci_init_msix(struct xhci_hc *hc)
     struct msi_intr intr;
 
     intr.name = "xHCI MSI-X";
-    intr.handler = xhci_common_isr;
+    intr.handler = xhci_intr;
     return pci_enable_msix(hci_dev, &intr);
 }
 

@@ -163,6 +163,7 @@ pci_enable_msix(struct pci_device *dev, const struct msi_intr *intr)
 {
     volatile uint64_t *tbl;
     struct cpu_info *ci;
+    struct intr_hand ih, *ih_res;
     uint32_t data, msg_ctl;
     uint64_t msg_addr, tmp;
     uint16_t tbl_off;
@@ -184,9 +185,14 @@ pci_enable_msix(struct pci_device *dev, const struct msi_intr *intr)
     tbl = (void *)((dev->bar[bir] & PCI_BAR_MEMMASK) + MMIO_OFFSET);
     tbl = (void *)((char *)tbl + tbl_off);
 
-    /* Get the vector and setup handler */
-    vector = intr_alloc_vector(intr->name, IPL_BIO);
-    idt_set_desc(vector, IDT_INT_GATE, ISR(intr->handler), 0);
+    ih.func = intr->handler;
+    ih.priority = IPL_BIO;
+    ih.irq = -1;
+    ih_res = intr_register(intr->name, &ih);
+    if (ih_res == NULL) {
+        return -EIO;
+    }
+    vector = ih_res->vector;
 
     /*
      * Setup the message data at bits 95:64 of the message

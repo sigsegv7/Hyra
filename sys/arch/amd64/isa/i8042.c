@@ -211,8 +211,8 @@ dev_send(bool aux, uint8_t data)
     return inb(I8042_DATA);
 }
 
-void
-i8042_kb_event(void)
+static int
+i8042_kb_event(void *sp)
 {
     struct cpu_info *ci;
     struct cons_input input;
@@ -234,21 +234,21 @@ i8042_kb_event(void)
 done:
     ci->irq_mask &= CPU_IRQ(1);
     spinlock_release(&isr_lock);
-    lapic_eoi();
+    return 1;   /* handled */
 }
 
 static void
 i8042_en_intr(void)
 {
     uint8_t conf;
-    int vec;
+    struct intr_hand ih;
 
     i8042_write(I8042_CMD, I8042_DISABLE_PORT0);
 
-    vec = intr_alloc_vector("i8042-kb", IPL_BIO);
-    idt_set_desc(vec, IDT_INT_GATE, ISR(i8042_kb_isr), IST_HW_IRQ);
-    ioapic_set_vec(KB_IRQ, vec);
-    ioapic_irq_unmask(KB_IRQ);
+    ih.func = i8042_kb_event;
+    ih.priority = IPL_BIO;
+    ih.irq = KB_IRQ;
+    intr_register("i8042-kb", &ih);
 
     /* Setup config bits */
     conf = i8042_read_conf();

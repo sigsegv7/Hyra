@@ -82,7 +82,5 @@ void i8042_quirk(int mask);
 
 /* Internal - do not use */
 void i8042_sync(void);
-void i8042_kb_isr(void);
-void i8042_kb_event(void);
 
 #endif  /* _I8042VAR_H_ */

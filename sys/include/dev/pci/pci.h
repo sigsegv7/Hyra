@@ -75,7 +75,7 @@ struct pci_device {
 
 struct msi_intr {
     const char *name;
-    void(*handler)(void *);
+    int(*handler)(void *);
 };
 
 pcireg_t pci_readl(struct pci_device *dev, uint32_t offset);

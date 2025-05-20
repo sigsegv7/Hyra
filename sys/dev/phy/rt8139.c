@@ -159,9 +159,8 @@ rt_poll(uint8_t reg, uint8_t size, uint32_t bits, bool pollset)
     return val;
 }
 
-#if defined(__x86_64__)
-__isr static void
-rt8139_pin_irq(void *sp)
+static int
+rt8139_intr(void *sp)
 {
     static uint32_t packet_ptr = 0;
     uint16_t len;
@@ -174,7 +173,7 @@ rt8139_pin_irq(void *sp)
     p += 2;             /* Points to data now */
 
     if (status & RT_TOK) {
-        return;
+        return -EIO;
     }
 
     /* Update rxbuf offset in CAPR */
@@ -184,28 +183,22 @@ rt8139_pin_irq(void *sp)
     }
     rt_write(RT_RXBUFTAIL, 2, packet_ptr - 0x10);
     rt_write(RT_INTRSTATUS, 2, RT_ACKW);
-    lapic_eoi();
+    return 1;       /* handled */
 }
 
 static int
 rtl8139_irq_init(void)
 {
-    int vec;
+    struct intr_hand ih;
 
-    vec = intr_alloc_vector("rt8139", IPL_BIO);
-    if (vec < 0) {
-        return vec;
+    ih.func = rt8139_intr;
+    ih.priority = IPL_BIO;
+    ih.irq = dev->irq_line;
+    if (intr_register("rt8139", &ih) == NULL) {
+        return -EIO;
     }
-
-    /* Map interrupt vector to IRQ */
-    idt_set_desc(vec, IDT_INT_GATE, ISR(rt8139_pin_irq), 0);
-    ioapic_set_vec(dev->irq_line, vec);
-    ioapic_irq_unmask(dev->irq_line);
     return 0;
 }
-#else
-#define rtl8139_irq_init(...) -ENOTSUP
-#endif
 
 static void
 rt_init_pci(void)

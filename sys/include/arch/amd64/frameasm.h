@@ -30,6 +30,8 @@
 #ifndef _MACHINE_FRAMEASM_H_
 #define _MACHINE_FRAMEASM_H_
 
+#define ALIGN_TEXT .align 8, 0x90
+
 /*
  * If the interrupt has an error code, this macro shall
  * be used to create the trapframe.

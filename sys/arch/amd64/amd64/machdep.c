@@ -44,6 +44,8 @@
 #include <machine/intr.h>
 #include <machine/isa/i8042var.h>
 
+#define HALT_VECTOR 0x21
+
 #if defined(__SPECTRE_IBRS)
 #define SPECTRE_IBRS  __SPECTRE_IBRS
 #else
@@ -54,6 +56,7 @@ static uint8_t halt_vector = 0;
 
 int ibrs_enable(void);
 void syscall_isr(void);
+void pin_isr_load(void);
 
 struct cpu_info g_bsp_ci = {0};
 static struct gdtr bsp_gdtr = {
@@ -72,10 +75,6 @@ cpu_halt_isr(void *p)
 static void
 setup_vectors(void)
 {
-    if (halt_vector == 0) {
-        halt_vector = intr_alloc_vector("cpu-halt", IPL_HIGH);
-    }
-
     idt_set_desc(0x0, IDT_TRAP_GATE, ISR(arith_err), 0);
     idt_set_desc(0x2, IDT_TRAP_GATE, ISR(nmi), 0);
     idt_set_desc(0x3, IDT_TRAP_GATE, ISR(breakpoint_handler), 0);
@@ -89,7 +88,8 @@ setup_vectors(void)
     idt_set_desc(0xD, IDT_TRAP_GATE, ISR(general_prot), 0);
     idt_set_desc(0xE, IDT_TRAP_GATE, ISR(page_fault), 0);
     idt_set_desc(0x80, IDT_USER_INT_GATE, ISR(syscall_isr), 0);
-    idt_set_desc(halt_vector, IDT_INT_GATE, ISR(cpu_halt_isr), 0);
+    idt_set_desc(HALT_VECTOR, IDT_INT_GATE, ISR(cpu_halt_isr), 0);
+    pin_isr_load();
 }
 
 static inline void
@@ -186,7 +186,7 @@ cpu_halt_others(void)
     }
 
     /* Send IPI to all cores */
-    lapic_send_ipi(0, IPI_SHORTHAND_OTHERS, halt_vector);
+    lapic_send_ipi(0, IPI_SHORTHAND_OTHERS, HALT_VECTOR);
 }
 
 void

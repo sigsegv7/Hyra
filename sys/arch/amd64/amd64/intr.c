@@ -31,12 +31,19 @@
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/panic.h>
+#include <sys/cdefs.h>
+#include <sys/syslog.h>
 #include <machine/intr.h>
 #include <machine/cpu.h>
 #include <machine/asm.h>
+#include <machine/ioapic.h>
 #include <vm/dynalloc.h>
+#include <string.h>
 
-static struct intr_entry *intrs[256] = {0};
+#define pr_trace(fmt, ...) kprintf("intr: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
+
+struct intr_hand *g_intrs[256] = {0};
 
 int
 splraise(uint8_t s)
@@ -67,35 +74,58 @@ splx(uint8_t s)
     ci->ipl = s;
 }
 
-int
-intr_alloc_vector(const char *name, uint8_t priority)
+void *
+intr_register(const char *name, const struct intr_hand *ih)
 {
-    size_t vec = MAX(priority << IPL_SHIFT, 0x20);
-    struct intr_entry *intr;
+    uint32_t vec = MAX(ih->priority << IPL_SHIFT, 0x20);
+    struct intr_hand *ih_new;
+    size_t name_len;
 
     /* Sanity check */
-    if (vec > NELEM(intrs)) {
-        return -1;
+    if (vec > NELEM(g_intrs) || name == NULL) {
+        return NULL;
+    }
+
+    ih_new = dynalloc(sizeof(*ih_new));
+    if (ih_new == NULL) {
+        pr_error("could not allocate new interrupt handler\n");
+        return NULL;
     }
 
     /*
      * Try to allocate an interrupt vector. An IPL is made up
      * of 4 bits so there can be 16 vectors per IPL.
+     *
+     * XXX: Vector 0x20 is reserved for the Hyra scheduler and
+     *      vector 0x21 is reserved for the CPU halt IPI.
      */
     for (int i = vec; i < vec + 16; ++i) {
-        if (intrs[i] != NULL) {
+        if (g_intrs[i] != NULL || i < 0x22) {
             continue;
         }
 
-        intr = dynalloc(sizeof(*intr));
-        if (intr == NULL) {
-            return -ENOMEM;
+        /* Allocate memory for the name */
+        name_len = strlen(name);
+        ih_new->name = dynalloc(name_len);
+        if (ih_new->name == NULL) {
+            dynfree(ih_new);
+            pr_trace("could not allocate interrupt name\n");
+            return NULL;
         }
 
-        intr->priority = priority;
-        intrs[i] = intr;
-        return i;
+        memcpy(ih_new->name, name, name_len);
+        ih_new->func = ih->func;
+        ih_new->priority = ih->priority;
+        ih_new->irq = ih->irq;
+        ih_new->vector = i;
+        g_intrs[i] = ih_new;
+
+        if (ih->irq >= 0) {
+            ioapic_set_vec(ih->irq, i);
+            ioapic_irq_unmask(ih->irq);
+        }
+        return ih_new;
     }
 
-    return -1;
+    return NULL;
 }

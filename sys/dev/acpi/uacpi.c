@@ -259,17 +259,16 @@ uacpi_status
 uacpi_kernel_install_interrupt_handler(uacpi_u32 irq, uacpi_interrupt_handler fn,
     uacpi_handle ctx, uacpi_handle *out_irq_handle)
 {
-    int vec;
+    struct intr_hand ih;
 
-#if defined(__x86_64__)
-    vec = intr_alloc_vector("acpi", IPL_HIGH);
-    idt_set_desc(vec, IDT_INT_GATE, ISR(fn), IST_HW_IRQ);
-    ioapic_set_vec(irq, vec);
-    ioapic_irq_unmask(irq);
+    ih.func = (void *)fn;
+    ih.priority = IPL_HIGH;
+    ih.irq = irq;
+    if (intr_register("acpi", &ih) == NULL) {
+        return UACPI_STATUS_INTERNAL_ERROR;
+    }
+
     return UACPI_STATUS_OK;
-#else
-    return UACPI_STATUS_UNIMPLEMENTED;
-#endif  /* __x86_64__ */
 }
 
 uacpi_status
