@@ -43,8 +43,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include <machine/lapic.h>
-
 #define pr_trace(fmt, ...) kprintf("xhci: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
