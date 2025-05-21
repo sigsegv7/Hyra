@@ -107,6 +107,7 @@ main(void)
     spawn(&proc0, start_init, NULL, 0, NULL);
 
     /* Load all drivers */
+    md_inton();
     DRIVERS_INIT();
 
     /* Bootstrap APs and here we go! */
