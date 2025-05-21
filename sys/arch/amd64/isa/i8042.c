@@ -232,7 +232,7 @@ i8042_kb_event(void *sp)
     input.chr = c;
     cons_ibuf_push(&g_root_scr, input);
 done:
-    ci->irq_mask &= CPU_IRQ(1);
+    ci->irq_mask &= ~CPU_IRQ(1);
     spinlock_release(&isr_lock);
     return 1;   /* handled */
 }
