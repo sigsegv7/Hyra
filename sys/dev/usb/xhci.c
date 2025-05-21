@@ -255,7 +255,7 @@ xhci_init_evring(struct xhci_hc *hc)
     memset(segtab, 0, DEFAULT_PAGESIZE);
 
     /* Set the size of the event ring segment table */
-    erst_size = PTR_OFFSET(runtime, 0x28);
+    erst_size = PTR_OFFSET(runtime, XHCI_RT_ERSTSZ);
     mmio_write32(erst_size, 1);
 
     /* Allocate the event ring segment */
@@ -269,20 +269,20 @@ xhci_init_evring(struct xhci_hc *hc)
     segtab->size = XHCI_EVRING_LEN;
 
     /* Setup the event ring dequeue pointer */
-    erdp = PTR_OFFSET(runtime, 0x38);
+    erdp = PTR_OFFSET(runtime, XHCI_RT_ERDP);
     mmio_write64(erdp, segtab->base);
 
     /* Point ERSTBA to our event ring segment */
-    erstba = PTR_OFFSET(runtime, 0x30);
+    erstba = PTR_OFFSET(runtime, XHCI_RT_ERSTBA);
     mmio_write64(erstba, VIRT_TO_PHYS(segtab));
     hc->evring = PHYS_TO_VIRT(segtab->base);
 
     /* Setup interrupt moderation */
-    imod = PTR_OFFSET(runtime, 0x24);
+    imod = PTR_OFFSET(runtime, XHCI_RT_IMOD);
     mmio_write32(imod, XHCI_IMOD_DEFAULT);
 
     /* Enable interrupts */
-    iman = PTR_OFFSET(runtime, 0x20);
+    iman = PTR_OFFSET(runtime, XHCI_RT_IMAN);
     tmp = mmio_read32(iman);
     mmio_write32(iman, tmp | XHCI_IMAN_IE);
 }

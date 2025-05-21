@@ -98,6 +98,13 @@ struct xhci_opregs {
 #define XHCI_RTS(BASE, RTSOFF) PTR_OFFSET(BASE, RTSOFF)
 #define XHCI_CMD_DB(BASE, DBOFF) PTR_OFFSET(BASE, DBOFF)
 
+/* Runtime register offsets */
+#define XHCI_RT_IMAN    0x20
+#define XHCI_RT_IMOD    0x24
+#define XHCI_RT_ERSTSZ  0x28
+#define XHCI_RT_ERSTBA  0x30
+#define XHCI_RT_ERDP    0x38
+
 /* Support protocol cap fields */
 #define XHCI_PROTO_ID(PROTO) (PROTO & 0xFF)
 #define XHCI_PROTO_MINOR(PROTO) ((PROTO >> 16) & 0xFF)
