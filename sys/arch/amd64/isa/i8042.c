@@ -68,6 +68,7 @@ static struct proc polltd;
 static struct timer tmr;
 static bool is_init = false;
 
+static void i8042_ibuf_wait(void);
 static int dev_send(bool aux, uint8_t data);
 static int i8042_kb_getc(uint8_t sc, char *chr);
 static void i8042_drain(void);
@@ -103,41 +104,30 @@ kbd_set_leds(uint8_t mask)
     dev_send(false, mask);
 }
 
-/*
- * Poll the i8042 status register
- *
- * @bits: Status bits.
- * @pollset: True to poll if set
- */
-static int
-i8042_statpoll(uint8_t bits, bool pollset)
+static void
+i8042_obuf_wait(void)
 {
-    size_t usec_start, usec;
-    size_t elapsed_msec;
-    uint8_t val;
-    bool tmp;
+    uint8_t status;
 
-    usec_start = tmr.get_time_usec();
     for (;;) {
-        val = inb(I8042_STATUS);
-        tmp = (pollset) ? ISSET(val, bits) : !ISSET(val, bits);
-        usec = tmr.get_time_usec();
-        elapsed_msec = (usec - usec_start) / 1000;
-
-        IO_NOP();
-
-        /* If tmp is set, the register updated in time */
-        if (tmp) {
-            break;
-        }
-
-        /* Exit with an error if we timeout */
-        if (elapsed_msec > I8042_DELAY) {
-            return -ETIME;
+        status = inb(I8042_STATUS);
+        if (ISSET(status, I8042_OBUFF)) {
+            return;
         }
     }
+}
 
-    return val;
+static void
+i8042_ibuf_wait(void)
+{
+    uint8_t status;
+
+    for (;;) {
+        status = inb(I8042_STATUS);
+        if (!ISSET(status, I8042_IBUFF)) {
+            return;
+        }
+    }
 }
 
 /*
@@ -162,7 +152,7 @@ i8042_drain(void)
 static void
 i8042_write(uint16_t port, uint8_t val)
 {
-    i8042_statpoll(I8042_IBUFF, false);
+    i8042_ibuf_wait();
     outb(port, val);
 }
 
@@ -174,7 +164,7 @@ i8042_read_conf(void)
 {
     i8042_drain();
     i8042_write(I8042_CMD, I8042_GET_CONFB);
-    i8042_statpoll(I8042_OBUFF, true);
+    i8042_obuf_wait();
     return inb(I8042_DATA);
 }
 
@@ -185,9 +175,9 @@ static void
 i8042_write_conf(uint8_t value)
 {
     i8042_drain();
-    i8042_statpoll(I8042_IBUFF, false);
+    i8042_ibuf_wait();
     i8042_write(I8042_CMD, I8042_SET_CONFB);
-    i8042_statpoll(I8042_IBUFF, false);
+    i8042_ibuf_wait();
     i8042_write(I8042_DATA, value);
     i8042_drain();
 }
@@ -205,9 +195,8 @@ dev_send(bool aux, uint8_t data)
         i8042_write(I8042_CMD, I8042_PORT1_SEND);
     }
 
-    i8042_statpoll(I8042_IBUFF, false);
     i8042_write(I8042_DATA, data);
-    i8042_statpoll(I8042_OBUFF, true);
+    i8042_obuf_wait();
     return inb(I8042_DATA);
 }
 
@@ -243,20 +232,10 @@ i8042_en_intr(void)
     uint8_t conf;
     struct intr_hand ih;
 
-    i8042_write(I8042_CMD, I8042_DISABLE_PORT0);
-
     ih.func = i8042_kb_event;
     ih.priority = IPL_BIO;
     ih.irq = KB_IRQ;
     intr_register("i8042-kb", &ih);
-
-    /* Setup config bits */
-    conf = i8042_read_conf();
-    conf |= I8042_PORT0_INTR;
-    conf &= ~I8042_PORT1_INTR;
-    i8042_write_conf(conf);
-
-    i8042_write(I8042_CMD, I8042_ENABLE_PORT0);
 }
 
 static void
@@ -346,43 +325,30 @@ i8042_kb_getc(uint8_t sc, char *chr)
     return 0;
 }
 
-static void
-i8042_sync_loop(void)
-{
-    /* Wake up the bus */
-    outb(I8042_DATA, 0x00);
-    i8042_drain();
-
-    for (;;) {
-        i8042_sync();
-        md_pause();
-    }
-}
-
 /*
  * Grabs a key from the keyboard, used typically
  * for syncing the machine however can be used
- * to bypass IRQs in case of buggy EC.
+ * to bypass IRQs to prevent lost bytes.
  */
 void
 i8042_sync(void)
 {
     static struct spinlock lock;
     struct cons_input input;
-    uint8_t data;
+    uint8_t data, status;
     char c;
 
     if (spinlock_try_acquire(&lock)) {
         return;
     }
 
-    if (ISSET(quirks, I8042_HOSTILE) && is_init) {
-        if (i8042_statpoll(I8042_OBUFF, true) < 0) {
-            /* No data ready */
+    if (is_init) {
+        status = inb(I8042_STATUS);
+        if (!ISSET(status, I8042_OBUFF)) {
             goto done;
         }
-        data = inb(I8042_DATA);
 
+        data = inb(I8042_DATA);
         if (i8042_kb_getc(data, &c) == 0) {
             input.scancode = data;
             input.chr = c;
@@ -397,6 +363,15 @@ void
 i8042_quirk(int mask)
 {
     quirks |= mask;
+}
+
+static void
+i8042_sync_loop(void)
+{
+    for (;;) {
+        i8042_obuf_wait();
+        i8042_sync();
+    }
 }
 
 static int
@@ -420,6 +395,9 @@ i8042_init(void)
         return -ENODEV;
     }
 
+    i8042_write(I8042_CMD, I8042_DISABLE_PORT0);
+    i8042_write(I8042_CMD, I8042_DISABLE_PORT1);
+
     /*
      * On some thinkpads, e.g., the T420s, the EC implementing
      * the i8042 logic likes to play cop and throw NMIs at us
@@ -440,11 +418,8 @@ i8042_init(void)
         i8042_en_intr();
     }
 
-    if (dev_send(false, 0xFF) == 0xFC) {
-        pr_error("kbd self test failure\n");
-        return -EIO;
-    }
-
+    i8042_write(I8042_CMD, I8042_ENABLE_PORT0);
+    i8042_drain();
     is_init = true;
     return 0;
 }
