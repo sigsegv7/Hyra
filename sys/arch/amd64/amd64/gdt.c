@@ -29,50 +29,70 @@
 
 #include <machine/gdt.h>
 
-struct gdt_entry g_gdt_data[256] = {
+/*
+ * The GDT should be cache line aligned, since it is accessed every time a
+ * segment selector is reloaded
+ */
+__cacheline_aligned struct gdt_entry g_gdt_data[GDT_ENTRY_COUNT] = {
     /* Null */
     {0},
 
-    /* Kernel code (0x8) */
+    /* Kernel code (0x08) */
     {
-            .limit          = 0x0000,
-            .base_low       = 0x0000,
-            .base_mid       = 0x00,
-            .access         = 0x9A,
-            .granularity    = 0x20,
-            .base_hi        = 0x00
+        .limit      = 0x0000,
+        .base_low   = 0x0000,
+        .base_mid   = 0x00,
+        .attributes = GDT_ATTRIBUTE_64BIT_CODE | GDT_ATTRIBUTE_PRESENT   |
+                      GDT_ATTRIBUTE_DPL0       | GDT_ATTRIBUTE_NONSYSTEM |
+                      GDT_ATTRIBUTE_EXECUTABLE | GDT_ATTRIBUTE_READABLE,
+        .base_hi    = 0x00
     },
 
     /* Kernel data (0x10) */
     {
-            .limit          = 0x0000,
-            .base_low       = 0x0000,
-            .base_mid       = 0x00,
-            .access         = 0x92,
-            .granularity    = 0x00,
-            .base_hi        = 0x00
+        .limit      = 0x0000,
+        .base_low   = 0x0000,
+        .base_mid   = 0x00,
+        .attributes = GDT_ATTRIBUTE_PRESENT    | GDT_ATTRIBUTE_DPL0      |
+                      GDT_ATTRIBUTE_NONSYSTEM  | GDT_ATTRIBUTE_WRITABLE,
+        .base_hi    = 0x00
     },
 
     /* User code (0x18) */
     {
-            .limit       = 0x0000,
-            .base_low    = 0x0000,
-            .base_mid    = 0x00,
-            .access      = 0xFA,
-            .granularity = 0xAF,
-            .base_hi     = 0x00
+        .limit      = 0x0000,
+        .base_low   = 0x0000,
+        .base_mid   = 0x00,
+        .attributes = GDT_ATTRIBUTE_64BIT_CODE | GDT_ATTRIBUTE_PRESENT   |
+                      GDT_ATTRIBUTE_DPL3       | GDT_ATTRIBUTE_NONSYSTEM |
+                      GDT_ATTRIBUTE_EXECUTABLE | GDT_ATTRIBUTE_READABLE,
+        .base_hi    = 0x00
     },
 
     /* User data (0x20) */
     {
-            .limit       = 0x0000,
-            .base_low    = 0x0000,
-            .base_mid    = 0x00,
-            .access      = 0xF2,
-            .granularity = 0x00,
-            .base_hi     = 0x00
+        .limit      = 0x0000,
+        .base_low   = 0x0000,
+        .base_mid   = 0x00,
+        .attributes = GDT_ATTRIBUTE_PRESENT    | GDT_ATTRIBUTE_DPL3      |
+                      GDT_ATTRIBUTE_NONSYSTEM  | GDT_ATTRIBUTE_WRITABLE,
+        .base_hi    = 0x00
     },
 
-    /* TSS segment (0x28) */
-    {0}
+    /*
+     * TSS segment (0x28)
+     *
+     * NOTE: 64-bit TSS descriptors are 16 bytes, equivalent to the size of two
+     *       regular descriptor entries.
+     *       See Intel SPG 3/25 Section 9.2.3 - TSS Descriptor in 64-bit mode.
+     */
+    {0}, {0}
+};
+
+/* Verify that the GDT is of the correct size */
+__static_assert(sizeof(g_gdt_data) == (8 * GDT_ENTRY_COUNT));
+
+const struct gdtr g_gdtr = {
+    .limit = sizeof(g_gdt_data) - 1,
+    .offset = (uintptr_t)&g_gdt_data[0]
 };

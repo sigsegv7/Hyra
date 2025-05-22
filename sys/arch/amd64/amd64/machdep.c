@@ -59,10 +59,6 @@ void syscall_isr(void);
 void pin_isr_load(void);
 
 struct cpu_info g_bsp_ci = {0};
-static struct gdtr bsp_gdtr = {
-    .limit = sizeof(struct gdt_entry) * 256 - 1,
-    .offset = (uintptr_t)&g_gdt_data[0]
-};
 
 __attribute__((__interrupt__))
 static void
@@ -97,7 +93,7 @@ init_tss(struct cpu_info *ci)
 {
     struct tss_desc *desc;
 
-    desc = (struct tss_desc *)&g_gdt_data[GDT_TSS];
+    desc = (struct tss_desc *)&g_gdt_data[GDT_TSS_INDEX];
     write_tss(ci, desc);
     tss_load();
 }
@@ -239,7 +235,7 @@ void
 cpu_startup(struct cpu_info *ci)
 {
     ci->self = ci;
-    gdt_load(&bsp_gdtr);
+    gdt_load();
     idt_load();
 
     setup_vectors();
