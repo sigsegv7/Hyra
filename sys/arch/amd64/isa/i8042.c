@@ -157,32 +157,6 @@ i8042_write(uint16_t port, uint8_t val)
 }
 
 /*
- * Read the i8042 config register
- */
-static uint8_t
-i8042_read_conf(void)
-{
-    i8042_drain();
-    i8042_write(I8042_CMD, I8042_GET_CONFB);
-    i8042_obuf_wait();
-    return inb(I8042_DATA);
-}
-
-/*
- * Write the i8042 config register
- */
-static void
-i8042_write_conf(uint8_t value)
-{
-    i8042_drain();
-    i8042_ibuf_wait();
-    i8042_write(I8042_CMD, I8042_SET_CONFB);
-    i8042_ibuf_wait();
-    i8042_write(I8042_DATA, value);
-    i8042_drain();
-}
-
-/*
  * Send a data to a device
  *
  * @aux: If true, send to aux device (mouse)
@@ -229,7 +203,6 @@ done:
 static void
 i8042_en_intr(void)
 {
-    uint8_t conf;
     struct intr_hand ih;
 
     ih.func = i8042_kb_event;
