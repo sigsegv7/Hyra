@@ -46,15 +46,19 @@ static struct spinlock lock = {0};
 static void
 syslog_write(const char *s, size_t len)
 {
-    const char *p = s;
+    const char *p;
+    size_t l;
 
-    while (len--) {
-        cons_putch(&g_root_scr, *p);
-        if (SERIAL_DEBUG) {
+    if (SERIAL_DEBUG) {
+        p = s;
+        l = len;
+        while (l--) {
             serial_putc(*p);
+            ++p;
         }
-        ++p;
     }
+
+    cons_putstr(&g_root_scr, s, len);
 }
 
 /*

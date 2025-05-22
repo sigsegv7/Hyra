@@ -65,6 +65,7 @@ struct cons_screen {
 void cons_init(void);
 void cons_expose(void);
 int cons_putch(struct cons_screen *scr, char c);
+int cons_putstr(struct cons_screen *scr, const char *s, size_t len);
 
 extern struct cons_screen g_root_scr;
 

@@ -91,9 +91,9 @@ cons_draw_char(struct cons_screen *scr, struct cons_char ch)
     y = ch.y;
 
     for (uint32_t cy = 0; cy < FONT_HEIGHT; ++cy) {
+        idx = fbdev_get_index(&scr->fbdev, x + (FONT_WIDTH - 1), y + cy);
         for (uint32_t cx = 0; cx < FONT_WIDTH; ++cx) {
-            idx = fbdev_get_index(&scr->fbdev, x + (FONT_WIDTH - 1) - cx, y + cy);
-            scr->fb_mem[idx] = ISSET(glyph[cy], BIT(cx)) ? ch.fg : ch.bg;
+            scr->fb_mem[idx--] = ISSET(glyph[cy], BIT(cx)) ? ch.fg : ch.bg;
         }
     }
 }
@@ -221,9 +221,9 @@ cons_draw_cursor(struct cons_screen *scr, uint32_t color)
     }
 
     for (uint32_t cy = 0; cy < FONT_HEIGHT; ++cy) {
+        idx = fbdev_get_index(&scr->fbdev, scr->curs_col * FONT_WIDTH, (scr->curs_row * FONT_HEIGHT) + cy);
         for (uint32_t cx = 0; cx < FONT_WIDTH; ++cx) {
-            idx = fbdev_get_index(&scr->fbdev, (scr->curs_col * FONT_WIDTH) + cx, (scr->curs_row * FONT_HEIGHT) + cy);
-            scr->fb_mem[idx] = color;
+            scr->fb_mem[idx++] = color;
         }
     }
 }
@@ -249,19 +249,57 @@ cons_clear_scr(struct cons_screen *scr, uint32_t bg)
 }
 
 /*
+ * Quickly put a character on the screen.
+ * XXX: Does not acquire the screen's lock or show/hide the cursor.
+ *
+ * @scr: Screen.
+ * @c: Character to draw.
+ */
+static void
+cons_fast_putch(struct cons_screen *scr, char c)
+{
+    struct cons_char cc;
+    struct cons_buf *bp;
+
+    /* Handle specials */
+    if (cons_handle_special(scr, c) == 0) {
+        return;
+    }
+
+    /* Create a new character */
+    cc.c = c;
+    cc.fg = scr->fg;
+    cc.bg = scr->bg;
+    cc.x = scr->ch_col * FONT_WIDTH;
+    cc.y = scr->ch_row * FONT_HEIGHT;
+
+    /* Push our new character */
+    bp = scr->ob[scr->ch_row];
+    bp->flags &= ~CONS_BUF_CLEAN;
+    cons_obuf_push(bp, cc);
+    ++scr->ch_col;
+
+    /* Check screen bounds */
+    if (cc.x >= (scr->ncols * FONT_WIDTH) - 1) {
+        scr->ch_col = 0;
+        ++scr->ch_row;
+    }
+
+    ++scr->curs_col;
+    if (scr->curs_col > scr->ncols - 1) {
+        scr->curs_col = 0;
+        if (scr->curs_row < scr->nrows)
+            ++scr->curs_row;
+    }
+}
+
+/*
  * Character device function.
  */
 static int
 dev_write(dev_t dev, struct sio_txn *sio, int flags)
 {
-    char *p;
-
-    p = sio->buf;
-
-    for (size_t i = 0; i < sio->len; ++i) {
-        cons_putch(&g_root_scr, p[i]);
-    }
-
+    cons_putstr(&g_root_scr, sio->buf, sio->len);
     cons_flush(&g_root_scr);
     return sio->len;
 }
@@ -347,47 +385,37 @@ cons_init_bufs(struct cons_screen *scr)
 int
 cons_putch(struct cons_screen *scr, char c)
 {
-    struct cons_buf *bp;
-    struct cons_char cc;
-    size_t max_width;
-
     spinlock_acquire(&scr->lock);
-
-    /* Handle specials */
-    if (cons_handle_special(scr, c) == 0) {
-        goto done;
-    }
-
     HIDE_CURSOR(scr);
 
-    /* Create a new character */
-    cc.c = c;
-    cc.fg = scr->fg;
-    cc.bg = scr->bg;
-    cc.x = scr->ch_col * FONT_WIDTH;
-    cc.y = scr->ch_row * FONT_HEIGHT;
+    cons_fast_putch(scr, c);
 
-    /* Push our new character */
-    bp = scr->ob[scr->ch_row];
-    bp->flags &= ~CONS_BUF_CLEAN;
-    cons_obuf_push(bp, cc);
-    ++scr->ch_col;
-
-    /* Check screen bounds */
-    max_width = scr->ncols * FONT_WIDTH;
-    if (cc.x >= max_width - 1) {
-        scr->ch_col = 0;
-        ++scr->ch_row;
-    }
-
-    ++scr->curs_col;
-    if (scr->curs_col > scr->ncols - 1) {
-        scr->curs_col = 0;
-        if (scr->curs_row < scr->nrows)
-            ++scr->curs_row;
-    }
     SHOW_CURSOR(scr);
-done:
+    spinlock_release(&scr->lock);
+    return 0;
+}
+
+/*
+ * Put a string on the screen.
+ *
+ * @scr: Screen.
+ * @s: String to draw.
+ * @l: Length of s.
+ */
+int
+cons_putstr(struct cons_screen *scr, const char *s, size_t len)
+{
+    const char *p = s;
+
+    spinlock_acquire(&scr->lock);
+    HIDE_CURSOR(scr);
+
+    while (len--) {
+        cons_fast_putch(scr, *p);
+        ++p;
+    }
+
+    SHOW_CURSOR(scr);
     spinlock_release(&scr->lock);
     return 0;
 }
