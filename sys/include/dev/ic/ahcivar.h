@@ -33,8 +33,11 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/device.h>
+#include <dev/dcdr/cache.h>
 #include <dev/ic/ahciregs.h>
 #include <fs/ctlfs.h>
+
+#define AHCI_DCDR_CAP 16
 
 struct ahci_cmd_hdr;
 extern const struct ctlops g_sata_bsize_ops;
@@ -100,6 +103,7 @@ struct hba_device {
     struct hba_port *io;
     struct ahci_hba *hba;
     struct ahci_cmd_hdr *cmdlist;
+    struct dcdr *dcdr;
     void *fra;
     dev_t dev;
 };

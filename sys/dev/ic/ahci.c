@@ -41,6 +41,7 @@
 #include <dev/timer.h>
 #include <dev/ic/ahcivar.h>
 #include <dev/ic/ahciregs.h>
+#include <dev/dcdr/cache.h>
 #include <fs/devfs.h>
 #include <fs/ctlfs.h>
 #include <vm/dynalloc.h>
@@ -470,7 +471,7 @@ done:
  * Send a read/write command to a SATA drive
  *
  * @hba: Host bus adapter of target port
- * @port: Port to send over
+ * @dev: Device to send over
  * @sio: System I/O descriptor
  * @write: If true, data pointed to by `sio` will be written
  *
@@ -480,20 +481,81 @@ done:
  *      - The `offset` field in `sio` is the LBA address.
  */
 static int
-ahci_sata_rw(struct ahci_hba *hba, struct hba_port *port, struct sio_txn *sio,
+ahci_sata_rw(struct ahci_hba *hba, struct hba_device *dev, struct sio_txn *sio,
     bool write)
 {
     paddr_t base, buf;
+    char *p, *dest;
+    bool dcdr_hit = false;
+    struct hba_port *port;
+    struct dcdr_lookup dcd_lookup;
+    struct dcd *dcd;
     struct ahci_cmd_hdr *cmdhdr;
     struct ahci_cmdtab *cmdtbl;
     struct ahci_fis_h2d *fis;
     int cmdslot, status;
+    size_t nblocks, cur_lba;
+    size_t len;
 
     if (sio == NULL) {
         return -EINVAL;
     }
     if (sio->len == 0 || sio->buf == NULL) {
         return -EINVAL;
+    }
+
+    port = dev->io;
+
+    /*
+     * Compute how many blocks can be cached.
+     *
+     * XXX: We do not want to fill the entire DCDR
+     *      with a single drive read to reduce the
+     *      frequency of DCDR evictions.
+     *
+     * TODO: We should also take advantage of logical
+     *       block coalescing.
+     */
+    nblocks = sio->len;
+    if (nblocks >= AHCI_DCDR_CAP) {
+        nblocks = AHCI_DCDR_CAP / 2;
+    }
+
+    /*
+     * If we are reading the drive, see if we have
+     * anything in the cache.
+     *
+     * XXX: If there is a break in the cache and we
+     *      have a miss inbetween, other DCDs are
+     *      ignored. Wonder how we can mitigate
+     *      fragmentation.
+     */
+    cur_lba = sio->offset;
+    len = sio->len;
+    for (size_t i = 0; i < nblocks && !write; ++i) {
+        status = dcdr_lookup(dev->dcdr, cur_lba, &dcd_lookup);
+        if (status != 0) {
+            break;
+        }
+        if (len == 0) {
+            break;
+        }
+
+        dcdr_hit = true;
+        dcd = dcd_lookup.dcd_res;
+
+        /* Hit, copy the cached data */
+        dest = &((char *)sio->buf)[i * 512];
+        p = dcd->block;
+        memcpy(dest, p, 512);
+
+        ++cur_lba;
+        --len;
+    }
+
+    /* Did we get everything already? */
+    if (len == 0) {
+        return 0;
     }
 
     buf = VIRT_TO_PHYS(sio->buf);
@@ -524,22 +586,32 @@ ahci_sata_rw(struct ahci_hba *hba, struct hba_port *port, struct sio_txn *sio,
     fis->device = (1 << 6); /* LBA */
 
     /* Setup LBA */
-    fis->lba0 = sio->offset & 0xFF;
-    fis->lba1 = (sio->offset >> 8) & 0xFF;
-    fis->lba2 = (sio->offset >> 16) & 0xFF;
-    fis->lba3 = (sio->offset >> 24) & 0xFF;
-    fis->lba4 = (sio->offset >> 32) & 0xFF;
-    fis->lba5 = (sio->offset >> 40) & 0xFF;
+    fis->lba0 = cur_lba & 0xFF;
+    fis->lba1 = (cur_lba >> 8) & 0xFF;
+    fis->lba2 = (cur_lba >> 16) & 0xFF;
+    fis->lba3 = (cur_lba >> 24) & 0xFF;
+    fis->lba4 = (cur_lba >> 32) & 0xFF;
+    fis->lba5 = (cur_lba >> 40) & 0xFF;
 
     /* Setup count */
-    fis->countl = sio->len & 0xFF;
-    fis->counth = (sio->len >> 8) & 0xFF;
+    fis->countl = len & 0xFF;
+    fis->counth = (len >> 8) & 0xFF;
 
-    pr_trace("SUBMIT: RIGHT!\n");
     if ((status = ahci_submit_cmd(hba, port, cmdslot)) != 0) {
         return status;
     }
 
+    /* Don't cache again on hit */
+    if (!write && dcdr_hit) {
+        return 0;
+    }
+
+    /* Cache our read */
+    for (size_t i = 0; i < nblocks; ++i) {
+        cur_lba = sio->offset + i;
+        p = sio->buf;
+        dcdr_cachein(dev->dcdr, &p[i * 512], cur_lba);
+    }
     return 0;
 }
 
@@ -595,7 +667,7 @@ sata_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
     wr_sio.buf = buf;
     wr_sio.len = block_count;
     wr_sio.offset = block_off;
-    status = ahci_sata_rw(hba, devp->io, &wr_sio, write);
+    status = ahci_sata_rw(hba, devp, &wr_sio, write);
     if (status == 0 && !write) {
         read_off = sio->offset & (BSIZE - 1);
         memcpy(sio->buf, buf + read_off, sio->len);
@@ -657,6 +729,12 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
     dp->io = port;
     dp->hba = hba;
     dp->dev = portno;
+
+    dp->dcdr = dcdr_alloc(512, AHCI_DCDR_CAP);
+    if (dp->dcdr == NULL) {
+        pr_error("failed to alloc dcdr\n");
+        return -ENOMEM;
+    }
 
     /* Allocate a command list */
     clen = ALIGN_UP(hba->nslots * AHCI_CMDENTRY_SIZE, pagesz);
