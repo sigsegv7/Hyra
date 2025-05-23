@@ -126,6 +126,20 @@ struct dcd *
 dcdr_cachein(struct dcdr *dcdr, void *block, off_t lba)
 {
     struct dcd *dcd, *tmp;
+    struct dcdr_lookup check;
+    int status;
+
+    /*
+     * If there is already a block within this
+     * DCDR, then we simply need to copy the
+     * new data into the old DCD.
+     */
+    status = dcdr_lookup(dcdr, lba, &check);
+    if (status == 0) {
+        dcd = check.dcd_res;
+        memcpy(dcd->block, block, dcdr->bsize);
+        return dcd;
+    }
 
     dcd = dynalloc(sizeof(*dcd));
     if (dcd == NULL) {
