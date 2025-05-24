@@ -20,5 +20,5 @@ jobs:
         run:  sudo apt-get install -y lld clang xorriso
       - name: Bootstrap and configure
         run: ./bootstrap && ./configure
-      - name: Build world with clang
-        run: make
+      - name: Build world
+        run: ./hyra-build.sh -i

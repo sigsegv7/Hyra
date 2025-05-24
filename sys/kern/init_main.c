@@ -84,6 +84,11 @@ main(void)
     kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
         HYRA_BUILDDATE);
 
+#if _INSTALL_MEDIA
+    kprintf("Hyra install media detected\n");
+    kprintf("Reform Industry!\n");
+#endif  /* _INSTALL_MEDIA */
+
     /* Start the ACPI subsystem */
     acpi_init();
 

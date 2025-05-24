@@ -4,6 +4,7 @@ override PROMPT := printf "%s\t\t%s\n"
 ###############################
 # CFLAGS, QEMU flags + misc
 ###############################
+KBUILD_ARGS = ""
 override PROJECT_ROOT = @PROJECT_ROOT@
 override BOOT_FW = @BOOT_FW@
 override ARCH = @ARCH@
@@ -12,15 +13,9 @@ override PROMPT := printf "%s\t\t%s\n"
 override KERNEL_CFLAGS = @KERNEL_CFLAGS@ $(KERNEL_DEFINES)
 override KERNEL_LDFLAGS = -no-pie -nostdlib -znoexecstack -zmax-page-size=0x1000 -static -Tsys/arch/$(ARCH)/conf/link.ld
 override QEMU_FLAGS = @QEMU_FLAGS@
-override KERNEL_DEFINES = $ -DHYRA_VERSION="\"$(HYRA_VERSION)\""\
+override KERNEL_DEFINES = $(KBUILD_ARGS) -DHYRA_VERSION="\"$(HYRA_VERSION)\""\
                           -DHYRA_BUILDDATE="\"@HYRA_BUILDDATE@\""\
                           -DHYRA_ARCH="\"@ARCH@\"" $(shell cat sys/arch/$(ARCH)/conf/GENERIC | tools/kconf/kconf)
-######################
-# Initramfs config
-######################
-override RAMFS_TOOL = @RAMFS_TOOL@
-override RAMFS_LOC = ramfs.omar
-
 ######################
 # Toolchain
 ######################
@@ -70,10 +65,10 @@ override SBIN_MAKEDIRS = $(shell find usr.sbin/ -type d -name "*" | awk '!/usr.s
 override BIN_MAKEDIRS = $(shell find usr.bin/ -type d -name "*" | awk '!/usr.bin\/$$/')
 override USRDIR = $(shell pwd)/base/usr
 
+
 .PHONY: all
-all: base libc sbin bin base/boot/hyra-kernel ramfs iso
+all: stand/boot/ libc sbin bin base/boot/hyra-kernel
 		rm -f sys/include/machine
-		rm -rf iso_root
 
 .PHONY: sbin
 sbin: $(SBIN_MAKEDIRS)
@@ -90,15 +85,6 @@ libc:
 	$(MAKE) -C lib/libc/ -I$(shell pwd)/builddeps \
 		USRDIR=$(USRDIR) ARCH=$(ARCH) ROOT=$(PROJECT_ROOT)
 
-.PHONY: base
-base:
-	mkdir -p base/usr/lib/
-	mkdir -p base/usr/sbin/
-	mkdir -p base/usr/bin/
-	mkdir -p base/boot/
-	mkdir -p base/usr/include/sys/
-	cp -f sys/include/sys/*.h base/usr/include/sys/
-
 .PHONY: cross
 cross:
 	bash tools/cross.sh $(ARCH)
@@ -107,34 +93,16 @@ cross:
 run:
 	$(QEMU) $(QEMU_FLAGS)
 
-.PHONY: ramfs
-ramfs:
-	$(RAMFS_TOOL) -i base/ -o ramfs.omar
-	$(PROMPT) " RAMFS " $(shell pwd)/ramfs.omar
-
 .PHONY: clean
 clean:
 	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
 	rm -f sys/include/machine
 
-.PHONY: iso
-iso:
-	mkdir -p iso_root/boot/
-	mkdir -p iso_root/EFI/BOOT/
-	cp stand/limine/$(BOOT_FW) iso_root/EFI/BOOT/
-	mv $(RAMFS_LOC) iso_root/boot/
-	cp builddeps/limine.conf stand/limine/limine-bios.sys \
-		stand/limine/limine-bios-cd.bin stand/limine/limine-uefi-cd.bin iso_root/
-	cp base/boot/* iso_root/boot/
-	cp builddeps/tree.jpg iso_root/boot/
-	xorriso -as mkisofs -b limine-bios-cd.bin -no-emul-boot -boot-load-size 4\
-		-boot-info-table --efi-boot limine-uefi-cd.bin -efi-boot-part \
-		--efi-boot-image --protective-msdos-label iso_root -o Hyra.iso > /dev/null
-	stand/limine/limine bios-install Hyra.iso
-	$(PROMPT) " ISO " $(shell pwd)/Hyra.iso
+stand/boot/:
+	mkdir -p stand/boot/
+	cp stand/limine/$(BOOT_FW) stand/boot/
 
 base/boot/hyra-kernel: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
-	rm -rf iso_root
 	$(PROMPT) " LD " $(shell pwd)/base/boot/hyra-kernel
 	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/hyra-kernel
 	tools/ksyms sys/kern/ksyms.c base/boot/hyra-kernel

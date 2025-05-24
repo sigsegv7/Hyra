@@ -17,16 +17,15 @@ Next, to configure for x86_64 just run configure:
 
 `./configure`
 
-Now you'll need to build the cross compiler by running:
+After running the configure script, you can now actually build Hyra:
 
-`make cross`
+`./hyra-build.sh`
 
-This may take awhile so just sit back, relax and do something else like... well I'm not you so
-I don't know what you like.
+This will create two ISO files:
 
-After the cross compiler is done building you can build and run the project in a virtual machine:
+`Hyra.iso   Hyra-install.iso`
 
-`make; make run`
+As of now, you should ignore the second file (`Hyra-install.iso`)
 
 Documentation:
 --------------
