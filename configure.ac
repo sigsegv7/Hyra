@@ -1,4 +1,4 @@
-AC_INIT([Hyra], [1.6], [ian@osmora.org])
+AC_INIT([Hyra], [1.7], [ian@osmora.org])
 
 TARGET="amd64"
 PROJECT_ROOT=`pwd`
