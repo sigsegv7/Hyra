@@ -39,31 +39,31 @@ install_flag="false"
 # Generate sysroot skeleton
 ###############################
 sysroot_skel() {
-	mkdir -p base/usr/lib/
-	mkdir -p base/usr/sbin/
-	mkdir -p base/usr/bin/
-	mkdir -p base/boot/
-	mkdir -p base/usr/include/sys/
-	cp -f sys/include/sys/*.h base/usr/include/sys
+    mkdir -p base/usr/lib/
+    mkdir -p base/usr/sbin/
+    mkdir -p base/usr/bin/
+    mkdir -p base/boot/
+    mkdir -p base/usr/include/sys/
+    cp -f sys/include/sys/*.h base/usr/include/sys
 
     # Populate ESP
     make stand/boot/
-	cp stand/boot/*.EFI iso_root/EFI/BOOT/
+    cp stand/boot/*.EFI iso_root/EFI/BOOT/
 }
 
 iso_root_skel() {
-	mkdir -p iso_root/boot/
-	mkdir -p iso_root/EFI/BOOT/
+    mkdir -p iso_root/boot/
+    mkdir -p iso_root/EFI/BOOT/
 }
 
 ###############################
 # Generate ISO root
 ###############################
 gen_iso_root() {
-	cp $RAMFS_NAME iso_root/boot/
-	cp builddeps/limine.conf stand/limine/limine-bios.sys \
-		stand/limine/limine-bios-cd.bin stand/limine/limine-uefi-cd.bin iso_root/
-	cp builddeps/tree.jpg iso_root/boot/
+    cp $RAMFS_NAME iso_root/boot/
+    cp builddeps/limine.conf stand/limine/limine-bios.sys \
+        stand/limine/limine-bios-cd.bin stand/limine/limine-uefi-cd.bin iso_root/
+    cp builddeps/tree.jpg iso_root/boot/
 }
 
 ##################################
@@ -74,11 +74,11 @@ gen_iso_root() {
 # --      --
 ##################################
 gen_isofs() {
-	cp base/boot/* iso_root/boot/
-	xorriso -as mkisofs -b limine-bios-cd.bin -no-emul-boot -boot-load-size 4\
-		-boot-info-table --efi-boot limine-uefi-cd.bin -efi-boot-part \
-		--efi-boot-image --protective-msdos-label iso_root -o $1 > /dev/null
-	stand/limine/limine bios-install $1
+    cp base/boot/* iso_root/boot/
+    xorriso -as mkisofs -b limine-bios-cd.bin -no-emul-boot -boot-load-size 4\
+        -boot-info-table --efi-boot limine-uefi-cd.bin -efi-boot-part \
+        --efi-boot-image --protective-msdos-label iso_root -o $1 > /dev/null
+    stand/limine/limine bios-install $1
 }
 
 ####################################
