@@ -435,6 +435,7 @@ ahci_identify(struct ahci_hba *hba, struct hba_device *dp)
     struct ahci_cmd_hdr *cmdhdr;
     struct ahci_cmdtab *cmdtbl;
     struct ahci_fis_h2d *fis;
+    uint16_t *p;
     int cmdslot, status;
 
     buf = vm_alloc_frame(1);
@@ -475,6 +476,9 @@ ahci_identify(struct ahci_hba *hba, struct hba_device *dp)
     }
 
     ahci_dump_identity(PHYS_TO_VIRT(buf));
+    p = (uint16_t *)PHYS_TO_VIRT(buf);
+    dp->nlba = (p[61] << 16) | p[60];
+    pr_trace("max block size: %d\n", dp->nlba);
 done:
     vm_free_frame(buf, 1);
     return status;

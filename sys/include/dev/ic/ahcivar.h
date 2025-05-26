@@ -96,6 +96,7 @@ struct ahci_hba {
  * @io: Memory mapped port registers
  * @hba: HBA descriptor
  * @cmdlist: Command list [p]
+ * @nlba: Max number of addressable blocks
  * @fra: FIS receive area [p]
  * @dev: Device minor number.
  */
@@ -104,6 +105,7 @@ struct hba_device {
     struct ahci_hba *hba;
     struct ahci_cmd_hdr *cmdlist;
     struct dcdr *dcdr;
+    uint32_t nlba;
     void *fra;
     dev_t dev;
 };
