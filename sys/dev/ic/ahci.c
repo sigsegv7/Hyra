@@ -363,9 +363,8 @@ hba_port_reset(struct ahci_hba *hba, struct hba_port *port)
     det = AHCI_PXSCTL_DET(ssts);
     ipm = AHCI_PXSSTS_IPM(ssts);
 
-    /* If there is no device, fake success */
     if (det == AHCI_DET_NULL) {
-        return 0;
+        return -ENODEV;
     }
 
     if (det != AHCI_DET_COMM) {
