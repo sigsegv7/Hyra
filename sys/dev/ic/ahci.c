@@ -417,9 +417,10 @@ ahci_submit_cmd(struct ahci_hba *hba, struct hba_port *port, uint8_t slot)
  * SATA device.
  */
 static int
-ahci_identify(struct ahci_hba *hba, struct hba_port *port)
+ahci_identify(struct ahci_hba *hba, struct hba_device *dp)
 {
     paddr_t base, buf;
+    struct hba_port *port;
     struct ahci_cmd_hdr *cmdhdr;
     struct ahci_cmdtab *cmdtbl;
     struct ahci_fis_h2d *fis;
@@ -431,6 +432,7 @@ ahci_identify(struct ahci_hba *hba, struct hba_port *port)
         return -ENOMEM;
     }
 
+    port = dp->io;
     cmdslot = ahci_alloc_cmdslot(hba, port);
     if (cmdslot < 0) {
         pr_trace("failed to alloc cmdslot\n");
@@ -789,7 +791,7 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
         return error;
     }
 
-    ahci_identify(hba, port);
+    ahci_identify(hba, dp);
 
     if (hba->major == 0) {
         hba->major = dev_alloc_major();
