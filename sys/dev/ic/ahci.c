@@ -827,7 +827,7 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
     dev.devname = devname;
     dev.ops = &g_sata_bsize_ops;
     ctlfs_create_entry("bsize", &dev);
-    return devfs_create_entry(devname, hba->major, dp->dev, 0444);
+    return devfs_create_entry(devname, hba->major, dp->dev, 060444);
 }
 
 /*
