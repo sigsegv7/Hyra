@@ -56,6 +56,7 @@ static struct bdevsw ahci_bdevsw;
 static struct hba_device *devs;
 static struct pci_device *ahci_dev;
 static struct timer tmr;
+static struct ahci_hba g_hba;
 
 /*
  * Poll register to have 'bits' set/unset.
@@ -620,7 +621,6 @@ sata_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
     const size_t BSIZE = 512;
     struct sio_txn wr_sio;
     struct hba_device *devp;
-    struct ahci_hba *hba;
     size_t block_count, len;
     off_t block_off, read_off;
     char *buf;
@@ -666,7 +666,7 @@ sata_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
     wr_sio.buf = buf;
     wr_sio.len = block_count;
     wr_sio.offset = block_off;
-    status = ahci_sata_rw(hba, devp, &wr_sio, write);
+    status = ahci_sata_rw(&g_hba, devp, &wr_sio, write);
     if (status == 0 && !write) {
         read_off = sio->offset & (BSIZE - 1);
         memcpy(sio->buf, buf + read_off, sio->len);
@@ -918,10 +918,9 @@ ahci_init(void)
 {
     struct pci_lookup lookup;
     int status;
-    struct ahci_hba hba;
     void *abar_vap = NULL;
 
-    hba.major = 0;
+    g_hba.major = 0;
     lookup.pci_class = 0x01;
     lookup.pci_subclass = 0x06;
 
@@ -967,8 +966,8 @@ ahci_init(void)
     }
 
     ahci_init_pci();
-    hba.io = (struct hba_memspace*)abar_vap;
-    ahci_hba_init(&hba);
+    g_hba.io = (struct hba_memspace*)abar_vap;
+    ahci_hba_init(&g_hba);
     return 0;
 }
 
