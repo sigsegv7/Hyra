@@ -107,8 +107,9 @@ main(void)
     md_intoff();
     sched_init();
 
+    memset(&proc0, 0, sizeof(proc0));
+
     /* Startup pid 1 */
-    memset(&proc0, 0, sizeof(proc0.tf));
     spawn(&proc0, start_init, NULL, 0, NULL);
 
     /* Load all drivers */
