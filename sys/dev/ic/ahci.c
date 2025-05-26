@@ -104,7 +104,6 @@ ahci_alloc_cmdslot(struct ahci_hba *hba, struct hba_port *port)
 {
     uint32_t slotlist;
 
-    slotlist = port->ci | port->sact;
     slotlist = mmio_read32(&port->ci);
     slotlist |= mmio_read32(&port->sact);
 
