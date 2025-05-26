@@ -634,7 +634,7 @@ sata_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
     if (sio->len == 0 || sio->buf == NULL) {
         return -EINVAL;
     }
-    if (dev >= devs_max) {
+    if (dev > devs_max) {
         return -ENODEV;
     }
 
