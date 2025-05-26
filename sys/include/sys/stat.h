@@ -32,6 +32,8 @@
 
 #include <sys/types.h>
 
+#define	S_IFBLK	 0060000
+
 struct stat {
     dev_t st_dev;
     ino_t st_ino;

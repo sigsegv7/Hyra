@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/vnode.h>
 #include <sys/errno.h>
+#include <sys/stat.h>
 #include <sys/mount.h>
 #include <sys/device.h>
 #include <fs/devfs.h>
@@ -255,7 +256,7 @@ devfs_create_entry(const char *name, devmajor_t major, dev_t dev, mode_t mode)
 
     memcpy(dnp->name, name, name_len);
     dnp->name[name_len] = '\0';
-
+    dnp->is_block = ISSET(mode, S_IFBLK) ? 1 : 0;
     dnp->major = major;
     dnp->dev = dev;
     dnp->mode = mode;
