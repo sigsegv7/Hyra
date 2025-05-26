@@ -703,6 +703,15 @@ ahci_dev_read(dev_t dev, struct sio_txn *sio, int flags)
 }
 
 /*
+ * Device interface write
+ */
+static int
+ahci_dev_write(dev_t dev, struct sio_txn *sio, int flags)
+{
+    return sata_dev_rw(dev, sio, true);
+}
+
+/*
  * Initialize a drive on an HBA port
  *
  * @hba: HBA descriptor
@@ -990,7 +999,7 @@ ahci_init(void)
 
 static struct bdevsw ahci_bdevsw = {
     .read = ahci_dev_read,
-    .write = nowrite
+    .write = ahci_dev_write,
 };
 
 DRIVER_EXPORT(ahci_init);
