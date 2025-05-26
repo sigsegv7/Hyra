@@ -712,6 +712,21 @@ ahci_dev_write(dev_t dev, struct sio_txn *sio, int flags)
 }
 
 /*
+ * Device interface number of blocks
+ */
+static int
+ahci_dev_bsize(dev_t dev)
+{
+    struct hba_device *dp;
+
+    if ((dp = ahci_get_dev(dev)) == NULL) {
+        return -ENODEV;
+    }
+
+    return dp->nlba;
+}
+
+/*
  * Initialize a drive on an HBA port
  *
  * @hba: HBA descriptor
@@ -1000,6 +1015,7 @@ ahci_init(void)
 static struct bdevsw ahci_bdevsw = {
     .read = ahci_dev_read,
     .write = ahci_dev_write,
+    .bsize = ahci_dev_bsize
 };
 
 DRIVER_EXPORT(ahci_init);
