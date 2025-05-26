@@ -96,6 +96,18 @@ ahci_poll_reg(volatile uint32_t *reg, uint32_t bits, bool pollset)
     return 0;
 }
 
+static struct hba_device *
+ahci_get_dev(dev_t dev)
+{
+    for (int i = 0; i < devs_max; ++i) {
+        if (devs[i].dev == dev) {
+            return &devs[i];
+        }
+    }
+
+    return NULL;
+}
+
 /*
  * Allocate a command slot for a port on
  * the HBA.
@@ -638,7 +650,7 @@ sata_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
         return -ENODEV;
     }
 
-    devp = &devs[dev];
+    devp = ahci_get_dev(dev);
     if (__unlikely(devp == NULL)) {
         return -ENODEV;
     }
