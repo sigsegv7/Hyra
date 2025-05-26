@@ -75,3 +75,9 @@ dev_nowrite(void)
 {
     return -ENOTSUP;
 }
+
+int
+dev_nobsize(void)
+{
+    return -ENOTSUP;
+}

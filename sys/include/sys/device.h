@@ -42,6 +42,7 @@ typedef uint8_t devmajor_t;
 /* Device operation typedefs */
 typedef int(*dev_read_t)(dev_t, struct sio_txn *, int);
 typedef int(*dev_write_t)(dev_t, struct sio_txn *, int);
+typedef int(*dev_bsize_t)(dev_t);
 
 struct cdevsw {
     int(*read)(dev_t dev, struct sio_txn *sio, int flags);
@@ -51,6 +52,7 @@ struct cdevsw {
 struct bdevsw {
     int(*read)(dev_t dev, struct sio_txn *sio, int flags);
     int(*write)(dev_t dev, struct sio_txn *sio, int flags);
+    int(*bsize)(dev_t dev);
 };
 
 void *dev_get(devmajor_t major, dev_t dev);
@@ -61,10 +63,12 @@ int dev_register(devmajor_t major, dev_t dev, void *devsw);
 
 int dev_noread(void);
 int dev_nowrite(void);
+int dev_nobsize(void);
 
 /* Device operation stubs */
 #define noread ((dev_read_t)dev_noread)
 #define nowrite ((dev_write_t)dev_nowrite)
+#define nobsize ((dev_bsize_t)dev_nobsize)
 
 #endif  /* _KERNEL */
 #endif  /* !_SYS_DEVICE_H_ */

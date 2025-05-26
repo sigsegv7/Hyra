@@ -137,6 +137,8 @@ devfs_getattr(struct vop_getattr_args *args)
     struct vnode *vp;
     struct vattr *attr;
     struct devfs_node *dnp;
+    struct bdevsw *bdev;
+    size_t size = 0;
 
     vp = args->vp;
     if ((dnp = vp->data) == NULL) {
@@ -144,6 +146,13 @@ devfs_getattr(struct vop_getattr_args *args)
     }
     if ((attr = args->res) == NULL) {
         return -EIO;
+    }
+
+    if (dnp->is_block) {
+        bdev = dev_get(dnp->major, dnp->dev);
+        if (bdev->bsize != NULL) {
+            size = bdev->bsize(dnp->dev);
+        }
     }
 
     /*
@@ -154,7 +163,7 @@ devfs_getattr(struct vop_getattr_args *args)
      *      size is hardwired to 0.
      */
     attr->mode = dnp->mode;
-    attr->size = 0;
+    attr->size = size;
     return 0;
 }
 
