@@ -165,8 +165,10 @@ cons_handle_special(struct cons_screen *scr, char c)
         }
 
         HIDE_CURSOR(scr);
-        --scr->ch_col;
-        --scr->curs_col;
+        if (scr->ch_col > 0 && scr->curs_col > 0) {
+            --scr->ch_col;
+            --scr->curs_col;
+        }
         SHOW_CURSOR(scr);
         return 0;
     case ASCII_LF:
