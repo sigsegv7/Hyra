@@ -35,8 +35,10 @@
 #define DISK_MAG 0x4F445421UL   /* "ODT!" */
 
 /*
+ * Represents a disk table.
+ *
  * @magic: Magic number (`DISK_MAG')
- * @sect_size: Sector size
+ * @sect_size: Disk sector size
  */
 struct disklabel {
     uint32_t magic;
