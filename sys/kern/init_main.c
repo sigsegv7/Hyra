@@ -35,6 +35,7 @@
 #include <sys/exec.h>
 #include <sys/driver.h>
 #include <sys/panic.h>
+#include <sys/systm.h>
 #include <dev/acpi/uacpi.h>
 #include <dev/cons/cons.h>
 #include <dev/acpi/acpi.h>
@@ -51,6 +52,18 @@ copyright(void)
     kprintf(OMIT_TIMESTAMP
            "Copyright (c) 2023-2025 Ian Marco Moffett and the OSMORA team\n");
 }
+
+#if defined(_INSTALL_MEDIA)
+static void
+begin_install(void)
+{
+    struct cpu_info *ci;
+
+    ci = this_cpu();
+    ci->curtd = &proc0;
+    hyra_install();
+}
+#endif
 
 static void
 start_init(void)
@@ -84,11 +97,6 @@ main(void)
     kprintf("Starting Hyra/%s v%s: %s\n", HYRA_ARCH, HYRA_VERSION,
         HYRA_BUILDDATE);
 
-#if _INSTALL_MEDIA
-    kprintf("Hyra install media detected\n");
-    kprintf("Reform Industry!\n");
-#endif  /* _INSTALL_MEDIA */
-
     /* Start the ACPI subsystem */
     acpi_init();
 
@@ -111,10 +119,16 @@ main(void)
 
     /* Startup pid 1 */
     spawn(&proc0, start_init, NULL, 0, NULL);
+    md_inton();
 
     /* Load all drivers */
-    md_inton();
     DRIVERS_INIT();
+
+#if defined(_INSTALL_MEDIA)
+    kprintf("Hyra install media detected\n");
+    kprintf("Reform Industry!\n");
+    begin_install();
+#endif
 
     /* Bootstrap APs and here we go! */
     mp_bootstrap_aps(&g_bsp_ci);

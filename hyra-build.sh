@@ -85,11 +85,6 @@ gen_isofs() {
 # Stage 1 - build production media
 ####################################
 stage1() {
-    if [[ $install_flag == "true" ]]
-    then
-        make clean
-    fi
-
     iso_root_skel
     sysroot_skel
 
@@ -119,6 +114,7 @@ stage2() {
     sysroot_skel
 
     echo "[*] stage2: Generate stage 2 RAMFS via OMAR"
+    mv Hyra.iso base/boot/
     $RAMFS_TOOL -i base/ -o $RAMFS_NAME
 
     echo "[*] stage2: Build kernel"
@@ -130,7 +126,41 @@ stage2() {
 
     # Clean up
     rm $RAMFS_NAME
+    rm base/boot/Hyra.iso
     rm -r iso_root
+}
+
+##################################
+# Clean up completly after build
+##################################
+hard_clean() {
+    make clean
+    rm -rf base/
+}
+
+##################################
+# Build results
+#
+# ++ ARGS ++
+# $1: ISO output name
+# --      --
+##################################
+result() {
+    echo "-------------------------------------------"
+    echo "Build finish"
+
+    if [[ $1 == "Hyra-install.iso" ]]
+    then
+        hard_clean # XXX: For safety
+        echo "Installer is at ./Hyra-install.iso"
+        echo "!!WARNING!!: Installer is _automatic_"
+        echo "!!NOTE!!: OSMORA is not responsible for incidental data loss"
+    else
+        echo "Boot image is at ./Hyra.iso"
+    fi
+
+    echo "Finished in $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds"
+    echo "-------------------------------------------"
 }
 
 while getopts "ih" flag
@@ -167,13 +197,15 @@ if [[ $install_flag != "true" ]]
 then
     echo "[?] Not building installer (-i unset)"
     echo "-- Skipping stage 2 --"
+    result "Hyra.iso"
 else
     echo "-- Begin stage 2 --"
     stage2
+    result "Hyra-install.iso"
 fi
 
-echo "-------------------------------------------"
-echo "Build finish"
-echo "Installer is at ./Hyra-install.iso"
-echo "Finished in $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds"
-echo "-------------------------------------------"
+if [[ $install_flag == "true" ]]
+then
+    make clean
+    rm -rf base/
+fi
