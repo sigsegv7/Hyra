@@ -85,6 +85,11 @@ gen_isofs() {
 # Stage 1 - build production media
 ####################################
 stage1() {
+    if [[ $install_flag == "true" ]]
+    then
+        make clean
+    fi
+
     iso_root_skel
     sysroot_skel
 
