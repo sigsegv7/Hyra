@@ -190,6 +190,9 @@ sched_switch(struct trapframe *tf)
     td = ci->curtd;
 
     if (td != NULL) {
+        if (td->pid == 0)
+            return;
+
         dispatch_signals(td);
         td_pri_update(td);
         sched_save_td(td, tf);
