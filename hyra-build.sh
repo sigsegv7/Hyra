@@ -93,14 +93,14 @@ stage1() {
     iso_root_skel
     sysroot_skel
 
+    echo "[*] stage1: Build kernel"
+    make
+
     echo "[*] stage1: Generate stage 1 RAMFS via OMAR"
     $RAMFS_TOOL -i base/ -o $RAMFS_NAME
 
-    echo "[*] stage1: Build kernel"
-    gen_iso_root
-    make KBUILD_ARGS="-D_INSTALL_MEDIA=0"
-
     echo "[*] stage1: Generate stage 1 ISOFS (production)"
+    gen_iso_root
     gen_isofs "Hyra.iso"
 
     # Clean up
