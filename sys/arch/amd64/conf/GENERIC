@@ -1,9 +1,15 @@
+//
 // Kernel options
-option SPECTRE_IBRS no
-option SERIAL_DEBUG yes
+//
+// XXX: Indirect branch restricted speculation (SPECTRE_IBRS)
+//      is disabled by default as it can lead to significant
+//      performance degradation.
+//
+option SPECTRE_IBRS no   // Enable the IBRS CPU feature
+option SERIAL_DEBUG yes  // Enable kmsg serial logging
 
 // Kernel constants
-setval SCHED_NQUEUE 4
+setval SCHED_NQUEUE 4    // Number of scheduler queues (for MLFQ)
 
 // Console attributes
 setval CONSOLE_BG 0x000000
