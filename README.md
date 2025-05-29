@@ -21,11 +21,7 @@ After running the configure script, you can now actually build Hyra:
 
 `./hyra-build.sh`
 
-This will create two ISO files:
-
-`Hyra.iso   Hyra-install.iso`
-
-As of now, you should ignore the second file (`Hyra-install.iso`)
+This will generate a new `Hyra.iso` file.
 
 Documentation:
 --------------
