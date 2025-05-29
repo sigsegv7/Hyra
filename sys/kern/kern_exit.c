@@ -41,7 +41,7 @@
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
 static void
-unload_td(struct proc *td, int flags)
+unload_td(struct proc *td)
 {
     const struct auxval *auxvalp;
     struct exec_prog *execp;
@@ -50,7 +50,7 @@ unload_td(struct proc *td, int flags)
     size_t len;
 
     sched_detach(td);
-    if (ISSET(flags, EXIT_KTD)) {
+    if (ISSET(td->flags, PROC_KTD)) {
         return;
     }
 
@@ -117,7 +117,7 @@ exit1(struct proc *td, int flags)
         stack -= VM_HIGHER_HALF;
     }
 
-    unload_td(td, flags);
+    unload_td(td);
     vm_unmap(pcbp->addrsp, td->stack_base, PROC_STACK_SIZE);
     vm_free_frame(stack, PROC_STACK_PAGES);
     pmap_destroy_vas(pcbp->addrsp);
