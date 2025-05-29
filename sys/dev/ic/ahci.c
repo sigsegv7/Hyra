@@ -1018,4 +1018,4 @@ static struct bdevsw ahci_bdevsw = {
     .bsize = ahci_dev_bsize
 };
 
-DRIVER_EXPORT(ahci_init);
+DRIVER_DEFER(ahci_init);
