@@ -1,5 +1,6 @@
 // Kernel options
 option SERIAL_DEBUG yes     // Enable kmsg serial logging
+option USER_KMSG    yes     // Show kmsg in user consoles
 
 // Kernel constants
 setval SCHED_NQUEUE 4       // Number of scheduler queues (for MLFQ)

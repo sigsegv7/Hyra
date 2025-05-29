@@ -130,6 +130,8 @@ main(void)
     begin_install();
 #endif
 
+    syslog_silence(true);
+
     /* Bootstrap APs and here we go! */
     mp_bootstrap_aps(&g_bsp_ci);
     sched_enter();

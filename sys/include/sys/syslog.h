@@ -31,11 +31,13 @@
 #define _SYS_SYSLOG_H_
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 #if defined(_KERNEL)
 
 #define OMIT_TIMESTAMP "\x01"
 
+void syslog_silence(bool option);
 void kprintf(const char *fmt, ...);
 void serial_init(void);
 void serial_putc(char c);

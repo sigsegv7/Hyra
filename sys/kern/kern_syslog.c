@@ -40,8 +40,15 @@
 #define SERIAL_DEBUG 0
 #endif
 
+#if defined(__USER_KMSG)
+#define USER_KMSG __USER_KMSG
+#else
+#define USER_KMSG 0
+#endif
+
 /* Global logger lock */
 static struct spinlock lock = {0};
+static bool no_cons_log = false;
 
 static void
 syslog_write(const char *s, size_t len)
@@ -56,6 +63,15 @@ syslog_write(const char *s, size_t len)
             serial_putc(*p);
             ++p;
         }
+    }
+
+    /*
+     * If the USER_KMSG option is disabled in kconf,
+     * do not log to the console if everything else
+     * has already started.
+     */
+    if (!USER_KMSG && no_cons_log) {
+        return;
     }
 
     cons_putstr(&g_root_scr, s, len);
@@ -115,4 +131,17 @@ kprintf(const char *fmt, ...)
     vkprintf(fmt_p, &ap);
     va_end(ap);
     spinlock_release(&lock);
+}
+
+/*
+ * Silence kernel messages in if the system
+ * is already operating in a user context.
+ *
+ * XXX: This is ignored if the kconf USER_KMSG
+ *      option is set to "no"
+ */
+void
+syslog_silence(bool option)
+{
+    no_cons_log = option;
 }
