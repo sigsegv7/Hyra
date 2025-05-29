@@ -121,9 +121,8 @@ main(void)
     spawn(&g_proc0, start_init, NULL, 0, NULL);
     md_inton();
 
-    /* Load all drivers */
+    /* Load all early drivers */
     DRIVERS_INIT();
-    DRIVERS_SCHED();
 
 #if defined(_INSTALL_MEDIA)
     kprintf("Hyra install media detected\n");
@@ -133,8 +132,12 @@ main(void)
 
     syslog_silence(true);
 
-    /* Bootstrap APs and here we go! */
+    /*
+     * Bootstrap APs, schedule all other drivers
+     * and here we go!
+     */
     mp_bootstrap_aps(&g_bsp_ci);
+    DRIVERS_SCHED();
     sched_enter();
     __builtin_unreachable();
 }
