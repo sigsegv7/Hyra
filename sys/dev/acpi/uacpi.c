@@ -513,9 +513,18 @@ uacpi_u64
 uacpi_kernel_get_nanoseconds_since_boot(void)
 {
     static uacpi_u64 time = 0;
+    static struct timer tmr = {0};
+    tmrr_status_t tmr_error;
 
-    /* TODO */
-    time += 1000000;
+    if (time == 0) {
+        tmr_error = req_timer(TIMER_GP, &tmr);
+        if (tmr_error != TMRR_SUCCESS) {
+            time += 1000000;
+            return time;
+        }
+    }
+
+    time = tmr.get_time_nsec();
     return time;
 }
 
