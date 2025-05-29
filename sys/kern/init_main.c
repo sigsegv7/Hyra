@@ -44,7 +44,7 @@
 #include <vm/vm.h>
 #include <string.h>
 
-static struct proc proc0;
+struct proc g_proc0;
 
 static void
 copyright(void)
@@ -60,7 +60,7 @@ begin_install(void)
     struct cpu_info *ci;
 
     ci = this_cpu();
-    ci->curtd = &proc0;
+    ci->curtd = &g_proc0;
     hyra_install();
 }
 #endif
@@ -115,14 +115,15 @@ main(void)
     md_intoff();
     sched_init();
 
-    memset(&proc0, 0, sizeof(proc0));
+    memset(&g_proc0, 0, sizeof(g_proc0));
 
     /* Startup pid 1 */
-    spawn(&proc0, start_init, NULL, 0, NULL);
+    spawn(&g_proc0, start_init, NULL, 0, NULL);
     md_inton();
 
     /* Load all drivers */
     DRIVERS_INIT();
+    DRIVERS_SCHED();
 
 #if defined(_INSTALL_MEDIA)
     kprintf("Hyra install media detected\n");

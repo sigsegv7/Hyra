@@ -29,6 +29,12 @@ SECTIONS
         __drivers_init_end = .;
     } :rodata
 
+    .drivers.defer : {
+        __driversd_init_start = .;
+        *(.drivers.defer .drivers.defer)
+        __driversd_init_end = .;
+    } :rodata
+
     . += CONSTANT(MAXPAGESIZE);
 
     .data : {

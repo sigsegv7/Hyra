@@ -31,21 +31,76 @@
 #define _SYS_DRIVER_H_
 
 #include <sys/cdefs.h>
+#include <sys/proc.h>
+#include <sys/types.h>
 
 #if defined(_KERNEL)
 
-struct driver {
-    int(*init)(void);
+/* Variable driver data */
+struct driver_var {
+    uint8_t deferred : 1;
 };
 
+struct driver {
+    int(*init)(void);
+    struct driver_var *data;
+};
+
+extern struct proc g_proc0;
+
+/* Early (high priority) drivers */
 extern char __drivers_init_start[];
 extern char __drivers_init_end[];
 
+/* Deferred (low priority) drivers */
+extern char __driversd_init_start[];
+extern char __driversd_init_end[];
+
 #define DRIVER_EXPORT(INIT)                         \
+    static struct driver_var __driver_var = {       \
+        .deferred = 0                               \
+    };                                              \
+                                                    \
     __attribute__((used, section(".drivers")))      \
     static struct driver __driver_desc = {          \
         .init = INIT,                               \
+        .data = &__driver_var                       \
     }
+
+/*
+ * Some drivers are not required to start up
+ * early for proper system operation and may
+ * be deferred to start at a later time.
+ *
+ * Examples of such (deferrable) drivers include code
+ * that waits for I/O (e.g., disks, network cards,
+ * et cetera). This allows for faster boot times
+ * as only *required* drivers are started before
+ * everything else.
+ *
+ * Drivers that wish to be deferred may export themselves
+ * via the DRIVER_DEFER() macro. The DRIVER_DEFERRED()
+ * macro gives the value of 1 if the current driver
+ * context has yet to be initialized. The driver may
+ * use this to defer requests for I/O.
+ */
+#if !defined(_INSTALL_MEDIA)
+#define DRIVER_DEFER(INIT)                           \
+    static struct driver_var __driver_var = {        \
+        .deferred = 1                                \
+    };                                               \
+                                                     \
+    __attribute__((used, section(".drivers.defer"))) \
+    static struct driver __driver_desc = {           \
+        .init = INIT,                                \
+        .data = &__driver_var                        \
+    }
+
+#define DRIVER_DEFERRED() __driver_var.deferred
+#else
+#define DRIVER_DEFER(INIT) DRIVER_EXPORT(INIT)
+#define DRIVER_DEFERRED() 0
+#endif  /* _INSTALL_MEDIA */
 
 #define DRIVERS_INIT() \
     for (struct driver *__d = (struct driver *)__drivers_init_start;    \
@@ -53,5 +108,11 @@ extern char __drivers_init_end[];
     {                                                                   \
         __d->init();                                                    \
     }
+
+#define DRIVERS_SCHED() \
+    spawn(&g_proc0,__driver_init_td, NULL, 0, NULL)
+
+void __driver_init_td(void);
+
 #endif  /* _KERNEL */
 #endif  /* !_SYS_DRIVER_H_ */
