@@ -60,12 +60,40 @@ static const char *trap_type[] = {
     [TRAP_SS]           = "stack-segment fault"
 };
 
+/* Page-fault flags */
+static const char pf_flags[] = {
+    'p',    /* Present */
+    'w',    /* Write */
+    'u',    /* User */
+    'r',    /* Reserved write */
+    'x',    /* Instruction fetch */
+    'k',    /* Protection key violation */
+    's'     /* Shadow stack access */
+};
+
 static inline uintptr_t
 pf_faultaddr(void)
 {
     uintptr_t cr2;
     __ASMV("mov %%cr2, %0\n" : "=r" (cr2) :: "memory");
     return cr2;
+}
+
+static void
+pf_code(uint64_t error_code)
+{
+    char tab[8] = {
+        '-', '-', '-',
+        '-', '-', '-',
+        '-', '\0'
+    };
+
+    for (int i = 0; i < 7; ++i) {
+        if (ISSET(error_code, BIT(i))) {
+            tab[i] = pf_flags[i];
+        }
+    }
+    kprintf("code=[%s]\n", tab);
 }
 
 static void
@@ -78,6 +106,10 @@ regdump(struct trapframe *tf)
            :
            : "memory"
     );
+
+    if (tf->trapno == TRAP_PAGEFLT) {
+        pf_code(tf->error_code);
+    }
 
     kprintf(OMIT_TIMESTAMP
         "RAX=%p RCX=%p RDX=%p\n"
@@ -101,6 +133,9 @@ trap_user(struct trapframe *tf)
     switch (tf->trapno) {
     case TRAP_PROTFLT:
     case TRAP_PAGEFLT:
+        if (tf->trapno == TRAP_PAGEFLT) {
+            pf_code(tf->error_code);
+        }
         sigaddset(&sigset, SIGSEGV);
         break;
     case TRAP_ARITH_ERR:
