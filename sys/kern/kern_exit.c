@@ -40,7 +40,7 @@
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
 static void
-unload_td(struct proc *td)
+unload_td(struct proc *td, int flags)
 {
     const struct auxval *auxvalp;
     struct exec_prog *execp;
@@ -49,6 +49,10 @@ unload_td(struct proc *td)
     size_t len;
 
     sched_detach(td);
+    if (ISSET(flags, EXIT_KTD)) {
+        return;
+    }
+
     execp = &td->exec;
     auxvalp = &execp->auxval;
     pcbp = &td->pcb;
@@ -79,7 +83,7 @@ unload_td(struct proc *td)
  * @td: Thread to exit
  */
 int
-exit1(struct proc *td)
+exit1(struct proc *td, int flags)
 {
     struct pcb *pcbp;
     struct proc *curtd, *procp;
@@ -97,7 +101,7 @@ exit1(struct proc *td)
     /* If we have any children, kill them too */
     if (td->nleaves > 0) {
         TAILQ_FOREACH(procp, &td->leafq, leaf_link) {
-            exit1(procp);
+            exit1(procp, flags);
         }
     }
 
@@ -110,7 +114,7 @@ exit1(struct proc *td)
         stack -= VM_HIGHER_HALF;
     }
 
-    unload_td(td);
+    unload_td(td, flags);
     vm_unmap(pcbp->addrsp, td->stack_base, PROC_STACK_SIZE);
     vm_free_frame(stack, PROC_STACK_PAGES);
     pmap_destroy_vas(pcbp->addrsp);
@@ -145,6 +149,6 @@ sys_exit(struct syscall_args *scargs)
     struct proc *td = this_td();
 
     td->exit_status = scargs->arg0;
-    exit1(td);
+    exit1(td, 0);
     __builtin_unreachable();
 }

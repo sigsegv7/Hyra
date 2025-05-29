@@ -84,6 +84,11 @@ struct proc {
 #define PROC_LEAFQ      BIT(3)  /* Leaf queue is active */
 #define PROC_WAITED     BIT(4)  /* Being waited on by parent */
 
+/*
+ * Flags for exit1()
+ */
+#define EXIT_KTD     BIT(0)  /* Kill a kernel thread */
+
 struct proc *this_td(void);
 struct proc *get_child(struct proc *cur, pid_t pid);
 int md_spawn(struct proc *p, struct proc *parent, uintptr_t ip);
@@ -95,7 +100,7 @@ void md_td_stackinit(struct proc *td, void *stack_top, struct exec_prog *prog);
 __dead void md_td_kick(struct proc *td);
 
 int fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp);
-int exit1(struct proc *td);
+int exit1(struct proc *td, int flags);
 __dead scret_t sys_exit(struct syscall_args *scargs);
 
 #endif  /* _KERNEL */

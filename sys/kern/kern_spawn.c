@@ -84,7 +84,7 @@ spawn_thunk(void)
 
     if (execve(cur, &execve_args) != 0) {
         pr_error("execve failed, aborting\n");
-        exit1(this_td());
+        exit1(this_td(), 0);
     }
     __builtin_unreachable();
 }

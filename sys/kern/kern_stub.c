@@ -41,7 +41,7 @@ sigfpe_default(int signo)
 
     td = this_td();
     kprintf("Floating point exception (pid=%d)\n", td->pid);
-    exit1(td);
+    exit1(td, 0);
 }
 
 void
@@ -51,7 +51,7 @@ sigkill_default(int signo)
 
     td = this_td();
     kprintf("Terminated (pid=%d)\n", td->pid);
-    exit1(td);
+    exit1(td, 0);
 }
 
 void
@@ -61,7 +61,7 @@ sigsegv_default(int signo)
 
     td = this_td();
     kprintf("Segmentation fault (pid=%d)\n", td->pid);
-    exit1(td);
+    exit1(td, 0);
 }
 
 int
