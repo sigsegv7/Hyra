@@ -35,6 +35,7 @@
 #include <vm/vm.h>
 #include <vm/map.h>
 #include <machine/pcb.h>
+#include <machine/cpu.h>
 
 #define pr_trace(fmt, ...) kprintf("exit: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
@@ -87,9 +88,11 @@ exit1(struct proc *td, int flags)
 {
     struct pcb *pcbp;
     struct proc *curtd, *procp;
+    struct cpu_info *ci;
     uintptr_t stack;
     pid_t target_pid, curpid;
 
+    ci = this_cpu();
     target_pid = td->pid;
     curtd = this_td();
     pcbp = &td->pcb;
@@ -134,8 +137,10 @@ exit1(struct proc *td, int flags)
      * If we are the thread exiting, reenter the scheduler
      * and do not return.
      */
-    if (target_pid == curpid)
+    if (target_pid == curpid) {
+        ci->curtd = NULL;
         sched_enter();
+    }
 
     return 0;
 }
