@@ -69,6 +69,7 @@ struct timer {
     const char *name;               /* e.g "HPET" */
     size_t(*calibrate)(void);       /* Returns frequency, 0 for unspecified */
     size_t(*get_time_usec)(void);   /* Time since init (microseconds) */
+    size_t(*get_time_nsec)(void);   /* Time since init (nanoseconds) */
     size_t(*get_time_sec)(void);    /* Time since init (seconds) */
     int(*msleep)(size_t ms);
     int(*usleep)(size_t us);

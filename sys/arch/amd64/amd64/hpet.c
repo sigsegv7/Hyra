@@ -47,6 +47,7 @@
 #define CAP_CLK_PERIOD(caps)        (caps >> 32)
 
 #define FSEC_PER_SECOND 1000000000000000ULL
+#define NSEC_PER_SECOND 1000000000ULL
 #define USEC_PER_SECOND 1000000ULL
 
 static void *hpet_base = NULL;
@@ -135,6 +136,20 @@ hpet_time_usec(void)
 }
 
 static size_t
+hpet_time_nsec(void)
+{
+    uint64_t period, freq, caps;
+    uint64_t counter;
+
+    caps = hpet_read(HPET_REG_CAPS);
+    period = CAP_CLK_PERIOD(caps);
+    freq = FSEC_PER_SECOND / period;
+
+    counter = hpet_read(HPET_REG_MAIN_COUNTER);
+    return (counter * NSEC_PER_SECOND) / freq;
+}
+
+static size_t
 hpet_time_sec(void)
 {
     return hpet_time_usec() / USEC_PER_SECOND;
@@ -180,6 +195,7 @@ hpet_init(void)
     timer.usleep = hpet_usleep;
     timer.nsleep = hpet_nsleep;
     timer.get_time_usec = hpet_time_usec;
+    timer.get_time_nsec = hpet_time_nsec;
     timer.get_time_sec = hpet_time_sec;
     register_timer(TIMER_GP, &timer);
     return 0;
