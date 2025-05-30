@@ -110,7 +110,7 @@ extern char __driversd_init_end[];
     }
 
 #define DRIVERS_SCHED() \
-    spawn(&g_proc0,__driver_init_td, NULL, 0, NULL)
+    spawn(&g_proc0, __driver_init_td, NULL, 0, NULL)
 
 void __driver_init_td(void);
 
