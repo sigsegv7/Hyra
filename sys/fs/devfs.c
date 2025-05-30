@@ -170,13 +170,6 @@ devfs_getattr(struct vop_getattr_args *args)
 static int
 devfs_reclaim(struct vnode *vp)
 {
-    struct devfs_node *dnp;
-
-    if ((dnp = vp->data) != NULL) {
-        dynfree(dnp->name);
-        dynfree(vp->data);
-    }
-
     vp->data = NULL;
     return 0;
 }
