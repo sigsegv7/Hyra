@@ -28,9 +28,14 @@
  */
 
 #include <sys/syslog.h>
+#include <sys/cdefs.h>
+#include <sys/sio.h>
 #include <sys/spinlock.h>
+#include <sys/device.h>
+#include <sys/errno.h>
 #include <dev/cons/cons.h>
 #include <dev/timer.h>
+#include <fs/devfs.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -46,9 +51,72 @@
 #define USER_KMSG 0
 #endif
 
+#define KBUF_SIZE (1 << 16)
+
+/* Sanity check */
+__static_assert(KBUF_SIZE <= (1 << 16), "KBUF_SIZE too high!");
+
 /* Global logger lock */
 static struct spinlock lock = {0};
+static struct spinlock kmsg_lock = {0};
 static bool no_cons_log = false;
+
+/* Kernel message buffer */
+static char kmsg[KBUF_SIZE];
+static size_t kmsg_i = 0;
+static struct cdevsw kmsg_cdevw;
+
+static void
+kmsg_append(const char *s, size_t len)
+{
+    spinlock_acquire(&kmsg_lock);
+    if ((kmsg_i + len) >= KBUF_SIZE) {
+        kmsg_i = 0;
+    }
+
+    for (size_t i = 0; i < len; ++i) {
+        kmsg[kmsg_i + i] = s[i];
+    }
+    kmsg_i += len;
+    spinlock_release(&kmsg_lock);
+}
+
+/*
+ * Character device function.
+ */
+static int
+kmsg_read(dev_t dev, struct sio_txn *sio, int flags)
+{
+    size_t len, offset, j;
+    size_t bytes_read = 0;
+    char *p = sio->buf;
+
+    spinlock_acquire(&kmsg_lock);
+    len = sio->len;
+    offset = sio->offset;
+
+    if (len == 0) {
+        spinlock_release(&kmsg_lock);
+        return -EINVAL;
+    }
+    if (offset >= kmsg_i) {
+        spinlock_release(&kmsg_lock);
+        return 0;
+    }
+
+    for (size_t i = 0; i < len; ++i) {
+        j = offset + i;
+        if (j > kmsg_i) {
+            break;
+        }
+
+        p[i] = kmsg[j];
+        ++bytes_read;
+    }
+
+    spinlock_release(&kmsg_lock);
+    return bytes_read;
+}
 
 static void
 syslog_write(const char *s, size_t len)
@@ -64,6 +132,8 @@ syslog_write(const char *s, size_t len)
             ++p;
         }
     }
+
+    kmsg_append(s, len);
 
     /*
      * If the USER_KMSG option is disabled in kconf,
@@ -138,10 +208,31 @@ kprintf(const char *fmt, ...)
  * is already operating in a user context.
  *
  * XXX: This is ignored if the kconf USER_KMSG
- *      option is set to "no"
+ *      option is set to "no". A kmsg device file
+ *      is also created on the first call.
  */
 void
 syslog_silence(bool option)
 {
+    static bool once = false;
+    static char devname[] = "kmsg";
+    devmajor_t major;
+    dev_t dev;
+
+    if (!once) {
+        once = true;
+        major = dev_alloc_major();
+        dev = dev_alloc(major);
+
+        dev_register(major, dev, &kmsg_cdevw);
+        devfs_create_entry(devname, major, dev, 0444);
+
+    }
+
     no_cons_log = option;
 }
+
+static struct cdevsw kmsg_cdevw = {
+    .read = kmsg_read,
+    .write = nowrite
+};
