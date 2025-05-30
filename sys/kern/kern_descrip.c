@@ -205,11 +205,20 @@ fd_rw(unsigned int fd, void *buf, size_t count, uint8_t write)
             goto done;
         }
 
+        /* End of file? */
+        if (n == 0) {
+            retval = 0;
+            goto done;
+        }
+
         if (copyout(kbuf, buf, count) < 0) {
             retval = -EFAULT;
             goto done;
         }
     }
+
+    /* Increment the offset per read */
+    filedes->offset += n;
     retval = count;
 done:
     if (kbuf != NULL) {
