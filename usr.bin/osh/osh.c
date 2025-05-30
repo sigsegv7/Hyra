@@ -49,6 +49,7 @@
     "echo     - Print the arguments to the console\n" \
     "reboot   - Reboot the machine\n" \
     "shutdown - Power off the machine\n" \
+    "kmsg     - Print kernel message buffer\n" \
     "exit     - Exit the shell\n"
 
 #define PROMPT "[root::osmora]~ "
@@ -84,6 +85,29 @@ void
 cmd_shutdown(int fd, int argc, char *argv[])
 {
     cpu_reboot(REBOOT_POWEROFF | REBOOT_HALT);
+}
+
+void
+cmd_kmsg(int fd, int argc, char *argv[])
+{
+    int mfd;
+    ssize_t retval;
+    char linebuf[256];
+
+    if ((mfd = open("/dev/kmsg", O_RDONLY)) < 0) {
+        return;
+    }
+
+    for (;;) {
+        retval = read(mfd, linebuf, sizeof(linebuf) - 1);
+        if (retval <= 0) {
+            break;
+        }
+        linebuf[retval] = '\0';
+        prcons(fd, linebuf);
+    }
+
+    close(mfd);
 }
 
 void
@@ -171,6 +195,7 @@ struct command cmds[] = {
     {"exit", cmd_exit},
     {"reboot", cmd_reboot},
     {"shutdown", cmd_shutdown},
+    {"kmsg", cmd_kmsg},
     {NULL, NULL}
 };
 
