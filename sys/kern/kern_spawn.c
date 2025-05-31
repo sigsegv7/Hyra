@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/spawn.h>
 #include <sys/proc.h>
 #include <sys/exec.h>
 #include <sys/mman.h>
