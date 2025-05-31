@@ -187,6 +187,7 @@ fd_rw(unsigned int fd, void *buf, size_t count, uint8_t write)
     sio.buf = kbuf;
     sio.offset = filedes->offset;
 
+    spinlock_acquire(&filedes->lock);
     if (write) {
         /* Copy in user buffer */
         if (copyin(buf, kbuf, count) < 0) {
@@ -224,6 +225,7 @@ done:
     if (kbuf != NULL) {
         dynfree(kbuf);
     }
+    spinlock_release(&filedes->lock);
     return retval;
 }
 
