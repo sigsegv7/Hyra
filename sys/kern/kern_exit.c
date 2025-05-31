@@ -78,35 +78,14 @@ unload_td(struct proc *td)
     }
 }
 
-/*
- * Kill a thread and deallocate its resources.
- *
- * @td: Thread to exit
- */
-int
-exit1(struct proc *td, int flags)
+void
+proc_reap(struct proc *td)
 {
     struct pcb *pcbp;
-    struct proc *curtd, *procp;
-    struct cpu_info *ci;
     uintptr_t stack;
-    pid_t target_pid, curpid;
 
-    ci = this_cpu();
-    target_pid = td->pid;
-    curtd = this_td();
     pcbp = &td->pcb;
-
-    curpid = curtd->pid;
     stack = td->stack_base;
-    td->flags |= PROC_EXITING;
-
-    /* If we have any children, kill them too */
-    if (td->nleaves > 0) {
-        TAILQ_FOREACH(procp, &td->leafq, leaf_link) {
-            exit1(procp, flags);
-        }
-    }
 
     /*
      * If this is on the higher half, it is kernel
@@ -121,6 +100,37 @@ exit1(struct proc *td, int flags)
     vm_unmap(pcbp->addrsp, td->stack_base, PROC_STACK_SIZE);
     vm_free_frame(stack, PROC_STACK_PAGES);
     pmap_destroy_vas(pcbp->addrsp);
+}
+
+/*
+ * Kill a thread and deallocate its resources.
+ *
+ * @td: Thread to exit
+ */
+int
+exit1(struct proc *td, int flags)
+{
+    struct proc *curtd, *procp;
+    struct cpu_info *ci;
+    pid_t target_pid, curpid;
+
+    ci = this_cpu();
+    target_pid = td->pid;
+    curtd = this_td();
+
+    curpid = curtd->pid;
+    td->flags |= PROC_EXITING;
+
+    /* If we have any children, kill them too */
+    if (td->nleaves > 0) {
+        TAILQ_FOREACH(procp, &td->leafq, leaf_link) {
+            exit1(procp, flags);
+        }
+    }
+
+    if (target_pid != curpid) {
+        proc_reap(td);
+    }
 
     /*
      * Only free the process structure if we aren't

@@ -88,6 +88,8 @@ struct proc {
 
 struct proc *this_td(void);
 struct proc *get_child(struct proc *cur, pid_t pid);
+void proc_reap(struct proc *td);
+
 int md_spawn(struct proc *p, struct proc *parent, uintptr_t ip);
 
 scret_t sys_spawn(struct syscall_args *scargs);
