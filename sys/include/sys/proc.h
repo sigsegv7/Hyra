@@ -64,7 +64,7 @@ struct proc {
     struct trapframe tf;
     struct pcb pcb;
     struct proc *parent;
-    void *spawn_data;
+    void *data;
     size_t priority;
     int exit_status;
     bool rested;

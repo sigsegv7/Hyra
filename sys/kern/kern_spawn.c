@@ -71,7 +71,7 @@ spawn_thunk(void)
     char *envp[] = { NULL };
 
     cur = this_td();
-    args = cur->spawn_data;
+    args = cur->data;
     path = args->path;
     memcpy(pathbuf, path, strlen(path));
 
@@ -151,7 +151,7 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
     TAILQ_INSERT_TAIL(&cur->leafq, newproc, leaf_link);
     atomic_inc_int(&cur->nleaves);
     newproc->parent = cur;
-    newproc->spawn_data = p;
+    newproc->data = p;
 
     /* Initialize the mmap ledger */
     mlgdr->nbytes = 0;
