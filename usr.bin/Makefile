@@ -6,3 +6,4 @@ ARGS = -I$(ROOT)/builddeps LDSCRIPT=$(LDSCRIPT) USRDIR=$(USRDIR) ROOT=$(ROOT)
 .PHONY: all
 all:
 	make -C osh/ $(ARGS)
+	make -C kmsg/ $(ARGS)

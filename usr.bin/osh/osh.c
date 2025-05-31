@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/reboot.h>
+#include <sys/spawn.h>
 #include <fcntl.h>
 #include <stddef.h>
 #include <unistd.h>
@@ -60,6 +61,7 @@ static int running;
 
 struct command {
     const char *name;
+    const char *path;
     void (*func)(int fd, int argc, char *argv[]);
 };
 
@@ -85,29 +87,6 @@ void
 cmd_shutdown(int fd, int argc, char *argv[])
 {
     cpu_reboot(REBOOT_POWEROFF | REBOOT_HALT);
-}
-
-void
-cmd_kmsg(int fd, int argc, char *argv[])
-{
-    int mfd;
-    ssize_t retval;
-    char linebuf[256];
-
-    if ((mfd = open("/dev/kmsg", O_RDONLY)) < 0) {
-        return;
-    }
-
-    for (;;) {
-        retval = read(mfd, linebuf, sizeof(linebuf) - 1);
-        if (retval <= 0) {
-            break;
-        }
-        linebuf[retval] = '\0';
-        prcons(fd, linebuf);
-    }
-
-    close(mfd);
 }
 
 void
@@ -189,13 +168,26 @@ getstr(int fd)
     }
 }
 
+static void
+command_run(struct command *cmd, int fd, int argc, char *argv[])
+{
+    if (cmd->func != NULL) {
+        cmd->func(fd, argc, argv);
+        return;
+    }
+
+    if (cmd->path != NULL) {
+        spawn(cmd->path, SPAWN_WAIT);
+    }
+}
+
 struct command cmds[] = {
-    {"help", cmd_help},
-    {"echo", cmd_echo},
-    {"exit", cmd_exit},
-    {"reboot", cmd_reboot},
-    {"shutdown", cmd_shutdown},
-    {"kmsg", cmd_kmsg},
+    {"help", NULL, cmd_help},
+    {"echo", NULL, cmd_echo},
+    {"exit", NULL, cmd_exit},
+    {"reboot", NULL, cmd_reboot},
+    {"shutdown", NULL, cmd_shutdown},
+    {"kmsg", "/usr/bin/kmsg", NULL},
     {NULL, NULL}
 };
 
@@ -230,7 +222,7 @@ main(void)
 
         for (i = 0; cmds[i].name != NULL; i++) {
             if (strcmp(input, cmds[i].name) == 0) {
-                cmds[i].func(fd, argc, argv);
+                command_run(&cmds[i], fd, argc, argv);
                 found = 1;
                 break;
             }
