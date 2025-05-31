@@ -51,6 +51,7 @@
     "reboot   - Reboot the machine\n" \
     "shutdown - Power off the machine\n" \
     "kmsg     - Print kernel message buffer\n" \
+    "fetch    - System information\n" \
     "exit     - Exit the shell\n"
 
 #define PROMPT "[root::osmora]~ "
@@ -188,6 +189,7 @@ struct command cmds[] = {
     {"reboot", NULL, cmd_reboot},
     {"shutdown", NULL, cmd_shutdown},
     {"kmsg", "/usr/bin/kmsg", NULL},
+    {"fetch", "/usr/bin/fetch", NULL},
     {NULL, NULL}
 };
 
