@@ -173,7 +173,7 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
         }
 
         if (!ISSET(newproc->flags, PROC_ZOMB)) {
-            pr_error("spawn: fatal: %d not zombie\n");
+            pr_error("spawn: fatal: %d not zombie\n", newproc->pid);
             panic("possibly memory corruption\n");
         }
 
