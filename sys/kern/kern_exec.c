@@ -37,6 +37,7 @@
 #include <vm/map.h>
 #include <vm/physmem.h>
 #include <machine/pcb.h>
+#include <machine/cdefs.h>
 #include <string.h>
 
 /*
@@ -87,6 +88,7 @@ execve(struct proc *td, const struct execve_args *args)
         release_stack(td);
 
     /* Save program state */
+    md_intoff();
     memcpy(&td->exec, &prog, sizeof(td->exec));
 
     /* Set new stack and map it to userspace */
