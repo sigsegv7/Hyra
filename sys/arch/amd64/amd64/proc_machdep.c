@@ -123,24 +123,37 @@ md_td_kick(struct proc *td)
 {
     struct trapframe *tfp;
     struct cpu_info *ci;
+    uint8_t rpl;
+    uint16_t ds = KERNEL_DS;
 
     tfp = &td->tf;
+    rpl = tfp->cs & 3;
     ci = this_cpu();
     ci->curtd = td;
 
+    if (rpl == 3) {
+        td->flags &= ~PROC_KTD;
+        ds = USER_DS | 3;
+    }
+
     __ASMV(
-        "push %0\n"
+        "mov %0, %%rax\n"
         "push %1\n"
-        "pushf\n"
         "push %2\n"
         "push %3\n"
+        "push %%rax\n"
+        "push %4\n"
+        "test $3, %%ax\n"
+        "jz 1f\n"
         "lfence\n"
         "swapgs\n"
-        "iretq"
+        "1:\n"
+        "   iretq"
         :
-        : "i" (USER_DS | 3),
+        : "r" (tfp->cs),
+          "r" (ds),
           "r" (tfp->rsp),
-          "i" (USER_CS | 3),
+          "m" (tfp->rflags),
           "r" (tfp->rip)
     );
 
