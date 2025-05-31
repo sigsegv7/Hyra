@@ -253,12 +253,20 @@ sched_enter(void)
 void
 sched_yield(void)
 {
-    struct proc *td = this_td();
+    struct proc *td;
+    struct cpu_info *ci = this_cpu();
 
-    if (td != NULL) {
-        td->rested = true;
-        sched_switch(&td->tf);
+    if ((td = ci->curtd) == NULL) {
+        return;
     }
+
+    td->rested = true;
+    ci->curtd = NULL;
+
+    md_inton();
+    sched_oneshot(false);
+    md_hlt();
+    ci->curtd = td;
 }
 
 void
