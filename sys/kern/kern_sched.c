@@ -104,12 +104,22 @@ sched_dequeue_td(void)
 
     for (size_t i = 0; i < SCHED_NQUEUE; ++i) {
         queue = &qlist[i];
-        if (!TAILQ_EMPTY(&queue->q)) {
-            td = TAILQ_FIRST(&queue->q);
-            TAILQ_REMOVE(&queue->q, td, link);
-            spinlock_release(&tdq_lock);
-            return td;
+        if (TAILQ_EMPTY(&queue->q)) {
+            continue;
         }
+
+        td = TAILQ_FIRST(&queue->q);
+        if (td == NULL) {
+            continue;
+        }
+
+        TAILQ_REMOVE(&queue->q, td, link);
+        if (ISSET(td->flags, PROC_SLEEP)) {
+            continue;
+        }
+
+        spinlock_release(&tdq_lock);
+        return td;
     }
 
     /* We got nothing */
@@ -124,6 +134,10 @@ void
 sched_enqueue_td(struct proc *td)
 {
     struct sched_queue *queue;
+
+    if (ISSET(td->flags, PROC_SLEEP)) {
+        return;
+    }
 
     spinlock_acquire(&tdq_lock);
     queue = &qlist[td->priority];

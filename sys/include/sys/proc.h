@@ -84,6 +84,7 @@ struct proc {
 #define PROC_LEAFQ      BIT(3)  /* Leaf queue is active */
 #define PROC_WAITED     BIT(4)  /* Being waited on by parent */
 #define PROC_KTD        BIT(5)  /* Kernel thread */
+#define PROC_SLEEP      BIT(6)  /* Thread execution paused */
 
 struct proc *this_td(void);
 struct proc *get_child(struct proc *cur, pid_t pid);
