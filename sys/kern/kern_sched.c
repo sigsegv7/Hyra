@@ -176,15 +176,31 @@ td_pri_update(struct proc *td)
     }
 }
 
+void
+sched_switch_to(struct trapframe *tf, struct proc *td)
+{
+    struct cpu_info *ci;
+    struct pcb *pcbp;
+
+    ci = this_cpu();
+
+    if (tf != NULL) {
+        memcpy(tf, &td->tf, sizeof(*tf));
+    }
+
+    ci->curtd = td;
+    pcbp = &td->pcb;
+    pmap_switch_vas(pcbp->addrsp);
+}
+
 /*
  * Perform a context switch.
  */
 void
 sched_switch(struct trapframe *tf)
 {
-    struct cpu_info *ci;
-    struct pcb *pcbp;
     struct proc *next_td, *td;
+    struct cpu_info *ci;
 
     ci = this_cpu();
     td = ci->curtd;
@@ -203,11 +219,7 @@ sched_switch(struct trapframe *tf)
         return;
     }
 
-    memcpy(tf, &next_td->tf, sizeof(*tf));
-    ci->curtd = next_td;
-    pcbp = &next_td->pcb;
-
-    pmap_switch_vas(pcbp->addrsp);
+    sched_switch_to(tf, next_td);
     sched_oneshot(false);
 }
 
