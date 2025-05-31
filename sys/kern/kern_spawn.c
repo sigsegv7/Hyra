@@ -111,6 +111,7 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
     struct proc *newproc;
     struct mmap_lgdr *mlgdr;
     int error;
+    pid_t pid;
 
     newproc = dynalloc(sizeof(*newproc));
     if (newproc == NULL) {
@@ -161,7 +162,25 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
     newproc->pid = ++nthreads;
     signals_init(newproc);
     sched_enqueue_td(newproc);
-    return newproc->pid;
+    pid = newproc->pid;
+
+    if (ISSET(flags, SPAWN_WAIT)) {
+        newproc->flags |= PROC_WAITED;
+        cur->flags |= PROC_SLEEP;
+
+        while (ISSET(cur->flags, PROC_SLEEP)) {
+            sched_yield();
+        }
+
+        if (!ISSET(newproc->flags, PROC_ZOMB)) {
+            pr_error("spawn: fatal: %d not zombie\n");
+            panic("possibly memory corruption\n");
+        }
+
+        proc_reap(newproc);
+    }
+
+    return pid;
 }
 
 /*

@@ -111,6 +111,7 @@ int
 exit1(struct proc *td, int flags)
 {
     struct proc *curtd, *procp;
+    struct proc *parent;
     struct cpu_info *ci;
     pid_t target_pid, curpid;
 
@@ -120,6 +121,7 @@ exit1(struct proc *td, int flags)
 
     curpid = curtd->pid;
     td->flags |= PROC_EXITING;
+    parent = td->parent;
 
     /* If we have any children, kill them too */
     if (td->nleaves > 0) {
@@ -149,6 +151,13 @@ exit1(struct proc *td, int flags)
      */
     if (target_pid == curpid) {
         ci->curtd = NULL;
+        if (parent->pid == 0)
+            sched_enter();
+        if (td->data == NULL)
+            sched_enter();
+
+        sched_enqueue_td(parent);
+        parent->flags &= ~PROC_SLEEP;
         sched_enter();
     }
 
@@ -163,6 +172,7 @@ sys_exit(struct syscall_args *scargs)
 {
     struct proc *td = this_td();
 
+    td->data = scargs->tf;
     td->exit_status = scargs->arg0;
     exit1(td, 0);
     __builtin_unreachable();

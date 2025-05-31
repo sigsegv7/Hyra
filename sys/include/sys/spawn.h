@@ -31,6 +31,9 @@
 #define _SYS_SPAWN_H_
 
 #include <sys/types.h>
+#include <sys/param.h>
+
+#define SPAWN_WAIT BIT(0)
 
 #if !defined(_KERNEL)
 pid_t spawn(const char *pathname, int flags);
