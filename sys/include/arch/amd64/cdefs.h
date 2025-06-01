@@ -43,4 +43,13 @@
 #define md_inton()  __ASMV("sti")           /* Enable interrupts */
 #define md_hlt()    __ASMV("hlt")           /* Halt the processor */
 
+/*
+ * AMD64 specific defines
+ */
+#define __invlpg(VA)        \
+    __ASMV("invlpg %0"      \
+           :                \
+           : "m" ((VA))     \
+           : "memory")
+
 #endif  /* !_AMD64_CDEFS_H_ */
