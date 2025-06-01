@@ -46,7 +46,7 @@ static volatile struct limine_smp_request g_smp_req = {
     .revision = 0
 };
 
-static volatile uint32_t ncpu_up = 0;
+static volatile uint32_t ncpu_up = 1;
 static struct cpu_info *ci_list[CPU_MAX];
 static struct spinlock ci_list_lock = {0};
 
@@ -97,6 +97,7 @@ mp_bootstrap_aps(struct cpu_info *ci)
 
     cpus = resp->cpus;
     cpu_init_counter = resp->cpu_count - 1;
+    ci_list[0] = ci;
 
     if (resp->cpu_count == 1) {
         pr_trace("CPU has 1 core, no APs to bootstrap...\n");
@@ -114,5 +115,5 @@ mp_bootstrap_aps(struct cpu_info *ci)
     }
 
     /* Wait for all cores to be ready */
-    while (ncpu_up < cpu_init_counter);
+    while ((ncpu_up - 1) < cpu_init_counter);
 }
