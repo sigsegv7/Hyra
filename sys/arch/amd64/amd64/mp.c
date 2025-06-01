@@ -29,6 +29,7 @@
 
 #include <sys/types.h>
 #include <sys/limine.h>
+#include <sys/limits.h>
 #include <sys/syslog.h>
 #include <sys/spinlock.h>
 #include <sys/sched.h>
@@ -46,6 +47,8 @@ static volatile struct limine_smp_request g_smp_req = {
 };
 
 static volatile uint32_t ncpu_up = 0;
+static struct cpu_info *ci_list[CPU_MAX];
+static struct spinlock ci_list_lock = {0};
 
 static void
 ap_trampoline(struct limine_smp_info *si)
@@ -57,9 +60,29 @@ ap_trampoline(struct limine_smp_info *si)
     memset(ci, 0, sizeof(*ci));
 
     cpu_startup(ci);
+    spinlock_acquire(&ci_list_lock);
+    ci_list[ncpu_up] = ci;
+    spinlock_release(&ci_list_lock);
+
     atomic_inc_int(&ncpu_up);
     sched_enter();
     while (1);
+}
+
+struct cpu_info *
+cpu_get(uint32_t index)
+{
+    if (index >= ncpu_up) {
+        return NULL;
+    }
+
+    return ci_list[index];
+}
+
+uint32_t
+cpu_count(void)
+{
+    return ncpu_up;
 }
 
 void

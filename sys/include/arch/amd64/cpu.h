@@ -52,6 +52,9 @@ __dead void cpu_halt_all(void);
 void cpu_halt_others(void);
 void cpu_startup(struct cpu_info *ci);
 
+struct cpu_info *cpu_get(uint32_t index);
+uint32_t cpu_count(void);
+
 struct cpu_info *this_cpu(void);
 void mp_bootstrap_aps(struct cpu_info *ci);
 
