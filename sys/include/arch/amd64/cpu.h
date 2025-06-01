@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/proc.h>
+#include <sys/spinlock.h>
 #include <machine/tss.h>
 
 #define CPU_IRQ(IRQ_N) (BIT((IRQ_N)) & 0xFF)
@@ -40,11 +41,14 @@
 struct cpu_info {
     uint32_t apicid;
     uint8_t has_x2apic : 1;
+    uint8_t tlb_shootdown : 1;
     uint8_t ipl;
     size_t lapic_tmr_freq;
     uint8_t irq_mask;
+    vaddr_t shootdown_va;
     struct tss_entry *tss;
     struct proc *curtd;
+    struct spinlock lock;
     struct cpu_info *self;
 };
 
@@ -54,6 +58,7 @@ void cpu_startup(struct cpu_info *ci);
 
 struct cpu_info *cpu_get(uint32_t index);
 uint32_t cpu_count(void);
+void cpu_shootdown_tlb(vaddr_t va);
 
 struct cpu_info *this_cpu(void);
 void mp_bootstrap_aps(struct cpu_info *ci);

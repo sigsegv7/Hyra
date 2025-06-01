@@ -42,9 +42,11 @@
 #include <machine/uart.h>
 #include <machine/sync.h>
 #include <machine/intr.h>
+#include <machine/cdefs.h>
 #include <machine/isa/i8042var.h>
 
 #define HALT_VECTOR 0x21
+#define TLB_VECTOR  0x22
 
 #if defined(__SPECTRE_IBRS)
 #define SPECTRE_IBRS  __SPECTRE_IBRS
@@ -66,6 +68,31 @@ cpu_halt_isr(void *p)
     __builtin_unreachable();
 }
 
+__attribute__((__interrupt__))
+static void
+tlb_shootdown_isr(void *p)
+{
+    struct cpu_info *ci;
+    int ipl;
+
+    /*
+     * Get the current CPU and check if we even
+     * need a shootdown. If `tlb_shootdown' is
+     * unset, this is not for us.
+     */
+    ci = this_cpu();
+    if (!ci->tlb_shootdown) {
+        return;
+    }
+
+    ipl = splraise(IPL_HIGH);
+    __invlpg(ci->shootdown_va);
+
+    ci->shootdown_va = 0;
+    ci->tlb_shootdown = 0;
+    splx(ipl);
+}
+
 static void
 setup_vectors(void)
 {
@@ -83,6 +110,7 @@ setup_vectors(void)
     idt_set_desc(0xE, IDT_TRAP_GATE, ISR(page_fault), 0);
     idt_set_desc(0x80, IDT_USER_INT_GATE, ISR(syscall_isr), 0);
     idt_set_desc(HALT_VECTOR, IDT_INT_GATE, ISR(cpu_halt_isr), 0);
+    idt_set_desc(TLB_VECTOR, IDT_INT_GATE, ISR(tlb_shootdown_isr), 0);
     pin_isr_load();
 }
 
@@ -125,6 +153,26 @@ backtrace_addr_to_name(uintptr_t addr, off_t *off)
     }
 
     return NULL;
+}
+
+void
+cpu_shootdown_tlb(vaddr_t va)
+{
+    uint32_t ncpu = cpu_count();
+    struct cpu_info *cip;
+
+    for (uint32_t i = 0; i < ncpu; ++i) {
+        cip = cpu_get(i);
+        if (cip == NULL) {
+            break;
+        }
+
+        spinlock_acquire(&cip->lock);
+        cip->shootdown_va = va;
+        cip->tlb_shootdown = 1;
+        lapic_send_ipi(cip->apicid, IPI_SHORTHAND_NONE, TLB_VECTOR);
+        spinlock_release(&cip->lock);
+    }
 }
 
 void
