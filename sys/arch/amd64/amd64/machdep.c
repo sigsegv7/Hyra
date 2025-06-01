@@ -52,8 +52,6 @@
 #define SPECTRE_IBRS 0
 #endif
 
-static uint8_t halt_vector = 0;
-
 int ibrs_enable(void);
 void syscall_isr(void);
 void pin_isr_load(void);
@@ -166,7 +164,7 @@ cpu_halt_all(void)
     }
 
     /* Send IPI to all cores */
-    lapic_send_ipi(0, IPI_SHORTHAND_ALL, halt_vector);
+    lapic_send_ipi(0, IPI_SHORTHAND_ALL, HALT_VECTOR);
     for (;;);
 }
 
