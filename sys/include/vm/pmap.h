@@ -76,6 +76,17 @@ int pmap_map(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot);
 int pmap_unmap(struct vas vas, vaddr_t va);
 
 /*
+ * Returns true if the page is clean (modified), otherwise
+ * returns false.
+ */
+bool pmap_is_clean(struct vas vas, vaddr_t va);
+
+/*
+ * Marks a page as clean (unmodified)
+ */
+void pmap_mark_clean(struct vas vas, vaddr_t va);
+
+/*
  * Mark a virtual address with a specific
  * caching type.
  */

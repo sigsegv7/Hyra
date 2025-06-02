@@ -33,6 +33,8 @@
 #include <sys/errno.h>
 #include <machine/tlb.h>
 #include <machine/vas.h>
+#include <machine/cpu.h>
+#include <machine/cdefs.h>
 #include <vm/pmap.h>
 #include <vm/physmem.h>
 #include <vm/vm.h>
@@ -302,4 +304,38 @@ pmap_set_cache(struct vas vas, vaddr_t va, int type)
     }
 
     return 0;
+}
+
+bool
+pmap_is_clean(struct vas vas, vaddr_t va)
+{
+    uintptr_t *tbl;
+    int status;
+    size_t idx;
+
+    if ((status = pmap_get_tbl(vas, va, false, &tbl)) != 0)
+        return status;
+
+    idx = pmap_get_level_index(1, va);
+    return ISSET(tbl[idx], PTE_DIRTY) == 0;
+}
+
+void
+pmap_mark_clean(struct vas vas, vaddr_t va)
+{
+    uintptr_t *tbl;
+    int status;
+    size_t idx;
+
+    if ((status = pmap_get_tbl(vas, va, false, &tbl)) != 0)
+        return;
+
+    idx = pmap_get_level_index(1, va);
+    tbl[idx] &= ~PTE_DIRTY;
+
+    if (cpu_count() > 1) {
+        cpu_shootdown_tlb(va);
+    } else {
+        __invlpg(va);
+    }
 }
