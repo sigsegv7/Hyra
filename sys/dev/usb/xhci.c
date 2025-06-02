@@ -37,6 +37,7 @@
 #include <dev/usb/xhciregs.h>
 #include <dev/usb/xhcivar.h>
 #include <dev/pci/pci.h>
+#include <dev/pci/pciregs.h>
 #include <dev/acpi/acpi.h>
 #include <vm/physmem.h>
 #include <vm/dynalloc.h>
@@ -496,6 +497,16 @@ xhci_init_hc(struct xhci_hc *hc)
     return 0;
 }
 
+static void
+xhci_init_pci(void)
+{
+    uint32_t tmp;
+
+    tmp = pci_readl(hci_dev, PCIREG_CMDSTATUS);
+    tmp |= (PCI_BUS_MASTERING | PCI_MEM_SPACE);
+    pci_writel(hci_dev, PCIREG_CMDSTATUS, tmp);
+}
+
 static int
 xhci_init(void)
 {
@@ -528,6 +539,7 @@ xhci_init(void)
         return -ENODEV;
     }
 
+    xhci_init_pci();
     return xhci_init_hc(&xhc);
 }
 
