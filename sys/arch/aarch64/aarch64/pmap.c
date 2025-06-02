@@ -66,3 +66,24 @@ pmap_destroy_vas(struct vas vas)
     /* TODO: STUB */
     return;
 }
+
+bool
+pmap_is_clean(struct vas vas, vaddr_t va)
+{
+    /* TODO: STUB */
+    return false;
+}
+
+void
+pmap_mark_clean(struct vas vas, vaddr_t va)
+{
+    /* TODO: STUB */
+    return;
+}
+
+int
+pmap_set_cache(struct vas vas, vaddr_t va, int type)
+{
+    /* TODO: STUB */
+    return 0;
+}
