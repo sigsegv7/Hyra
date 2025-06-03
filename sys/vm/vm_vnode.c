@@ -162,7 +162,6 @@ vn_attach(struct vnode *vp, vm_prot_t prot)
 
     if (vp->type != VREG) {
         pr_error("vn_attach: vp=%p, prot=%x\n", vp, prot);
-        pr_error("vn_attach: Special files not supported yet!\n");
         return NULL;
     }
 
