@@ -7,3 +7,4 @@ ARGS = -I$(ROOT)/builddeps LDSCRIPT=$(LDSCRIPT) USRDIR=$(USRDIR) ROOT=$(ROOT)
 all:
 	make -C osh/ $(ARGS)
 	make -C kmsg/ $(ARGS)
+	make -C fetch/ $(ARGS)
