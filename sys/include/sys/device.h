@@ -36,6 +36,7 @@
 #include <sys/queue.h>
 #include <sys/proc.h>
 #include <sys/sio.h>
+#include <vm/vm_obj.h>
 
 typedef uint8_t devmajor_t;
 
@@ -47,6 +48,10 @@ typedef int(*dev_bsize_t)(dev_t);
 struct cdevsw {
     int(*read)(dev_t dev, struct sio_txn *sio, int flags);
     int(*write)(dev_t dev, struct sio_txn *sio, int flags);
+    paddr_t(*mmap)(dev_t dev, off_t off, int flags);
+
+    /* Private */
+    struct vm_object vmobj;
 };
 
 struct bdevsw {
