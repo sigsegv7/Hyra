@@ -45,13 +45,12 @@ static volatile struct limine_framebuffer_request framebuffer_req = {
 };
 
 static paddr_t
-fbdev_mmap(dev_t dev, off_t off, int flags)
+fbdev_mmap(dev_t dev, size_t size, off_t off, int flags)
 {
     size_t max_bounds;
 
     max_bounds = FRAMEBUFFER->pitch * FRAMEBUFFER->height;
-    max_bounds /= 4;
-    if (off > max_bounds) {
+    if ((off + size) > max_bounds) {
         return 0;
     }
 

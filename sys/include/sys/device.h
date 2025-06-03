@@ -48,7 +48,7 @@ typedef int(*dev_bsize_t)(dev_t);
 struct cdevsw {
     int(*read)(dev_t dev, struct sio_txn *sio, int flags);
     int(*write)(dev_t dev, struct sio_txn *sio, int flags);
-    paddr_t(*mmap)(dev_t dev, off_t off, int flags);
+    paddr_t(*mmap)(dev_t dev, size_t size, off_t off, int flags);
 
     /* Private */
     struct vm_object vmobj;

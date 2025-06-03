@@ -216,7 +216,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
         }
 
         cdevp = map_obj->data;
-        if ((pa = cdevp->mmap(vp->dev, off, 0)) == 0) {
+        if ((pa = cdevp->mmap(vp->dev, len, off, 0)) == 0) {
             kprintf("mmap: dev mmap() gave 0\n");
             return NULL;
         }
