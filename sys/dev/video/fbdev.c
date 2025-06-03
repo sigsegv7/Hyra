@@ -28,17 +28,22 @@
  */
 
 #include <sys/types.h>
+#include <sys/errno.h>
 #include <sys/limine.h>
 #include <sys/device.h>
 #include <sys/driver.h>
+#include <sys/fbdev.h>
 #include <dev/video/fbdev.h>
 #include <fs/devfs.h>
+#include <fs/ctlfs.h>
 #include <vm/vm.h>
+#include <string.h>
 
 #define FRAMEBUFFER \
         framebuffer_req.response->framebuffers[0]
 
 static struct cdevsw fb_cdevsw;
+static const struct ctlops fb_size_ctl;
 static volatile struct limine_framebuffer_request framebuffer_req = {
     .id = LIMINE_FRAMEBUFFER_REQUEST,
     .revision = 0
@@ -57,6 +62,31 @@ fbdev_mmap(dev_t dev, size_t size, off_t off, int flags)
     return VIRT_TO_PHYS(FRAMEBUFFER->address);
 }
 
+static int
+ctl_attr_read(struct ctlfs_dev *cdp, struct sio_txn *sio)
+{
+    struct fbattr attr;
+    size_t len = sizeof(attr);
+
+    if (sio == NULL) {
+        return -EINVAL;
+    }
+    if (sio->buf == NULL) {
+        return -EINVAL;
+    }
+
+    if (len > sio->len) {
+        len = sio->len;
+    }
+
+    attr.width = FRAMEBUFFER->width;
+    attr.height = FRAMEBUFFER->height;
+    attr.pitch = FRAMEBUFFER->pitch;
+    attr.bpp = FRAMEBUFFER->bpp;
+    memcpy(sio->buf, &attr, len);
+    return len;
+}
+
 struct fbdev
 fbdev_get(void)
 {
@@ -73,6 +103,7 @@ fbdev_get(void)
 static int
 fbdev_init(void)
 {
+    struct ctlfs_dev ctl;
     char devname[] = "fb0";
     devmajor_t major;
     dev_t dev;
@@ -82,6 +113,14 @@ fbdev_init(void)
     dev = dev_alloc(major);
     dev_register(major, dev, &fb_cdevsw);
     devfs_create_entry(devname, major, dev, 0444);
+
+
+    /* Register control files */
+    ctl.mode = 0444;
+    ctlfs_create_node(devname, &ctl);
+    ctl.devname = devname;
+    ctl.ops = &fb_size_ctl;
+    ctlfs_create_entry("attr", &ctl);
     return 0;
 }
 
@@ -89,6 +128,11 @@ static struct cdevsw fb_cdevsw = {
     .read = noread,
     .write = nowrite,
     .mmap = fbdev_mmap
+};
+
+static const struct ctlops fb_size_ctl = {
+    .read = ctl_attr_read,
+    .write = NULL,
 };
 
 DRIVER_EXPORT(fbdev_init);
