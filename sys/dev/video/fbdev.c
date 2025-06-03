@@ -29,15 +29,34 @@
 
 #include <sys/types.h>
 #include <sys/limine.h>
+#include <sys/device.h>
+#include <sys/driver.h>
 #include <dev/video/fbdev.h>
+#include <fs/devfs.h>
+#include <vm/vm.h>
 
 #define FRAMEBUFFER \
         framebuffer_req.response->framebuffers[0]
 
+static struct cdevsw fb_cdevsw;
 static volatile struct limine_framebuffer_request framebuffer_req = {
     .id = LIMINE_FRAMEBUFFER_REQUEST,
     .revision = 0
 };
+
+static paddr_t
+fbdev_mmap(dev_t dev, off_t off, int flags)
+{
+    size_t max_bounds;
+
+    max_bounds = FRAMEBUFFER->pitch * FRAMEBUFFER->height;
+    max_bounds /= 4;
+    if (off > max_bounds) {
+        return 0;
+    }
+
+    return VIRT_TO_PHYS(FRAMEBUFFER->address);
+}
 
 struct fbdev
 fbdev_get(void)
@@ -51,3 +70,26 @@ fbdev_get(void)
     ret.bpp = FRAMEBUFFER->bpp;
     return ret;
 }
+
+static int
+fbdev_init(void)
+{
+    char devname[] = "fb0";
+    devmajor_t major;
+    dev_t dev;
+
+    /* Register the device here */
+    major = dev_alloc_major();
+    dev = dev_alloc(major);
+    dev_register(major, dev, &fb_cdevsw);
+    devfs_create_entry(devname, major, dev, 0444);
+    return 0;
+}
+
+static struct cdevsw fb_cdevsw = {
+    .read = noread,
+    .write = nowrite,
+    .mmap = fbdev_mmap
+};
+
+DRIVER_EXPORT(fbdev_init);

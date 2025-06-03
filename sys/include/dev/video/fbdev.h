@@ -52,5 +52,6 @@ fbdev_get_index(const struct fbdev *fbdev, uint32_t x, uint32_t y)
 }
 
 struct fbdev fbdev_get(void);
+void fbdev_init_dev(void);
 
 #endif  /* !_DEV_FBDEV_H_ */
