@@ -35,8 +35,10 @@
 #include <sys/syscall.h>
 #include <sys/syslog.h>
 #include <sys/mman.h>
+#include <sys/filedesc.h>
 #include <vm/dynalloc.h>
 #include <vm/vm_pager.h>
+#include <vm/vm_device.h>
 #include <vm/pmap.h>
 #include <vm/map.h>
 #include <vm/vm.h>
@@ -159,9 +161,12 @@ vm_map_modify(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot, bool unmap
 void *
 mmap_at(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 {
-    struct vm_object *map_obj;
+    struct vm_object *map_obj = NULL;
+    struct cdevsw *cdevp;
     struct vm_page *pg;
     struct mmap_entry *ep;
+    struct vnode *vp;
+    struct filedesc *fdp;
     struct proc *td;
     struct vas vas;
     int error, npgs;
@@ -172,6 +177,7 @@ mmap_at(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     misalign = len & (DEFAULT_PAGESIZE - 1);
     len = ALIGN_UP(len + misalign, DEFAULT_PAGESIZE);
     npgs = len / DEFAULT_PAGESIZE;
+    vas = pmap_read_vas();
 
     if (addr == NULL) {
         pr_error("mmap: NULL addr not supported\n");
@@ -179,25 +185,68 @@ mmap_at(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     }
 
     /* Validate flags */
-    if (ISSET(flags, MAP_FIXED | MAP_SHARED)) {
-        pr_error("mmap: fixed/shared mappings not yet supported\n");
+    if (ISSET(flags, MAP_FIXED)) {
+        pr_error("mmap: fixed mappings not yet supported\n");
         mmap_dbg(addr, len, prot, flags, fildes, off);
         return NULL;
     }
-    map_obj = dynalloc(sizeof(*map_obj));
-    if (map_obj == NULL) {
-        kprintf("mmap: failed to allocate map object\n");
-        return NULL;
+
+    /*
+     * Attempt to open the file if mapping
+     * is shared.
+     */
+    if (ISSET(flags, MAP_SHARED)) {
+        fdp = fd_get(fildes);
+        if (fdp == NULL) {
+            pr_error("mmap: no such fd (fd=%d)\n", fildes);
+            return NULL;
+        }
+
+        vp = fdp->vp;
+        if (vp->type != VCHR) {
+            /* TODO */
+            pr_error("mmap: only device files supported\n");
+            return NULL;
+        }
+
+        map_obj = dv_attach(vp->major, vp->dev, prot);
+        if (map_obj == NULL) {
+            kprintf("mmap: dv_attach() failure\n");
+            return NULL;
+        }
+
+        cdevp = map_obj->data;
+        if ((pa = cdevp->mmap(vp->dev, off, 0)) == 0) {
+            kprintf("mmap: dev mmap() gave 0\n");
+            return NULL;
+        }
+
+        va = ALIGN_DOWN((vaddr_t)addr, DEFAULT_PAGESIZE);
+        error = vm_map(vas, va, pa, prot, len);
+        if (error != 0) {
+            kprintf("mmap: map failed (error=%d)\n", error);
+            return NULL;
+        }
+
+        goto done;
     }
-    error = vm_obj_init(map_obj, &vm_anonops, 1);
-    if (error < 0) {
-        kprintf("mmap: vm_obj_init() returned %d\n", error);
-        kprintf("mmap: failed to init object\n");
-        return NULL;
+
+    /* Only allocate new obj if needed */
+    if (map_obj == NULL) {
+        map_obj = dynalloc(sizeof(*map_obj));
+        if (map_obj == NULL) {
+            kprintf("mmap: failed to allocate map object\n");
+            return NULL;
+        }
+        error = vm_obj_init(map_obj, &vm_anonops, 1);
+        if (error < 0) {
+            kprintf("mmap: vm_obj_init() returned %d\n", error);
+            kprintf("mmap: failed to init object\n");
+            return NULL;
+        }
     }
 
     /* XXX: Assuming private */
-    vas = pmap_read_vas();
     va = ALIGN_DOWN((vaddr_t)addr, DEFAULT_PAGESIZE);
 
     for (int i = 0; i < npgs; ++i) {
@@ -211,13 +260,13 @@ mmap_at(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 
         pa = pg->phys_addr;
         error = vm_map(vas, va, pa, prot, len);
-        pr_trace("va=%p, len=%d\n", va, len);
         if (error < 0) {
             pr_error("mmap: failed to map page (retval=%x)\n", error);
             return NULL;
         }
     }
 
+done:
     /* Add entry to ledger */
     td = this_td();
     ep = dynalloc(sizeof(*ep));
