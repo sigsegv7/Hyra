@@ -127,6 +127,8 @@ devfs_lookup(struct vop_lookup_args *args)
 
     vp->data = dnp;
     vp->vops = &g_devfs_vops;
+    vp->major = dnp->major;
+    vp->dev = dnp->dev;
     *args->vpp = vp;
     return 0;
 }

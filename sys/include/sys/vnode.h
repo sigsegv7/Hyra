@@ -32,6 +32,7 @@
 
 #include <sys/types.h>
 #include <sys/queue.h>
+#include <sys/vnode.h>
 #include <sys/atomic.h>
 #include <sys/sio.h>
 #include <vm/vm_obj.h>
@@ -47,6 +48,8 @@ struct vnode {
     const struct vops *vops;
     struct vm_object vobj;
     uint32_t refcount;
+    dev_t major;
+    dev_t dev;
     TAILQ_ENTRY(vnode) vcache_link;
 };
 
