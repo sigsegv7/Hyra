@@ -28,26 +28,20 @@
  */
 
 #include <sys/syscall.h>
-#include <sys/sysctl.h>
-#include <sys/reboot.h>
-#include <sys/types.h>
 #include <sys/mman.h>
-#include <sys/proc.h>
-#include <sys/vfs.h>
+#include <sys/types.h>
 
-scret_t(*g_sctab[])(struct syscall_args *) = {
-    NULL,       /* SYS_none */
-    sys_exit,   /* SYS_exit */
-    sys_open,   /* SYS_open */
-    sys_read,   /* SYS_read */
-    sys_close,  /* SYS_close */
-    sys_stat,   /* SYS_stat */
-    sys_sysctl, /* SYS_sysctl */
-    sys_write,  /* SYS_write */
-    sys_spawn,  /* SYS_spawn */
-    sys_reboot, /* SYS_reboot */
-    sys_mmap,   /* SYS_mmap */
-    sys_munmap, /* SYS_munap */
-};
+void *
+mmap(void *addr, size_t len, int prot, int flags,
+     int fildes, off_t off)
 
-const size_t MAX_SYSCALLS = NELEM(g_sctab);
+{
+    return (void *)syscall(SYS_mmap, (uintptr_t)addr, len,
+        prot, flags, fildes, off);
+}
+
+int
+munmap(void *addr, size_t len)
+{
+    return syscall(SYS_munmap, (uintptr_t)addr, len);
+}

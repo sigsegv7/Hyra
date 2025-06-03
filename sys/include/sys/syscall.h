@@ -48,6 +48,8 @@
 #define SYS_write   7
 #define SYS_spawn   8
 #define SYS_reboot  9
+#define SYS_mmap    10
+#define SYS_munmap  11
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */
