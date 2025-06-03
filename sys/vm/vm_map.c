@@ -159,7 +159,7 @@ vm_map_modify(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot, bool unmap
  *      crashes.
  */
 void *
-mmap_at(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
+mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 {
     struct vm_object *map_obj = NULL;
     struct cdevsw *cdevp;
@@ -292,7 +292,7 @@ done:
  *      multiple of the machine page size.
  */
 int
-munmap_at(void *addr, size_t len)
+munmap(void *addr, size_t len)
 {
     int pgno;
     vaddr_t va;
@@ -348,7 +348,7 @@ munmap_at(void *addr, size_t len)
  * arg5 -> off
  */
 scret_t
-mmap(struct syscall_args *scargs)
+sys_mmap(struct syscall_args *scargs)
 {
     void *addr;
     size_t len;
@@ -357,11 +357,11 @@ mmap(struct syscall_args *scargs)
 
     addr = (void *)scargs->arg0;
     len = scargs->arg1;
-    prot = scargs->arg2;
+    prot = scargs->arg2 | PROT_USER;
     flags = scargs->arg3;
     fildes = scargs->arg4;
     off = scargs->arg5;
-    return (scret_t)mmap_at(addr, len, prot, flags, fildes, off);
+    return (scret_t)mmap(addr, len, prot, flags, fildes, off);
 }
 
 /*
@@ -371,14 +371,14 @@ mmap(struct syscall_args *scargs)
  * arg1 -> len
  */
 scret_t
-munmap(struct syscall_args *scargs)
+sys_munmap(struct syscall_args *scargs)
 {
     void *addr;
     size_t len;
 
     addr = (void *)scargs->arg0;
     len = scargs->arg1;
-    return (scret_t)munmap_at(addr, len);
+    return (scret_t)munmap(addr, len);
 }
 
 /*

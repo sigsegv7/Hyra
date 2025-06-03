@@ -35,6 +35,8 @@
 #if defined(_KERNEL)
 #include <sys/tree.h>
 #include <vm/vm_obj.h>
+#else
+#include <stddef.h>
 #endif  /* _KERNEL */
 
 /*
@@ -80,19 +82,19 @@ struct mmap_lgdr {
     size_t nbytes;
 };
 
-/* Kernel munmap() routine */
-int munmap_at(void *addr, size_t len);
-
-/* Kernel mmap() routine */
-void *mmap_at(void *addr, size_t len, int prot, int flags,
-              int fildes, off_t off);
-
 int mmap_entrycmp(const struct mmap_entry *a, const struct mmap_entry *b);
 RBT_PROTOTYPE(lgdr_entries, mmap_entry, hd, mmap_entrycmp)
-#endif  /* _KERNEL */
 
 /* Syscall layer */
-scret_t mmap(struct syscall_args *scargs);
-scret_t munmap(struct syscall_args *scargs);
+scret_t sys_mmap(struct syscall_args *scargs);
+scret_t sys_munmap(struct syscall_args *scargs);
+#endif  /* _KERNEL */
+
+/* Kernel munmap() routine */
+int munmap(void *addr, size_t len);
+
+/* Kernel mmap() routine */
+void *mmap(void *addr, size_t len, int prot, int flags,
+              int fildes, off_t off);
 
 #endif  /* !_SYS_MMAN_H_ */
