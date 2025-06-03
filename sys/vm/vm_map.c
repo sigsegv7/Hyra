@@ -179,11 +179,6 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     npgs = len / DEFAULT_PAGESIZE;
     vas = pmap_read_vas();
 
-    if (addr == NULL) {
-        pr_error("mmap: NULL addr not supported\n");
-        return NULL;
-    }
-
     /* Validate flags */
     if (ISSET(flags, MAP_FIXED)) {
         pr_error("mmap: fixed mappings not yet supported\n");
@@ -221,6 +216,24 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
             return NULL;
         }
 
+        /*
+         * If the address passed is NULL, just identity
+         * map everything.
+         *
+         * XXX: This is why the bounds check done in the
+         *      cdev mmap() *must* be correct.
+         *
+         * TODO: Use copy-on-write for this instead. Since mapping
+         *       certain devices may required a lot of memory to
+         *       be referenced anyways, we could use a buffered
+         *       copy-on-write technique where only a window of
+         *       pages can be mapped on-demand and other pages
+         *       freed when that window is exceeded.
+         */
+        if (addr == NULL) {
+            addr = (void *)pa;
+        }
+
         va = ALIGN_DOWN((vaddr_t)addr, DEFAULT_PAGESIZE);
         error = vm_map(vas, va, pa, prot, len);
         if (error != 0) {
@@ -229,6 +242,11 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
         }
 
         goto done;
+    }
+
+    if (addr == NULL) {
+        pr_error("mmap: NULL addr not supported\n");
+        return NULL;
     }
 
     /* Only allocate new obj if needed */
