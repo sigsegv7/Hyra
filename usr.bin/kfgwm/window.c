@@ -42,11 +42,11 @@ static void
 draw_win(struct kfg_window *parent, struct kfg_window *wp)
 {
     kfgpixel_t *framep;
-    kfgpixel_t x_i, y_i;    /* Start */
-    kfgpixel_t x_end, y_end;    /* End */
+    kfgpos_t x_i, y_i;    /* Start */
+    kfgpos_t x_end, y_end;    /* End */
     kfgpixel_t brush = wp->bg;
-    kfgpixel_t rx, ry;  /* Starts at 0 */
-    kfgpixel_t rx_end, ry_end;  /* Starts at 0 */
+    kfgpos_t rx, ry;  /* Starts at 0 */
+    kfgpos_t rx_end, ry_end;  /* Starts at 0 */
     size_t i;
 
     framep = parent->framebuf;
