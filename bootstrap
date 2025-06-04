@@ -36,7 +36,7 @@ prepare() {
 }
 
 fetch() {
-    try_fetch "git clone https://github.com/limine-bootloader/limine.git --branch=v9.x-binary --depth=1" "stand/limine"
+    try_fetch "git clone https://github.com/limine-bootloader/limine.git --branch=v9.3.0-binary --depth=1" "stand/limine"
 }
 
 build_limine() {
