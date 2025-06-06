@@ -158,6 +158,8 @@ cons_handle_special(struct cons_screen *scr, char c)
     }
 
     switch (c) {
+    case ASCII_NUL:
+        return 0;
     case ASCII_BS:
         bp = scr->ob[scr->ch_row];
         if (bp->head > bp->tail) {
