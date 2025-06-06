@@ -176,7 +176,7 @@ xhci_init_scratchpads(struct xhci_hc *hc)
     struct xhci_caps *caps = XHCI_CAPS(hc->base);
     uint16_t max_bufs_lo, max_bufs_hi;
     uint16_t max_bufs;
-    uint32_t npages;
+    size_t len;
     uintptr_t *bufarr, tmp;
 
     max_bufs_lo = XHCI_MAX_SP_LO(caps->hcsparams1);
@@ -190,9 +190,9 @@ xhci_init_scratchpads(struct xhci_hc *hc)
         return 0;
     }
 
-    npages = (sizeof(uint64_t) * max_bufs) / DEFAULT_PAGESIZE;
-    pr_trace("using %d pages for xHC scratchpads\n", npages);
-    bufarr = dynalloc_memalign(npages * DEFAULT_PAGESIZE, 0x1000);
+    len = sizeof(uint64_t) * max_bufs;
+    pr_trace("using %d bytes for xHC scratchpads\n", len);
+    bufarr = dynalloc_memalign(len, 0x1000);
     if (bufarr == NULL) {
         pr_error("failed to allocate scratchpad buffer array\n");
         return -1;
