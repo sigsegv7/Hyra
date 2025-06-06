@@ -24,43 +24,23 @@
 .\" CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 .\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 .\" POSSIBILITY OF SUCH DAMAGE.
-.Dd Feb 18 2025
-.Dt MMIO 9
+.Dd Jun 6 2024
+.Dt VM 9
 .Os Hyra
 .Sh NAME
-.Nm mmio - hyra MMIO interface
+.Nm vm - hyra virtual memory subsystem
 .Sh SYNOPSIS
-.In sys/mmio.h
-
-.Bd -literal
-static inline void mmio_write8(void *addr, uint8_t val);
-static inline void mmio_write16(void *addr, uint16_t val);
-static inline void mmio_write32(void *addr, uint32_t val);
-#if __SIZEOF_SIZE_T__ == 8
-static inline void mmio_write64(void *addr, uint64_t val);
-#endif
-__extension__
-.Ed
+.In vm/vm.h
 
 .Sh DESCRIPTION
-In short, MMIO is a method of writing to registers
-of an I/O device via a mapped porition of memory. MMIO
-should NOT be done on your own when doing Hyra kernel programming.
-Instead, rely on Hyra's MMIO interface and use
-.Ft mmio_read<n>()
-and
-.Ft mmio_write<n>()
-functions. Where `n` is 8 to 32 on 32-bit machines, and to 64
-on 64-bit machines.
-
-The
-.Ft addr
-argument can be either a physical address or virtual
-address; however, it is recommended to use virtual addresses
-for the sake of consistency.
-
-.Sh SEE ALSO
-.Xr vm_map 9,
+The Hyra virtual memory subsystem is a crucial subsystem within the
+kernel. This subsystem facilitates machine independent management of
+per-process virtual address spaces and has many frameworks within that
+allow abstractions over various things such as pages, memory mapping, and
+objects.
 
 .Sh AUTHORS
 .An Ian Moffett Aq Mt ian@osmora.org
+
+.Sh SEE ALSO
+.Xr vm_map 9

@@ -24,43 +24,74 @@
 .\" CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 .\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 .\" POSSIBILITY OF SUCH DAMAGE.
-.Dd Feb 18 2025
-.Dt MMIO 9
+.Dd Jun 6 2024
+.Dt VM_MAP 9
 .Os Hyra
 .Sh NAME
-.Nm mmio - hyra MMIO interface
+.Nm vm_map - create/destory a virtual memory mapping
 .Sh SYNOPSIS
-.In sys/mmio.h
+.In vm/map.h
 
-.Bd -literal
-static inline void mmio_write8(void *addr, uint8_t val);
-static inline void mmio_write16(void *addr, uint16_t val);
-static inline void mmio_write32(void *addr, uint32_t val);
-#if __SIZEOF_SIZE_T__ == 8
-static inline void mmio_write64(void *addr, uint64_t val);
-#endif
-__extension__
-.Ed
+.Ft int
+.Fn vm_map "struct vas vas" "vaddr_t va" "paddr_t pa" "vm_prot_t prot" "size_t count"
+
+.Ft int
+.Fn vm_unmap "struct vas vas" "vaddr_t va" "size_t count"
 
 .Sh DESCRIPTION
-In short, MMIO is a method of writing to registers
-of an I/O device via a mapped porition of memory. MMIO
-should NOT be done on your own when doing Hyra kernel programming.
-Instead, rely on Hyra's MMIO interface and use
-.Ft mmio_read<n>()
-and
-.Ft mmio_write<n>()
-functions. Where `n` is 8 to 32 on 32-bit machines, and to 64
-on 64-bit machines.
+
+The Hyra virtual memory mapping framework provides a machine independent
+interface for mapping and unmapping pages to respective page frames.
 
 The
-.Ft addr
-argument can be either a physical address or virtual
-address; however, it is recommended to use virtual addresses
-for the sake of consistency.
+.Fn vm_map
+function creates a virtual to physical memory mapping.
 
-.Sh SEE ALSO
-.Xr vm_map 9,
+The
+.Fa vas
+argument specifies the virtual address space for the mapping
+to be created within.
+
+The
+.Fa va
+argument specifies the virtual address to be mapped.
+
+The
+.Fa pa
+argument specifies the physical address that
+.Fa va
+is to be mapped to.
+
+The
+.Fa prot
+argument specifies the virtual memory protection flags.
+
+The
+.Fa count
+argument specifies the number of bytes to be mapped which
+is to be aligned to the machine's page size.
+
+The
+.Fn vm_unmap
+function destroys a virtual to physical memory mapping.
+
+The
+.Fa vas
+argument specifies the virtual address space for the mapping
+to be destroyed within.
+
+
+The
+.Fa va
+argument specifies the virtual address to be unmapped.
+
+The
+.Fa count
+argument specifies the number of bytes to be unmapped which
+is to be aligned to the machine's page size.
 
 .Sh AUTHORS
 .An Ian Moffett Aq Mt ian@osmora.org
+
+.Sh SEE ALSO
+.Xr vm_map 9
