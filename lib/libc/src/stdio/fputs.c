@@ -27,21 +27,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
-#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
-extern int __libc_stdio_init(void);
-
-int main(int argc, char **argv);
+extern size_t __stdio_write(const void *__restrict ptr, size_t size, FILE *__restrict stream);
 
 int
-__libc_entry(uint64_t *ctx)
+fputs(const char *__restrict s, FILE *__restrict stream)
 {
-    int status;
+    size_t len;
 
-    if ((status = __libc_stdio_init()) != 0) {
-        return status;
+    if (s == NULL || stream == NULL) {
+        return EOF;
     }
 
-    return main(0, NULL);
+    len = strlen(s);
+    if (len < 1) {
+        return 0;
+    }
+
+    if (__stdio_write(s, sizeof(char) * len, stream) != (sizeof(char) * len)) {
+        return EOF;
+    }
+
+    return 0;
+}
+
+int
+puts(const char *s)
+{
+    if (fputs(s, stdout) < 0) {
+        return EOF;
+    }
+
+    if (fputc('\n', stdout) != '\n') {
+        return EOF;
+    }
+
+    return 0;
 }

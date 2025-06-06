@@ -27,21 +27,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
-#include <stddef.h>
+#include <stdio.h>
 
-extern int __libc_stdio_init(void);
-
-int main(int argc, char **argv);
+extern size_t __stdio_write(const void *__restrict ptr, size_t size, FILE *__restrict stream);
 
 int
-__libc_entry(uint64_t *ctx)
+fputc(int c, FILE *stream)
 {
-    int status;
+    unsigned char val;
 
-    if ((status = __libc_stdio_init()) != 0) {
-        return status;
+    if (stream == NULL) {
+        return EOF;
     }
 
-    return main(0, NULL);
+    val = (unsigned char)c;
+    if (__stdio_write(&val, sizeof(val), stream) != sizeof(val)) {
+        return EOF;
+    }
+
+    return (int)val;
+}
+
+int
+putchar(int c)
+{
+    return fputc(c, stdout);
 }

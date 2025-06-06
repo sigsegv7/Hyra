@@ -27,21 +27,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
-#include <stddef.h>
+#include <stdio.h>
+#include <unistd.h>
 
-extern int __libc_stdio_init(void);
-
-int main(int argc, char **argv);
-
-int
-__libc_entry(uint64_t *ctx)
+size_t
+__stdio_write(const void *__restrict ptr, size_t size, FILE *__restrict stream)
 {
-    int status;
+    ssize_t count;
 
-    if ((status = __libc_stdio_init()) != 0) {
-        return status;
+    if (stream->buf_mode == _IONBF) {
+        if ((count = write(stream->fd, ptr, size)) < 0) {
+            return 0;
+        }
+
+        return count;
     }
 
-    return main(0, NULL);
+    /*
+     * TODO: Implement more buffering modes.
+     */
+
+    return 0;
+}
+
+size_t
+fwrite(const void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream)
+{
+    if (ptr == NULL || stream == NULL || (size * n) == 0) {
+        return 0;
+    }
+
+    return __stdio_write(ptr, size * n, stream);
 }

@@ -27,21 +27,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
-#include <stddef.h>
+#include <stdio.h>
+#include <fcntl.h>
 
-extern int __libc_stdio_init(void);
+FILE *stdin;
+FILE *stdout;
+FILE *stderr;
 
-int main(int argc, char **argv);
+static FILE cin, cout, cerr;
 
 int
-__libc_entry(uint64_t *ctx)
+__libc_stdio_init(void)
 {
-    int status;
+    int cfd;
 
-    if ((status = __libc_stdio_init()) != 0) {
-        return status;
+    if ((cfd = open("/dev/console", O_RDWR)) < 0) {
+        return cfd;
     }
 
-    return main(0, NULL);
+    cin.buf_mode = _IONBF;
+    cin.fd = cfd;
+
+    cout.buf_mode = _IONBF;
+    cout.fd = cfd;
+
+    cerr.buf_mode = _IONBF;
+    cerr.fd = cfd;
+
+    stdout = &cout;
+    stdin = &cin;
+    stderr = &cerr;
+
+    return 0;
 }

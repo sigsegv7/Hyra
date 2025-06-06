@@ -27,21 +27,62 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
+#ifndef _STDIO_H
+#define _STDIO_H 1
+
+#include <sys/cdefs.h>
+#define __need_NULL
+#define __need_size_t
 #include <stddef.h>
+#define __need_va_list
+#include <stdarg.h>
 
-extern int __libc_stdio_init(void);
+#if __STDC_VERSION__ >= 202311L
+#define __STDC_VERSION_STDIO_H__ 202311L
+#endif
 
-int main(int argc, char **argv);
+/* Buffering modes */
+#define _IOFBF 0 /* Fully buffered */
+#define _IOLBF 1 /* Line buffered */
+#define _IONBF 2 /* Unbuffered */
 
-int
-__libc_entry(uint64_t *ctx)
-{
-    int status;
+/* Default buffer size */
+#define BUFSIZ 256
 
-    if ((status = __libc_stdio_init()) != 0) {
-        return status;
-    }
+/* End-Of-File indicator */
+#define EOF (-1)
 
-    return main(0, NULL);
-}
+/* Spec says these should be defined as macros */
+#define stdin  stdin
+#define stdout stdout
+#define stderr stderr
+
+/* File structure */
+typedef struct _IO_FILE {
+    int fd;
+    int buf_mode;
+} FILE;
+
+extern FILE *stdin;
+extern FILE *stdout;
+extern FILE *stderr;
+
+#define putc(c, stream) fputc((c), (stream))
+
+__BEGIN_DECLS
+
+size_t fwrite(const void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
+
+int fputc(int c, FILE *stream);
+int putchar(int c);
+
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+int fputs(const char *__restrict s, FILE *__restrict stream);
+#else
+int fputs(const char *s, FILE *stream);
+#endif
+int puts(const char *s);
+
+__END_DECLS
+
+#endif /* !_STDIO_H */
