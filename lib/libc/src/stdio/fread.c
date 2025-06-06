@@ -27,67 +27,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STDIO_H
-#define _STDIO_H 1
+#include <stdio.h>
+#include <unistd.h>
 
-#include <sys/cdefs.h>
-#define __need_NULL
-#define __need_size_t
-#include <stddef.h>
-#define __need_va_list
-#include <stdarg.h>
+size_t
+__stdio_read(void *__restrict ptr, size_t size, FILE *__restrict stream)
+{
+    ssize_t count;
 
-#if __STDC_VERSION__ >= 202311L
-#define __STDC_VERSION_STDIO_H__ 202311L
-#endif
+    if (stream->buf_mode == _IONBF) {
+        if ((count = read(stream->fd, ptr, size)) < 0) {
+            return 0;
+        }
 
-/* Buffering modes */
-#define _IOFBF 0 /* Fully buffered */
-#define _IOLBF 1 /* Line buffered */
-#define _IONBF 2 /* Unbuffered */
+        return count;
+    }
 
-/* Default buffer size */
-#define BUFSIZ 256
+    /*
+     * TODO: Implement more buffering modes.
+     */
 
-/* End-Of-File indicator */
-#define EOF (-1)
+    return 0;
+}
 
-/* Spec says these should be defined as macros */
-#define stdin  stdin
-#define stdout stdout
-#define stderr stderr
+size_t
+fread(void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream)
+{
+    if (ptr == NULL || stream == NULL || (size * n) == 0) {
+        return 0;
+    }
 
-/* File structure */
-typedef struct _IO_FILE {
-    int fd;
-    int buf_mode;
-} FILE;
-
-extern FILE *stdin;
-extern FILE *stdout;
-extern FILE *stderr;
-
-#define putc(c, stream) fputc((c), (stream))
-#define getc(stream)    fgetc((stream))
-
-__BEGIN_DECLS
-
-size_t fread(void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
-size_t fwrite(const void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
-
-int fputc(int c, FILE *stream);
-int putchar(int c);
-
-int fgetc(FILE *stream);
-int getchar(void);
-
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-int fputs(const char *__restrict s, FILE *__restrict stream);
-#else
-int fputs(const char *s, FILE *stream);
-#endif
-int puts(const char *s);
-
-__END_DECLS
-
-#endif /* !_STDIO_H */
+    return __stdio_read(ptr, size * n, stream);
+}
