@@ -33,6 +33,7 @@
 #include <sys/spawn.h>
 #include <fcntl.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -53,6 +54,7 @@
     "kmsg     - Print kernel message buffer\n" \
     "fetch    - System information\n" \
     "kfg      - Start up kfgwm\n"     \
+    "bell     - Toggle backspace bell\n" \
     "exit     - Exit the shell\n"
 
 #define PROMPT "[root::osmora]~ "
@@ -60,6 +62,8 @@
 static char buf[64];
 static uint8_t i;
 static int running;
+static int bell_fd;
+static bool bs_bell = true; /* Beep on backspace */
 
 struct command {
     const char *name;
@@ -101,6 +105,27 @@ cmd_echo(int fd, int argc, char *argv[])
     prcons(fd, "\n");
 }
 
+void
+cmd_bell(int fd, int argc, char *argv[])
+{
+    const char *usage_str = "usage: bell [on/off]\n";
+    const char *arg;
+
+    if (argc < 2) {
+        prcons(fd, usage_str);
+        return;
+    }
+
+    arg = argv[1];
+    if (strcmp(arg, "on") == 0) {
+        bs_bell = true;
+    } else if (strcmp(arg, "off") == 0) {
+        bs_bell = false;
+    } else {
+        prcons(fd, usage_str);
+    }
+}
+
 int
 parse_args(char *input, char *argv[], int max_args)
 {
@@ -140,7 +165,16 @@ getstr(int fd)
 {
     char c;
     uint8_t input;
+    uint32_t beep_payload;
+
     i = 0;
+
+    /*
+     * Prepare the beep payload @ 500 Hz
+     * for 20ms
+     */
+    beep_payload = 500;
+    beep_payload |= (30 << 16);
 
     for (;;) {
         if (read(fd, &input, 2) <= 0) {
@@ -161,6 +195,8 @@ getstr(int fd)
             if (i > 0) {
                 i--;
                 write(fd, "\b \b", 3);
+            } else if (bell_fd > 0 && bs_bell) {
+                write(bell_fd, &beep_payload, sizeof(beep_payload));
             }
         } else if (is_ascii(c) && i < sizeof(buf) - 1) {
             /* write to fd and add to buffer */
@@ -189,6 +225,7 @@ struct command cmds[] = {
     {"exit", NULL, cmd_exit},
     {"reboot", NULL, cmd_reboot},
     {"shutdown", NULL, cmd_shutdown},
+    {"bell", NULL, cmd_bell},
     {"kmsg", "/usr/bin/kmsg", NULL},
     {"fetch", "/usr/bin/fetch", NULL},
     {"kfg", "/usr/bin/kfgwm", NULL},
@@ -209,6 +246,7 @@ main(void)
     i = 0;
     running = 1;
     found = 0;
+    bell_fd = open("/dev/beep", O_WRONLY);
 
     prcons(fd, WELCOME);
     while (running) {
