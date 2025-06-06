@@ -30,13 +30,59 @@
 #include <sys/cdefs.h>
 #include <sys/errno.h>
 #include <sys/param.h>
+#include <sys/device.h>
+#include <sys/driver.h>
+#include <fs/devfs.h>
 #include <dev/timer.h>
 #include <machine/isa/spkr.h>
 #include <machine/isa/i8254.h>
 #include <machine/pio.h>
+#include <string.h>
 
 #define DIVIDEND 1193180
 #define CTRL_PORT 0x61
+
+static struct cdevsw beep_cdevsw;
+
+/*
+ * Write to the pcspkr
+ *
+ * Bits 15:0 - frequency (hz)
+ * Bits 31:16 - duration (msec)
+ */
+static int
+dev_write(dev_t dev, struct sio_txn *sio, int flags)
+{
+    uint32_t payload = 0;
+    uint16_t hz;
+    uint16_t duration;
+    size_t len = sizeof(payload);
+
+    if (sio->len < len) {
+        return -EINVAL;
+    }
+
+    memcpy(&payload, sio->buf, len);
+    hz = payload & 0xFFFF;
+    duration = (payload >> 16) & 0xFFFF;
+    pcspkr_tone(hz, duration);
+    return sio->len;
+}
+
+static int
+beep_init(void)
+{
+    char devname[] = "beep";
+    devmajor_t major;
+    dev_t dev;
+
+    /* Register the device here */
+    major = dev_alloc_major();
+    dev = dev_alloc(major);
+    dev_register(major, dev, &beep_cdevsw);
+    devfs_create_entry(devname, major, dev, 0666);
+    return 0;
+}
 
 int
 pcspkr_tone(uint16_t freq, uint32_t msec)
@@ -67,3 +113,10 @@ pcspkr_tone(uint16_t freq, uint32_t msec)
     outb(CTRL_PORT, tmp & ~3);
     return 0;
 }
+
+static struct cdevsw beep_cdevsw = {
+    .read = noread,
+    .write = dev_write
+};
+
+DRIVER_EXPORT(beep_init);
