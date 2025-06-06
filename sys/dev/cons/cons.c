@@ -379,6 +379,23 @@ cons_init_bufs(struct cons_screen *scr)
 }
 
 /*
+ * Reset console color.
+ */
+void
+cons_reset_color(struct cons_screen *scr)
+{
+    g_root_scr.fg = CONSOLE_FG;
+    g_root_scr.bg = CONSOLE_BG;
+}
+
+void
+cons_update_color(struct cons_screen *scr, uint32_t fg, uint32_t bg)
+{
+    scr->fg = fg;
+    scr->bg = bg;
+}
+
+/*
  * Put a character on the screen.
  *
  * @scr: Screen.

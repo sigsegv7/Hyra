@@ -64,6 +64,8 @@ struct cons_screen {
 
 void cons_init(void);
 void cons_expose(void);
+void cons_update_color(struct cons_screen *scr, uint32_t fg, uint32_t bg);
+void cons_reset_color(struct cons_screen *scr);
 int cons_putch(struct cons_screen *scr, char c);
 int cons_putstr(struct cons_screen *scr, const char *s, size_t len);
 
