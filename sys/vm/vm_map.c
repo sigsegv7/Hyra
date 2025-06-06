@@ -245,11 +245,6 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
         goto done;
     }
 
-    if (addr == NULL) {
-        pr_error("mmap: NULL addr not supported\n");
-        return NULL;
-    }
-
     /* Only allocate new obj if needed */
     if (map_obj == NULL) {
         map_obj = dynalloc(sizeof(*map_obj));
@@ -276,6 +271,12 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
             /* TODO */
             pr_error("mmap: failed to allocate page %d\n");
             return NULL;
+        }
+
+        /* TODO: copy-on-write */
+        if (addr == NULL) {
+            va = pg->phys_addr;
+            addr = (void *)va;
         }
 
         pa = pg->phys_addr;
