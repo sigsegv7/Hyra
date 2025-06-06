@@ -173,6 +173,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
     paddr_t pa;
     vaddr_t va;
     size_t misalign;
+    off_t page_off;
 
     misalign = len & (DEFAULT_PAGESIZE - 1);
     len = ALIGN_UP(len + misalign, DEFAULT_PAGESIZE);
@@ -269,6 +270,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 
     for (int i = 0; i < npgs; ++i) {
         pg = vm_pagealloc(map_obj, PALLOC_ZERO);
+        page_off = i * DEFAULT_PAGESIZE;
 
         if (pg == NULL) {
             /* TODO */
@@ -277,7 +279,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
         }
 
         pa = pg->phys_addr;
-        error = vm_map(vas, va, pa, prot, len);
+        error = vm_map(vas, va + page_off, pa, prot, len);
         if (error < 0) {
             pr_error("mmap: failed to map page (retval=%x)\n", error);
             return NULL;
