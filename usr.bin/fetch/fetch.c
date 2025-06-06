@@ -30,8 +30,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-
-#define prcons(FD, STR) write((FD), (STR), strlen((STR)))
+#include <stdio.h>
 
 #define ASCII_ART \
     "  ____      \n" \
@@ -39,20 +38,12 @@
     " | /\\  \\     user: root\n" \
     " |/  \\  \\    OS:   Hyra/amd64 v"_OSVER"\n" \
     " \\ R. \\  \\   arch: "_OSARCH"\n" \
-    "  \\ I. \\  \\\n"
+    "  \\ I. \\  \\"
 
 
 int
 main(void)
 {
-    int fd;
-
-    fd = open("/dev/console", O_WRONLY);
-    if (fd < 0) {
-        return fd;
-    }
-
-    prcons(fd, ASCII_ART);
-    close(fd);
+    puts(ASCII_ART);
     return 0;
 }

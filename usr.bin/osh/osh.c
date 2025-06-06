@@ -36,14 +36,14 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdio.h>
 
-#define prcons(FD, STR) write((FD), (STR), strlen((STR)))
 #define is_ascii(C) ((C) >= 0 && (C) <= 128)
 #define WELCOME \
     ":::::::::::::::::::::::::::::::::::::::\n" \
     ":: OSMORA GATEWAY ~ Every key echos  ::\n" \
     ":: ..... Proceed with purpose .....  ::\n" \
-    ":::::::::::::::::::::::::::::::::::::::\n"
+    ":::::::::::::::::::::::::::::::::::::::"
 
 #define HELP \
     "Default commands:\n" \
@@ -55,7 +55,7 @@
     "fetch    - System information\n" \
     "kfg      - Start up kfgwm\n"     \
     "bell     - Toggle backspace bell\n" \
-    "exit     - Exit the shell\n"
+    "exit     - Exit the shell"
 
 #define PROMPT "[root::osmora]~ "
 
@@ -68,51 +68,51 @@ static bool bs_bell = true; /* Beep on backspace */
 struct command {
     const char *name;
     const char *path;
-    void (*func)(int fd, int argc, char *argv[]);
+    void (*func)(int argc, char *argv[]);
 };
 
 void
-cmd_help(int fd, int argc, char *argv[])
+cmd_help(int argc, char *argv[])
 {
-    prcons(fd, HELP);
+    puts(HELP);
 }
 
 void
-cmd_exit(int fd, int argc, char *argv[])
+cmd_exit(int argc, char *argv[])
 {
     running = 0;
 }
 
 void
-cmd_reboot(int fd, int argc, char *argv[])
+cmd_reboot(int argc, char *argv[])
 {
     cpu_reboot(REBOOT_RESET);
 }
 
 void
-cmd_shutdown(int fd, int argc, char *argv[])
+cmd_shutdown(int argc, char *argv[])
 {
     cpu_reboot(REBOOT_POWEROFF | REBOOT_HALT);
 }
 
 void
-cmd_echo(int fd, int argc, char *argv[])
+cmd_echo(int argc, char *argv[])
 {
     for (i = 1; i < argc; i++) {
-        prcons(fd, argv[i]);
-        prcons(fd, " ");
+        fputs(argv[i], stdout);
+        putchar(' ');
     }
-    prcons(fd, "\n");
+    putchar('\n');
 }
 
 void
-cmd_bell(int fd, int argc, char *argv[])
+cmd_bell(int argc, char *argv[])
 {
-    const char *usage_str = "usage: bell [on/off]\n";
+    const char *usage_str = "usage: bell [on/off]";
     const char *arg;
 
     if (argc < 2) {
-        prcons(fd, usage_str);
+        puts(usage_str);
         return;
     }
 
@@ -122,7 +122,7 @@ cmd_bell(int fd, int argc, char *argv[])
     } else if (strcmp(arg, "off") == 0) {
         bs_bell = false;
     } else {
-        prcons(fd, usage_str);
+        puts(usage_str);
     }
 }
 
@@ -161,10 +161,10 @@ parse_args(char *input, char *argv[], int max_args)
 }
 
 static char *
-getstr(int fd)
+getstr(void)
 {
     char c;
-    uint8_t input;
+    int input;
     uint32_t beep_payload;
 
     i = 0;
@@ -177,16 +177,16 @@ getstr(int fd)
     beep_payload |= (30 << 16);
 
     for (;;) {
-        if (read(fd, &input, 2) <= 0) {
+        if ((input = getchar()) < 0) {
             continue;
         }
 
-        c = input & 0xFF;
+        c = (char)input;
 
         /* return on newline */
         if (c == '\n') {
             buf[i] = '\0';
-            write(fd, "\n", 1);
+            putchar('\n');
             return buf;
         }
 
@@ -194,23 +194,23 @@ getstr(int fd)
         if (c == '\b' || c == 127) {
             if (i > 0) {
                 i--;
-                write(fd, "\b \b", 3);
+                fputs("\b \b", stdout);
             } else if (bell_fd > 0 && bs_bell) {
                 write(bell_fd, &beep_payload, sizeof(beep_payload));
             }
         } else if (is_ascii(c) && i < sizeof(buf) - 1) {
             /* write to fd and add to buffer */
             buf[i++] = c;
-            write(fd, &c, 1);
+            putchar(c);
         }
     }
 }
 
 static void
-command_run(struct command *cmd, int fd, int argc, char *argv[])
+command_run(struct command *cmd, int argc, char *argv[])
 {
     if (cmd->func != NULL) {
-        cmd->func(fd, argc, argv);
+        cmd->func(argc, argv);
         return;
     }
 
@@ -235,24 +235,20 @@ struct command cmds[] = {
 int
 main(void)
 {
-    int fd, found, argc;
+    int found, argc;
     char *input, *argv[16];
     char c;
-
-    if ((fd = open("/dev/console", O_RDWR)) < 0) {
-        return fd;
-    }
 
     i = 0;
     running = 1;
     found = 0;
     bell_fd = open("/dev/beep", O_WRONLY);
 
-    prcons(fd, WELCOME);
+    puts(WELCOME);
     while (running) {
-        prcons(fd, PROMPT);
+        fputs(PROMPT, stdout);
 
-        input = getstr(fd);
+        input = getstr();
         if (input[0] == '\0') {
             continue;
         }
@@ -264,14 +260,14 @@ main(void)
 
         for (i = 0; cmds[i].name != NULL; i++) {
             if (strcmp(input, cmds[i].name) == 0) {
-                command_run(&cmds[i], fd, argc, argv);
+                command_run(&cmds[i], argc, argv);
                 found = 1;
                 break;
             }
         }
 
         if (found == 0) {
-            prcons(fd, "Unrecognized command\n");
+            puts("Unrecognized command");
         }
 
         found = 0;

@@ -31,20 +31,17 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdio.h>
 
 int
 main(void)
 {
-    int mfd, cons_fd;
+    int mfd;
     ssize_t retval;
     char linebuf[256];
 
     if ((mfd = open("/dev/kmsg", O_RDONLY)) < 0) {
         return mfd;
-    }
-    if ((cons_fd = open("/dev/console", O_WRONLY)) < 0) {
-        close(mfd);
-        return cons_fd;
     }
 
     for (;;) {
@@ -53,10 +50,9 @@ main(void)
             break;
         }
         linebuf[retval] = '\0';
-        write(cons_fd, linebuf, strlen(linebuf));
+        fputs(linebuf, stdout);
     }
 
-    close(cons_fd);
     close(mfd);
     return 0;
 }
