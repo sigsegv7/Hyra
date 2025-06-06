@@ -40,7 +40,9 @@ sigfpe_default(int signo)
     static struct proc *td;
 
     td = this_td();
-    kprintf("Floating point exception (pid=%d)\n", td->pid);
+    syslog_silence(false);
+    kprintf(OMIT_TIMESTAMP "Floating point exception (pid=%d)\n", td->pid);
+    syslog_silence(true);
     exit1(td, 0);
 }
 
@@ -50,7 +52,9 @@ sigkill_default(int signo)
     static struct proc *td;
 
     td = this_td();
-    kprintf("Terminated (pid=%d)\n", td->pid);
+    syslog_silence(false);
+    kprintf(OMIT_TIMESTAMP "Terminated (pid=%d)\n", td->pid);
+    syslog_silence(true);
     exit1(td, 0);
 }
 
@@ -60,7 +64,9 @@ sigsegv_default(int signo)
     static struct proc *td;
 
     td = this_td();
-    kprintf("Segmentation fault (pid=%d)\n", td->pid);
+    syslog_silence(false);
+    kprintf(OMIT_TIMESTAMP "Segmentation fault (pid=%d)\n", td->pid);
+    syslog_silence(true);
     exit1(td, 0);
 }
 
