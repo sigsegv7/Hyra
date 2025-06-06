@@ -27,50 +27,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DEV_CONS_H_
-#define _DEV_CONS_H_
+#ifndef _CONS_ANSI_H_
+#define _CONS_ANSI_H_
 
 #include <sys/types.h>
-#include <sys/spinlock.h>
-#include <dev/video/fbdev.h>
-#include <dev/cons/consvar.h>
-#include <dev/cons/ansi.h>
+#include <sys/cdefs.h>
+#include <sys/param.h>
 
-struct cons_char {
-    char c;
+/* ANSI colors */
+#define ANSI_BLACK      0x000000
+#define ANSI_RED        0xAA0000
+#define ANSI_GREEN      0x00AA00
+#define ANSI_BLUE       0x0000AA
+#define ANSI_YELLOW     0xAA5500
+#define ANSI_MAGENTA    0xAA00AA
+#define ANSI_CYAN       0x00AAAA
+#define ANSI_WHITE      0xAAAAAA
+
+/* ANSI_FEED update codes */
+#define ANSI_UPDATE_COLOR  -1
+
+/*
+ * ANSI parser state machine.
+ *
+ * @prev: Previous char
+ * @csi: Encountered control seq introducer
+ * @reset_color: 1 if color is to be reset
+ * @set_fg: 1 if fg is being set
+ * @set_bg: 1 if bg is being set
+ * @fg: Foreground color
+ * @bg: Background color
+ * @flags: State flags
+ */
+struct ansi_state {
+    char prev;
+    uint8_t csi : 2;
+    uint8_t reset_color : 1;
+    uint8_t set_fg : 1;
+    uint8_t set_bg : 1;
     uint32_t fg;
     uint32_t bg;
-    uint32_t x;
-    uint32_t y;
 };
 
-struct cons_screen {
-    struct fbdev fbdev;
-    struct ansi_state ansi_s;
-    uint32_t fg;
-    uint32_t bg;
+int ansi_feed(struct ansi_state *statep, char c);
 
-    /* Private */
-    uint32_t *fb_mem;
-    uint32_t nrows;
-    uint32_t ncols;
-    uint32_t ch_col;    /* Current col */
-    uint32_t ch_row;    /* Current row */
-    uint32_t curs_col;  /* Cursor col */
-    uint32_t curs_row;  /* Cursor row */
-    struct cons_buf *ib;  /* Input buffer */
-    struct cons_buf **ob; /* Output buffers */
-    struct cons_char last_chr;
-    struct spinlock lock;
-};
-
-void cons_init(void);
-void cons_expose(void);
-void cons_update_color(struct cons_screen *scr, uint32_t fg, uint32_t bg);
-void cons_reset_color(struct cons_screen *scr);
-int cons_putch(struct cons_screen *scr, char c);
-int cons_putstr(struct cons_screen *scr, const char *s, size_t len);
-
-extern struct cons_screen g_root_scr;
-
-#endif  /* !_DEV_CONS_H_ */
+#endif  /* !_CONS_ANSI_H_ */

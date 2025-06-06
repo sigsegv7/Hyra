@@ -264,6 +264,14 @@ cons_fast_putch(struct cons_screen *scr, char c)
 {
     struct cons_char cc;
     struct cons_buf *bp;
+    int ansi;
+
+    ansi = ansi_feed(&scr->ansi_s, c);
+    if (ansi > 0) {
+        c = ASCII_NUL;
+    } else if (ansi < 0) {
+        c = ASCII_NUL;
+    }
 
     /* Handle specials */
     if (cons_handle_special(scr, c) == 0) {
