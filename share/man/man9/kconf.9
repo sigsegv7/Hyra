@@ -1,0 +1,81 @@
+.\" Copyright (c) 2023-2025 Ian Marco Moffett and the Osmora Team.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions are met:
+.\"
+.\" 1. Redistributions of source code must retain the above copyright notice,
+.\"    this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of Hyra nor the names of its
+.\"    contributors may be used to endorse or promote products derived from
+.\"    this software without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+.\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+.\" LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+.\" CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+.\" SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+.\" INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+.\" CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+.\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+.\" POSSIBILITY OF SUCH DAMAGE.
+.Dd Jun 7 2025
+.Dt KCONF 9
+.Os Hyra
+.Sh NAME
+.Nm kconf - Hyra kernel configuration
+.Sh SYNOPSIS
+GENERIC configuration:
+.Ft sys/arch/<arch>/conf/GENERIC
+
+Kconf sources:
+.Ft tools/kconf/
+
+.Sh DESCRIPTION
+
+Hyra provides the kconf format for kernel configuration by allowing
+the user to create defines that represent yes/no options and fixed values.
+
+Running kconf on a configuration file results in define flags (-D__KEY=val) to
+be generated so that they may be passed to the compiler of choice.
+
+The
+.Ft option
+keyword allows users to define an option that
+can either be yes or no. For example, the following
+may be used to create an option "FOO" to be set to "yes":
+
+.Ft option FOO yes
+
+This will be given to the kernel as __FOO, for yes/no options the value
+of either 1 (yes) or 0 will be given.
+
+Similarly, a user may create a define that holds a fixed value
+by using the
+.Ft setval
+keyword.
+
+For example, the following may be used to create an option
+"MEOW" set to 0xCA7F00D:
+
+.Ft setval MEOW 0xCA7F00D
+
+These options can be read within the kernel by checking if
+the define exists and potentially falling back to a default
+value if not. This example shows how "MEOW" can be read:
+
+.Bd -literal
+#if defined(__MEOW)     /* Option is prefixed with "__" */
+#define MEOW __MEOW
+#else
+#define MEOW 0
+#endif  /* __MEOW */
+.Ed
+
+.Sh AUTHORS
+.An Ian Moffett Aq Mt ian@osmora.org
