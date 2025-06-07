@@ -662,4 +662,4 @@ static struct bdevsw nvme_bdevsw = {
     .write = nowrite
 };
 
-DRIVER_EXPORT(nvme_init);
+DRIVER_DEFER(nvme_init);
