@@ -52,7 +52,9 @@ ioapic_common_func:
 
     mov (%rdx), %rbx            // intr_hand.func
     xor %rdi, %rdi              // No data
+    push %rcx                   // Save our counter
     call *%rbx                  // Call the handler
+    pop %rcx                    // Restore our counter
     or %rax, %rax               // Was it theirs? (RET >= 1)
     jnz done                    // Yes, we are done.
 1:  inc %rcx                    // Next
