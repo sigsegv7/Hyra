@@ -33,7 +33,7 @@
 #include <sys/driver.h>
 #include <sys/device.h>
 #include <dev/pci/pci.h>
-#include <dev/phy/rt8139.h>
+#include <dev/phy/rtl.h>
 #include <dev/timer.h>
 #include <dev/pci/pciregs.h>
 #include <net/if_ether.h>
@@ -50,7 +50,7 @@
 #include <machine/idt.h>
 #endif
 
-#define pr_trace(fmt, ...) kprintf("rt8139: " fmt, ##__VA_ARGS__)
+#define pr_trace(fmt, ...) kprintf("rt81xx: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
 #define RX_BUF_SIZE      3      /* In pages */
@@ -160,7 +160,7 @@ rt_poll(uint8_t reg, uint8_t size, uint32_t bits, bool pollset)
 }
 
 static int
-rt8139_intr(void *sp)
+rt81xx_intr(void *sp)
 {
     static uint32_t packet_ptr = 0;
     uint16_t len;
@@ -187,14 +187,14 @@ rt8139_intr(void *sp)
 }
 
 static int
-rtl8139_irq_init(void)
+rt81xx_irq_init(void)
 {
     struct intr_hand ih;
 
-    ih.func = rt8139_intr;
+    ih.func = rt81xx_intr;
     ih.priority = IPL_BIO;
     ih.irq = dev->irq_line;
-    if (intr_register("rt8139", &ih) == NULL) {
+    if (intr_register("rt81xx", &ih) == NULL) {
         return -EIO;
     }
     return 0;
@@ -306,7 +306,7 @@ rt_init_mac(void)
      * TODO: Support TX
      *
      */
-    rtl8139_irq_init();
+    rt81xx_irq_init();
     rt_write(RT_RXBUF, 4, rxbuf);
     rt_write(RT_RXCONFIG, 4, RT_AB | RT_AM | RT_APM | RT_AAP);
     rt_write(RT_INTRMASK, 2, RT_ROK | RT_TOK);
@@ -315,7 +315,7 @@ rt_init_mac(void)
 }
 
 static int
-rt813l_init(void)
+rt81xx_init(void)
 {
     struct pci_lookup lookup;
 
@@ -357,4 +357,4 @@ rt813l_init(void)
     return rt_init_mac();
 }
 
-DRIVER_DEFER(rt813l_init);
+DRIVER_DEFER(rt81xx_init);
