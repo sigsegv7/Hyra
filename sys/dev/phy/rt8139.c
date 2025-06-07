@@ -357,4 +357,4 @@ rt813l_init(void)
     return rt_init_mac();
 }
 
-DRIVER_EXPORT(rt813l_init);
+DRIVER_DEFER(rt813l_init);
