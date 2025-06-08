@@ -27,75 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/mman.h>
+#ifndef _KFGWM_FONT_H_
+#define _KFGWM_FONT_H_
+
 #include <sys/types.h>
-#include <sys/fbdev.h>
-#include <kfg/window.h>
-#include <fcntl.h>
-#include <stddef.h>
-#include <unistd.h>
 
-static struct fbattr fbattr;
-static uint32_t *framep;
+#define FONT_WIDTH 8
+#define FONT_HEIGHT 16
 
-static void
-test_win(struct kfg_window *root, kfgpos_t x, kfgpos_t y, const char *str)
-{
-    struct kfg_text text;
-    struct kfg_window test_win;
+extern const uint8_t g_KFG_FONT[];
 
-    test_win.x = x;
-    test_win.y = y;
-    test_win.width = 250;
-    test_win.height = 150;
-    test_win.fb_pitch = fbattr.pitch;
-    test_win.framebuf = framep;
-    test_win.bg = KFG_DARK;
-    test_win.border_bg = KFG_RED;
-
-    text.text = str;
-    text.x = 0;
-    text.y = 0;
-
-    kfg_win_draw(root, &test_win);
-    kfg_win_putstr(&test_win, &text);
-}
-
-int
-main(void)
-{
-    int fb_fd, fbattr_fd, prot;
-    size_t fb_size;
-    struct kfg_window root_win;
-
-    fb_fd = open("/dev/fb0", O_RDWR);
-    if (fb_fd < 0) {
-        return fb_fd;
-    }
-
-    fbattr_fd = open("/ctl/fb0/attr", O_RDONLY);
-    if (fbattr_fd < 0) {
-        close(fb_fd);
-        return fbattr_fd;
-    }
-
-    read(fbattr_fd, &fbattr, sizeof(fbattr));
-    close(fbattr_fd);
-
-    fb_size = fbattr.height * fbattr.pitch;
-    prot = PROT_READ | PROT_WRITE;
-    framep = mmap(NULL, fb_size, prot, MAP_SHARED, fb_fd, 0);
-
-    root_win.x = 0;
-    root_win.y = 0;
-    root_win.width = fbattr.width;
-    root_win.height = fbattr.height;
-    root_win.fb_pitch = fbattr.pitch;
-    root_win.framebuf = framep;
-    root_win.bg = KFG_RED;
-    root_win.border_bg = KFG_RED;
-    test_win(&root_win, 40, 85, "Hello, World!");
-    test_win(&root_win, 150, 20, "Mrow!");
-
-    for (;;);
-}
+#endif  /* !_KFGWM_FONT_H_ */

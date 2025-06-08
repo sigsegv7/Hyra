@@ -55,6 +55,13 @@ struct kfg_window {
     kfgpixel_t *framebuf;
 };
 
+struct kfg_text {
+    const char *text;
+    kfgpos_t x;
+    kfgpos_t y;
+};
+
 int kfg_win_draw(struct kfg_window *parent, struct kfg_window *wp);
+int kfg_win_putstr(struct kfg_window *wp, struct kfg_text *tp);
 
 #endif  /* !KFG_WINDOW_H_ */

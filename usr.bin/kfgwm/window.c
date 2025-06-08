@@ -29,13 +29,35 @@
 
 #include <sys/errno.h>
 #include <sys/cdefs.h>
+#include <sys/param.h>
 #include <kfg/window.h>
+#include <kfg/font.h>
 #include <stddef.h>
+#include <string.h>
 
 __always_inline static inline size_t
 pixel_index(struct kfg_window *wp, kfgpos_t x, kfgpos_t y)
 {
     return x + y * (wp->fb_pitch / 4);
+}
+
+static int
+kfg_win_putc(struct kfg_window *wp, uint32_t x, uint32_t y, char ch)
+{
+    size_t idx;
+    const uint8_t *glyph;
+    uint32_t fg, bg;
+
+    glyph = &g_KFG_FONT[(int)ch*16];
+    fg = KFG_WHITE;
+    bg = wp->bg;
+
+    for (uint32_t cy = 0; cy < FONT_HEIGHT; ++cy) {
+        idx = pixel_index(wp, x + (FONT_WIDTH - 1), y + cy);
+        for (uint32_t cx = 0; cx < FONT_WIDTH; ++cx) {
+            wp->framebuf[idx--] = ISSET(glyph[cy], BIT(cx)) ? fg : bg;
+        }
+    }
 }
 
 static void
@@ -128,5 +150,38 @@ kfg_win_draw(struct kfg_window *parent, struct kfg_window *wp)
     }
 
     draw_win(parent, wp);
+    return 0;
+}
+
+int
+kfg_win_putstr(struct kfg_window *wp, struct kfg_text *tp)
+{
+    size_t slen;
+    const char *p;
+    kfgpos_t x, y;
+
+    if (tp == NULL)
+        return -EINVAL;
+    if (tp->text == NULL)
+        return -EINVAL;
+
+    slen = strlen(tp->text);
+    x = (wp->x + tp->x) + (KFG_BORDER_WIDTH + 1);
+    y = (KFG_TITLE_HEIGHT + wp->y) + tp->y;
+    p = tp->text;
+
+    while (slen--) {
+        if (y >= wp->height) {
+            break;
+        }
+
+        kfg_win_putc(wp, x, y, *(p++));
+        x += FONT_WIDTH;
+        if (x >= wp->width) {
+            y += FONT_HEIGHT;
+            x = wp->x + (KFG_BORDER_WIDTH + 1);
+        }
+    }
+
     return 0;
 }
