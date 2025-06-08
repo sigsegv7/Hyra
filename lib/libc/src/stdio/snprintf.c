@@ -27,69 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STDIO_H
-#define _STDIO_H 1
-
-#include <sys/cdefs.h>
-#define __need_NULL
-#define __need_size_t
+#include <sys/types.h>
+#include <stdio.h>
 #include <stddef.h>
-#define __need_va_list
-#include <stdarg.h>
 
-#if __STDC_VERSION__ >= 202311L
-#define __STDC_VERSION_STDIO_H__ 202311L
-#endif
+/* TODO FIXME: Use stdarg.h */
+#define __va_start(ap, fmt)  __builtin_va_start(ap, fmt)
+#define __va_end(ap)  __builtin_va_end(ap)
 
-/* Buffering modes */
-#define _IOFBF 0 /* Fully buffered */
-#define _IOLBF 1 /* Line buffered */
-#define _IONBF 2 /* Unbuffered */
+int
+snprintf(char *s, size_t size, const char *fmt, ...)
+{
+    va_list ap;
+    int ret;
 
-/* Default buffer size */
-#define BUFSIZ 256
-
-/* End-Of-File indicator */
-#define EOF (-1)
-
-/* Spec says these should be defined as macros */
-#define stdin  stdin
-#define stdout stdout
-#define stderr stderr
-
-/* File structure */
-typedef struct _IO_FILE {
-    int fd;
-    int buf_mode;
-} FILE;
-
-extern FILE *stdin;
-extern FILE *stdout;
-extern FILE *stderr;
-
-#define putc(c, stream) fputc((c), (stream))
-#define getc(stream)    fgetc((stream))
-
-__BEGIN_DECLS
-
-size_t fread(void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
-size_t fwrite(const void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
-
-int vsnprintf(char *s, size_t size, const char *fmt, va_list ap);
-int snprintf(char *s, size_t size, const char *fmt, ...);
-int fputc(int c, FILE *stream);
-
-int putchar(int c);
-int fgetc(FILE *stream);
-int getchar(void);
-
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-int fputs(const char *__restrict s, FILE *__restrict stream);
-#else
-int fputs(const char *s, FILE *stream);
-#endif
-int puts(const char *s);
-
-__END_DECLS
-
-#endif /* !_STDIO_H */
+    __va_start(ap, fmt);
+    ret = vsnprintf(s, size, fmt, ap);
+    __va_end(ap);
+    return ret;
+}
