@@ -75,6 +75,7 @@ __BEGIN_DECLS
 size_t fread(void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
 size_t fwrite(const void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
 
+int vsnprintf(char *s, size_t size, const char *fmt, va_list ap);
 int fputc(int c, FILE *stream);
 int putchar(int c);
 
