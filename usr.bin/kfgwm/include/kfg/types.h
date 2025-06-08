@@ -31,6 +31,7 @@
 #define KFG_TYPES_H_
 
 #include <sys/types.h>
+#include <stddef.h>
 
 typedef uint32_t kfgpos_t;
 typedef uint32_t kfgdim_t;
