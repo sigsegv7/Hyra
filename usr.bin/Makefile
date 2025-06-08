@@ -9,3 +9,4 @@ all:
 	make -C kmsg/ $(ARGS)
 	make -C fetch/ $(ARGS)
 	make -C kfgwm/ $(ARGS)
+	make -C time/ $(ARGS)

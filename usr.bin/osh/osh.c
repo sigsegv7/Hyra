@@ -55,6 +55,7 @@
     "fetch    - System information\n" \
     "kfg      - Start up kfgwm\n"     \
     "bell     - Toggle backspace bell\n" \
+    "time     - Get the current time\n" \
     "exit     - Exit the shell"
 
 #define PROMPT "[root::osmora]~ "
@@ -226,6 +227,7 @@ struct command cmds[] = {
     {"reboot", NULL, cmd_reboot},
     {"shutdown", NULL, cmd_shutdown},
     {"bell", NULL, cmd_bell},
+    {"time", "/usr/bin/time", NULL},
     {"kmsg", "/usr/bin/kmsg", NULL},
     {"fetch", "/usr/bin/fetch", NULL},
     {"kfg", "/usr/bin/kfgwm", NULL},
