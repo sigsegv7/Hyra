@@ -27,16 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STRING_H_
-#define _STRING_H_ 1
+#include <string.h>
 
-#include <stddef.h>
+void *
+memcpy(void *dest, const void *src, size_t n)
+{
+    for (size_t i = 0; i < n; ++i) {
+        ((char *)dest)[i] = ((char *)src)[i];
+    }
 
-size_t strlen(const char *s);
-void *memset(void *dst, int c, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
-
-void *memcpy(void *dest, const void *src, size_t n);
-int strcmp(const char *s1, const char *s2);
-
-#endif  /* !_STRING_H_ */
+    return dest;
+}
