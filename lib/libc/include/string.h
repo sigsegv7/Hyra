@@ -36,6 +36,7 @@ size_t strlen(const char *s);
 void *memset(void *dst, int c, size_t n);
 int memcmp(const void *s1, const void *s2, size_t n);
 
+char *itoa(int64_t value, char *buf, int base);
 void *memcpy(void *dest, const void *src, size_t n);
 int strcmp(const char *s1, const char *s2);
 
