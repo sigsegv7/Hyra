@@ -82,23 +82,26 @@ void
 proc_reap(struct proc *td)
 {
     struct pcb *pcbp;
-    uintptr_t stack;
+    vaddr_t stack_va;
+    paddr_t stack_pa;
 
     pcbp = &td->pcb;
-    stack = td->stack_base;
+    unload_td(td);
 
     /*
-     * If this is on the higher half, it is kernel
-     * mapped and we need to convert it to a physical
-     * address.
+     * User space stacks are identity mapped and
+     * kernel space stacks are not.
      */
-    if (stack >= VM_HIGHER_HALF) {
-        stack -= VM_HIGHER_HALF;
+    if (ISSET(td->flags, PROC_KTD)) {
+        stack_va = td->stack_base;
+        stack_pa = td->stack_base - VM_HIGHER_HALF;
+    } else {
+        stack_va = td->stack_base;
+        stack_pa = td->stack_base;
+        vm_unmap(pcbp->addrsp, stack_va, PROC_STACK_SIZE);
     }
 
-    unload_td(td);
-    vm_unmap(pcbp->addrsp, td->stack_base, PROC_STACK_SIZE);
-    vm_free_frame(stack, PROC_STACK_PAGES);
+    vm_free_frame(stack_pa, PROC_STACK_PAGES);
     pmap_destroy_vas(pcbp->addrsp);
 }
 
