@@ -113,11 +113,18 @@ sched_dequeue_td(void)
             continue;
         }
 
-        TAILQ_REMOVE(&queue->q, td, link);
-        if (ISSET(td->flags, PROC_SLEEP)) {
+        while (ISSET(td->flags, PROC_SLEEP)) {
+            td = TAILQ_NEXT(td, link);
+            if (td == NULL) {
+                break;
+            }
+        }
+
+        if (td == NULL) {
             continue;
         }
 
+        TAILQ_REMOVE(&queue->q, td, link);
         spinlock_release(&tdq_lock);
         return td;
     }
