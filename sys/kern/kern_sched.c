@@ -264,11 +264,18 @@ sched_yield(void)
     }
 
     td->rested = true;
-    ci->curtd = NULL;
 
+    /* FIXME: Hang yielding when waited on */
+    if (ISSET(td->flags, PROC_WAITED)) {
+        return;
+    }
+
+    ci->curtd = NULL;
     md_inton();
     sched_oneshot(false);
+
     md_hlt();
+    md_intoff();
     ci->curtd = td;
 }
 
