@@ -135,10 +135,6 @@ sched_enqueue_td(struct proc *td)
 {
     struct sched_queue *queue;
 
-    if (ISSET(td->flags, PROC_SLEEP)) {
-        return;
-    }
-
     spinlock_acquire(&tdq_lock);
     queue = &qlist[td->priority];
 
