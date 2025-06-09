@@ -168,10 +168,7 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
     if (ISSET(flags, SPAWN_WAIT)) {
         newproc->flags |= PROC_WAITED;
         cur->flags |= PROC_SLEEP;
-
-        while (ISSET(cur->flags, PROC_SLEEP)) {
-            sched_yield();
-        }
+        sched_yield();
 
         if (!ISSET(newproc->flags, PROC_ZOMB)) {
             pr_error("spawn: fatal: %d not zombie\n", newproc->pid);
