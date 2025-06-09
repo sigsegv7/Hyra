@@ -68,7 +68,7 @@ struct proc {
     size_t priority;
     int exit_status;
     bool rested;
-    uint32_t flags;
+    volatile uint32_t flags;
     uint32_t nleaves;
     uintptr_t stack_base;
     struct spinlock ksigq_lock;
