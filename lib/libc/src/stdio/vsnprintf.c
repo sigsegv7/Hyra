@@ -96,6 +96,7 @@ vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
                 num_len = strlen(num_buf);
                 for (size_t i = num_len; i < pad_width; ++i)
                     printc(s, size, &off, '0');
+                pad_width = 0;
             }
             printstr(s, size, &off, num_buf);
             break;
