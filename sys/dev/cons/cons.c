@@ -44,7 +44,7 @@
     cons_draw_cursor((SCR), (SCR)->bg)
 
 #define SHOW_CURSOR(SCR) \
-    cons_draw_cursor((SCR), (SCR)->fg)
+    cons_draw_cursor((SCR), rgb_invert((SCR)->bg))
 
 /* Console background from kconf */
 #if defined(__CONSOLE_BG)
@@ -66,6 +66,23 @@ static struct cdevsw cons_cdevsw;
 static void cons_draw_cursor(struct cons_screen *scr, uint32_t color);
 static int cons_handle_special(struct cons_screen *scr, char c);
 static void cons_clear_scr(struct cons_screen *scr, uint32_t bg);
+
+static uint32_t
+rgb_invert(uint32_t rgb)
+{
+    uint8_t r, g, b;
+    uint32_t ret;
+
+    r = (rgb >> 16) & 0xFF;
+    g = (rgb >> 8) & 0xFF;
+    b = rgb & 0xFF;
+
+    ret = (255 - r) << 16;
+    ret |= (255 - g) << 8;
+    ret |= 255 - b;
+    return ret;
+}
+
 
 /*
  * Render a character onto the screen.
