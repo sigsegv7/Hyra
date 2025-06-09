@@ -23,4 +23,9 @@ SECTIONS
         *(.bss.*)
         __bss_end = .;
     }
+
+    /DISCARD/ : {
+        *(.eh_frame)
+        *(.note .note.*)
+    }
 }
