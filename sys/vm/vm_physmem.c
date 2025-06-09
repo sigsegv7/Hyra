@@ -141,22 +141,35 @@ uintptr_t
 vm_alloc_frame(size_t count)
 {
     size_t frames = 0;
+    ssize_t free_i = -1;
+    size_t start, end;
     uintptr_t ret = 0;
 
     spinlock_acquire(&lock);
     for (size_t i = 0; i < highest_frame_idx; ++i) {
-        if (!testbit(bitmap, i)) {
-            /* We have a free page */
-            if (++frames != count) {
-                continue;
-            }
+        if (testbit(bitmap, i)) {
+            /* Not free, try again... */
+            frames = 0;
+            free_i = -1;
+            continue;
+        }
 
-            for (size_t j = i; j < i + count; ++j) {
-                setbit(bitmap, j);
-            }
+        if (free_i < 0) {
+            free_i = i;
+        }
 
-            ret = i * DEFAULT_PAGESIZE;
+        /* We have a free page */
+        if (++frames == count) {
+            ret = free_i * DEFAULT_PAGESIZE;
             break;
+        }
+    }
+
+    if (ret > 0) {
+        start = free_i;
+        end = free_i + count;
+        for (size_t i = start; i < end; ++i) {
+            setbit(bitmap, i);
         }
     }
 
