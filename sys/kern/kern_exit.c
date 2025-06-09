@@ -146,6 +146,7 @@ exit1(struct proc *td, int flags)
         dynfree(td);
     } else {
         td->flags |= PROC_ZOMB;
+        td->flags &= ~PROC_WAITED;
     }
 
     /*
