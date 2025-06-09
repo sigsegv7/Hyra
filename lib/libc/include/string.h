@@ -31,6 +31,7 @@
 #define _STRING_H_ 1
 
 #include <stddef.h>
+#include <stdint.h>
 
 size_t strlen(const char *s);
 void *memset(void *dst, int c, size_t n);
