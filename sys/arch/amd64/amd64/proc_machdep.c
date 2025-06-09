@@ -175,6 +175,7 @@ md_spawn(struct proc *p, struct proc *parent, uintptr_t ip)
     struct pcb *pcbp;
     uint8_t rpl = 0;
     int error;
+    vm_prot_t prot = PROT_READ | PROT_WRITE;
 
     tfp = &p->tf;
 
@@ -216,8 +217,8 @@ md_spawn(struct proc *p, struct proc *parent, uintptr_t ip)
         stack_base += VM_HIGHER_HALF;
         p->flags |= PROC_KTD;
     } else {
-        vm_map(pcbp->addrsp, stack_base, stack_base,
-            PROT_READ | PROT_WRITE | PROT_USER, PROC_STACK_PAGES);
+        prot |= PROT_USER;
+        vm_map(pcbp->addrsp, stack_base, stack_base, prot, PROC_STACK_PAGES);
     }
 
     p->stack_base = stack_base;
