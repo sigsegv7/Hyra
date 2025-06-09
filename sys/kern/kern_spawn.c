@@ -73,6 +73,7 @@ spawn_thunk(void)
     cur = this_td();
     args = cur->data;
     path = args->path;
+    memset(pathbuf, 0, sizeof(pathbuf));
     memcpy(pathbuf, path, strlen(path));
 
     argv[0] = (char *)pathbuf;
