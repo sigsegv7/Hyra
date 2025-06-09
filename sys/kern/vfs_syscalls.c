@@ -39,11 +39,13 @@
 #include <sys/filedesc.h>
 #include <string.h>
 
+#include <sys/panic.h>
+
 static int
 vfs_dostat(const char *path, struct stat *sbuf)
 {
     char pathbuf[PATH_MAX];
-    struct vattr *attr;
+    struct vattr attr;
     struct stat st;
     struct vnode *vp;
     struct vop_getattr_args gattr;
@@ -67,18 +69,18 @@ vfs_dostat(const char *path, struct stat *sbuf)
 
     vp = nd.vp;
     gattr.vp = vp;
+    gattr.res = &attr;
     error = vfs_vop_getattr(vp, &gattr);
 
     if (error != 0) {
         return error;
     }
 
-    attr = gattr.res;
     memset(&st, VNOVAL, sizeof(st));
 
     /* Copy stat data to userspace statbuf */
-    st.st_mode = attr->mode;
-    st.st_size = attr->size;
+    st.st_mode = attr.mode;
+    st.st_size = attr.size;
     copyout(&st, sbuf, sizeof(*sbuf));
     return 0;
 }
