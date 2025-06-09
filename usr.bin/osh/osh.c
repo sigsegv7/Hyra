@@ -72,31 +72,31 @@ struct command {
     void (*func)(int argc, char *argv[]);
 };
 
-void
+static void
 cmd_help(int argc, char *argv[])
 {
     puts(HELP);
 }
 
-void
+static void
 cmd_exit(int argc, char *argv[])
 {
     running = 0;
 }
 
-void
+static void
 cmd_reboot(int argc, char *argv[])
 {
     cpu_reboot(REBOOT_RESET);
 }
 
-void
+static void
 cmd_shutdown(int argc, char *argv[])
 {
     cpu_reboot(REBOOT_POWEROFF | REBOOT_HALT);
 }
 
-void
+static void
 cmd_echo(int argc, char *argv[])
 {
     for (i = 1; i < argc; i++) {
@@ -106,7 +106,7 @@ cmd_echo(int argc, char *argv[])
     putchar('\n');
 }
 
-void
+static void
 cmd_bell(int argc, char *argv[])
 {
     const char *usage_str = "usage: bell [on/off]";
@@ -127,7 +127,7 @@ cmd_bell(int argc, char *argv[])
     }
 }
 
-int
+static int
 parse_args(char *input, char *argv[], int max_args)
 {
     int argc = 0;
