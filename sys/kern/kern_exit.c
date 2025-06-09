@@ -156,8 +156,10 @@ exit1(struct proc *td, int flags)
         if (td->data == NULL)
             sched_enter();
 
-        sched_enqueue_td(parent);
-        parent->flags &= ~PROC_SLEEP;
+        if (ISSET(parent->flags, PROC_SLEEP)) {
+            sched_enqueue_td(parent);
+            parent->flags &= ~PROC_SLEEP;
+        }
         sched_enter();
     }
 
