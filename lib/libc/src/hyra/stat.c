@@ -27,27 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_STAT_H_
-#define _SYS_STAT_H_
+#include <sys/stat.h>
+#include <sys/syscall.h>
 
-#include <sys/types.h>
-
-#define	S_IFBLK	 0060000
-
-struct stat {
-    dev_t st_dev;
-    ino_t st_ino;
-    mode_t st_mode;
-    nlink_t st_nlink;
-    uid_t st_uid;
-    gid_t st_guid;
-    dev_t st_rdev;
-    off_t st_size;
-    time_t st_atime;
-    time_t st_mtime;
-    time_t st_ctime;
-};
-
-int stat(const char *path, struct stat *buf);
-
-#endif  /* _SYS_STAT_H_ */
+int
+stat(const char *path, struct stat *buf)
+{
+    return syscall(SYS_stat, (uintptr_t)path, (uintptr_t)buf);
+}
