@@ -46,7 +46,7 @@ main(void)
     read(rtc_fd, &d, sizeof(d));
     close(rtc_fd);
 
-    snprintf(date_str, sizeof(date_str), "%d:%d:%d\n",
+    snprintf(date_str, sizeof(date_str), "%02d:%02d:%02d\n",
         d.hour, d.min, d.sec);
     fputs(date_str, stdout);
     return 0;
