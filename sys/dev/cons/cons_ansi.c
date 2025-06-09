@@ -88,6 +88,13 @@ ansi_feed(struct ansi_state *statep, char c)
         statep->csi = 2;
         statep->prev = c;
         return c;
+    case 2:
+        if (c == 'H') {
+            cons_reset_cursor(&g_root_scr);
+            ansi_reset(statep);
+            return ANSI_UPDATE_CURSOR;
+        }
+        break;
     }
 
     if (!statep->set_fg && !statep->set_bg) {

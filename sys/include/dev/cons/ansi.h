@@ -46,6 +46,7 @@
 
 /* ANSI_FEED update codes */
 #define ANSI_UPDATE_COLOR  -1
+#define ANSI_UPDATE_CURSOR -2
 
 /*
  * ANSI parser state machine.

@@ -422,6 +422,17 @@ cons_update_color(struct cons_screen *scr, uint32_t fg, uint32_t bg)
     scr->bg = bg;
 }
 
+void
+cons_reset_cursor(struct cons_screen *scr)
+{
+    HIDE_CURSOR(scr);
+    scr->ch_col = 0;
+    scr->ch_row = 0;
+    scr->curs_col = 0;
+    scr->curs_row = 0;
+    SHOW_CURSOR(scr);
+}
+
 /*
  * Put a character on the screen.
  *
