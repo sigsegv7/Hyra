@@ -178,14 +178,15 @@ done:
  * @vas: Virtual address space.
  * @va: Target virtual address.
  * @val: Value to write.
+ * @alloc: True to alloc new paging entries.
  */
 static int
-pmap_update_tbl(struct vas vas, vaddr_t va, uint64_t val)
+pmap_update_tbl(struct vas vas, vaddr_t va, uint64_t val, bool alloc)
 {
     uintptr_t *tbl;
     int status;
 
-    if ((status = pmap_get_tbl(vas, va, true, &tbl)) != 0) {
+    if ((status = pmap_get_tbl(vas, va, alloc, &tbl)) != 0) {
         return status;
     }
 
@@ -268,13 +269,13 @@ pmap_map(struct vas vas, vaddr_t va, paddr_t pa, vm_prot_t prot)
 {
     uint32_t flags = pmap_prot_to_pte(prot);
 
-    return pmap_update_tbl(vas, va, (pa | flags));
+    return pmap_update_tbl(vas, va, (pa | flags), true);
 }
 
 int
 pmap_unmap(struct vas vas, vaddr_t va)
 {
-    return pmap_update_tbl(vas, va, 0);
+    return pmap_update_tbl(vas, va, 0, false);
 }
 
 int
