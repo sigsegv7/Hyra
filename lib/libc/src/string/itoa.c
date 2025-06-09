@@ -29,6 +29,7 @@
 
 #include <sys/types.h>
 #include <string.h>
+#include <stdbool.h>
 
 static char *
 itoa_base10_convert(int64_t value, char *buf)
