@@ -160,6 +160,7 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
     mlgdr->nbytes = 0;
     RBT_INIT(lgdr_entries, &mlgdr->hd);
     newproc->mlgdr = mlgdr;
+    newproc->flags |= PROC_WAITED;
 
     newproc->pid = ++nthreads;
     signals_init(newproc);
@@ -167,7 +168,6 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
     pid = newproc->pid;
 
     if (ISSET(flags, SPAWN_WAIT)) {
-        newproc->flags |= PROC_WAITED;
         cur->flags |= PROC_SLEEP;
         sched_yield();
 
