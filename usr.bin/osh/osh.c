@@ -66,9 +66,8 @@ static int running;
 static int bell_fd;
 static bool bs_bell = true; /* Beep on backspace */
 
-struct command {
+struct builtin_cmd {
     const char *name;
-    const char *path;
     void (*func)(int argc, char *argv[]);
 };
 
@@ -208,29 +207,35 @@ getstr(void)
 }
 
 static void
-command_run(struct command *cmd, int argc, char *argv[])
+builtin_run(struct builtin_cmd *cmd, int argc, char *argv[])
 {
     if (cmd->func != NULL) {
         cmd->func(argc, argv);
         return;
     }
-
-    if (cmd->path != NULL) {
-        spawn(cmd->path, SPAWN_WAIT);
-    }
 }
 
-struct command cmds[] = {
-    {"help", NULL, cmd_help},
-    {"echo", NULL, cmd_echo},
-    {"exit", NULL, cmd_exit},
-    {"reboot", NULL, cmd_reboot},
-    {"shutdown", NULL, cmd_shutdown},
-    {"bell", NULL, cmd_bell},
-    {"time", "/usr/bin/time", NULL},
-    {"kmsg", "/usr/bin/kmsg", NULL},
-    {"fetch", "/usr/bin/fetch", NULL},
-    {"kfg", "/usr/bin/kfgwm", NULL},
+static int
+cmd_run(const char *input, int argc, char *argv[])
+{
+    char bin_path[256];
+    int error;
+
+    snprintf(bin_path, sizeof(bin_path), "/usr/bin/%s", input);
+    if ((error = spawn(bin_path, SPAWN_WAIT)) < 0) {
+        return error;
+    }
+
+    return 0;
+}
+
+struct builtin_cmd cmds[] = {
+    {"help",cmd_help},
+    {"echo",cmd_echo},
+    {"exit",cmd_exit},
+    {"reboot",cmd_reboot},
+    {"shutdown", cmd_shutdown},
+    {"bell", cmd_bell},
     {NULL, NULL}
 };
 
@@ -262,14 +267,16 @@ main(void)
 
         for (i = 0; cmds[i].name != NULL; i++) {
             if (strcmp(input, cmds[i].name) == 0) {
-                command_run(&cmds[i], argc, argv);
+                builtin_run(&cmds[i], argc, argv);
                 found = 1;
                 break;
             }
         }
 
         if (found == 0) {
-            puts("Unrecognized command");
+            if (cmd_run(input, argc, argv) < 0) {
+                puts("Unrecognized command");
+            }
         }
 
         found = 0;
