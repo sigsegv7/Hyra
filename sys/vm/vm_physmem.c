@@ -169,6 +169,8 @@ vm_free_frame(uintptr_t base, size_t count)
 {
     size_t stop_at = base + (count * DEFAULT_PAGESIZE);
 
+    base = ALIGN_UP(base, DEFAULT_PAGESIZE);
+
     spinlock_acquire(&lock);
     for (uintptr_t p = base; p < stop_at; p += DEFAULT_PAGESIZE) {
         clrbit(bitmap, p / DEFAULT_PAGESIZE);
