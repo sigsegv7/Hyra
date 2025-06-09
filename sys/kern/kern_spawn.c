@@ -153,6 +153,7 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
     atomic_inc_int(&cur->nleaves);
     newproc->parent = cur;
     newproc->data = p;
+    newproc->exit_status = -1;
 
     /* Initialize the mmap ledger */
     mlgdr->nbytes = 0;
@@ -175,6 +176,10 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
         if (!ISSET(newproc->flags, PROC_ZOMB)) {
             pr_error("spawn: fatal: %d not zombie\n", newproc->pid);
             panic("possibly memory corruption\n");
+        }
+
+        if (newproc->exit_status < 0) {
+            pid = newproc->exit_status;
         }
 
         proc_reap(newproc);
