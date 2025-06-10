@@ -40,6 +40,7 @@ scret_t sys_close(struct syscall_args *args);
 scret_t sys_read(struct syscall_args *scargs);
 scret_t sys_write(struct syscall_args *sargs);
 scret_t sys_stat(struct syscall_args *scargs);
+scret_t sys_access(struct syscall_args *scargs);
 
 #endif  /* _KERNEL */
 #endif  /* !_SYS_VFS_H_ */

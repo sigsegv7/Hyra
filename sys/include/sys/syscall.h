@@ -50,6 +50,7 @@
 #define SYS_reboot  9
 #define SYS_mmap    10
 #define SYS_munmap  11
+#define SYS_access  12
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */

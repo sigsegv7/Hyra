@@ -85,6 +85,28 @@ vfs_dostat(const char *path, struct stat *sbuf)
 }
 
 static int
+vfs_doaccess(const char *path)
+{
+    struct nameidata nd;
+    char pathbuf[PATH_MAX];
+    int error;
+
+    if ((copyinstr(path, pathbuf, sizeof(pathbuf))) < 0) {
+        return -EFAULT;
+    }
+
+    nd.path = pathbuf;
+    nd.flags = 0;
+
+    if ((error = namei(&nd)) != 0) {
+        return error;
+    }
+
+    vfs_release_vnode(nd.vp);
+    return 0;
+}
+
+static int
 vfs_doopen(const char *pathname, int flags)
 {
     char pathbuf[PATH_MAX];
@@ -149,4 +171,15 @@ scret_t
 sys_stat(struct syscall_args *scargs)
 {
     return vfs_dostat((const char *)scargs->arg0, (void *)scargs->arg1);
+}
+
+/*
+ * Check if a file can be accessed.
+ *
+ * @arg0: path
+ */
+scret_t
+sys_access(struct syscall_args *scargs)
+{
+    return vfs_doaccess((const char *)scargs->arg0);
 }
