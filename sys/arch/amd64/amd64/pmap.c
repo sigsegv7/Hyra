@@ -282,6 +282,8 @@ int
 pmap_set_cache(struct vas vas, vaddr_t va, int type)
 {
     uintptr_t *tbl;
+    uint32_t flags;
+    paddr_t pa;
     int status;
     size_t idx;
 
@@ -289,22 +291,24 @@ pmap_set_cache(struct vas vas, vaddr_t va, int type)
         return status;
 
     idx = pmap_get_level_index(1, va);
+    pa = tbl[idx] & PTE_ADDR_MASK;
+    flags = tbl[idx] & ~PTE_ADDR_MASK;
 
     /* Set the caching policy */
     switch (type) {
     case VM_CACHE_UC:
-        tbl[idx] |= PTE_PCD;
-        tbl[idx] &= ~PTE_PWT;
+        flags |= PTE_PCD;
+        flags &= ~PTE_PWT;
         break;
     case VM_CACHE_WT:
-        tbl[idx] &= ~PTE_PCD;
-        tbl[idx] |= PTE_PWT;
+        flags &= ~PTE_PCD;
+        flags |= PTE_PWT;
         break;
     default:
         return -EINVAL;
     }
 
-    return 0;
+    return pmap_update_tbl(vas, va, (pa | flags), false);
 }
 
 bool
