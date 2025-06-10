@@ -36,13 +36,7 @@
 
 struct bus_resource;
 
-/*
- * Hyra assumes that the bootloader uses PDE[256] for some
- * higher half mappings. To avoid conflicts with those mappings,
- * this offset is used to start device memory at PDE[257]. This
- * will give us more than enough space.
- */
-#define MMIO_OFFSET (VM_HIGHER_HALF + 0x8000000000)
+#define MMIO_OFFSET VM_HIGHER_HALF
 
 /* Resource signature size max */
 #define RSIG_MAX 16
