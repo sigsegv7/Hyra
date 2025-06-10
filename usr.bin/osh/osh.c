@@ -222,6 +222,12 @@ cmd_run(const char *input, int argc, char *argv[])
     int error;
 
     snprintf(bin_path, sizeof(bin_path), "/usr/bin/%s", input);
+
+    /* See if we can access it */
+    if (access(bin_path, F_OK) != 0) {
+        return -1;
+    }
+
     if ((error = spawn(bin_path, SPAWN_WAIT)) < 0) {
         return error;
     }
