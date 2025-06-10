@@ -58,7 +58,7 @@ vfs_dostat(const char *path, struct stat *sbuf)
         return -EFAULT;
     }
 
-    nd.path = path;
+    nd.path = pathbuf;
     nd.flags = 0;
 
     if ((error = namei(&nd)) != 0) {
