@@ -39,8 +39,6 @@
 #include <sys/filedesc.h>
 #include <string.h>
 
-#include <sys/panic.h>
-
 static int
 vfs_dostat(const char *path, struct stat *sbuf)
 {
