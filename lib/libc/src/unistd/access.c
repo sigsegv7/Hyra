@@ -27,22 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UNISTD_H
-#define _UNISTD_H
+#include <sys/syscall.h>
+#include <unistd.h>
 
-#include <sys/types.h>
-#include <sys/cdefs.h>
-#include <stddef.h>
-
-#define F_OK 0
-
-__BEGIN_DECLS
-
-ssize_t read(int fd, void *buf, size_t count);
-ssize_t write(int fd, const void *buf, size_t count);
-int close(int fd);
-int access(const char *path, int mode);
-
-__END_DECLS
-
-#endif  /* !_UNISTD_H */
+int
+access(const char *path, int mode)
+{
+    return syscall(SYS_access, (uintptr_t)path, mode);
+}
