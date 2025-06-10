@@ -38,7 +38,7 @@
 #define ANSI_BLACK      0x000000
 #define ANSI_RED        0xAA0000
 #define ANSI_GREEN      0x00AA00
-#define ANSI_BLUE       0x0000AA
+#define ANSI_BLUE       0x00007F
 #define ANSI_YELLOW     0xAA5500
 #define ANSI_MAGENTA    0xAA00AA
 #define ANSI_CYAN       0x00AAAA
