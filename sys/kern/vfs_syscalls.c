@@ -80,6 +80,7 @@ vfs_dostat(const char *path, struct stat *sbuf)
     st.st_mode = attr.mode;
     st.st_size = attr.size;
     copyout(&st, sbuf, sizeof(*sbuf));
+    vfs_release_vnode(vp);
     return 0;
 }
 
