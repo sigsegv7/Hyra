@@ -44,6 +44,12 @@
 #include <vm/vm.h>
 #include <string.h>
 
+#if defined(_INSTALL_MEDIA)
+#define _START_PATH "/usr/sbin/install"
+#else
+#define _START_PATH "/usr/bin/osh"
+#endif  /* _INSTALL_MEDIA  */
+
 struct proc g_proc0;
 
 static void
@@ -53,24 +59,12 @@ copyright(void)
            "Copyright (c) 2023-2025 Ian Marco Moffett and the OSMORA team\n");
 }
 
-#if defined(_INSTALL_MEDIA)
-static void
-begin_install(void)
-{
-    struct cpu_info *ci;
-
-    ci = this_cpu();
-    ci->curtd = &g_proc0;
-    hyra_install();
-}
-#endif
-
 static void
 start_init(void)
 {
     struct proc *td = this_td();
     struct execve_args execve_args;
-    char *argv[] = { "/usr/bin/osh", NULL };
+    char *argv[] = { _START_PATH, NULL };
     char *envp[] = { NULL };
 
     execve_args.pathname = argv[0];
@@ -124,12 +118,7 @@ main(void)
     /* Load all early drivers */
     DRIVERS_INIT();
 
-#if defined(_INSTALL_MEDIA)
-    kprintf("Hyra install media detected\n");
-    kprintf("Reform Industry!\n");
-    begin_install();
-#endif
-
+    /* Only log to kmsg from here */
     syslog_silence(true);
 
     /*

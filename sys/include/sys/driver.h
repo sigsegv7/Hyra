@@ -84,7 +84,6 @@ extern char __driversd_init_end[];
  * context has yet to be initialized. The driver may
  * use this to defer requests for I/O.
  */
-#if !defined(_INSTALL_MEDIA)
 #define DRIVER_DEFER(INIT)                           \
     static struct driver_var __driver_var = {        \
         .deferred = 1                                \
@@ -97,10 +96,6 @@ extern char __driversd_init_end[];
     }
 
 #define DRIVER_DEFERRED() __driver_var.deferred
-#else
-#define DRIVER_DEFER(INIT) DRIVER_EXPORT(INIT)
-#define DRIVER_DEFERRED() 0
-#endif  /* _INSTALL_MEDIA */
 
 #define DRIVERS_INIT() \
     for (struct driver *__d = (struct driver *)__drivers_init_start;    \
