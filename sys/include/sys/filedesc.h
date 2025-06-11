@@ -31,6 +31,7 @@
 #define _SYS_FILEDESC_H_
 
 #include <sys/types.h>
+#if defined(_KERNEL)
 #include <sys/vnode.h>
 #include <sys/spinlock.h>
 
@@ -54,4 +55,5 @@ int fd_open(const char *pathname, int flags);
 int fd_dup(int fd);
 struct filedesc *fd_get(unsigned int fdno);
 
+#endif  /* _KERNEL */
 #endif  /* !_SYS_FILEDESC_H_ */
