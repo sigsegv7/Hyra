@@ -179,6 +179,7 @@ installer_wipe(int hdd_fd, uint32_t count)
         progress_update(&bar, i, 256);
     }
 
+    lseek(hdd_fd, 0, SEEK_SET);
     puts("OK");
 }
 
