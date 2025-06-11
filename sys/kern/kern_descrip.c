@@ -331,3 +331,16 @@ fd_seek(int fildes, off_t offset, int whence)
 
     return 0;
 }
+
+/*
+ * Update file offset
+ *
+ * arg0: `filedes'
+ * arg1: `offset'
+ * arg2: `whence'
+ */
+scret_t
+sys_lseek(struct syscall_args *scargs)
+{
+    return fd_seek(scargs->arg0, scargs->arg1, scargs->arg2);
+}

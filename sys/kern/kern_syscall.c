@@ -49,6 +49,7 @@ scret_t(*g_sctab[])(struct syscall_args *) = {
     sys_mmap,   /* SYS_mmap */
     sys_munmap, /* SYS_munap */
     sys_access, /* SYS_access */
+    sys_lseek,  /* SYS_lseek */
 };
 
 const size_t MAX_SYSCALLS = NELEM(g_sctab);

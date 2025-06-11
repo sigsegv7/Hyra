@@ -62,5 +62,7 @@ off_t fd_seek(int fildes, off_t offset, int whence);
 int fd_dup(int fd);
 struct filedesc *fd_get(unsigned int fdno);
 
+scret_t sys_lseek(struct syscall_args *scargs);
+
 #endif  /* _KERNEL */
 #endif  /* !_SYS_FILEDESC_H_ */

@@ -51,6 +51,7 @@
 #define SYS_mmap    10
 #define SYS_munmap  11
 #define SYS_access  12
+#define SYS_lseek   13
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */
