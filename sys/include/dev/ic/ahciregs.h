@@ -88,6 +88,7 @@ struct hba_memspace {
  */
 #define AHCI_PXSSTS_DET(SSTS) (SSTS & 0xF)
 #define AHCI_PXSSTS_IPM(SSTS) ((SSTS >> 8) & 0xF)
+#define AHCI_PXSSTS_SPD(SSTS) ((SSTS >> 4) & 0xF)
 
 /*
  * Port SATA control bits
@@ -100,6 +101,7 @@ struct hba_memspace {
  * See section 3.3.7 of the AHCI spec.
  */
 #define AHCI_PXCMD_ST   BIT(0)    /* Start */
+#define AHCI_PXCMD_SUD  BIT(1)    /* Spin-up device */
 #define AHCI_PXCMD_FRE  BIT(4)    /* FIS Receive Enable */
 #define AHCI_PXCMD_FR   BIT(14)   /* FIS Receive Running  */
 #define AHCI_PXCMD_CR   BIT(15)   /* Command List Running */
@@ -137,6 +139,9 @@ struct hba_memspace {
 #define AHCI_DET_PRESENT    1   /* Device present (no PHY comm) */
 #define AHCI_DET_COMM       3   /* Device present and phy comm established */
 #define AHCI_IPM_ACTIVE     1
+#define AHCI_SPD_GEN1       1   /* 1.5 Gb/s */
+#define AHCI_SPD_GEN2       2   /* 3 Gb/s */
+#define AHCI_SPD_GEN3       3   /* 6 Gb/s */
 
 /*
  * PxSERR bits

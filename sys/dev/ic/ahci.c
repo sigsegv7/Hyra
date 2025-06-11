@@ -328,22 +328,24 @@ hba_port_chkerr(struct hba_port *port)
 static int
 hba_port_reset(struct ahci_hba *hba, struct hba_port *port)
 {
-    uint32_t sctl, ssts;
-    uint8_t det, ipm;
-    int error;
+    uint32_t sctl, ssts, cmd;
+    uint8_t det, ipm, spd;
+    uint32_t elapsed = 0;
+
+    sctl = mmio_read32(&port->sctl);
 
     /*
-     * The port must not be in an idle state when a
-     * COMRESET is sent over the interface as some
-     * chipsets do not know how to handle this...
-     *
-     * After bringing up the port, send a COMRESET
-     * over the interface for roughly ~2ms.
+     * Transmit a COMRESET to the device. If the HBA
+     * supports staggered spin-up, we'll need to set
+     * the PxCMD.SUD bit as well.
      */
-    hba_port_start(port);
-    sctl = mmio_read32(&port->sctl);
     sctl = (sctl & ~0x0F) | AHCI_DET_COMRESET;
     mmio_write32(&port->sctl, sctl);
+    if (hba->sss) {
+        cmd = mmio_read32(&port->cmd);
+        cmd |= AHCI_PXCMD_SUD;
+        mmio_write32(&port->cmd, cmd);
+    }
 
     /*
      * Wait for the link to become reestablished
@@ -353,33 +355,50 @@ hba_port_reset(struct ahci_hba *hba, struct hba_port *port)
     sctl &= ~AHCI_DET_COMRESET;
     mmio_write32(&port->sctl,  sctl);
 
-    /*
-     * Now we'll need to grab some power management
-     * and detection flags as the port must have
-     * a device present along with an active
-     * interface.
-     */
-    ssts = mmio_read32(&port->ssts);
-    det = AHCI_PXSCTL_DET(ssts);
+    for (;;) {
+        if (elapsed >= AHCI_TIMEOUT) {
+            break;
+        }
+        ssts = mmio_read32(&port->ssts);
+        det = AHCI_PXSSTS_DET(ssts);
+        if (det == AHCI_DET_COMM) {
+            break;
+        }
+
+        tmr.msleep(10);
+        elapsed += 10;
+    }
+
     ipm = AHCI_PXSSTS_IPM(ssts);
+    spd = AHCI_PXSSTS_SPD(ssts);
 
-    if (det == AHCI_DET_NULL) {
-        return -ENODEV;
+    if (det == AHCI_DET_PRESENT) {
+        pr_error("SATA link timeout\n");
+        return -EAGAIN;
     }
-
     if (det != AHCI_DET_COMM) {
-        pr_trace("failed to establish link\n");
         return -EAGAIN;
     }
 
+    /*
+     * Ensure the interface is in an active
+     * state.
+     */
     if (ipm != AHCI_IPM_ACTIVE) {
-        pr_trace("device interface not active\n");
+        pr_error("device interface not active\n");
         return -EAGAIN;
     }
 
-    if ((error = hba_port_stop(port)) < 0) {
-        pr_trace("failed to stop port\n");
-        return error;
+    switch (spd) {
+    case AHCI_SPD_GEN1:
+        pr_trace("SATA link rate @ ~1.5 Gb/s\n");
+        break;
+    case AHCI_SPD_GEN2:
+        pr_trace("SATA link rate @ ~3 Gb/s\n");
+        break;
+    case AHCI_SPD_GEN3:
+        pr_trace("SATA link rate @ ~6 Gb/s\n");
+        break;
     }
 
     return 0;
