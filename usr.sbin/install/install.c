@@ -28,6 +28,7 @@
  */
 
 #include <sys/mman.h>
+#include <sys/disklabel.h>
 #include <sys/fbdev.h>
 #include <sys/reboot.h>
 #include <sys/spawn.h>
@@ -183,20 +184,61 @@ installer_wipe(int hdd_fd, uint32_t count)
     puts("OK");
 }
 
+/*
+ * Write data to the drive.
+ *
+ * @hdd: HDD file descriptor
+ * @p: Data pointer
+ * @len: Length of data.
+ */
+static void
+installer_write(int hdd_fd, int file_fd, void *p, size_t len)
+{
+    size_t nblocks;
+    struct progress_bar bar = {0, 0};
+    char buf[BLOCK_SIZE];
+    char *bufp;
+
+    len = ALIGN_UP(len, BLOCK_SIZE);
+    nblocks = len / BLOCK_SIZE;
+    bufp = (p == NULL || len < BLOCK_SIZE) ? buf : p;
+
+    if (len < BLOCK_SIZE) {
+        memcpy(buf, p, len);
+    }
+
+    for (size_t i = 0; i < nblocks; ++i) {
+        if (file_fd > 0) {
+            read(file_fd, bufp, BLOCK_SIZE);
+        }
+
+        write(hdd_fd, bufp, BLOCK_SIZE);
+        progress_update(&bar, i, 128);
+    }
+
+    puts("OK");
+}
+
 static void
 installer_run(void)
 {
     struct stat hdd_sb, iso_sb;
+    struct disklabel label;
     const char *hdd_path = "/dev/sd1";
     const char *iso_path = "/boot/Hyra.iso";
     char buf[256];
-    int hdd_fd, error;
+    int hdd_fd, iso_fd, error;
+    int n;
     char c;
 
     pre_installer();
 
     if ((hdd_fd = open(hdd_path, O_RDWR)) < 0) {
         puts("No available devices to target!");
+        reboot_prompt();
+    }
+    if (stat(hdd_path, &hdd_sb) < 0) {
+        puts("hdd stat() failure\n");
         reboot_prompt();
     }
 
@@ -214,7 +256,26 @@ installer_run(void)
         }
     }
 
-    puts("TODO");
+    if ((iso_fd = open(iso_path, O_RDONLY)) < 0) {
+        puts("failed to read install data\n");
+        reboot_prompt();
+    }
+    if (stat(iso_path, &iso_sb) < 0) {
+        puts("hdd stat() failure\n");
+        reboot_prompt();
+    }
+
+    /* Prepare the parition table */
+    label.magic = DISK_MAG;
+    label.sect_size = BLOCK_SIZE;
+
+    installer_wipe(hdd_fd, iso_sb.st_size + sizeof(label));
+    puts("writing install data");
+    installer_write(hdd_fd, iso_fd, NULL, iso_sb.st_size);
+    puts("writing parition table");
+    installer_write(hdd_fd, -1, &label, sizeof(label));
+
+    puts("\nInstallation complete!");
     reboot_prompt();
 }
 
