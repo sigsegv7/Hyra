@@ -33,7 +33,13 @@
 #include <sys/types.h>
 #if defined(_KERNEL)
 #include <sys/vnode.h>
+#include <sys/syscall.h>
 #include <sys/spinlock.h>
+#include <sys/syscall.h>
+
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
 
 struct filedesc {
     int fdno;
@@ -51,6 +57,7 @@ int fd_write(unsigned int fd, void *buf, size_t count);
 
 int fd_alloc(struct filedesc **fd_out);
 int fd_open(const char *pathname, int flags);
+off_t fd_seek(int fildes, off_t offset, int whence);
 
 int fd_dup(int fd);
 struct filedesc *fd_get(unsigned int fdno);

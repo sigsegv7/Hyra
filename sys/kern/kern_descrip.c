@@ -296,3 +296,38 @@ fd_dup(int fd)
     new_desc->vp = tmp->vp;
     return new_desc->fdno;
 }
+
+off_t
+fd_seek(int fildes, off_t offset, int whence)
+{
+    struct filedesc *tmp;
+    struct vattr attr;
+    struct vop_getattr_args getattr_args;
+
+    tmp = fd_get(fildes);
+    if (tmp == NULL) {
+        return -EBADF;
+    }
+
+    getattr_args.vp = tmp->vp;
+    getattr_args.res = &attr;
+    if ((vfs_vop_getattr(tmp->vp, &getattr_args)) < 0) {
+        return -EPIPE;
+    }
+
+    switch (whence) {
+    case SEEK_SET:
+        tmp->offset = offset;
+        break;
+    case SEEK_CUR:
+        tmp->offset += offset;
+        break;
+    case SEEK_END:
+        tmp->offset = attr.size + offset;
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
+}
