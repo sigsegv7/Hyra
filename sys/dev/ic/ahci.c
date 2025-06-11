@@ -760,27 +760,19 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
     struct hba_device *dp;
     struct ctlfs_dev dev;
     size_t clen, pagesz;
-    uint32_t lo, hi, ssts;
-    uint8_t det;
+    uint32_t lo, hi, sig;
     paddr_t fra, cmdlist, tmp;
     int error;
 
     pagesz = DEFAULT_PAGESIZE;
     port = &abar->ports[portno];
 
-    /* Is anything on the port? */
-    ssts = mmio_read32(&port->ssts);
-    det = AHCI_PXSCTL_DET(ssts);
-    switch (det) {
-    case AHCI_DET_NULL:
-        /* No device attached */
-        return 0;
-    case AHCI_DET_PRESENT:
-        if ((error = hba_port_reset(hba, port)) < 0) {
-            pr_trace("failed to reset port %d\n", portno);
-            return error;
-        }
-        break;
+    if ((error = hba_port_reset(hba, port)) < 0) {
+        return error;
+    }
+    sig = mmio_read32(&port->sig);
+    if (sig == ATAPI_SIG) {
+        return -ENOTSUP;
     }
 
     pr_trace("found device @ port %d\n", portno);

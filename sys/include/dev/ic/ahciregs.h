@@ -163,6 +163,8 @@ struct hba_memspace {
 #define AHCI_DIAG_T BIT(24) /* Transport state transition error */
 #define AHCI_DIAG_F BIT(25) /* Unknown FIS type */
 
+#define ATAPI_SIG 0xEB140101
+
 /*
  * Device detection initialization values
  * See section 3.3.11 of the AHCI spec.
