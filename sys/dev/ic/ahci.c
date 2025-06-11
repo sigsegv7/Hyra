@@ -709,7 +709,7 @@ sata_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
     }
 
     dynfree(buf);
-    return status;
+    return sio->len;
 }
 
 /*
