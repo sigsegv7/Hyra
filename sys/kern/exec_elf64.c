@@ -192,6 +192,7 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
     if ((status = elf64_verify(hdr)) != 0)
         goto done;
 
+    memset(loadmap, 0, sizeof(loadmap));
     pcbp = &td->pcb;
     start = -1;
     end = 0;
