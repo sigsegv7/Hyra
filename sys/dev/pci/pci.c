@@ -32,20 +32,31 @@
 #include <sys/syslog.h>
 #include <sys/errno.h>
 #include <sys/spinlock.h>
+#include <sys/mmio.h>
 #include <dev/pci/pci.h>
 #include <dev/pci/pciregs.h>
+#include <dev/acpi/acpi.h>
+#include <dev/acpi/tables.h>
 #include <machine/pci/pci.h>
 #include <vm/dynalloc.h>
+#include <vm/vm.h>
 #include <lib/assert.h>
 
 #define pr_trace(fmt, ...) kprintf("pci: " fmt, ##__VA_ARGS__)
 
 static TAILQ_HEAD(, pci_device) device_list;
 static struct spinlock devlist_lock = {0};
+static struct acpi_mcfg *mcfg;
 
 struct cam_hook {
+    /* PCI CAM */
     pcireg_t(*cam_readl)(struct pci_device *dev, uint32_t off);
     void(*cam_writel)(struct pci_device *dev, uint32_t off, pcireg_t val);
+
+    /* PCIe ECAM */
+    pcireg_t(*ecam_readl)(struct pci_device *dev, uint32_t off);
+    void(*ecam_writel)(struct pci_device *dev, uint32_t off, pcireg_t val);
+    void *ecam_base[1];
 } cam_hook = { NULL };
 
 static bool
@@ -129,6 +140,9 @@ pci_set_device_info(struct pci_device *dev)
     dev->prog_if = PCIREG_PROGIF(classrev);
     dev->hdr_type = (uint8_t)pci_readl(dev, PCIREG_HDRTYPE);
 
+    /* This is a PCIe device if it has CAP ID of 0x10 */
+    dev->pci_express = pci_get_cap(dev, 0x10) != 0;
+
     /* Set type-specific data */
     switch (dev->hdr_type & ~BIT(7)) {
     case PCI_HDRTYPE_NORMAL:
@@ -156,6 +170,53 @@ pci_set_device_info(struct pci_device *dev)
 
 static void
 pci_scan_bus(uint8_t bus);
+
+static inline vaddr_t
+pcie_ecam_addr(struct pci_device *dev)
+{
+    vaddr_t base = (vaddr_t)cam_hook.ecam_base[0];
+
+    base += dev->bus << 20  |
+            dev->slot << 15 |
+            dev->func << 12;
+    return base;
+}
+
+static pcireg_t
+pcie_ecam_readl(struct pci_device *dev, uint32_t offset)
+{
+    vaddr_t address;
+
+    address = pcie_ecam_addr(dev);
+    address += (offset & ~3);
+    return mmio_read32((void *)address);
+}
+
+static void
+pcie_ecam_writel(struct pci_device *dev, uint32_t offset, pcireg_t val)
+{
+    vaddr_t address;
+
+    address = pcie_ecam_addr(dev);
+    address += (offset & ~3);
+    mmio_write32((void *)address, val);
+}
+
+static int
+pcie_init(struct acpi_mcfg_base *base)
+{
+    void *iobase;
+
+    pr_trace("[group %02d] @ bus [%02d - %02d]\n", base->seg_grpno,
+        base->bus_start, base->bus_end);
+    pr_trace("ecam @ %p\n", base->base_pa);
+
+    iobase = PHYS_TO_VIRT(base->base_pa);
+    cam_hook.ecam_base[0] = iobase;
+    cam_hook.ecam_writel = pcie_ecam_writel;
+    cam_hook.ecam_readl = pcie_ecam_readl;
+    return 0;
+}
 
 /*
  * Attempt to register a device.
@@ -283,8 +344,10 @@ pci_add_device(struct pci_device *dev)
 pcireg_t
 pci_readl(struct pci_device *dev, uint32_t offset)
 {
-    if (cam_hook.cam_readl == NULL) {
-        return (pcireg_t)-1;
+    bool have_ecam = cam_hook.ecam_readl != NULL;
+
+    if (dev->pci_express && have_ecam) {
+        return cam_hook.ecam_readl(dev, offset);
     }
 
     return cam_hook.cam_readl(dev, offset);
@@ -293,7 +356,10 @@ pci_readl(struct pci_device *dev, uint32_t offset)
 void
 pci_writel(struct pci_device *dev, uint32_t offset, pcireg_t val)
 {
-    if (cam_hook.cam_writel == NULL) {
+    bool have_ecam = cam_hook.ecam_writel != NULL;
+
+    if (dev->pci_express && have_ecam) {
+        cam_hook.ecam_writel(dev, offset, val);
         return;
     }
 
@@ -305,6 +371,11 @@ pci_init(void)
 {
     size_t ndev;
     TAILQ_INIT(&device_list);
+
+    mcfg = acpi_query("MCFG");
+    if (mcfg != NULL) {
+        pcie_init(&mcfg->base[0]);
+    }
 
     cam_hook.cam_readl = md_pci_readl;
     cam_hook.cam_writel = md_pci_writel;

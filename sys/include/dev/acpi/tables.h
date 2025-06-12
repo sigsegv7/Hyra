@@ -132,4 +132,34 @@ struct __packed acpi_hpet {
     uint8_t page_protection;
 };
 
+/*
+ * PCIe / ACPI MCFG base address description
+ * table.
+ *
+ * @base_pa: Enhanced configuration base [physical]
+ * @seg_grpno: PCI segment group number
+ * @bus_start: Host bridge bus start
+ * @bus_end: Host bridge bus end
+ */
+struct __packed acpi_mcfg_base {
+    uint64_t base_pa;
+    uint16_t seg_grpno;
+    uint8_t bus_start;
+    uint8_t bus_end;
+    uint32_t reserved;
+};
+
+/*
+ * PCIe / ACPI MCFG structure
+ *
+ * @hdr: ACPI header
+ * @reserved: Do not use
+ * @base: ECAM MMIO address list
+ */
+struct __packed acpi_mcfg {
+    struct acpi_header hdr;
+    uint32_t reserved[2];
+    struct acpi_mcfg_base base[1];
+};
+
 #endif  /* _ACPI_TABLES_H_ */

@@ -62,6 +62,7 @@ struct pci_device {
     uint8_t pci_subclass;
     uint8_t prog_if;
     uint8_t hdr_type;
+    uint8_t pci_express : 1;
 
     uint8_t pri_bus;
     uint8_t sec_bus;
