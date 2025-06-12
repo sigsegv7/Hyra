@@ -34,6 +34,7 @@
 #include <sys/spinlock.h>
 #include <dev/pci/pci.h>
 #include <dev/pci/pciregs.h>
+#include <machine/pci/pci.h>
 #include <vm/dynalloc.h>
 #include <lib/assert.h>
 
@@ -41,6 +42,11 @@
 
 static TAILQ_HEAD(, pci_device) device_list;
 static struct spinlock devlist_lock = {0};
+
+struct cam_hook {
+    pcireg_t(*cam_readl)(struct pci_device *dev, uint32_t off);
+    void(*cam_writel)(struct pci_device *dev, uint32_t off, pcireg_t val);
+} cam_hook = { NULL };
 
 static bool
 pci_dev_exists(uint8_t bus, uint8_t slot, uint8_t func)
@@ -273,11 +279,35 @@ pci_add_device(struct pci_device *dev)
     spinlock_release(&devlist_lock);
 }
 
+
+pcireg_t
+pci_readl(struct pci_device *dev, uint32_t offset)
+{
+    if (cam_hook.cam_readl == NULL) {
+        return (pcireg_t)-1;
+    }
+
+    return cam_hook.cam_readl(dev, offset);
+}
+
+void
+pci_writel(struct pci_device *dev, uint32_t offset, pcireg_t val)
+{
+    if (cam_hook.cam_writel == NULL) {
+        return;
+    }
+
+    cam_hook.cam_writel(dev, offset, val);
+}
+
 int
 pci_init(void)
 {
     size_t ndev;
     TAILQ_INIT(&device_list);
+
+    cam_hook.cam_readl = md_pci_readl;
+    cam_hook.cam_writel = md_pci_writel;
 
     /* Recursively scan bus 0 */
     pci_scan_bus(0);

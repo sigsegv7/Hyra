@@ -33,6 +33,7 @@
 #include <sys/mmio.h>
 #include <dev/pci/pci.h>
 #include <dev/pci/pciregs.h>
+#include <machine/pci/pci.h>
 #include <machine/pio.h>
 #include <machine/bus.h>
 #include <machine/cpu.h>
@@ -73,8 +74,8 @@ pci_get_barreg(struct pci_device *dev, uint8_t bar)
     }
 }
 
-pcireg_t
-pci_readl(struct pci_device *dev, uint32_t offset)
+__weak pcireg_t
+md_pci_readl(struct pci_device *dev, uint32_t offset)
 {
     uint32_t address;
 
@@ -83,8 +84,8 @@ pci_readl(struct pci_device *dev, uint32_t offset)
     return inl(0xCFC) >> ((offset & 3) * 8);
 }
 
-void
-pci_writel(struct pci_device *dev, uint32_t offset, pcireg_t val)
+__weak void
+md_pci_writel(struct pci_device *dev, uint32_t offset, pcireg_t val)
 {
     uint32_t address;
 
