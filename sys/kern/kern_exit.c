@@ -157,8 +157,6 @@ exit1(struct proc *td, int flags)
         ci->curtd = NULL;
         if (parent->pid == 0)
             sched_enter();
-        if (td->data == NULL)
-            sched_enter();
 
         parent->flags &= ~PROC_SLEEP;
         sched_enter();
@@ -175,7 +173,6 @@ sys_exit(struct syscall_args *scargs)
 {
     struct proc *td = this_td();
 
-    td->data = scargs->tf;
     td->exit_status = scargs->arg0;
     exit1(td, 0);
     __builtin_unreachable();
