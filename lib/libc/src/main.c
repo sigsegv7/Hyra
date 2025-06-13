@@ -38,10 +38,15 @@ int
 __libc_entry(uint64_t *ctx)
 {
     int status;
+    uint64_t argc;
+    char **argv;
+
+    argc = *(ctx++);
+    argv = (char **)((ctx++));
 
     if ((status = __libc_stdio_init()) != 0) {
         return status;
     }
 
-    return main(0, NULL);
+    return main(argc, argv);
 }
