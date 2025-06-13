@@ -10,3 +10,4 @@ all:
 	make -C fetch/ $(ARGS)
 	make -C kfgwm/ $(ARGS)
 	make -C time/ $(ARGS)
+	make -C mex/ $(ARGS)
