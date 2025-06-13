@@ -40,7 +40,7 @@
 #include <vm/map.h>
 #include <string.h>
 
-void
+uintptr_t
 md_td_stackinit(struct proc *td, void *stack_top, struct exec_prog *prog)
 {
     uintptr_t *sp = stack_top;
@@ -97,6 +97,7 @@ md_td_stackinit(struct proc *td, void *stack_top, struct exec_prog *prog)
     STACK_PUSH(sp, argc);
     tfp = &td->tf;
     tfp->rsp = (uintptr_t)sp - VM_HIGHER_HALF;
+    return tfp->rsp;
 }
 
 void

@@ -95,7 +95,7 @@ int md_spawn(struct proc *p, struct proc *parent, uintptr_t ip);
 scret_t sys_spawn(struct syscall_args *scargs);
 pid_t spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **newprocp);
 
-void md_td_stackinit(struct proc *td, void *stack_top, struct exec_prog *prog);
+uintptr_t md_td_stackinit(struct proc *td, void *stack_top, struct exec_prog *prog);
 __dead void md_td_kick(struct proc *td);
 
 int fork1(struct proc *cur, int flags, void(*ip)(void), struct proc **newprocp);

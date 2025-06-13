@@ -101,7 +101,7 @@ execve(struct proc *td, const struct execve_args *args)
     stack_top = td->stack_base + (PROC_STACK_SIZE - 1);
 
     /* Setup registers, signals and stack */
-    md_td_stackinit(td, (void *)(stack_top + VM_HIGHER_HALF), &prog);
+    stack_top = md_td_stackinit(td, (void *)(stack_top + VM_HIGHER_HALF), &prog);
     setregs(td, &prog, stack_top);
     signals_init(td);
 
