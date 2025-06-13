@@ -223,6 +223,8 @@ initramfs_read(struct vnode *vp, struct sio_txn *sio)
         return -EIO;
     if (sio->buf == NULL)
         return -EIO;
+    if (sio->len > n->size)
+        sio->len = n->size;
 
     src = n->data;
     dest = sio->buf;
