@@ -123,6 +123,12 @@ vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
             num = __va_arg(ap, uint64_t);
             itoa(num, num_buf, 16);
             tmp_len = strlen(num_buf);
+            if (pad_width > 0) {
+                num_len = strlen(num_buf);
+                for (size_t i = num_len; i < pad_width; ++i)
+                    printc(s, size, &off, '0');
+                pad_width = 0;
+            }
             printstr(s, size, &off, num_buf + 2);
             break;
         case 's':
