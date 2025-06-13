@@ -137,6 +137,10 @@ exit1(struct proc *td, int flags)
         proc_reap(td);
     }
 
+    if (td->data != NULL) {
+        dynfree(td->data);
+    }
+
     /*
      * Only free the process structure if we aren't
      * being waited on, otherwise let it be so the

@@ -82,7 +82,6 @@ spawn_thunk(void)
     execve_args.envp = envp;
 
     path = NULL;
-    dynfree(args);
 
     if (execve(cur, &execve_args) != 0) {
         pr_error("execve failed, aborting\n");
