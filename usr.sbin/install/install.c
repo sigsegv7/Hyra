@@ -82,6 +82,8 @@ installer_clearscr(uint32_t color, bool setattr)
 static void
 pre_installer(void)
 {
+    char *argv[] = { "/usr/bin/osh", NULL };
+    char *envp[] = { NULL };
     char c;
 
     puts("[S]hell/[I]nstall");
@@ -90,7 +92,7 @@ pre_installer(void)
         if (c == 's') {
             puts("\033[0m");
             installer_clearscr(0x000000, false);
-            spawn("/usr/bin/osh", SPAWN_WAIT);
+            spawn(argv[0], argv, envp, SPAWN_WAIT);
             installer_clearscr(INSTALLER_BG, true);
             break;
         } else if (c == 'i') {

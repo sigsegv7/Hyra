@@ -219,6 +219,7 @@ static int
 cmd_run(const char *input, int argc, char *argv[])
 {
     char bin_path[256];
+    char *envp[1] = { NULL };
     int error;
 
     snprintf(bin_path, sizeof(bin_path), "/usr/bin/%s", input);
@@ -228,7 +229,7 @@ cmd_run(const char *input, int argc, char *argv[])
         return -1;
     }
 
-    if ((error = spawn(bin_path, SPAWN_WAIT)) < 0) {
+    if ((error = spawn(bin_path, argv, envp, SPAWN_WAIT)) < 0) {
         return error;
     }
 

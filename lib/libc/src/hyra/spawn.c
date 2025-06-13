@@ -35,10 +35,13 @@
  * Spawn a process
  *
  * @pathname: Path to executable.
+ * @argv: Argument vector
+ * @envp: Environment vector
  * @flags: Spawn flags.
  */
 pid_t
-spawn(const char *pathname, int flags)
+spawn(const char *pathname, char **argv, char **envp, int flags)
 {
-    return syscall(SYS_spawn, (uintptr_t)pathname, flags);
+    return syscall(SYS_spawn, (uintptr_t)pathname, (uintptr_t)argv,
+        (uintptr_t)envp, flags);
 }

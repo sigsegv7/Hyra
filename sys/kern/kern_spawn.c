@@ -45,10 +45,17 @@
 #define pr_trace(fmt, ...) kprintf("spawn: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
+#define ARGVP_MAX (ARG_MAX / sizeof(void *))
+
 static volatile size_t nthreads = 0;
 
+/*
+ * TODO: envp
+ */
 struct spawn_args {
     char path[PATH_MAX];
+    char argv_blk[ARG_MAX];
+    char *argv[ARGVP_MAX];
 };
 
 static inline void
@@ -67,7 +74,6 @@ spawn_thunk(void)
     struct proc *cur;
     struct execve_args execve_args;
     struct spawn_args *args;
-    char *argv[] = { NULL, NULL };
     char *envp[] = { NULL };
 
     cur = this_td();
@@ -76,11 +82,9 @@ spawn_thunk(void)
     memset(pathbuf, 0, sizeof(pathbuf));
     memcpy(pathbuf, path, strlen(path));
 
-    argv[0] = (char *)pathbuf;
-    execve_args.pathname = argv[0];
-    execve_args.argv = argv;
+    execve_args.pathname = pathbuf;
+    execve_args.argv = (char **)&args->argv[0];
     execve_args.envp = envp;
-
     path = NULL;
 
     if (execve(cur, &execve_args) != 0) {
@@ -210,19 +214,26 @@ get_child(struct proc *cur, pid_t pid)
 
 /*
  * arg0: The file /path/to/executable
- * arg1: Optional flags (`flags')
+ * arg1: Argv
+ * arg2: Envp (TODO)
+ * arg3: Optional flags (`flags')
  */
 scret_t
 sys_spawn(struct syscall_args *scargs)
 {
     struct spawn_args *args;
-    const char *u_path;
+    char *path;
+    const char *u_path, **u_argv;
+    const char *u_p = NULL;
     struct proc *td;
     int flags, error;
+    size_t len, bytes_copied = 0;
+    size_t argv_i = 0;
 
     td = this_td();
-    flags = scargs->arg1;
     u_path = (const char *)scargs->arg0;
+    u_argv = (const char **)scargs->arg1;
+    flags = scargs->arg3;
 
     args = dynalloc(sizeof(*args));
     if (args == NULL) {
@@ -233,6 +244,31 @@ sys_spawn(struct syscall_args *scargs)
     if (error < 0) {
         dynfree(args);
         return error;
+    }
+
+    memset(args->argv, 0, ARG_MAX);
+    for (size_t i = 0; i < ARG_MAX - 1; ++i) {
+        error = copyin(&u_argv[argv_i], &u_p, sizeof(u_p));
+        if (error < 0) {
+            dynfree(args);
+            return error;
+        }
+        if (u_p == NULL) {
+            args->argv[argv_i++] = NULL;
+            break;
+        }
+
+        path = &args->argv_blk[i];
+        error = copyinstr(u_p, path, ARG_MAX - bytes_copied);
+        if (error < 0) {
+            dynfree(args);
+            return error;
+        }
+
+        args->argv[argv_i++] = &args->argv_blk[i];
+        len = strlen(path);
+        bytes_copied += (len + 1);
+        i += len;
     }
 
     return spawn(td, spawn_thunk, args, flags, NULL);

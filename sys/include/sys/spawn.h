@@ -36,6 +36,6 @@
 #define SPAWN_WAIT BIT(0)
 
 #if !defined(_KERNEL)
-pid_t spawn(const char *pathname, int flags);
+pid_t spawn(const char *pathname, char **argv, char **envp, int flags);
 #endif  /* _KERNEL */
 #endif  /* !_SYS_SPAWN_H_ */
