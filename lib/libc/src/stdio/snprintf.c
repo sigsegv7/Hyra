@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <unistd.h>
 
 /* TODO FIXME: Use stdarg.h */
 #define __va_start(ap, fmt)  __builtin_va_start(ap, fmt)
@@ -43,6 +44,20 @@ snprintf(char *s, size_t size, const char *fmt, ...)
 
     __va_start(ap, fmt);
     ret = vsnprintf(s, size, fmt, ap);
+    __va_end(ap);
+    return ret;
+}
+
+int
+printf(const char *__restrict fmt, ...)
+{
+    char buf[512];
+    va_list ap;
+    int ret;
+
+    __va_start(ap, fmt);
+    ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+    write(stdout->fd, buf, ret);
     __va_end(ap);
     return ret;
 }
