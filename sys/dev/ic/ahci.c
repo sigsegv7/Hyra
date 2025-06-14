@@ -46,6 +46,7 @@
 #include <fs/ctlfs.h>
 #include <vm/dynalloc.h>
 #include <vm/physmem.h>
+#include <machine/cdefs.h>
 #include <string.h>
 
 #define pr_trace(fmt, ...) kprintf("ahci: " fmt, ##__VA_ARGS__)
@@ -57,6 +58,7 @@ static struct hba_device *devs;
 static struct pci_device *ahci_dev;
 static struct timer tmr;
 static struct ahci_hba g_hba;
+static struct driver_var __driver_var;
 
 /*
  * Poll register to have 'bits' set/unset.
@@ -718,6 +720,10 @@ sata_dev_rw(dev_t dev, struct sio_txn *sio, bool write)
 static int
 ahci_dev_read(dev_t dev, struct sio_txn *sio, int flags)
 {
+    while (DRIVER_DEFERRED()) {
+        md_pause();
+    }
+
     return sata_dev_rw(dev, sio, false);
 }
 
@@ -727,6 +733,10 @@ ahci_dev_read(dev_t dev, struct sio_txn *sio, int flags)
 static int
 ahci_dev_write(dev_t dev, struct sio_txn *sio, int flags)
 {
+    while (DRIVER_DEFERRED()) {
+        md_pause();
+    }
+
     return sata_dev_rw(dev, sio, true);
 }
 
@@ -737,6 +747,10 @@ static int
 ahci_dev_bsize(dev_t dev)
 {
     struct hba_device *dp;
+
+    while (DRIVER_DEFERRED()) {
+        md_pause();
+    }
 
     if ((dp = ahci_get_dev(dev)) == NULL) {
         return -ENODEV;
