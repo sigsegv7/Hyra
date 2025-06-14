@@ -56,6 +56,7 @@
     "kfg      - Start up kfgwm\n"     \
     "bell     - Toggle backspace bell\n" \
     "time     - Get the current time\n" \
+    "clear    - Clear the screen\n"     \
     "exit     - Exit the shell"
 
 #define PROMPT "[root::osmora]~ "
@@ -103,6 +104,12 @@ cmd_echo(int argc, char *argv[])
         putchar(' ');
     }
     putchar('\n');
+}
+
+static void
+cmd_clear(int argc, char *argv[])
+{
+    fputs("\033[H", stdout);
 }
 
 static void
@@ -243,6 +250,7 @@ struct builtin_cmd cmds[] = {
     {"reboot",cmd_reboot},
     {"shutdown", cmd_shutdown},
     {"bell", cmd_bell},
+    {"clear", cmd_clear},
     {NULL, NULL}
 };
 
