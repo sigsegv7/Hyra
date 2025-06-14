@@ -36,11 +36,11 @@
 #include <vm/vm.h>
 #include <string.h>
 
-size_t highest_frame_idx = 0;
-size_t bitmap_size = 0;
-size_t bitmap_free_start = 0;
+static size_t highest_frame_idx = 0;
+static size_t bitmap_size = 0;
+static size_t bitmap_free_start = 0;
 
-uint8_t *bitmap;
+static uint8_t *bitmap;
 static struct limine_memmap_response *resp = NULL;
 static struct spinlock lock = {0};
 
