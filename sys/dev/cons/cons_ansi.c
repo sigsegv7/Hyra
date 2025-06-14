@@ -90,8 +90,7 @@ ansi_feed(struct ansi_state *statep, char c)
         return c;
     case 2:
         if (c == 'H') {
-            cons_reset_cursor(&g_root_scr);
-            ansi_reset(statep);
+            cons_clear_scr(&g_root_scr, g_root_scr.bg);
             return ANSI_UPDATE_CURSOR;
         }
         break;

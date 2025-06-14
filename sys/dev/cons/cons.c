@@ -65,7 +65,6 @@ static struct cdevsw cons_cdevsw;
 
 static void cons_draw_cursor(struct cons_screen *scr, uint32_t color);
 static int cons_handle_special(struct cons_screen *scr, char c);
-static void cons_clear_scr(struct cons_screen *scr, uint32_t bg);
 
 static uint32_t
 rgb_invert(uint32_t rgb)
@@ -191,21 +190,13 @@ cons_handle_special(struct cons_screen *scr, char c)
         SHOW_CURSOR(scr);
         return 0;
     case ASCII_LF:
-        HIDE_CURSOR(scr);
-
         /* Are we past screen width? */
         if (scr->ch_row >= scr->nrows - 1) {
             cons_clear_scr(scr, scr->bg);
-            cons_flush(scr);
-            scr->ch_col = 0;
-            scr->ch_row = 0;
-
-            /* Update cursor */
-            scr->curs_row = 0;
-            scr->curs_col = 0;
-            SHOW_CURSOR(scr);
             return 0;
         }
+
+        HIDE_CURSOR(scr);
 
         /* Make a newline */
         cons_flush(scr);
@@ -255,18 +246,25 @@ cons_draw_cursor(struct cons_screen *scr, uint32_t color)
  * @scr: Screen to clear.
  * @bg: Color to clear it to.
  */
-static void
+void
 cons_clear_scr(struct cons_screen *scr, uint32_t bg)
 {
     struct fbdev fbdev = scr->fbdev;
-    struct cons_buf *bp;
+
+    cons_flush(scr);
+    HIDE_CURSOR(scr);
+
+    scr->ch_col = 0;
+    scr->ch_row = 0;
+    scr->curs_col = 0;
+    scr->curs_row = 0;
 
     for (size_t i = 0; i < fbdev.height * fbdev.pitch; ++i) {
         scr->fb_mem[i] = bg;
     }
 
-    bp = scr->ob[scr->nrows - 1];
-    bp->flags |= CONS_BUF_CLEAN;
+    SHOW_CURSOR(scr);
+
 }
 
 /*
