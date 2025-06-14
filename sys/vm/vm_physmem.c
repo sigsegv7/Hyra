@@ -39,6 +39,7 @@
 static size_t highest_frame_idx = 0;
 static size_t bitmap_size = 0;
 static size_t bitmap_free_start = 0;
+static ssize_t last_idx = 0;
 
 static uint8_t *bitmap;
 static struct limine_memmap_response *resp = NULL;
@@ -137,15 +138,14 @@ physmem_init_bitmap(void)
  *
  * @count: Number of frames to allocate.
  */
-uintptr_t
-vm_alloc_frame(size_t count)
+static uintptr_t
+__vm_alloc_frame(size_t count)
 {
     size_t frames = 0;
     ssize_t idx = -1;
     uintptr_t ret = 0;
 
-    spinlock_acquire(&lock);
-    for (size_t i = 0; i < highest_frame_idx; ++i) {
+    for (size_t i = last_idx; i < highest_frame_idx; ++i) {
         if (!testbit(bitmap, i)) {
             if (idx < 0)
                 idx = i;
@@ -167,9 +167,24 @@ vm_alloc_frame(size_t count)
     for (size_t i = idx; i < idx + count; ++i) {
         setbit(bitmap, i);
     }
-
     ret = idx * DEFAULT_PAGESIZE;
+    last_idx = idx;
+    memset(PHYS_TO_VIRT(ret), 0, count * DEFAULT_PAGESIZE);
 done:
+    return ret;
+}
+
+uintptr_t
+vm_alloc_frame(size_t count)
+{
+    uintptr_t ret;
+
+    spinlock_acquire(&lock);
+    if ((ret = __vm_alloc_frame(count)) == 0) {
+        last_idx = 0;
+        ret = __vm_alloc_frame(count);
+    }
+
     spinlock_release(&lock);
     return ret;
 }
