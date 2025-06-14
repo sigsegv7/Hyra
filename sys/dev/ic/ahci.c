@@ -806,8 +806,6 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
     }
 
     dp->fra = PHYS_TO_VIRT(fra);
-    memset(dp->cmdlist, 0, clen * pagesz);
-    memset(dp->fra, 0, pagesz);
 
     /* Write the command list */
     lo = cmdlist & 0xFFFFFFFF;
@@ -826,7 +824,6 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
         tmp = vm_alloc_frame(1);
         dp->cmdlist[i].prdtl = 1;
         dp->cmdlist[i].ctba = tmp;
-        memset(PHYS_TO_VIRT(tmp), 0, pagesz);
     }
 
     mmio_write32(&port->serr, 0xFFFFFFFF);
