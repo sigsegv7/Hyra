@@ -27,19 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STRING_H_
-#define _STRING_H_ 1
+#include <string.h>
 
-#include <stddef.h>
-#include <stdint.h>
+#define IS_DIGIT(C) ((C >= '0' && C <= '9'))
 
-size_t strlen(const char *s);
-void *memset(void *dst, int c, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
+int
+atoi(char *s)
+{
+    int n, sign;
 
-char *itoa(int64_t value, char *buf, int base);
-void *memcpy(void *dest, const void *src, size_t n);
-int strcmp(const char *s1, const char *s2);
-int atoi(char *s);
+    while (*s == ' ') {
+        ++s;
+    }
 
-#endif  /* !_STRING_H_ */
+    sign = (*s == '-') ? -1 : 1;
+    if (*s == '+' || *s == '-') {
+        s++;
+    }
+    for (n = 0; IS_DIGIT(*s); ++s) {
+        n = 10 * n + (*s - '0');
+    }
+    return sign * n;
+}
