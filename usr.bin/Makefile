@@ -11,3 +11,4 @@ all:
 	make -C kfgwm/ $(ARGS)
 	make -C time/ $(ARGS)
 	make -C mex/ $(ARGS)
+	make -C beep/ $(ARGS)
