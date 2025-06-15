@@ -38,6 +38,7 @@
 #include <dev/pci/pciregs.h>
 #include <net/if_ether.h>
 #include <vm/physmem.h>
+#include <vm/dynalloc.h>
 #include <vm/vm.h>
 #include <machine/pio.h>
 #include <string.h>
@@ -70,6 +71,16 @@ static struct timer tmr;
 static struct etherdev wire;
 static uint16_t ioport;
 static paddr_t rxbuf, txbuf;
+
+/* TXAD regs */
+static uint16_t tsads[] = {
+    RT_TXAD_N(0), RT_TXAD_N(4),
+    RT_TXAD_N(8), RT_TXAD_N(12)
+};
+static uint16_t tsds[] = {
+    RT_TXSTATUS_N(0), RT_TXSTATUS_N(4),
+    RT_TXSTATUS_N(8), RT_TXSTATUS_N(8)
+};
 
 /*
  * Write to an RTL8139 register
@@ -159,6 +170,28 @@ rt_poll(uint8_t reg, uint8_t size, uint32_t bits, bool pollset)
     return val;
 }
 
+__used static int
+rt_tx(void *packet, size_t len)
+{
+    static uint32_t tx_ptr = 0;
+    void *tx_data;
+    paddr_t tx_pa;
+
+    tx_data = dynalloc(len);
+    if (tx_data == NULL) {
+        return -ENOMEM;
+    }
+
+    memcpy(tx_data, packet, len);
+    tx_pa = VIRT_TO_PHYS(tx_data);
+    rt_write(tsads[tx_ptr], 4, tx_pa);
+    rt_write(tsds[tx_ptr++], 4, len);
+    if (tx_ptr) {
+        tx_ptr = 0;
+    }
+    return 0;
+}
+
 static int
 rt81xx_intr(void *sp)
 {
@@ -172,8 +205,13 @@ rt81xx_intr(void *sp)
     len = *(p + 1);     /* Length after header */
     p += 2;             /* Points to data now */
 
-    if (status & RT_TOK) {
-        return -EIO;
+    if (!ISSET(status, RT_TOK | RT_ROK)) {
+        return 0;
+    }
+
+    if (ISSET(status, RT_TOK)) {
+        pr_trace("sent packet\n");
+        return 1;
     }
 
     /* Update rxbuf offset in CAPR */
@@ -310,7 +348,7 @@ rt_init_mac(void)
     rt_write(RT_RXBUF, 4, rxbuf);
     rt_write(RT_RXCONFIG, 4, RT_AB | RT_AM | RT_APM | RT_AAP);
     rt_write(RT_INTRMASK, 2, RT_ROK | RT_TOK);
-    rt_write(RT_CHIPCMD, 1, RT_RE);
+    rt_write(RT_CHIPCMD, 1, RT_RE | RT_TE);
     return 0;
 }
 

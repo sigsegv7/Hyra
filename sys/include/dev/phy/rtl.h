@@ -71,6 +71,9 @@
 #define RT_AS_LPAR      0x68    /* Auto-negotiation link partner reg (16 bits) */
 #define RT_AS_EXPANSION 0x6A    /* Auto-negotiation expansion reg (16 bits) */
 
+#define RT_TXAD_N(N)     (RT_TXADDR0 + (N))
+#define RT_TXSTATUS_N(N) (RT_TXSTATUS0 + ((N)))
+
 /* Command register bits */
 #define RT_BUFEN BIT(0)         /* Buffer empty */
 #define RT_TE    BIT(2)         /* Transmitter enable */
