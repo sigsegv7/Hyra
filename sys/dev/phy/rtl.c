@@ -30,18 +30,22 @@
 #include <sys/types.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
+#include <sys/spinlock.h>
 #include <sys/driver.h>
 #include <sys/device.h>
 #include <dev/pci/pci.h>
 #include <dev/phy/rtl.h>
 #include <dev/timer.h>
 #include <dev/pci/pciregs.h>
-#include <net/if_ether.h>
+#include <net/netbuf.h>
+#include <net/if_var.h>
 #include <vm/physmem.h>
 #include <vm/dynalloc.h>
 #include <vm/vm.h>
 #include <machine/pio.h>
 #include <string.h>
+
+#define IFNAME "rt0"
 
 /* TODO: Make this smoother */
 #if defined(__x86_64__)
@@ -56,6 +60,7 @@
 
 #define RX_BUF_SIZE      3      /* In pages */
 #define RX_REAL_BUF_SIZE 8192   /* In bytes */
+#define TXQ_ENTRIES 4
 
 #define RX_PTR_MASK (~3)
 
@@ -66,18 +71,22 @@
 #define HAVE_PIO 0
 #endif  /* _MACHINE_HAVE_PIO */
 
+static struct spinlock netif_lock;
+static struct netbuf netif_buf[TXQ_ENTRIES];
 static struct pci_device *dev;
+static struct netif netif;
 static struct timer tmr;
-static struct etherdev wire;
+static uint32_t tx_ptr = 0;
+static uint32_t netif_enq_ptr = 0;
 static uint16_t ioport;
 static paddr_t rxbuf, txbuf;
 
 /* TXAD regs */
-static uint16_t tsads[] = {
+static uint16_t tsads[TXQ_ENTRIES] = {
     RT_TXAD_N(0), RT_TXAD_N(4),
     RT_TXAD_N(8), RT_TXAD_N(12)
 };
-static uint16_t tsds[] = {
+static uint16_t tsds[TXQ_ENTRIES] = {
     RT_TXSTATUS_N(0), RT_TXSTATUS_N(4),
     RT_TXSTATUS_N(8), RT_TXSTATUS_N(8)
 };
@@ -170,7 +179,7 @@ rt_poll(uint8_t reg, uint8_t size, uint32_t bits, bool pollset)
     return val;
 }
 
-__used static int
+static int
 rt_tx(void *packet, size_t len)
 {
     static uint32_t tx_ptr = 0;
@@ -186,22 +195,61 @@ rt_tx(void *packet, size_t len)
     tx_pa = VIRT_TO_PHYS(tx_data);
     rt_write(tsads[tx_ptr], 4, tx_pa);
     rt_write(tsds[tx_ptr++], 4, len);
-    if (tx_ptr) {
+    if (tx_ptr > TXQ_ENTRIES - 1) {
         tx_ptr = 0;
     }
+    return 0;
+}
+
+static void
+__rt81xx_tx_start(struct netif *nifp)
+{
+    struct netbuf *dest;
+    int error;
+
+    for (int i = 0; i < netif_enq_ptr; ++i) {
+        dest = &netif_buf[i];
+        error = rt_tx(dest->data, dest->len);
+        if (error < 0) {
+            pr_error("tx_start fail @queue %d (errno=%d)\n", i, error);
+        }
+    }
+}
+
+static void
+rt81xx_tx_start(struct netif *nifp)
+{
+    spinlock_acquire(&netif_lock);
+    __rt81xx_tx_start(nifp);
+    spinlock_release(&netif_lock);
+}
+
+static int
+rt81xx_tx_enq(struct netif *nifp, struct netbuf *nbp, void *data)
+{
+    struct netbuf *dest;
+
+    spinlock_acquire(&netif_lock);
+    dest = &netif_buf[netif_enq_ptr++];
+    memcpy(dest, nbp, sizeof(*dest));
+
+    if (netif_enq_ptr > TXQ_ENTRIES - 1) {
+        __rt81xx_tx_start(nifp);
+        netif_enq_ptr = 0;
+    }
+    spinlock_release(&netif_lock);
     return 0;
 }
 
 static int
 rt81xx_intr(void *sp)
 {
-    static uint32_t packet_ptr = 0;
     uint16_t len;
     uint16_t *p;
     uint16_t status;
 
     status = rt_read(RT_INTRSTATUS, 2);
-    p = (uint16_t *)(rxbuf + packet_ptr);
+    p = (uint16_t *)(rxbuf + tx_ptr);
     len = *(p + 1);     /* Length after header */
     p += 2;             /* Points to data now */
 
@@ -215,11 +263,11 @@ rt81xx_intr(void *sp)
     }
 
     /* Update rxbuf offset in CAPR */
-    packet_ptr = (packet_ptr + len + 4 + 3) & RX_PTR_MASK;
-    if (packet_ptr > RX_REAL_BUF_SIZE) {
-        packet_ptr -= RX_REAL_BUF_SIZE;
+    tx_ptr = (tx_ptr + len + 4 + 3) & RX_PTR_MASK;
+    if (tx_ptr > RX_REAL_BUF_SIZE) {
+        tx_ptr -= RX_REAL_BUF_SIZE;
     }
-    rt_write(RT_RXBUFTAIL, 2, packet_ptr - 0x10);
+    rt_write(RT_RXBUFTAIL, 2, tx_ptr - 0x10);
     rt_write(RT_INTRSTATUS, 2, RT_ACKW);
     return 1;       /* handled */
 }
@@ -252,6 +300,7 @@ rt_init_pci(void)
 static int
 rt_init_mac(void)
 {
+    struct netif_addr *addr = &netif.addr;
     uint8_t conf;
     uint32_t tmp;
     int error;
@@ -287,20 +336,20 @@ rt_init_mac(void)
 
     /* MAC address dword 0 */
     tmp = rt_read(RT_IDR0, 4);
-    wire.mac_addr[0] = tmp & 0xFF;
-    wire.mac_addr[1] = (tmp >> 8) & 0xFF;
-    wire.mac_addr[2] = (tmp >> 16) & 0xFF;
-    wire.mac_addr[3] = (tmp >> 24) & 0xFF;
+    addr->data[0] = tmp & 0xFF;
+    addr->data[1] = (tmp >> 8) & 0xFF;
+    addr->data[2] = (tmp >> 16) & 0xFF;
+    addr->data[3] = (tmp >> 24) & 0xFF;
 
     /* MAC address word 1 */
     tmp = rt_read(RT_IDR2, 4);
-    wire.mac_addr[4] = (tmp >> 16) & 0xFF;
-    wire.mac_addr[5] = (tmp >> 24) & 0xFF;
+    addr->data[4] = (tmp >> 16) & 0xFF;
+    addr->data[5] = (tmp >> 24) & 0xFF;
 
     pr_trace("MAC address: %x:%x:%x:%x:%x:%x\n",
-        (uint64_t)wire.mac_addr[0], (uint64_t)wire.mac_addr[1],
-        (uint64_t)wire.mac_addr[2], (uint64_t)wire.mac_addr[3],
-        (uint64_t)wire.mac_addr[4], (uint64_t)wire.mac_addr[5]);
+        (uint64_t)addr->data[0], (uint64_t)addr->data[1],
+        (uint64_t)addr->data[2], (uint64_t)addr->data[3],
+        (uint64_t)addr->data[4], (uint64_t)addr->data[5]);
 
     /*
      * Alright, now we don't want those EEM bits
@@ -323,6 +372,11 @@ rt_init_mac(void)
         pr_error("failed to alloc TX/RX buffers\n");
         return -ENOMEM;
     }
+
+    memcpy(netif.name, IFNAME, strlen(IFNAME) + 1);
+    netif.tx_enq = rt81xx_tx_enq;
+    netif.tx_start = rt81xx_tx_start;
+    netif_add(&netif);
 
     /*
      * Configure the chip:
