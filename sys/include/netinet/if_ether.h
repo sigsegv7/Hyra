@@ -27,48 +27,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _IF_ETHER_H_
-#define _IF_ETHER_H_
+#ifndef _NETINET_IF_ETHER_H_
+#define _NETINET_IF_ETHER_H_
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
-#include <net/if.h>
+#include <net/if_arp.h>
+#include <net/if_var.h>
 
-#define MACADDR_LEN 6
+#define ETHER_ADDR_LEN 6
 
-struct __packed ether_frame {
-    uint8_t sync[7];        /* Preamble (sync stuff) */
-    uint8_t spd;            /* Start frame delimiter */
-    uint8_t macd[6];        /* MAC destination */
-    uint8_t macs[6];        /* MAC source */
-    uint16_t type;          /* Protocol type */
-    char payload[1];        /* sized @ 1+n */
+struct ether_arp {
+    struct arp_hdr hdr;
+    uint8_t sha[ETHER_ADDR_LEN];
+    uint8_t spa[4];
+    uint8_t tha[ETHER_ADDR_LEN];
+    uint8_t tpa[4];
 };
 
-/*
- * Used by the driver to buffer packets.
- */
-struct etherbuf {
-    struct ether_frame *frp;
-    off_t head;
-    off_t tail;
-    size_t cap;     /* In entries */
+struct ether_frame {
+    uint8_t ether_daddr[ETHER_ADDR_LEN];
+    uint8_t ether_saddr[ETHER_ADDR_LEN];
+    uint16_t ether_type;
 };
 
-/*
- * Ethernet device
- *
- * if_ether: E
- * driver: D
- *
- * @if_name: Interface name.
- * @tx: Transmit packets (D->E)
- */
-struct etherdev {
-    char if_name[IFNAMESIZ];
-    struct etherbuf *buf;
-    ssize_t(*tx)(struct etherdev *ep, const void *buf, size_t len);
-    char mac_addr[MACADDR_LEN];
-};
+int arp_request(struct netif *nifp, uint8_t *sproto, uint8_t *tproto);
 
-#endif  /* !_IF_ETHER_H_ */
+#endif  /* !_NETINET_IF_ETHER_H_ */
