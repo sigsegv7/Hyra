@@ -341,8 +341,6 @@ rt_init_mac(void)
      * - Enable interrupts through ROK/TOK
      * - Enable RX state machines
      *
-     * TODO: Support TX
-     *
      */
     rt81xx_irq_init();
     rt_write(RT_RXBUF, 4, rxbuf);
