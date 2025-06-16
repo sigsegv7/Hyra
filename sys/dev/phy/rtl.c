@@ -43,17 +43,10 @@
 #include <vm/dynalloc.h>
 #include <vm/vm.h>
 #include <machine/pio.h>
+#include <machine/intr.h>
 #include <string.h>
 
 #define IFNAME "rt0"
-
-/* TODO: Make this smoother */
-#if defined(__x86_64__)
-#include <machine/intr.h>
-#include <machine/ioapic.h>
-#include <machine/lapic.h>
-#include <machine/idt.h>
-#endif
 
 #define pr_trace(fmt, ...) kprintf("rt81xx: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
