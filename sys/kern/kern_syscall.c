@@ -31,6 +31,7 @@
 #include <sys/sysctl.h>
 #include <sys/reboot.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/proc.h>
 #include <sys/vfs.h>
@@ -50,6 +51,7 @@ scret_t(*g_sctab[])(struct syscall_args *) = {
     sys_munmap, /* SYS_munap */
     sys_access, /* SYS_access */
     sys_lseek,  /* SYS_lseek */
+    sys_sleep,  /* SYS_sleep */
 };
 
 const size_t MAX_SYSCALLS = NELEM(g_sctab);

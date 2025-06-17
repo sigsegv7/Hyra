@@ -31,6 +31,9 @@
 #define _SYS_TIME_H_
 
 #include <sys/types.h>
+#if defined(_KERNEL)
+#include <sys/syscall.h>
+#endif  /* _KERNEL */
 
 struct timeval {
     time_t tv_sec;
@@ -48,4 +51,7 @@ struct date {
     uint8_t hour;
 };
 
+#if defined(_KERNEL)
+scret_t sys_sleep(struct syscall_args *scargs);
+#endif
 #endif  /* !_SYS_TIME_H_ */
