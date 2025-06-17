@@ -55,7 +55,5 @@ __sigraise(int signo)
     dispatch_signals(td);
 }
 
-int hyra_install(void);
-
 #endif  /* _KERNEL */
 #endif  /* !_SYS_SYSTM_H_ */
