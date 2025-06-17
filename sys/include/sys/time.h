@@ -37,6 +37,11 @@ struct timeval {
     time_t tv_usec;
 };
 
+struct timespec {
+    time_t tv_sec;
+    long tv_nsec;
+};
+
 struct date {
     uint8_t sec;
     uint8_t min;
