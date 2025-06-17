@@ -51,5 +51,6 @@ struct ether_frame {
 };
 
 int arp_request(struct netif *nifp, uint8_t *sproto, uint8_t *tproto);
+int arp_reply(struct netif *netif, uint8_t *sproto, uint8_t *tproto);
 
 #endif  /* !_NETINET_IF_ETHER_H_ */

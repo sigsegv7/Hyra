@@ -78,8 +78,8 @@ arp_create(struct netif *nifp, uint32_t *sproto, uint32_t *tproto, uint16_t op)
     return packet;
 }
 
-int
-arp_request(struct netif *nifp, uint8_t *sproto, uint8_t *tproto)
+static int
+arp_send(struct netif *nifp, uint8_t *sproto, uint8_t *tproto, uint16_t op)
 {
     struct arp_pkt *packet;
     struct netbuf nb;
@@ -95,7 +95,7 @@ arp_request(struct netif *nifp, uint8_t *sproto, uint8_t *tproto)
     src_tmp = (uint32_t *)sproto;
     targ_tmp = (uint32_t *)tproto;
 
-    packet = arp_create(nifp, src_tmp, targ_tmp, ARP_REQUEST);
+    packet = arp_create(nifp, src_tmp, targ_tmp, op);
     if (packet == NULL) {
         return -ENOMEM;
     }
@@ -107,4 +107,16 @@ arp_request(struct netif *nifp, uint8_t *sproto, uint8_t *tproto)
     nifp->tx_start(nifp);
     dynfree(packet);
     return 0;
+}
+
+int
+arp_request(struct netif *nifp, uint8_t *sproto, uint8_t *tproto)
+{
+    return arp_send(nifp, sproto, tproto, ARP_REQUEST);
+}
+
+int
+arp_reply(struct netif *nifp, uint8_t *sproto, uint8_t *tproto)
+{
+    return arp_send(nifp, sproto, tproto, ARP_REPLY);
 }
