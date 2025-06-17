@@ -40,19 +40,6 @@ struct arp_pkt {
     struct ether_arp payload;
 };
 
-static void
-set_hwaddr(struct netif_addr *addrp, char addr[ETHER_ADDR_LEN])
-{
-    uint16_t *psrc, *p;
-
-    psrc = (uint16_t *)&addrp->data[0];
-    p = (uint16_t *)addr;
-
-    p[0] = swap16(psrc[0]);
-    p[1] = swap16(psrc[1]);
-    p[2] = swap16(psrc[2]);
-}
-
 static struct arp_pkt *
 arp_create(struct netif *nifp, uint32_t *sproto, uint32_t *tproto, uint16_t op)
 {
@@ -71,7 +58,7 @@ arp_create(struct netif *nifp, uint32_t *sproto, uint32_t *tproto, uint16_t op)
     hdrp = &payload->hdr;
 
     /* Ethernet frame, from source to all */
-    set_hwaddr(&nifp->addr, frp->ether_saddr);
+    memcpy(frp->ether_saddr, &nifp->addr, ETHER_ADDR_LEN);
     memset(frp->ether_daddr, 0xFF, ETHER_ADDR_LEN);
     frp->ether_type = swap16(ETHERTYPE_ARP);
 
