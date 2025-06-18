@@ -36,6 +36,6 @@
 #define md_pause()  __ASMV("yield")
 #define md_intoff() __ASMV("msr daifset, #2")
 #define md_inton()  __ASMV("msr daifclr, #2")
-#define md_halt()   __ASMV("hlt")
+#define md_hlt()   __ASMV("hlt #0")
 
 #endif  /* !_AARCH64_CDEFS_H_ */
