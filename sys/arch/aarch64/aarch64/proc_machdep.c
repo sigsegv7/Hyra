@@ -37,17 +37,17 @@
  * @ip: Instruction pointer.
  */
 int
-md_fork(struct proc *p, struct proc *parent, uintptr_t ip)
+md_spawn(struct proc *p, struct proc *parent, uintptr_t ip)
 {
     /* TODO: STUB */
     return 0;
 }
 
-void
+uintptr_t
 md_td_stackinit(struct proc *td, void *stack_top, struct exec_prog *prog)
 {
     /* TODO: STUB */
-    return;
+    return 0;
 }
 
 void

@@ -30,20 +30,6 @@
 #include <sys/types.h>
 #include <dev/pci/pci.h>
 
-pcireg_t
-pci_readl(struct pci_device *dev, uint32_t offset)
-{
-    /* TODO: STUB */
-    return 0;
-}
-
-void
-pci_writel(struct pci_device *dev, uint32_t offset, pcireg_t val)
-{
-    /* TODO: STUB */
-    return;
-}
-
 /*
  * Map a BAR into kernel memory.
  *

@@ -30,9 +30,25 @@
 #include <sys/reboot.h>
 #include <sys/param.h>
 
+/*
+ * Typically the reset vector is at address 0 but this can
+ * be remapped if the vendor is feeling silly.
+ */
+void(*g_cpu_reboot)(void) = NULL;
+
 void
 cpu_reboot(int method)
 {
-    /* TODO: STUB */
+    g_cpu_reboot();
     for (;;);
+}
+
+/*
+ * arg0: Method bits
+ */
+scret_t
+sys_reboot(struct syscall_args *scargs)
+{
+    cpu_reboot(scargs->arg0);
+    __builtin_unreachable();
 }

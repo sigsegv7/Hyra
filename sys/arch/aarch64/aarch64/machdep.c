@@ -76,6 +76,13 @@ md_sync_all(void)
     return 0;
 }
 
+void
+cpu_halt_all(void)
+{
+    /* TODO: Stub */
+    for (;;);
+}
+
 /*
  * Get the descriptor for the currently
  * running processor.
