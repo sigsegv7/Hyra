@@ -73,17 +73,20 @@ all: stand/boot/ libc sbin bin base/boot/hyra-kernel
 .PHONY: sbin
 sbin: $(SBIN_MAKEDIRS)
 	make -C usr.sbin/ LDSCRIPT=$(shell pwd)/usr.sbin/link.ld USRDIR=$(USRDIR)\
-			ROOT=$(PROJECT_ROOT) OSVER=$(HYRA_VERSION) OSARCH=$(ARCH)
+			ROOT=$(PROJECT_ROOT) OSVER=$(HYRA_VERSION) OSARCH=$(ARCH)\
+			CC="$(CC)"
 
 .PHONY: bin
 bin: $(BIN_MAKEDIRS)
 	make -C usr.bin/ LDSCRIPT=$(shell pwd)/usr.bin/link.ld USRDIR=$(USRDIR)\
-			ROOT=$(PROJECT_ROOT) OSVER=$(HYRA_VERSION) OSARCH=$(ARCH)
+			ROOT=$(PROJECT_ROOT) OSVER=$(HYRA_VERSION) OSARCH=$(ARCH)\
+			CC="$(CC)"
 
 .PHONY: libc
 libc:
 	$(MAKE) -C lib/libc/ -I$(shell pwd)/builddeps \
-		USRDIR=$(USRDIR) ARCH=$(ARCH) ROOT=$(PROJECT_ROOT)
+		USRDIR=$(USRDIR) ARCH=$(ARCH) ROOT=$(PROJECT_ROOT) \
+		CC="$(CC)"
 
 .PHONY: cross
 cross:
