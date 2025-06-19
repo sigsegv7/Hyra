@@ -42,6 +42,7 @@
 #define __dead          __attribute__((__noreturn__))
 #define __cold          __attribute__((__cold__))
 #define __dead_cold     __attribute__((__noreturn__, __cold__))
+#define __aligned(n)    __attribute__((__aligned__((n))))
 #define __unused        __attribute__((__unused__))
 #define __used          __attribute__((__used__))
 #define __nothing       ((void)0)
