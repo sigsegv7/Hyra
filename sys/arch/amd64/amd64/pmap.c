@@ -344,3 +344,9 @@ pmap_mark_clean(struct vas vas, vaddr_t va)
         __invlpg(va);
     }
 }
+
+int
+pmap_init(void)
+{
+    return 0;
+}

@@ -87,3 +87,15 @@ pmap_set_cache(struct vas vas, vaddr_t va, int type)
     /* TODO: STUB */
     return 0;
 }
+
+int
+pmap_init(void)
+{
+    uint64_t mair;
+
+    mair = MT_ATTR(MT_NORMAL, MEM_NORMAL)       |
+           MT_ATTR(MT_NORMAL_UC, MEM_NORMAL_UC) |
+           MT_ATTR(MT_DEVICE, MEM_DEV_NGNRNE);
+    mair_el1_write(mair);
+    return 0;
+}

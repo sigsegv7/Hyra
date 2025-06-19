@@ -56,6 +56,7 @@ vm_init(void)
     void *pool;
 
     vm_physmem_init();
+    pmap_init();
 
     g_kvas = pmap_read_vas();
     vm_ctx.dynalloc_pool_sz = DYNALLOC_POOL_SZ;

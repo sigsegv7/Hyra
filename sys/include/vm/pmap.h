@@ -92,4 +92,9 @@ void pmap_mark_clean(struct vas vas, vaddr_t va);
  */
 int pmap_set_cache(struct vas vas, vaddr_t va, int type);
 
+/*
+ * Machine dependent pmap init code.
+ */
+int pmap_init(void);
+
 #endif  /* !_VM_PMAP_H_ */
