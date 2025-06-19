@@ -111,6 +111,8 @@ pmap_prot_to_pte(vm_prot_t prot)
 
     if (ISSET(prot, PROT_WRITE))
         pte_flags &= ~PTE_READONLY;
+    if (ISSET(prot, PROT_EXEC))
+        pte_flags &= ~PTE_XN;
     if (ISSET(prot, PROT_USER))
         pte_flags |= PTE_USER;
 
