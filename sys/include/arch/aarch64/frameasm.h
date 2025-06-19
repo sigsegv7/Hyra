@@ -79,5 +79,4 @@
     ldp x28, x27, [sp, #(2 * 8)]    ; \
     ldp x30, x29, [sp, #(0 * 8)]    ; \
 
-
 #endif  /* !_MACHINE_FRAMEASM_H_ */
