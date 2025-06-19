@@ -27,74 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/syslog.h>
-#include <sys/panic.h>
-#include <machine/cpu.h>
-#include <machine/sync.h>
+    .text
+    .globl md_cpu_init
+md_cpu_init:
+    ldr x0, =__vectab
+    msr vbar_el1, x0
+    ret
 
-struct cpu_info g_bsp_ci = {0};
-
-void md_cpu_init(void);
-
-void
-cpu_halt_others(void)
-{
-    /* TODO: STUB */
-    return;
-}
-
-void
-serial_init(void)
-{
-    /* TODO: STUB */
-    return;
-}
-
-void
-md_backtrace(void)
-{
-    /* TODO: STUB */
-    return;
-}
-
-void
-serial_putc(char c)
-{
-    /* TODO: STUB */
-    return;
-}
-
-int
-md_sync_all(void)
-{
-    /* TODO: STUB */
-    return 0;
-}
-
-void
-cpu_halt_all(void)
-{
-    /* TODO: Stub */
-    for (;;);
-}
-
-/*
- * Get the descriptor for the currently
- * running processor.
- */
-struct cpu_info *
-this_cpu(void)
-{
-    struct cpu_info *ci;
-
-    __ASMV("mrs %0, tpidr_el1" : "=r" (ci));
-    return ci;
-}
-
-void
-cpu_startup(struct cpu_info *ci)
-{
-    ci->self = ci;
-    __ASMV("msr tpidr_el1, %0" :: "r" (ci));
-    md_cpu_init();
-}

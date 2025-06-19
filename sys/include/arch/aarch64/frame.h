@@ -33,9 +33,11 @@
 #include <sys/types.h>
 
 typedef uint64_t lreg_t;
+typedef uint64_t frament_t;
 
 /* General purpose registers */
 struct gpregs {
+    frament_t trapno;
     lreg_t x0;
     lreg_t x1;
     lreg_t x2;

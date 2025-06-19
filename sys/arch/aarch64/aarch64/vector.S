@@ -27,74 +27,88 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/syslog.h>
-#include <sys/panic.h>
-#include <machine/cpu.h>
-#include <machine/sync.h>
+#include <machine/frameasm.h>
 
-struct cpu_info g_bsp_ci = {0};
+// Vector table entries are aligned at 128 bytes
+// giving us 32 exception entries
+.macro ventry label
+    .align 7
+    b \label
+.endm
 
-void md_cpu_init(void);
+    .section .data
+error:
+    .ascii "got exception, halting\n\0"
 
-void
-cpu_halt_others(void)
-{
-    /* TODO: STUB */
-    return;
-}
+    .text
+x_sync_elx:
+    PUSH_XFRAME(TRAPNO_XSYNC)
+    ldr x0, =error
+    bl kprintf
+    POP_XFRAME()
+1:
+    hlt #0
+    b 1b
 
-void
-serial_init(void)
-{
-    /* TODO: STUB */
-    return;
-}
+x_irq_elx:
+    PUSH_XFRAME(TRAPNO_XSYNC)
+    ldr x0, =error
+    bl kprintf
+    POP_XFRAME()
+1:
+    hlt #0
+    b 1b
 
-void
-md_backtrace(void)
-{
-    /* TODO: STUB */
-    return;
-}
+.align 7
+x_fiq_elx:
+    PUSH_XFRAME(TRAPNO_XSYNC)
+    ldr x0, =error
+    bl kprintf
+    POP_XFRAME()
+1:
+    hlt #0
+    b 1b
 
-void
-serial_putc(char c)
-{
-    /* TODO: STUB */
-    return;
-}
+x_serr_elx:
+    PUSH_XFRAME(TRAPNO_XSYNC)
+    ldr x0, =error
+    bl kprintf
+    POP_XFRAME()
+1:
+    hlt #0
+    b 1b
 
-int
-md_sync_all(void)
-{
-    /* TODO: STUB */
-    return 0;
-}
+x_unimpl:
+    PUSH_XFRAME(TRAPNO_XSYNC)
+    ldr x0, =error
+    bl kprintf
+    POP_XFRAME()
+1:
+    hlt #0
+    b 1b
 
-void
-cpu_halt_all(void)
-{
-    /* TODO: Stub */
-    for (;;);
-}
+    .align 11         // Table aligned @ 2 KiB
+    .globl __vectab
+__vectab:
+    // From current EL (w/ SP_EL0)
+    ventry x_sync_elx
+    ventry x_irq_elx
+    ventry x_fiq_elx
+    ventry x_serr_elx
 
-/*
- * Get the descriptor for the currently
- * running processor.
- */
-struct cpu_info *
-this_cpu(void)
-{
-    struct cpu_info *ci;
+    // From current EL (w/ SP_ELx > 0)
+    ventry x_sync_elx
+    ventry x_irq_elx
+    ventry x_fiq_elx
+    ventry x_serr_elx
 
-    __ASMV("mrs %0, tpidr_el1" : "=r" (ci));
-    return ci;
-}
+    // Lower EL with faulting code in AARCH64
+    ventry x_sync_elx
+    ventry x_irq_elx
+    ventry x_fiq_elx
+    ventry x_serr_elx
 
-void
-cpu_startup(struct cpu_info *ci)
-{
-    ci->self = ci;
-    __ASMV("msr tpidr_el1, %0" :: "r" (ci));
-    md_cpu_init();
-}
+    ventry x_unimpl
+    ventry x_unimpl
+    ventry x_unimpl
+    ventry x_unimpl
