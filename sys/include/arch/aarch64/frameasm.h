@@ -31,13 +31,14 @@
 #define _MACHINE_FRAMEASM_H_
 
 /* XXX: Must be 16-byte aligned!!! */
-#define XFRAME_STACK_SIZE (34 * 8)
+#define XFRAME_STACK_SIZE (38 * 8)
 
 /* Trap numbers */
-#define TRAPNO_XSYNC  #0     /* Synchronous */
-#define TRAPNO_XIRQ   #1     /* IRQ */
-#define TRAPNO_XFIQ   #2     /* FIQ */
-#define TRAPNO_XSERR  #3     /* System error */
+#define TRAPNO_UNKNOWN #0
+#define TRAPNO_XSYNC   #1     /* Synchronous */
+#define TRAPNO_XIRQ    #2     /* IRQ */
+#define TRAPNO_XFIQ    #3     /* FIQ */
+#define TRAPNO_XSERR   #4     /* System error */
 
 #define PUSH_XFRAME(TRAPNO)          \
     sub sp, sp, #XFRAME_STACK_SIZE ; \
@@ -57,11 +58,16 @@
     stp x4, x3, [sp, #(26 * 8)]    ; \
     stp x2, x1, [sp, #(28 * 8)]    ; \
     str x0, [sp, #(30 * 8)]        ; \
+                                   ; \
+    mrs x0, elr_el1                ; \
+    str x0, [sp, #(31 * 8)]        ; \
+    mrs x0, esr_el1                ; \
+    str x0, [sp, #(32 * 8)]        ; \
     mov x0, TRAPNO                 ; \
-    str x0, [sp, #(31 * 8)]
+    str x0, [sp, #(33 * 8)]        ; \
+    mov x0, sp
 
 #define POP_XFRAME()                  \
-    add sp, sp, #8                  ; \
     ldr x0, [sp, #(30 * 8)]         ; \
     ldp x2, x1, [sp, #(28 * 8)]     ; \
     ldp x4, x3, [sp, #(26 * 8)]     ; \
@@ -78,5 +84,6 @@
     ldp x26, x25, [sp, #(4 * 8)]    ; \
     ldp x28, x27, [sp, #(2 * 8)]    ; \
     ldp x30, x29, [sp, #(0 * 8)]    ; \
+    add sp, sp, #XFRAME_STACK_SIZE
 
 #endif  /* !_MACHINE_FRAMEASM_H_ */

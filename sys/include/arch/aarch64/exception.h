@@ -27,66 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MACHINE_FRAME_H_
-#define _MACHINE_FRAME_H_
+#ifndef _MACHINE_EXCEPTION_H_
+#define _MACHINE_EXCEPTION_H_
 
 #include <sys/types.h>
-#include <sys/cdefs.h>
+#include <machine/frame.h>
 
-typedef uint64_t lreg_t;
-typedef uint64_t frament_t;
+/* Exception class */
+#define EC_UNKNOWN  0x00    /* Unknown type */
+#define EC_WF       0x01    /* Trapped WF instruction */
+#define EC_MCRMRC   0x03    /* Trapped MCR/MRC */
+#define EC_MCRRC    0x04    /* Trapped MCRR/MRRC */
+#define EC_LDCSTC   0x06    /* Trapped LDC/STC */
+#define EC_SVE      0x07    /* Trapped SVE/SIMD/FP op */
+#define EC_BRE      0x0D    /* Branch target exception */
+#define EC_ILLX     0x0E    /* Illegal execution state */
+#define EC_SVC64    0x15    /* AARCH64 SVC */
+#define EC_PCALIGN  0x22    /* PC alignment fault */
+#define EC_DABORT   0x24    /* Data abort (w/o ELx change) */
+#define EC_EDABORT  0x25    /* Data abort (w/ ELx change) */
+#define EC_SPALIGN  0x26    /* SP alignment fault */
+#define EC_SERR     0x2F    /* System error (what the fuck!) */
 
-/* Stack regs */
-struct sregs {
-    lreg_t sp_el0;
-    lreg_t sp_el1;
-    lreg_t sp_el2;
-};
+void handle_exception(struct trapframe *tf);
 
-/* Program status */
-struct pstat {
-    lreg_t spsr_el1;
-    lreg_t spsr_el2;
-    lreg_t spsr_el3;
-};
-
-struct __aligned(16) trapframe {
-    lreg_t x30;
-    lreg_t x29;
-    lreg_t x28;
-    lreg_t x27;
-    lreg_t x26;
-    lreg_t x25;
-    lreg_t x24;
-    lreg_t x23;
-    lreg_t x22;
-    lreg_t x21;
-    lreg_t x20;
-    lreg_t x19;
-    lreg_t x18;
-    lreg_t x17;
-    lreg_t x16;
-    lreg_t x15;
-    lreg_t x14;
-    lreg_t x13;
-    lreg_t x12;
-    lreg_t x11;
-    lreg_t x10;
-    lreg_t x9;
-    lreg_t x8;
-    lreg_t x7;
-    lreg_t x6;
-    lreg_t x5;
-    lreg_t x4;
-    lreg_t x3;
-    lreg_t x2;
-    lreg_t x1;
-    lreg_t x0;
-    lreg_t elr;
-    lreg_t esr;
-    frament_t trapno;
-};
-
-#define TF_IP(TFP) ((TFP)->pc)
-
-#endif  /* !_MACHINE_FRAME_H_ */
+#endif  /* !_MACHINE_EXCEPTION_H_ */

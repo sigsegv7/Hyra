@@ -36,54 +36,37 @@
     b \label
 .endm
 
-    .section .data
-error:
-    .ascii "got exception, halting\n\0"
-
     .text
 x_sync_elx:
-    PUSH_XFRAME(TRAPNO_XSYNC)
-    ldr x0, =error
-    bl kprintf
-    POP_XFRAME()
-1:
-    hlt #0
+    PUSH_XFRAME(TRAPNO_XSYNC)   // Synchronous: sp+top @ X0
+    bl handle_exception         // Handle the exception
+    POP_XFRAME()                // Pop the trapframe
+1:  hlt #0                      // TODO
     b 1b
 
 x_irq_elx:
-    PUSH_XFRAME(TRAPNO_XSYNC)
-    ldr x0, =error
-    bl kprintf
-    POP_XFRAME()
-1:
-    hlt #0
+    PUSH_XFRAME(TRAPNO_XIRQ)    // IRQ: sp+top @ X0
+    bl handle_exception         // Handle the exception
+    POP_XFRAME()                // Pop the trapframe
+1:  hlt #0                      // TODO
     b 1b
 
 x_fiq_elx:
-    PUSH_XFRAME(TRAPNO_XSYNC)
-    ldr x0, =error
-    bl kprintf
-    POP_XFRAME()
-1:
-    hlt #0
+    PUSH_XFRAME(TRAPNO_XFIQ)    // FIQ: sp+top @ X0
+    bl handle_exception         // Handle the exception
+    POP_XFRAME()                // Pop the trapframe
+1:  hlt #0
     b 1b
 
 x_serr_elx:
-    PUSH_XFRAME(TRAPNO_XSYNC)
-    ldr x0, =error
-    bl kprintf
-    POP_XFRAME()
-1:
-    hlt #0
+    PUSH_XFRAME(TRAPNO_XSERR)   // SERR: sp+top @ X0
+    bl handle_exception         // Handle the exception
+    POP_XFRAME()                // Pop the trapframe
+1:  hlt #0                      // TODO
     b 1b
 
 x_unimpl:
-    PUSH_XFRAME(TRAPNO_XSYNC)
-    ldr x0, =error
-    bl kprintf
-    POP_XFRAME()
-1:
-    hlt #0
+1:  hlt #0
     b 1b
 
     .align 11         // Table aligned @ 2 KiB
