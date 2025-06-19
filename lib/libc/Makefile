@@ -1,6 +1,6 @@
 CFLAGS = -c -fno-stack-protector -nostdlib -static -Iinclude/ -D_OLIBC
 LIBC_CFILES = $(shell find src/ -name "*.c")
-LIBC_ASMFILES = $(shell find src/ -name "*.S")
+LIBC_ASMFILES = $(shell find src/arch/$(ARCH) -name "*.S")
 
 LIBC_OBJ = $(LIBC_CFILES:.c=.o)
 LIBC_ASMOBJ = $(LIBC_ASMFILES:.S=.S.o)
