@@ -59,7 +59,6 @@ x_irq_elx:
     hlt #0
     b 1b
 
-.align 7
 x_fiq_elx:
     PUSH_XFRAME(TRAPNO_XSYNC)
     ldr x0, =error
