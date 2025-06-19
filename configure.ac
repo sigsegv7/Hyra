@@ -1,6 +1,7 @@
 AC_INIT([Hyra], [2.0], [ian@osmora.org])
 
 TARGET="amd64"
+QEMU="qemu-system-x86_64"
 PROJECT_ROOT=`pwd`
 BOOT_FW="BOOTX64.EFI"
 AC_ARG_ENABLE([aarch64],
@@ -37,12 +38,19 @@ QEMU_FLAGS_AMD64="--enable-kvm -monitor stdio 	\\
 		          -M q35 -m 1G -smp 4 -cpu host  \\
 			      -cdrom Hyra.iso"
 
+QEMU_FLAGS_AARCH64="-monitor stdio 	\\
+		          -M versatilepb -m 256M -smp 1 \\
+			      -cdrom Hyra.iso"
+
 KERN_CFLAGS="$KERN_CFLAGS_AMD64"
+QEMU_FLAGS=$QEMU_FLAGS_AMD64
 
 if test "x$TARGET" = "xaarch64"
 then
     KERN_CFLAGS="$KERN_CFLAGS_AARCH64"
     BOOT_FW="BOOTAA64.EFI"
+    QEMU_FLAGS=$QEMU_FLAGS_AARCH64
+    QEMU="qemu-system-aarch64"
 fi
 
 
@@ -53,10 +61,10 @@ AC_SUBST(HYRA_BUILDDATE, [$HYRA_BUILDDATE])
 AC_SUBST(HYRA_BUILDBRANCH, [$HYRA_BUILDBRANCH])
 
 AC_SUBST(KERNEL_CFLAGS, [$KERN_CFLAGS])
-AC_SUBST(QEMU_FLAGS, [$QEMU_FLAGS_AMD64])
-AC_SUBST(QEMU, [qemu-system-x86_64])
 AC_SUBST(BOOT_FW, [$BOOT_FW])
 AC_SUBST(ARCH, [$TARGET])
+AC_SUBST(QEMU_FLAGS, [$QEMU_FLAGS])
+AC_SUBST(QEMU, [$QEMU])
 AC_SUBST(PROJECT_ROOT, [$PROJECT_ROOT])
 AC_SUBST(TOOLCHAIN, [clang])
 AC_CONFIG_FILES([Makefile])
