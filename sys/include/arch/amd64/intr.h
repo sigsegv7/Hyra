@@ -47,10 +47,6 @@
 #define IPL_CLOCK   2   /* Clock */
 #define IPL_HIGH    3   /* Defer everything */
 
-struct intr_entry {
-    int priority;
-};
-
 /*
  * Interrupt handler
  *
