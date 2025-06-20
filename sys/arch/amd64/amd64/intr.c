@@ -79,6 +79,8 @@ intr_register(const char *name, const struct intr_hand *ih)
 {
     uint32_t vec = MAX(ih->priority << IPL_SHIFT, 0x20);
     struct intr_hand *ih_new;
+    struct intr_data *idp_new;
+    const struct intr_data *idp;
     size_t name_len;
 
     /* Sanity check */
@@ -115,6 +117,14 @@ intr_register(const char *name, const struct intr_hand *ih)
         }
 
         memcpy(ih_new->name, name, name_len);
+        idp_new = &ih_new->data;
+        idp = &ih->data;
+
+        /* Pass the interrupt data */
+        idp_new->ihp = ih_new;
+        idp_new->data_u64 = idp->data_u64;
+
+        /* Setup the new intr_hand */
         ih_new->func = ih->func;
         ih_new->priority = ih->priority;
         ih_new->irq = ih->irq;

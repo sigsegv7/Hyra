@@ -51,7 +51,8 @@ ioapic_common_func:
     jz 1f                       // Nope, return
 
     mov (%rdx), %rbx            // intr_hand.func
-    xor %rdi, %rdi              // No data
+    add $8, %rdx                // Get interrupt data
+    mov %rdx, %rdi              // Pass the interrupt data
     push %rcx                   // Save our counter
     call *%rbx                  // Call the handler
     pop %rcx                    // Restore our counter

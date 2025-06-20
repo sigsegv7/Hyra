@@ -47,6 +47,22 @@
 #define IPL_CLOCK   2   /* Clock */
 #define IPL_HIGH    3   /* Defer everything */
 
+struct intr_hand;
+
+/*
+ * Contains information passed to driver
+ *
+ * @ihp: Interrupt handler
+ * @data: Driver specific data
+ */
+struct intr_data {
+    struct intr_hand *ihp;
+    union {
+        void *data;
+        uint64_t data_u64;
+    };
+};
+
 /*
  * Interrupt handler
  *
@@ -55,6 +71,7 @@
  * [v]: Returned by intr_register()
  *
  * @func: The actual handler        [r]
+ * @data: Interrupt data            [o/v]
  * @name: Interrupt name            [v]
  * @priority: Interrupt priority    [r]
  * @irq: Interrupt request number   [o]
@@ -74,6 +91,7 @@
  */
 struct intr_hand {
     int(*func)(void *);
+    struct intr_data data;
     char *name;
     int priority;
     int irq;
