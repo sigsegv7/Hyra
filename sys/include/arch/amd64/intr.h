@@ -60,6 +60,8 @@
  * @irq: Interrupt request number   [o]
  * @vector: Interrupt vector        [v]
  *
+ * XXX: `name' must be null terminated ('\0')
+ *
  * XXX: `irq` can be set to -1 for MSI/MSI-X
  *      interrupts.
  *

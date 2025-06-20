@@ -106,7 +106,7 @@ intr_register(const char *name, const struct intr_hand *ih)
         }
 
         /* Allocate memory for the name */
-        name_len = strlen(name);
+        name_len = strlen(name) + 1;
         ih_new->name = dynalloc(name_len);
         if (ih_new->name == NULL) {
             dynfree(ih_new);
