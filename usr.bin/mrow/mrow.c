@@ -45,7 +45,8 @@
 
 #define SPRITE_WIDTH 20
 #define SPRITE_HEIGHT 20
-#define MOUSE_SPEED 4
+#define MAX_MOUSE_SPEED 3
+#define MIN_MOUSE_SPEED 1
 #define PLAYER_SPEED 30
 
 #define SCR_WIDTH (fbattr.width)
@@ -72,6 +73,7 @@ struct mouse {
     int32_t y;
     uint8_t x_inc : 1;
     uint8_t y_inc : 1;
+    uint8_t speed;
 };
 
 static inline size_t
@@ -97,16 +99,16 @@ update_mouse(struct mouse *mouse)
 
     /* Move the mouse in the x direction */
     if (mouse->x_inc) {
-        mouse->x += rand() % MOUSE_SPEED;
+        mouse->x += mouse->speed;
     } else {
-        mouse->x -= rand() % MOUSE_SPEED;
+        mouse->x -= mouse->speed;
     }
 
     /* Move the mouse in the y direction */
     if (mouse->y_inc) {
-        mouse->y += rand() % MOUSE_SPEED;
+        mouse->y += mouse->speed;
     } else {
-        mouse->y -= rand() % MOUSE_SPEED;
+        mouse->y -= mouse->speed;
     }
 
     if (mouse->x >= MAX_X) {
@@ -143,6 +145,18 @@ beep(uint16_t msec, uint16_t freq)
     write(beep_fd, &payload, sizeof(payload));
 }
 
+static void
+score_increment(struct player *p, struct mouse *m)
+{
+    printf("\033[31;40mSCORE: %d\033[0m\n", ++hit_count);
+
+    if (m->speed < MAX_MOUSE_SPEED) {
+        m->speed += 1;
+    } else {
+        m->speed = MIN_MOUSE_SPEED;
+    }
+}
+
 static bool
 mouse_collide(struct player *p, struct mouse *m)
 {
@@ -170,9 +184,7 @@ mouse_collide(struct player *p, struct mouse *m)
         m->y = 0;
         m->x_inc ^= 1;
         m->y_inc ^= 1;
-
-        ++hit_count;
-        printf("\033[31;40mSCORE: %d\033[0m\n", hit_count);
+        score_increment(p, m);
     }
 
     return detected;
@@ -200,6 +212,7 @@ game_loop(void)
     mouse.y = MAX_Y;
     mouse.x_inc = 0;
     mouse.y_inc = 0;
+    mouse.speed = MIN_MOUSE_SPEED;
 
     /* Draw player and mouse */
     draw_rect(p.x, p.y, SPRITE_WIDTH, SPRITE_HEIGHT, PLAYER_BG);
