@@ -27,67 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STDLIB_H
-#define _STDLIB_H 1
+#include <stdlib.h>
 
-/* For __dead */
-#include <sys/cdefs.h>
+static unsigned int r_seed = 0x9E3779B9;
 
-/* Get specific definitions from stddef.h */
-#define __need_NULL
-#define __need_size_t
-#define __need_wchar_t
-#include <stddef.h>
+void
+srand(unsigned int r)
+{
+    r_seed = r;
+}
 
-#if __STDC_VERSION__ >= 202311L
-#define __STDC_VERSION_STDLIB_H__ 202311L
-#endif
-
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
-
-typedef struct {
-    int quot;
-    int rem;
-} div_t;
-
-#ifndef __ldiv_t_defined
-typedef struct {
-    long int quot;
-    long int rem;
-} ldiv_t;
-#define __ldiv_t_defined 1
-#endif /* !__ldiv_t_defined */
-
-#ifndef __lldiv_t_defined
-typedef struct {
-    long long int quot;
-    long long int rem;
-} lldiv_t;
-#define __lldiv_t_defined 1
-#endif /* !__lldiv_t_defined */
-
-__BEGIN_DECLS
-
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) || (defined(__cplusplus) && __cplusplus >= 201103L)
-[[noreturn]] void abort(void);
-[[noreturn]] void exit(int status);
-[[noreturn]] void _Exit(int status);
-#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-_Noreturn void abort(void);
-_Noreturn void exit(int status);
-_Noreturn void _Exit(int status);
-#else
-__dead void abort(void);
-__dead void exit(int status);
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-__dead void _Exit(int status);
-#endif
-#endif
-
-void srand(unsigned int r);
-int rand(void);
-
-__END_DECLS
-
-#endif /* !_STDLIB_H */
+int
+rand(void)
+{
+    r_seed = (r_seed >> 0x01U) ^ (-(r_seed & 0x01U) & 0xB400U);
+    return r_seed;
+}
