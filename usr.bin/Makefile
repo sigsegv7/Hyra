@@ -12,3 +12,4 @@ all:
 	make -C time/ $(ARGS)
 	make -C mex/ $(ARGS)
 	make -C beep/ $(ARGS)
+	make -C mrow/ $(ARGS)
