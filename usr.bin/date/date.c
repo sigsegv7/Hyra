@@ -28,14 +28,34 @@
  */
 
 #include <sys/time.h>
+#include <sys/cdefs.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 
+#define MONTHS_PER_YEAR 12
+#define DAYS_PER_WEEK 7
+
+/* Months of the year */
+static const char *montab[] = {
+    "Jan", "Feb", "Mar",
+    "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep",
+    "Oct", "Nov", "Dec"
+};
+
+/* Days of the week */
+static const char *daytab[] = {
+    "Sat", "Sun", "Mon",
+    "Tue", "Wed", "Thu",
+    "Fri"
+};
+
 int
 main(void)
 {
-    char date_str[16];
+    const char *day, *month;
+    char date_str[32];
     struct date d;
     int rtc_fd;
 
@@ -46,8 +66,21 @@ main(void)
     read(rtc_fd, &d, sizeof(d));
     close(rtc_fd);
 
-    snprintf(date_str, sizeof(date_str), "%02d:%02d:%02d\n",
-        d.hour, d.min, d.sec);
+    /* This should not happen */
+    if (__unlikely(d.month > MONTHS_PER_YEAR)) {
+        printf("got bad month %d from RTC\n", d.month);
+        return -1;
+    }
+    if (__unlikely(d.month == 0 || d.day == 0)) {
+        printf("got zero month/day from RTC\n");
+        return -1;
+    }
+
+    day = daytab[d.day % DAYS_PER_WEEK];
+    month = montab[d.month - 1];
+
+    snprintf(date_str, sizeof(date_str), "%s %s %d %02d:%02d:%02d\n",
+        day, month, d.day, d.hour, d.min, d.sec);
     fputs(date_str, stdout);
     return 0;
 }
