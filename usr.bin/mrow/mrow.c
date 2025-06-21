@@ -278,7 +278,9 @@ main(void)
     fb_size = fbattr.height * fbattr.pitch;
     prot = PROT_READ | PROT_WRITE;
     framep = mmap(NULL, fb_size, prot, MAP_SHARED, fb_fd, 0);
+
     game_loop();
+    printf("\033[35;40mYOUR FINAL SCORE: %d\033[0m\n", hit_count);
 
     /* Cleanup */
     close(beep_fd);
