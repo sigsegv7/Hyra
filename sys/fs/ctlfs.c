@@ -371,25 +371,7 @@ ctlfs_read(struct vnode *vp, struct sio_txn *sio)
 static int
 ctlfs_reclaim(struct vnode *vp)
 {
-    struct ctlfs_hdr *hp;
-
-    if (vp->data == NULL) {
-        return 0;
-    }
-
-    /* Ensure the magic is correct */
-    hp = vp->data;
-    switch (hp->magic) {
-    case CTLFS_NODE_MAG:
-    case CTLFS_ENTRY_MAG:
-        dynfree(hp->name);
-        break;
-    default:
-        pr_error("reclaim: bad magic in vp\n");
-        break;
-    }
-
-    dynfree(vp->data);
+    vp->data = NULL;
     return 0;
 }
 
