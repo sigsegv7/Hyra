@@ -46,7 +46,7 @@
 
 #define SPRITE_WIDTH 20
 #define SPRITE_HEIGHT 20
-#define MAX_MOUSE_SPEED 3
+#define MAX_MOUSE_SPEED 2
 #define MIN_MOUSE_SPEED 1
 #define PLAYER_SPEED 30
 
