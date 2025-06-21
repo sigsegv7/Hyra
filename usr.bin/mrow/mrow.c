@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define IS_ASCII(C) ((C) > 0 && (C) < 127)
 
