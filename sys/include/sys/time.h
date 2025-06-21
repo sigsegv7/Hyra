@@ -46,6 +46,9 @@ struct timespec {
 };
 
 struct date {
+    uint16_t year;
+    uint8_t month;
+    uint8_t day;
     uint8_t sec;
     uint8_t min;
     uint8_t hour;

@@ -82,6 +82,12 @@ mc1468_updating(void)
 static bool
 mc1468_date_synced(struct date *a, struct date *b)
 {
+    if (a->year != b->year)
+        return false;
+    if (a->month != b->month)
+        return false;
+    if (a->day != b->day)
+        return false;
     if (a->sec != b->sec)
         return false;
     if (a->min != b->min)
@@ -100,6 +106,9 @@ mc1468_date_synced(struct date *a, struct date *b)
 static void
 mc1468_bcd_conv(struct date *dp)
 {
+    dp->year = (dp->year & 0x0F) + ((dp->year / 16) * 10);
+    dp->month = (dp->month & 0x0F) + ((dp->month / 16) * 10);
+    dp->day = (dp->day & 0x0F) + ((dp->day / 16) * 10);
     dp->sec = (dp->sec & 0x0F) + ((dp->sec / 16) * 10);
     dp->min = (dp->min & 0x0F) + ((dp->min / 16) * 10);
     dp->hour = (dp->hour & 0x0F) + (((dp->hour & 0x70) / 16) * 10);
@@ -117,6 +126,9 @@ mc1468_bcd_conv(struct date *dp)
 static void
 __mc1468_get_time(struct date *dp)
 {
+    dp->year = mc1468_read(0x09);
+    dp->month = mc1468_read(0x08);
+    dp->day = mc1468_read(0x07);
     dp->sec = mc1468_read(0x00);
     dp->min = mc1468_read(0x02);
     dp->hour = mc1468_read(0x04);
@@ -144,6 +156,9 @@ mc1468_get_date(struct date *dp)
             md_pause();
         }
         __mc1468_get_time(&date_last);
+        date_cur.year = date_last.year;
+        date_cur.month = date_last.month;
+        date_cur.day = date_last.day;
         date_cur.sec = date_last.sec;
         date_cur.min = date_last.min;
         date_cur.hour = date_last.hour;
