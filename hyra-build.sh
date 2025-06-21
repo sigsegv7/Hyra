@@ -153,7 +153,6 @@ result() {
     then
         hard_clean # XXX: For safety
         echo "Installer is at ./Hyra-install.iso"
-        echo "!!WARNING!!: Installer is _automatic_"
         echo "!!NOTE!!: OSMORA is not responsible for incidental data loss"
     else
         echo "Boot image is at ./Hyra.iso"
