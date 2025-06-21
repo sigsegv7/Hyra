@@ -55,7 +55,7 @@
     "fetch    - System information\n" \
     "kfg      - Start up kfgwm\n"     \
     "bell     - Toggle backspace bell\n" \
-    "time     - Get the current time\n" \
+    "date     - Get the current date\n" \
     "clear    - Clear the screen\n"     \
     "exit     - Exit the shell"
 

@@ -9,7 +9,7 @@ all:
 	make -C kmsg/ $(ARGS)
 	make -C fetch/ $(ARGS)
 	make -C kfgwm/ $(ARGS)
-	make -C time/ $(ARGS)
+	make -C date/ $(ARGS)
 	make -C mex/ $(ARGS)
 	make -C beep/ $(ARGS)
 	make -C mrow/ $(ARGS)
