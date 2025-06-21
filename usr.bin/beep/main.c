@@ -63,8 +63,8 @@ main(int argc, char **argv)
         return -1;
     }
 
-    payload = duration;
-    payload |= (freq << 16);
+    payload = freq;
+    payload |= (duration << 16);
     write(beep_fd, &payload, sizeof(payload));
     return 0;
 }
