@@ -39,7 +39,7 @@
 __always_inline static inline uint16_t
 __swap16(uint16_t x)
 {
-    return ((x << 8) & 0XFF00) | ((x >> 8) & 0X00FF);
+    return ((x << 8) & 0xFF00) | ((x >> 8) & 0x00FF);
 }
 
 __always_inline static inline uint32_t
@@ -48,7 +48,7 @@ __swap32(uint32_t x)
     return ((x << 24) & 0xFF000000) |
            ((x << 8)  & 0x00FF0000) |
            ((x >> 8)  & 0x0000FF00) |
-           ((x >> 24) & 0X000000FF);
+           ((x >> 24) & 0x000000FF);
 }
 
 #endif  /* !_SYS_ENDIAN_H_ */
