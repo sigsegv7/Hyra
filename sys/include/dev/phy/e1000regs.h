@@ -100,4 +100,20 @@
 #define E1000_EECD_SIZE BIT(9)  /* EEPROM size (1024-bit [0], 4096-bit [1]) */
 #define E1000_EECD_TYPE BIT(13) /* EEPROM type (microwire [0], SPI [1]) */
 
+/*
+ * EEPROM read (`eerd') register bits
+ *
+ * See section 13.4.4 of the PCI/PCI-X Intel Gigabit
+ * Ethernet controller spec
+ */
+#define E1000_EERD_START     BIT(0) /* Start read */
+#define E1000_EERD_DONE      BIT(4) /* EEPROM read finished */
+
+/*
+ * EEPROM word addresses
+ */
+#define E1000_HWADDR0 0x00      /* Word 0 */
+#define E1000_HWADDR1 0x01      /* Word 1 */
+#define E1000_HWADDR2 0x02      /* Word 2 */
+
 #endif  /* !_PHY_E1000_REGS_H_ */
