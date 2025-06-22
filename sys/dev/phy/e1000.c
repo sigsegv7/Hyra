@@ -243,6 +243,29 @@ e1000_read_macaddr(struct e1000_nic *np, struct netif_addr *addr)
 }
 
 /*
+ * Reset the entire E1000
+ */
+static int
+e1000_reset(struct e1000_nic *np)
+{
+    uint32_t ctl, *ctl_p;
+    int error;
+
+    ctl_p = PTR_OFFSET(np->vap, E1000_CTL);
+    ctl = mmio_read32(&ctl_p);
+    ctl |= E1000_CTL_RST;
+    mmio_write32(&ctl_p, ctl);
+
+    error = e1000_poll_reg(ctl_p, E1000_CTL_RST, false);
+    if (error < 0) {
+        pr_error("reset timeout\n");
+        return error;
+    }
+
+    return 0;
+}
+
+/*
  * Initialize an E1000(e) chip
  */
 static int
@@ -250,6 +273,19 @@ e1000_chip_init(struct e1000_nic *np)
 {
     struct netif_addr *addr = &netif.addr;
     int error;
+
+    /*
+     * To ensure that BIOS/UEFI or whatever firmware got us
+     * here didn't fuck anything up in the process or at the
+     * very least, put the controller in a seemingly alright
+     * state that gives us a suprise screwing in the future,
+     * we'll reset everything to its default startup state.
+     *
+     * Better safe than sorry...
+     */
+    if ((error = e1000_reset(np)) < 0) {
+        return error;
+    }
 
     eeprom_query(np);
     if ((error = e1000_read_macaddr(np, addr)) < 0) {
