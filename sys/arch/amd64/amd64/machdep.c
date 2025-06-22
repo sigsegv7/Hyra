@@ -45,6 +45,9 @@
 #include <machine/cdefs.h>
 #include <machine/isa/i8042var.h>
 
+#define pr_trace(fmt, ...) kprintf("cpu: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
+
 #define HALT_VECTOR 0x21
 #define TLB_VECTOR  0x22
 
@@ -55,6 +58,7 @@
 #endif
 
 int ibrs_enable(void);
+int simd_init(void);
 void syscall_isr(void);
 void pin_isr_load(void);
 
@@ -153,6 +157,20 @@ backtrace_addr_to_name(uintptr_t addr, off_t *off)
     }
 
     return NULL;
+}
+
+static void
+enable_simd(void)
+{
+    int retval;
+
+    if ((retval = simd_init()) < 0) {
+        pr_error("SIMD not supported\n");
+    }
+
+    if (retval == 1) {
+        pr_trace("SSE enabled but not AVX\n");
+    }
 }
 
 void
@@ -290,5 +308,6 @@ cpu_startup(struct cpu_info *ci)
     init_tss(ci);
     try_mitigate_spectre();
 
+    enable_simd();
     lapic_init();
 }
