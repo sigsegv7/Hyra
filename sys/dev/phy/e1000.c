@@ -100,6 +100,20 @@ e1000_chip_init(struct e1000_nic *np)
     return 0;
 }
 
+/*
+ * Enables PCI specific bits like bus mastering (for DMA)
+ * as well as MMIO.
+ */
+static void
+e1000_init_pci(void)
+{
+    uint32_t tmp;
+
+    tmp = pci_readl(e1000, PCIREG_CMDSTATUS);
+    tmp |= (PCI_BUS_MASTERING | PCI_MEM_SPACE);
+    pci_writel(e1000, PCIREG_CMDSTATUS, tmp);
+}
+
 static int
 e1000_init(void)
 {
@@ -124,6 +138,7 @@ e1000_init(void)
         return status;
     }
 
+    e1000_init_pci();
     e1000_chip_init(&nic);
     return 0;
 }
