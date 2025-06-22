@@ -45,11 +45,7 @@
 static struct pci_device *e1000;
 
 struct e1000_nic {
-    union {
-        struct e1000_iomem *iop;
-        void *vap;
-    };
-
+    void *vap;
     uint8_t has_eeprom : 1;
     uint16_t eeprom_size;
 };
@@ -66,17 +62,18 @@ struct e1000_nic {
 static void
 eeprom_query(struct e1000_nic *np)
 {
-    uint32_t eecd;
     uint16_t size_bits = 1024;
+    uint32_t eecd, *eecd_p;
     const char *typestr = "microwire";
-    struct e1000_iomem *iop = np->iop;
+
+    eecd_p = PTR_OFFSET(np->vap, E1000_EECD);
 
     /*
      * First we should check if there is an EEPROM
      * on-board as if not, there is nothing we can do
      * here.
      */
-    eecd = mmio_read32(&iop->eecd);
+    eecd = mmio_read32(eecd_p);
     if (!ISSET(eecd, E1000_EECD_PRES)) {
         return;
     }

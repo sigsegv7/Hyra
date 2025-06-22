@@ -34,54 +34,38 @@
 #include <sys/param.h>
 
 /*
- * Device I/O memory space
- *
- * @ctl: Control register
- * @status: Status register
- * @eecd: EEPROM/flash control & data register
- * @eerd: EEPROM/flash read register (see reserved notes below)
- * @fla: Flash access register (see reserved notes below)
- * @ctl_ext: Extended device control register
- * @midi_ctl: PHY management data interface control register
- * @fctl: Flow control register
- * @fct: Flow control type register
- * @vet: VLAN ether type register
- * @fcttv: Flow control transmit timer value register
- * @txcw: Transmit config word register (see reserved notes below)
- * @rxcw: Receive config word register (see reserved notes below)
- * @ledctl: LED control register (see reserved notes below)
+ * E1000 register offsets
  *
  * XXX: Notes about reserve fields:
  *
- *      - The `eerd' register is reserved and should NOT be touched
- *        for the 82544GC/EI card.
+ *  - The `EERD' register is reserved and should NOT be touched
+ *    for the 82544GC/EI card.
  *
- *      - The `fla' register is only usable for the 82541xx and
- *        82547GI/EI cards, this is reserved and should NOT be
- *        touched on any other cards.
+ *  - The `FLA' register is only usable for the 82541xx and
+ *    82547GI/EI cards, this is reserved and should NOT be
+ *    touched on any other cards.
  *
- *      - The `txcw' and `rxcw' registers are reserved and should NOT
- *        be touched for the 82540EP/EM, 82541xx and 82547GI/EI cards.
+ *  - The `TXCW' and `RXCW' registers are reserved and should NOT
+ *    be touched for the 82540EP/EM, 82541xx and 82547GI/EI cards.
  *
- *      - The `ledctl' register is reserved and should NOT be touched
- *        for the 82544GC/EI card.
+ *  - The `LEDCTL' register is reserved and should NOT be touched
+ *    for the 82544GC/EI card.
  */
-struct e1000_iomem {
-    volatile uint32_t ctl;
-    volatile uint32_t status;
-    volatile uint32_t eecd;
-    volatile uint32_t eerd;
-    volatile uint32_t fla;
-    volatile uint32_t ctl_ext;
-    volatile uint32_t midi_ctl;
-    volatile uint64_t fctl;
-    volatile uint32_t fct;
-    volatile uint32_t vet;
-    volatile uint32_t fcttv;
-    volatile uint32_t txcw;
-    volatile uint32_t rxcw;
-    volatile uint32_t ledctl;
-};
+#define E1000_CTL       0x00000  /* Control register */
+#define E1000_STATUS    0x00008  /* Status register */
+#define E1000_EECD      0x00010  /* EEPROM/flash control and data register */
+#define E1000_EERD      0x00014  /* EEPROM/flash read register */
+#define E1000_FLA       0x0001C  /* EEPROM/flash read register */
+#define E1000_CTRL_EXT  0x00018  /* Extended device control register */
+#define E1000_MDIC      0x00020  /* PHY management data interface control register */
+#define E1000_FCAL      0x00028  /* Flow control low register */
+#define E1000_FCAH      0x0002C  /* Flow control high register */
+#define E1000_FCT       0x00030  /* Flow control type register */
+#define E1000_VET       0x00038  /* VLAN ethertype register */
+#define E1000_FCTTV     0x00170  /* Flow control transmit timer value register */
+#define E1000_TXCW      0x00178  /* Transmit config word register */
+#define E1000_RXCW      0x00180  /* Receive config word register */
+#define E1000_LEDCTL    0x00E00  /* LED control register */
 
 /*
  * Device control register (`ctl') bits
