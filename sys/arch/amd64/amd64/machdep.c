@@ -47,6 +47,10 @@
 
 #define pr_trace(fmt, ...) kprintf("cpu: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
+#define pr_trace_bsp(...)       \
+    if (!bsp_init) {            \
+        pr_trace(__VA_ARGS__);  \
+    }
 
 #define HALT_VECTOR 0x21
 #define TLB_VECTOR  0x22
@@ -63,6 +67,7 @@ void syscall_isr(void);
 void pin_isr_load(void);
 
 struct cpu_info g_bsp_ci = {0};
+static bool bsp_init = false;
 
 __attribute__((__interrupt__))
 static void
@@ -165,11 +170,11 @@ enable_simd(void)
     int retval;
 
     if ((retval = simd_init()) < 0) {
-        pr_error("SIMD not supported\n");
+        pr_trace_bsp("SIMD not supported\n");
     }
 
     if (retval == 1) {
-        pr_trace("SSE enabled but not AVX\n");
+        pr_trace_bsp("SSE enabled but not AVX\n");
     }
 }
 
@@ -310,4 +315,8 @@ cpu_startup(struct cpu_info *ci)
 
     enable_simd();
     lapic_init();
+
+    if (!bsp_init) {
+        bsp_init = true;
+    }
 }
