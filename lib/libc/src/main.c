@@ -31,6 +31,7 @@
 #include <stddef.h>
 
 extern int __libc_stdio_init(void);
+extern int __malloc_mem_init(void);
 
 int main(int argc, char **argv);
 
@@ -48,5 +49,6 @@ __libc_entry(uint64_t *ctx)
         return status;
     }
 
+    __malloc_mem_init();
     return main(argc, argv);
 }
