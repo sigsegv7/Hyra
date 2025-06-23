@@ -182,7 +182,7 @@ mouse_collide(struct player *p, struct mouse *m)
         draw_rect(p->x, p->y, SPRITE_WIDTH, SPRITE_HEIGHT, GAME_BG);
 
         m->x = 0;
-        m->y = 0;
+        m->y = rand() % MAX_Y;
         m->x_inc ^= 1;
         m->y_inc ^= 1;
         score_increment(p, m);
