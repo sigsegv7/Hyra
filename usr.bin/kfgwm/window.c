@@ -77,6 +77,11 @@ draw_win(struct kfg_window *parent, struct kfg_window *wp)
     x_end = x_i + wp->width;
     y_end = y_i + wp->height;
 
+    if (x_end > parent->width)
+        x_end = parent->width;
+    if (y_end > parent->height)
+        y_end = parent->height;
+
     for (kfgpos_t x = x_i; x < x_end; ++x) {
         for (kfgpos_t y = y_i; y < y_i+KFG_TITLE_HEIGHT; ++y) {
             rx = (x - x_i);
