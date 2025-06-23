@@ -67,8 +67,12 @@
 /* Gives 1 if pointer is aligned */
 #define PTR_ALIGNED(PTR, ALIGN) (!((uintptr_t)PTR & (ALIGN - 1)))
 
-/* Adds a value to a pointer */
+/*
+ * PTR_OFFSET: Adds an offset to the pointer
+ * PTR_NOFFSET: Subtracts a negative offset from the pointer
+ */
 #define PTR_OFFSET(PTR, OFF) ((void *)((uintptr_t)PTR + OFF))
+#define PTR_NOFFSET(PTR, NOFF) ((void *)((uintptr_t)PTR - NOFF))
 
 #define NELEM(a) (sizeof(a) / sizeof(a[0]))
 
