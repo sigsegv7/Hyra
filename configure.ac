@@ -1,4 +1,4 @@
-AC_INIT([Hyra], [2.0], [ian@osmora.org])
+AC_INIT([Hyra], [2.1], [ian@osmora.org])
 
 TARGET="amd64"
 QEMU="qemu-system-x86_64"
