@@ -40,7 +40,7 @@ static const char *elftype[] = {
     [ET_REL] = "Relocatable",
     [ET_EXEC] = "Executable",
     [ET_DYN] = "Shared object",
-    [ET_CORE] "Core dump"
+    [ET_CORE] = "Core dump"
 };
 
 /* Phdr.p_type table */
