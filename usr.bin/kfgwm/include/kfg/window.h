@@ -61,6 +61,7 @@ struct kfg_text {
     kfgpos_t y;
 };
 
+struct kfg_window *kfg_win_new(struct kfg_window *parent, kfgpos_t x, kfgpos_t y);
 int kfg_win_draw(struct kfg_window *parent, struct kfg_window *wp);
 int kfg_win_putstr(struct kfg_window *wp, struct kfg_text *tp);
 

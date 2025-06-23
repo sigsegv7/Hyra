@@ -32,6 +32,7 @@
 #include <sys/param.h>
 #include <kfg/window.h>
 #include <kfg/font.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -156,6 +157,34 @@ kfg_win_draw(struct kfg_window *parent, struct kfg_window *wp)
 
     draw_win(parent, wp);
     return 0;
+}
+
+/*
+ * Create a new default window
+ *
+ * @x: X position for this window
+ * @y: Y position for this window
+ * @w: Window width
+ * @h: Window height
+ */
+struct kfg_window *
+kfg_win_new(struct kfg_window *parent, kfgpos_t x, kfgpos_t y)
+{
+    struct kfg_window *wp;
+
+    if ((wp = malloc(sizeof(*wp))) == NULL) {
+        return NULL;
+    }
+
+    wp->x = x;
+    wp->y = y;
+    wp->width = 250;
+    wp->height = 150;
+    wp->fb_pitch = parent->fb_pitch;
+    wp->framebuf = parent->framebuf;
+    wp->bg = KFG_DARK;
+    wp->border_bg = KFG_RED;
+    return wp;
 }
 
 int
