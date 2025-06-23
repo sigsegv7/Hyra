@@ -69,9 +69,9 @@ static off_t heap_pos = 0;
  * by bumping a pointer which is O(1). During this state, even after
  * any calls to free(), we can assume that there is more memory ahead
  * of us that is free (due to the initial zero-fragmentation). However,
- * once we've reached the end of the pool, if any memory has been previous
+ * once we've reached the end of the pool, if any memory has been previously
  * freed (indicated by heap_len > 0), we can wrap the tail and start allocating
- * in a best-fit fasion as we assume that heap is now fragmented.
+ * in a best-fit fashion as we can assume that the heap is now fragmented.
  */
 static bool wrap = false;
 
