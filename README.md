@@ -27,6 +27,10 @@ Documentation:
 --------------
 Documentation will be in the form of comments throughout the codebase and can also be found in the share/ directory within the project root.
 
+Screenshot:
+--------------
+![Hyra](./.github/assets/hyra.png)
+
 License:
 --------
 This project is licensed under the BSD-3 clause (SPDX Identifier: BSD-3-Clause)
