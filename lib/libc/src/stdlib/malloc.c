@@ -39,12 +39,13 @@
 
 #define HEAP_SIZE   0x1001A8
 #define HEAP_MAGIC  0x05306A    /* "OSMORA" :~) */
+#define HEAP_ALIGN  4
 #define HEAP_PROT PROT_READ | PROT_WRITE
 #define BYTE_PTR(PTR) ((char *)(PTR))
 #define HEAP_NEXT(BLOCKP, SIZE) \
     PTR_OFFSET((BLOCKP), sizeof(struct mem_block) + (SIZE))
 
-struct __aligned(4) mem_block {
+struct __aligned(HEAP_ALIGN) mem_block {
     uint32_t magic;
     uint32_t size;
     uint8_t allocated : 1;
@@ -121,7 +122,7 @@ malloc(size_t size)
     struct mem_block *tail;
     size_t inc_len = 0;
 
-    size = ALIGN_UP(size, 4);
+    size = ALIGN_UP(size, HEAP_ALIGN);
     inc_len = sizeof(*next_block) + size;
 
     if (heap_len < 0) {
