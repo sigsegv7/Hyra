@@ -310,6 +310,11 @@ open_script(const char *pathname)
     }
 
     while (read(fd, &c, 1) > 0) {
+        /* Skip blank newlines */
+        if (c == '\n' && buf_i == 0) {
+            continue;
+        }
+
         if (buf_i >= sizeof(buf) - 1) {
             buf_i = 0;
         }
