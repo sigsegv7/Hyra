@@ -44,6 +44,9 @@ sysroot_skel() {
     mkdir -p base/usr/bin/
     mkdir -p base/boot/
     mkdir -p base/usr/include/sys/
+    mkdir -p base/usr/rc
+
+    cp -r rc/* base/usr/rc
     cp -f sys/include/sys/*.h base/usr/include/sys
 
     # Populate ESP
