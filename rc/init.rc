@@ -1,1 +1,7 @@
+@
+@ /usr/rc/init.rc
+@ ---------------
+@ Hyra userspace startup script
+@
+
 osh
