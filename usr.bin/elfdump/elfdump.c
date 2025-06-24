@@ -89,7 +89,7 @@ parse_phdrs(const Elf64_Ehdr *eh, int fd)
     Elf64_Phdr phdr;
     const char *type = "Unknown";
 
-    lseek(fd, SEEK_SET, eh->e_phoff);
+    lseek(fd, eh->e_phoff, SEEK_SET);
     printf("-- PHDRS BEGIN --\n");
     for (size_t i = 0; i < eh->e_phnum; ++i) {
         if (read(fd, &phdr, eh->e_phentsize) <= 0) {
