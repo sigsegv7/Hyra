@@ -356,6 +356,9 @@ open_script(const char *pathname)
             buf[buf_i] = '\0';
             argc = parse_args(buf, argv, sizeof(argv));
             command_match(buf, argc, argv, true);
+
+            argv[0] = NULL;
+            argv[1] = NULL;
             buf_i = 0;
             continue;
         }
