@@ -46,10 +46,8 @@
 
 #if defined(_INSTALL_MEDIA)
 #define _START_PATH "/usr/sbin/install"
-#define _START_ARG NULL
 #else
-#define _START_PATH "/usr/bin/osh"
-#define _START_ARG "/usr/rc/init.rc"
+#define _START_PATH "/usr/sbin/init"
 #endif  /* _INSTALL_MEDIA  */
 
 struct proc g_proc0;
@@ -66,7 +64,7 @@ start_init(void)
 {
     struct proc *td = this_td();
     struct execve_args execve_args;
-    char *argv[] = { _START_PATH, _START_ARG, NULL };
+    char *argv[] = { _START_PATH, NULL, NULL };
     char *envp[] = { NULL };
 
     execve_args.pathname = argv[0];

@@ -27,8 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/spawn.h>
+#include <stddef.h>
+
+#define SHELL_PATH   "/usr/bin/osh"
+#define INIT_RC_PATH "/usr/rc/init.rc"
+
 int
 main(void)
 {
+    char *argv[] = { SHELL_PATH, INIT_RC_PATH, NULL };
+    char *envp[] = { NULL };
+
+    spawn(SHELL_PATH, argv, envp, SPAWN_WAIT);
+    argv[1] = NULL;
+    spawn(SHELL_PATH, argv, envp, SPAWN_WAIT);
     return 0;
 }
