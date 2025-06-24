@@ -39,6 +39,7 @@
 #include <stdio.h>
 
 #define is_ascii(C) ((C) >= 0 && (C) <= 128)
+#define COMMENT '@'
 #define WELCOME \
     ":::::::::::::::::::::::::::::::::::::::\n" \
     ":: OSMORA GATEWAY ~ Every key echos  ::\n" \
@@ -157,6 +158,11 @@ parse_args(char *input, char *argv[], int max_args)
 {
     int argc = 0;
 
+    /* ignore comments */
+    if (*input == '@') {
+        return 0;
+    }
+
     while (*input != '\0') {
         /* skip leading spaces */
         while (*input == ' ') {
@@ -168,11 +174,21 @@ parse_args(char *input, char *argv[], int max_args)
             break;
         }
 
+        /* comment? */
+        if (*input == COMMENT) {
+            break;
+        }
+
         if (argc < max_args) {
             argv[argc++] = input; /* mark start of the argument */
         }
         /* move forward until next space or end */
         while (*input != '\0' && *input != ' ') {
+            /* ignore comments */
+            if (*input == COMMENT) {
+                return 0;
+            }
+
             input++;
         }
 
@@ -296,6 +312,17 @@ command_match(const char *input, int argc, char *argv[], bool wait)
     }
 }
 
+static void
+script_skip_comment(int fd)
+{
+    char c;
+
+    while (c != '\n') {
+        if (read(fd, &c, 1) <= 0)
+            break;
+    }
+}
+
 static int
 open_script(const char *pathname)
 {
@@ -310,6 +337,12 @@ open_script(const char *pathname)
     }
 
     while (read(fd, &c, 1) > 0) {
+        /* Skip comments */
+        if (c == COMMENT) {
+            script_skip_comment(fd);
+            continue;
+        }
+
         /* Skip blank newlines */
         if (c == '\n' && buf_i == 0) {
             continue;
