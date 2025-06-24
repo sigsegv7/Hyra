@@ -129,7 +129,8 @@ exit1(struct proc *td, int flags)
     /* If we have any children, kill them too */
     if (td->nleaves > 0) {
         TAILQ_FOREACH(procp, &td->leafq, leaf_link) {
-            exit1(procp, flags);
+            if (!ISSET(procp->flags, PROC_EXITING))
+                exit1(procp, flags);
         }
     }
 
