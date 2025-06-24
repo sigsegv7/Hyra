@@ -14,3 +14,4 @@ all:
 	make -C beep/ $(ARGS)
 	make -C mrow/ $(ARGS)
 	make -C elfdump/ $(ARGS)
+	make -C cat/ $(ARGS)
