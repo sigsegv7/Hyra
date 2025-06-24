@@ -4,3 +4,7 @@ option USER_KMSG    yes     // Show kmsg in user consoles
 
 // Kernel constants
 setval SCHED_NQUEUE 4       // Number of scheduler queues (for MLFQ)
+
+// Console attributes
+setval CONSOLE_BG 0x000000
+setval CONSOLE_FG 0xB57614
