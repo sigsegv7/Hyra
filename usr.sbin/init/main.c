@@ -39,7 +39,7 @@ main(void)
     char *argv[] = { SHELL_PATH, INIT_RC_PATH, NULL };
     char *envp[] = { NULL };
 
-    spawn(SHELL_PATH, argv, envp, SPAWN_WAIT);
+    spawn(SHELL_PATH, argv, envp, 0);
     argv[1] = NULL;
     spawn(SHELL_PATH, argv, envp, SPAWN_WAIT);
     return 0;
