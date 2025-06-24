@@ -67,9 +67,28 @@ static int running;
 static int bell_fd;
 static bool bs_bell = true; /* Beep on backspace */
 
+static void cmd_help(int argc, char *argv[]);
+static void cmd_echo(int argc, char *argv[]);
+static void cmd_exit(int argc, char *argv[]);
+static void cmd_reboot(int argc, char *argv[]);
+static void cmd_shutdown(int argc, char *argv[]);
+static void cmd_bell(int argc, char *argv[]);
+static void cmd_clear(int argc, char *argv[]);
+
 struct builtin_cmd {
     const char *name;
     void (*func)(int argc, char *argv[]);
+};
+
+static struct builtin_cmd cmds[] = {
+    {"help",cmd_help},
+    {"echo",cmd_echo},
+    {"exit",cmd_exit},
+    {"reboot",cmd_reboot},
+    {"shutdown", cmd_shutdown},
+    {"bell", cmd_bell},
+    {"clear", cmd_clear},
+    {NULL, NULL}
 };
 
 static void
@@ -223,11 +242,11 @@ builtin_run(struct builtin_cmd *cmd, int argc, char *argv[])
 }
 
 static int
-cmd_run(const char *input, int argc, char *argv[])
+cmd_run(const char *input, int argc, char *argv[], bool wait)
 {
-    char bin_path[256];
+    char bin_path[512];
     char *envp[1] = { NULL };
-    int error;
+    int error, spawn_flags = 0;
 
     snprintf(bin_path, sizeof(bin_path), "/usr/bin/%s", input);
 
@@ -236,30 +255,89 @@ cmd_run(const char *input, int argc, char *argv[])
         return -1;
     }
 
-    if ((error = spawn(bin_path, argv, envp, SPAWN_WAIT)) < 0) {
+    /* Should we wait or daemonize? */
+    if (wait) {
+        spawn_flags |= SPAWN_WAIT;
+    }
+
+    if ((error = spawn(bin_path, argv, envp, spawn_flags)) < 0) {
         return error;
     }
 
     return 0;
 }
 
-struct builtin_cmd cmds[] = {
-    {"help",cmd_help},
-    {"echo",cmd_echo},
-    {"exit",cmd_exit},
-    {"reboot",cmd_reboot},
-    {"shutdown", cmd_shutdown},
-    {"bell", cmd_bell},
-    {"clear", cmd_clear},
-    {NULL, NULL}
-};
+/*
+ * Match a command with a builtin or binary
+ *
+ * @input: Command input
+ * @argc: Argument count
+ * @argv: Argument vector
+ * @wait: If false, program will be daemonized
+ */
+static void
+command_match(const char *input, int argc, char *argv[], bool wait)
+{
+    int found = 0;
+    int i;
+
+    for (i = 0; cmds[i].name != NULL; i++) {
+        if (strcmp(input, cmds[i].name) == 0) {
+            builtin_run(&cmds[i], argc, argv);
+            found = 1;
+            break;
+        }
+    }
+
+    if (found == 0) {
+        if (cmd_run(input, argc, argv, wait) < 0) {
+            puts("Unrecognized command");
+        }
+    }
+}
+
+static int
+open_script(const char *pathname)
+{
+    int fd, argc, buf_i = 0;
+    char c, *input, *argv[16];
+    char buf[256];
+
+    fd = open(pathname, O_RDONLY);
+    if (fd < 0) {
+        printf("osh: failed to open %s\n", pathname);
+        return fd;
+    }
+
+    while (read(fd, &c, 1) > 0) {
+        if (buf_i >= sizeof(buf) - 1) {
+            buf_i = 0;
+        }
+
+        if (c == '\n') {
+            buf[buf_i] = '\0';
+            argc = parse_args(buf, argv, sizeof(argv));
+            command_match(buf, argc, argv, true);
+            buf_i = 0;
+            continue;
+        }
+        buf[buf_i++] = c;
+    }
+
+    return 0;
+}
 
 int
-main(void)
+main(int argc, char **argv)
 {
-    int found, argc;
-    char *input, *argv[16];
+    int found, prog_argc;
+    int stdout_fd;
+    char *input, *prog_argv[16], *p;
     char c;
+
+    if (argc > 1) {
+        return open_script(argv[1]);
+    }
 
     i = 0;
     running = 1;
@@ -275,25 +353,12 @@ main(void)
             continue;
         }
 
-        argc = parse_args(input, argv, sizeof(argv));
-        if (argc == 0) {
+        prog_argc = parse_args(input, prog_argv, sizeof(prog_argv));
+        if (prog_argc == 0) {
             continue;
         }
 
-        for (i = 0; cmds[i].name != NULL; i++) {
-            if (strcmp(input, cmds[i].name) == 0) {
-                builtin_run(&cmds[i], argc, argv);
-                found = 1;
-                break;
-            }
-        }
-
-        if (found == 0) {
-            if (cmd_run(input, argc, argv) < 0) {
-                puts("Unrecognized command");
-            }
-        }
-
+        command_match(input, prog_argc, prog_argv, true);
         found = 0;
         buf[0] = '\0';
     }
