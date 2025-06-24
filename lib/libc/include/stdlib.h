@@ -86,6 +86,7 @@ __dead void _Exit(int status);
 #endif
 
 void *malloc(size_t size);
+void *realloc(void *ptr, size_t size);
 void free(void *ptr);
 
 void srand(unsigned int r);

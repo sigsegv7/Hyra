@@ -36,6 +36,7 @@
 #include <stdatomic.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define HEAP_SIZE   0x1001A8
 #define HEAP_MAGIC  0x05306A    /* "OSMORA" :~) */
@@ -161,6 +162,26 @@ malloc(size_t size)
     heap_len += inc_len;
     heap_pos += inc_len;
     return PTR_OFFSET(next_block, sizeof(*next_block));
+}
+
+void *
+realloc(void *ptr, size_t size)
+{
+    struct mem_block *blk;
+    void *new_buf;
+
+    blk = PTR_NOFFSET(ptr, sizeof(*blk));
+    if (blk->magic != HEAP_MAGIC) {
+        __heap_abort("realloc: bad realloc block detected\n");
+    }
+    if (!blk->allocated) {
+        __heap_abort("realloc: bad realloc\n");
+    }
+
+    new_buf = malloc(size);
+    memcpy(new_buf, ptr, blk->size);
+    free(ptr);
+    return new_buf;
 }
 
 void
