@@ -27,7 +27,7 @@ Documentation:
 --------------
 Documentation will be in the form of comments throughout the codebase and can also be found in the share/ directory within the project root.
 
-Screenshot:
+Hyra running on bare metal:
 --------------
 ![Hyra](./.github/assets/hyra.png)
 
