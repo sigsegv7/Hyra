@@ -162,4 +162,35 @@ struct __packed acpi_mcfg {
     struct acpi_mcfg_base base[1];
 };
 
+struct __packed dmi_entry32 {
+    char signature[4];      /* _SM_ */
+    uint8_t checksum;       /* Sum of table bytes */
+    uint8_t length;         /* Length of entry table */
+    uint8_t major;          /* DMI major */
+    uint8_t minor;          /* DMI minor */
+    uint16_t max_size;      /* Max structure size */
+    uint8_t rev;            /* Entry revision */
+    char fmt_area[5];       /* Formatted area */
+    char isignature[5];     /* Intermediate signature */
+    uint8_t ichecksum;      /* Intermediate checksum */
+    uint16_t table_len;     /* Length of SMBIOS structure table */
+    uint32_t addr;          /* 32-bit physical start of SMBIOS structure table */
+    uint16_t nstruct;       /* Total number of structures */
+    uint8_t bcd_rev;
+};
+
+struct __packed dmi_entry64 {
+    char signature[5];      /* _SM_ */
+    uint8_t checksum;       /* Sum of table bytes */
+    uint8_t length;         /* Length of entry table */
+    uint8_t major;          /* DMI major */
+    uint8_t minor;          /* DMI minor */
+    uint8_t docrev;
+    uint8_t entry_rev;
+    uint8_t reserved;
+    uint16_t max_size;      /* Max structure size */
+    uint16_t padding;
+    uint64_t addr;          /* 64-bit physical address */
+};
+
 #endif  /* _ACPI_TABLES_H_ */
