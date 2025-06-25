@@ -124,18 +124,12 @@ md_td_kick(struct proc *td)
 {
     struct trapframe *tfp;
     struct cpu_info *ci;
-    uint8_t rpl;
-    uint16_t ds = KERNEL_DS;
+    uint16_t ds = USER_DS | 3;
 
     tfp = &td->tf;
-    rpl = tfp->cs & 3;
     ci = this_cpu();
     ci->curtd = td;
-
-    if (rpl == 3) {
-        td->flags &= ~PROC_KTD;
-        ds = USER_DS | 3;
-    }
+    td->flags &= ~PROC_KTD;
 
     __ASMV(
         "mov %0, %%rax\n"
