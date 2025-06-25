@@ -54,7 +54,7 @@
 #define PTE_PCD         BIT(4)        /* Page-level cache disable */
 #define PTE_ACC         BIT(5)        /* Accessed */
 #define PTE_DIRTY       BIT(6)        /* Dirty (written-to page) */
-#define PTE_PAT         BIT(7)
+#define PTE_PS          BIT(7)        /* Page size */
 #define PTE_GLOBAL      BIT(8)
 #define PTE_NX          BIT(63)       /* Execute-disable */
 
@@ -112,6 +112,16 @@ pmap_extract(uint8_t level, vaddr_t va, vaddr_t *pmap, bool alloc)
 
     if (pmap == NULL) {
         return NULL;
+    }
+
+    /*
+     * TODO: Support huge pages... For now, don't let the
+     *       bootloader fuck us up with their pre-kernel
+     *       mappings and tell huge pages to get the fuck.
+     *
+     */
+    if (ISSET(pmap[idx], PTE_PS)) {
+        pmap[idx] = 0;
     }
 
     if (ISSET(pmap[idx], PTE_P)) {
