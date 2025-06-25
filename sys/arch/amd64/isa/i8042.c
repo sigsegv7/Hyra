@@ -39,6 +39,7 @@
 #include <dev/acpi/acpi.h>
 #include <dev/timer.h>
 #include <dev/cons/cons.h>
+#include <dev/dmi/dmi.h>
 #include <machine/cpu.h>
 #include <machine/pio.h>
 #include <machine/isa/i8042var.h>
@@ -157,6 +158,45 @@ i8042_write(uint16_t port, uint8_t val)
 }
 
 /*
+ * Read from an i8042 register.
+ *
+ * @port: I/O port
+ */
+static uint8_t
+i8042_read(uint16_t port)
+{
+    i8042_obuf_wait();
+    return inb(port);
+}
+
+/*
+ * Read the i8042 controller configuration
+ * byte.
+ */
+static uint8_t
+i8042_read_conf(void)
+{
+    uint8_t conf;
+
+    i8042_write(I8042_CMD, I8042_GET_CONFB);
+    i8042_obuf_wait();
+    conf = i8042_read(I8042_DATA);
+    return conf;
+}
+
+/*
+ * Write a new value to the i8042 controller
+ * configuration byte.
+ */
+static void
+i8042_write_conf(uint8_t conf)
+{
+    i8042_write(I8042_CMD, I8042_SET_CONFB);
+    i8042_ibuf_wait();
+    i8042_write(I8042_DATA, conf);
+}
+
+/*
  * Send a data to a device
  *
  * @aux: If true, send to aux device (mouse)
@@ -204,11 +244,22 @@ static void
 i8042_en_intr(void)
 {
     struct intr_hand ih;
+    uint8_t conf;
 
     ih.func = i8042_kb_event;
     ih.priority = IPL_BIO;
     ih.irq = KB_IRQ;
     intr_register("i8042-kb", &ih);
+
+    /*
+     * Enable the clock of PS/2 port 0 and tell
+     * the controller that we are accepting
+     * interrupts.
+     */
+    conf = i8042_read_conf();
+    conf &= ~I8042_PORT0_CLK;
+    conf |= I8042_PORT0_INTR;
+    i8042_write_conf(conf);
 }
 
 static void
@@ -350,6 +401,8 @@ i8042_sync_loop(void)
 static int
 i8042_init(void)
 {
+    const char *prodver = NULL;
+
     /* Try to request a general purpose timer */
     if (req_timer(TIMER_GP, &tmr) != TMRR_SUCCESS) {
         pr_error("failed to fetch general purpose timer\n");
@@ -378,9 +431,12 @@ i8042_init(void)
      * etc... As of now, treat the i8042 like a fucking bomb
      * if this bit is set.
      */
-    if (strcmp(acpi_oemid(), "LENOVO") == 0) {
+    if ((prodver = dmi_prodver()) == NULL) {
+        prodver = "None";
+    }
+    if (strcmp(prodver, "ThinkPad T420s") == 0) {
         quirks |= I8042_HOSTILE;
-        pr_trace("lenovo device, assuming hostile\n");
+        pr_trace("ThinkPad T420s detected, assuming hostile\n");
         pr_trace("disabling irq 1, polling as fallback\n");
         spawn(&polltd, i8042_sync_loop, NULL, 0, NULL);
     }
