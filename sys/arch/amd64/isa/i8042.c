@@ -262,20 +262,6 @@ i8042_en_intr(void)
     i8042_write_conf(conf);
 }
 
-static void
-esckey_reboot(void)
-{
-    syslock();
-    kprintf(OMIT_TIMESTAMP "** Machine going down for a reboot\f");
-
-    for (size_t i = 0; i < 3; ++i) {
-        kprintf(OMIT_TIMESTAMP ".\f");
-        tmr.msleep(1000);
-    }
-
-    cpu_reboot(0);
-}
-
 /*
  * Convert scancode to character
  *
@@ -290,10 +276,6 @@ i8042_kb_getc(uint8_t sc, char *chr)
     bool release = ISSET(sc, BIT(7));
 
     switch (sc) {
-    /* Left alt [press] */
-    case 0x38:
-        esckey_reboot();
-        break;
     /* Caps lock [press] */
     case 0x3A:
         /*
