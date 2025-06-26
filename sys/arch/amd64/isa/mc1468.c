@@ -50,6 +50,29 @@
 
 static struct cdevsw mc1468_cdevsw;
 
+static uint8_t
+bin_dabble(uint8_t bin)
+{
+    uint8_t retval = 0;
+    uint8_t nibble;
+
+    for (int i = 7; i >= 0; --i) {
+        retval <<= 1;
+        if (bin & (1 << i)) {
+            retval |= 1;
+        }
+
+        for (int j = 0; j < 2; ++j) {
+            nibble = retval & (retval >> (4 * nibble)) & 0x0F;
+            if (nibble >= 5) {
+                retval += 0x03 << (4 * nibble);
+            }
+        }
+    }
+
+    return retval;
+}
+
 /*
  * Read a byte from an MC1468XX register.
  */
@@ -58,6 +81,16 @@ mc1468_read(uint8_t reg)
 {
     outb(MC1468_REGSEL, reg);
     return inb(MC1468_DATA);
+}
+
+/*
+ * Write a byte to the MC1468XX register.
+ */
+static void
+mc1468_write(uint8_t reg, uint8_t val)
+{
+    outb(MC1468_REGSEL, reg);
+    outb(MC1468_DATA, val);
 }
 
 /*
@@ -134,6 +167,23 @@ __mc1468_get_time(struct date *dp)
     dp->hour = mc1468_read(0x04);
 }
 
+/*
+ * Write a new time/date to the chip.
+ */
+static void
+mc1468_set_date(const struct date *dp)
+{
+    while (mc1468_updating()) {
+        md_pause();
+    }
+
+    mc1468_write(0x08, bin_dabble(dp->month));
+    mc1468_write(0x07, bin_dabble(dp->day));
+    mc1468_write(0x04, bin_dabble(dp->hour));
+    mc1468_write(0x02, bin_dabble(dp->min));
+    mc1468_write(0x00, bin_dabble(dp->sec));
+}
+
 static int
 mc1468_get_date(struct date *dp)
 {
@@ -195,6 +245,21 @@ mc1468_dev_read(dev_t dev, struct sio_txn *sio, int flags)
 }
 
 static int
+mc1468_dev_write(dev_t dev, struct sio_txn *sio, int flags)
+{
+    struct date d;
+    size_t len = sizeof(d);
+
+    if (sio->len > len) {
+        sio->len = len;
+    }
+
+    memcpy(&d, sio->buf, sio->len);
+    mc1468_set_date(&d);
+    return sio->len;
+}
+
+static int
 mc1468_init(void)
 {
     char devname[] = "rtc";
@@ -210,7 +275,7 @@ mc1468_init(void)
 
 static struct cdevsw mc1468_cdevsw = {
     .read = mc1468_dev_read,
-    .write = nowrite
+    .write = mc1468_dev_write,
 };
 
 DRIVER_EXPORT(mc1468_init);
