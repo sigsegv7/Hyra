@@ -174,6 +174,7 @@ mc1468_get_date(struct date *dp)
         date_cur.hour = ((date_cur.hour & 0x7F) + 12) % 24;
     }
 
+    date_cur.year += 2000;
     *dp = date_cur;
     return 0;
 }
