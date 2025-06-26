@@ -67,6 +67,7 @@ start_init(void)
     char *argv[] = { _START_PATH, NULL, NULL };
     char *envp[] = { NULL };
 
+    kprintf("starting init...\n");
     execve_args.pathname = argv[0];
     execve_args.argv = argv;
     execve_args.envp = envp;
