@@ -32,6 +32,9 @@
 
 #include <sys/types.h>
 #include <sys/vnode.h>
+#include <sys/param.h>
+
+#define NAMEI_WANTPARENT BIT(0)     /* Request parent only */
 
 struct nameidata {
     const char *path;   /* Pathname */

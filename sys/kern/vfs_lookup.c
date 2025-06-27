@@ -29,6 +29,7 @@
 
 #include <sys/namei.h>
 #include <sys/vnode.h>
+#include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/errno.h>
 #include <vm/dynalloc.h>
@@ -118,20 +119,60 @@ vfs_get_fname_at(const char *path, size_t idx)
 }
 
 /*
+ * Count the number of components that exist within
+ * a path minus the delimiter as well as any redundant
+ * delimiters.
+ *
+ * @path: Path to count
+ */
+static uint8_t
+namei_num_cnp(const char *path)
+{
+    const char *p = path;
+    uint8_t count = 0;
+
+    while (*p != '\0') {
+        /* Skip redundant delimiters */
+        if (p[0] == '/' && p[1] == '/') {
+            ++p;
+            continue;
+        }
+
+        if (*p == '/') {
+            ++count;
+        }
+        ++p;
+    }
+
+    /* Don't count leading slash */
+    if (*(p - 1) == '/') {
+        --count;
+    }
+
+    return count;
+}
+
+/*
  * Search for a path within a mountpoint.
  *
  * @mp: Mountpoint to search in.
  * @path: Path to search for.
+ * @ndp: Namei data pointer
  */
 static struct vnode *
-namei_mp_search(struct mount *mp, const char *path)
+namei_mp_search(struct mount *mp, const char *path, struct nameidata *ndp)
 {
     struct vop_lookup_args lookup_args;
     struct vnode *vp = mp->vp;
+    uint8_t n_cnp = 0;
     char *name;
     int status;
 
-    for (size_t i = 1;; ++i) {
+    n_cnp = namei_num_cnp(path);
+    if (ISSET(ndp->flags, NAMEI_WANTPARENT)) {
+        --n_cnp;
+    }
+    for (size_t i = 1; i < n_cnp; ++i) {
         name = vfs_get_fname_at(path, i);
         if (name == NULL)
             break;
@@ -212,7 +253,7 @@ namei(struct nameidata *ndp)
 
         /* If the name matches, search within */
         if (strcmp(mp->name, name) == 0)
-            vp = namei_mp_search(mp, path);
+            vp = namei_mp_search(mp, path, ndp);
 
         /* Did we find it at this mountpoint? */
         if (vp != NULL) {
