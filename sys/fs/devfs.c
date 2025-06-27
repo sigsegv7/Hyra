@@ -273,7 +273,8 @@ const struct vops g_devfs_vops = {
     .reclaim = devfs_reclaim,
     .read = devfs_read,
     .write = devfs_write,
-    .getattr = devfs_getattr
+    .getattr = devfs_getattr,
+    .create = NULL
 };
 
 const struct vfsops g_devfs_vfsops = {

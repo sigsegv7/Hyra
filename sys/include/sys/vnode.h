@@ -86,6 +86,13 @@ struct vop_lookup_args {
     struct vnode **vpp;     /* Result vnode */
 };
 
+struct vop_create_args {
+    const char *path;       /* Full path */
+    const char *ppath;      /* Parent path */
+    struct vnode *dirvp;    /* Directory vnode */
+    struct vnode **vpp;     /* Result vnode */
+};
+
 /*
  * A field in this structure is unavailable
  * if it has a value of VNOVAL.
@@ -106,6 +113,7 @@ struct vops {
     int(*read)(struct vnode *vp, struct sio_txn *sio);
     int(*write)(struct vnode *vp, struct sio_txn *sio);
     int(*reclaim)(struct vnode *vp);
+    int(*create)(struct vop_create_args *args);
 };
 
 extern struct vnode *g_root_vnode;

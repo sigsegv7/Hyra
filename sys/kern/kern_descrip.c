@@ -229,6 +229,29 @@ done:
     return retval;
 }
 
+static int
+fd_do_create(const char *path, struct nameidata *ndp)
+{
+    struct vop_create_args cargs;
+    struct vnode *dirvp = ndp->vp;
+    const struct vops *vops = dirvp->vops;
+    int error;
+
+    if (vops->create == NULL) {
+        return -EINVAL;
+    }
+
+    cargs.path = path;
+    cargs.ppath = ndp->path;
+    cargs.dirvp = dirvp;
+    cargs.vpp = &ndp->vp;
+    if ((error = vops->create(&cargs)) < 0) {
+        return error;
+    }
+
+    return 0;
+}
+
 int
 fd_read(unsigned int fd, void *buf, size_t count)
 {
@@ -247,18 +270,17 @@ fd_write(unsigned int fd, void *buf, size_t count)
  *
  * @pathname: Path of file to open.
  * @flags: Flags to use.
- *
- * TODO: Use of flags.
  */
 int
 fd_open(const char *pathname, int flags)
 {
     int error;
+    const struct vops *vops;
     struct filedesc *filedes;
     struct nameidata nd;
 
     nd.path = pathname;
-    nd.flags = 0;
+    nd.flags = ISSET(flags, O_CREAT) ? NAMEI_WANTPARENT : 0;
 
     if ((error = namei(&nd)) < 0) {
         return error;
@@ -266,6 +288,14 @@ fd_open(const char *pathname, int flags)
 
     if ((error = fd_alloc(&filedes)) != 0) {
         vfs_release_vnode(nd.vp);
+        return error;
+    }
+
+    vops = nd.vp->vops;
+    if (ISSET(flags, O_CREAT) && vops->create != NULL) {
+        error = fd_do_create(pathname, &nd);
+    }
+    if (error < 0) {
         return error;
     }
 

@@ -380,7 +380,8 @@ static const struct vops ctlfs_vops = {
     .read = ctlfs_read,
     .getattr = NULL,
     .write = NULL,
-    .reclaim = ctlfs_reclaim
+    .reclaim = ctlfs_reclaim,
+    .create = NULL
 };
 
 const struct vfsops g_ctlfs_vfsops = {

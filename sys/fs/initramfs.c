@@ -279,7 +279,8 @@ const struct vops g_initramfs_vops = {
     .read = initramfs_read,
     .write = NULL,
     .reclaim = initramfs_reclaim,
-    .getattr = initramfs_getattr
+    .getattr = initramfs_getattr,
+    .create = NULL,
 };
 
 const struct vfsops g_initramfs_vfsops = {
