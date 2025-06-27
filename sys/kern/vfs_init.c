@@ -37,7 +37,8 @@ struct vnode *g_root_vnode = NULL;
 static struct fs_info fs_list[] = {
     {MOUNT_RAMFS, &g_initramfs_vfsops, 0, 0},
     {MOUNT_DEVFS, &g_devfs_vfsops, 0, 0},
-    {MOUNT_CTLFS, &g_ctlfs_vfsops, 0, 0}
+    {MOUNT_CTLFS, &g_ctlfs_vfsops, 0, 0},
+    {MOUNT_TMPFS, &g_tmpfs_vfsops, 0, 0}
 };
 
 void
