@@ -34,24 +34,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/*
- * TODO FIXME (BUG): Print line by line (fix line clobbering issue)
- */
 static void
 cat(const char *pathname)
 {
-    char buf[4096];
+    FILE *file;
+    char buf[64];
     int fd;
 
-    fd = open(pathname, O_RDONLY);
-    if (fd < 0) {
-        printf("cat: could not open %s\n", pathname);
+    file = fopen(pathname, "r");
+    if (file == NULL) {
         return;
     }
 
-    read(fd, buf, sizeof(buf));
-    printf("%s", buf);
-    close(fd);
+    while (fgets(buf, sizeof(buf), file) != NULL) {
+        printf("%s", buf);
+    }
+
+    fclose(file);
 }
 
 int
