@@ -31,6 +31,7 @@
 #include <sys/limine.h>
 #include <sys/limits.h>
 #include <sys/syslog.h>
+#include <sys/proc.h>
 #include <sys/spinlock.h>
 #include <sys/sched.h>
 #include <sys/atomic.h>
@@ -41,6 +42,7 @@
 
 #define pr_trace(fmt, ...) kprintf("cpu_mp: " fmt, ##__VA_ARGS__)
 
+extern struct proc g_proc0;
 static volatile struct limine_smp_request g_smp_req = {
     .id = LIMINE_SMP_REQUEST,
     .revision = 0
@@ -91,12 +93,14 @@ mp_bootstrap_aps(struct cpu_info *ci)
     struct limine_smp_response *resp = g_smp_req.response;
     struct limine_smp_info **cpus;
     size_t cpu_init_counter;
+    uint32_t ncpu;
 
     /* Should not happen */
     __assert(resp != NULL);
 
     cpus = resp->cpus;
-    cpu_init_counter = resp->cpu_count - 1;
+    ncpu = resp->cpu_count;
+    cpu_init_counter = ncpu - 1;
     ci_list[0] = ci;
 
     if (resp->cpu_count == 1) {
@@ -112,6 +116,12 @@ mp_bootstrap_aps(struct cpu_info *ci)
         }
 
         cpus[i]->goto_address = ap_trampoline;
+    }
+
+    /* Start up idle threads */
+    pr_trace("kicking %d idle threads...\n", ncpu);
+    for (uint32_t i = 0; i < ncpu; ++i) {
+        spawn(&g_proc0, sched_enter, NULL, 0, NULL);
     }
 
     /* Wait for all cores to be ready */
