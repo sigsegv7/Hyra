@@ -49,10 +49,42 @@
 #define PHDR(HDRP, IDX) \
     (void *)((uintptr_t)HDRP + (HDRP)->e_phoff + (HDRP->e_phentsize * IDX))
 
+#define SHDR(HDRP, IDX) \
+    (void *)((uintptr_t)HDRP + (HDRP)->e_shoff + (HDRP->e_shentsize * IDX))
+
 struct elf_file {
     char *data;
     size_t size;
 };
+
+static int
+elf_parse_shdrs(Elf64_Ehdr *eh)
+{
+    Elf64_Shdr *shp;
+    uint32_t nshdr;
+
+    if (eh == NULL) {
+        return -EINVAL;
+    }
+
+    nshdr = eh->e_shnum;
+    for (uint32_t i = 0; i < nshdr; ++i) {
+        shp = SHDR(eh, i);
+
+        /* Drop null entries */
+        if (shp->sh_type == SHT_NULL) {
+            continue;
+        }
+
+        switch (shp->sh_type) {
+        case SHT_NOBITS:
+            memset((void *)shp->sh_addr, 0x0, shp->sh_size);
+            break;
+        }
+    }
+
+    return 0;
+}
 
 /*
  * Load the file and give back an "elf_file"
@@ -243,6 +275,7 @@ elf64_load(const char *pathname, struct proc *td, struct exec_prog *prog)
         }
     }
 
+    elf_parse_shdrs(hdr);
     memcpy(prog->loadmap, loadmap, sizeof(loadmap));
     prog->start = start;
     prog->end = end;
