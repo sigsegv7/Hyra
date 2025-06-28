@@ -74,6 +74,8 @@ __BEGIN_DECLS
 
 size_t fread(void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
 size_t fwrite(const void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
+char *fgets(char *__restrict s, int size, FILE *__restrict stream);
+
 FILE *fopen(const char *__restrict path, const char *__restrict mode);
 int fclose(FILE *stream);
 
