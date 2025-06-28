@@ -149,6 +149,7 @@ fd_rw(unsigned int fd, void *buf, size_t count, uint8_t write)
 {
     char *kbuf = NULL;
     ssize_t n;
+    uint32_t seal;
     struct filedesc *filedes;
     struct sio_txn sio;
     scret_t retval = 0;
@@ -159,8 +160,17 @@ fd_rw(unsigned int fd, void *buf, size_t count, uint8_t write)
     }
 
     filedes = fd_get(fd);
-    kbuf = dynalloc(count);
+    seal = filedes->flags;
 
+    /* Check the seal */
+    if (write && !ISSET(seal, O_ALLOW_WR)) {
+        return -EPERM;
+    }
+    if (!write && ISSET(seal, O_WRONLY)) {
+        return -EPERM;
+    }
+
+    kbuf = dynalloc(count);
     if (kbuf == NULL) {
         retval = -ENOMEM;
         goto done;
