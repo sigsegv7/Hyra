@@ -174,6 +174,15 @@ cons_handle_special(struct cons_screen *scr, char c)
     }
 
     switch (c) {
+    case ASCII_HT:
+        HIDE_CURSOR(scr);
+        scr->curs_col += 4;
+        scr->ch_col += 4;
+        if (scr->ch_col >= scr->ncols - 1) {
+           cons_handle_special(scr, '\n');
+        }
+        SHOW_CURSOR(scr);
+        return 0;
     case ASCII_NUL:
         return 0;
     case ASCII_BS:
