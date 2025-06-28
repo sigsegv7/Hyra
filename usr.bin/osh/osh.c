@@ -224,6 +224,9 @@ getstr(void)
         }
 
         c = (char)input;
+        if (c == '\t') {
+            continue;
+        }
 
         /* return on newline */
         if (c == '\n') {
