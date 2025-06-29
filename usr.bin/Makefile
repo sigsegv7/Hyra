@@ -15,3 +15,4 @@ all:
 	make -C mrow/ $(ARGS)
 	make -C elfdump/ $(ARGS)
 	make -C cat/ $(ARGS)
+	make -C getconf/ $(ARGS)
