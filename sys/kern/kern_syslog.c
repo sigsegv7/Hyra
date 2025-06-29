@@ -191,7 +191,6 @@ kprintf(const char *fmt, ...)
         }
     }
 
-    spinlock_acquire(&lock);
     if (use_timestamp) {
         syslog_write(timestamp, strlen(timestamp));
     }
@@ -200,7 +199,6 @@ kprintf(const char *fmt, ...)
 
     vkprintf(fmt_p, &ap);
     va_end(ap);
-    spinlock_release(&lock);
 }
 
 /*
