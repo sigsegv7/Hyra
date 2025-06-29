@@ -390,6 +390,7 @@ main(int argc, char **argv)
 
     puts(WELCOME);
     while (running) {
+        memset(prog_argv, 0, sizeof(prog_argv));
         fputs(PROMPT, stdout);
 
         input = getstr();
