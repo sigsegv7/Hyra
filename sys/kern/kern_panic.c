@@ -95,7 +95,6 @@ hcf(const char *fmt, ...)
 {
     va_list ap;
 
-
     if (fmt != NULL) {
         va_start(ap, fmt);
         kprintf(OMIT_TIMESTAMP);
