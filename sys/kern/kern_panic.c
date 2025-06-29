@@ -31,6 +31,7 @@
 #include <sys/spinlock.h>
 #include <sys/syslog.h>
 #include <sys/reboot.h>
+#include <dev/cons/cons.h>
 #include <machine/cdefs.h>
 #include <machine/cpu.h>
 
@@ -53,7 +54,32 @@ bas(bool do_trace, int reboot_type)
         md_backtrace();
     }
 
+    kprintf(OMIT_TIMESTAMP "\n-- ALL CORES HAVE BEEN HALTED --\n");
     cpu_reboot(reboot_type);
+    __builtin_unreachable();
+}
+
+static void
+panic_screen(void)
+{
+    struct cons_screen *scr = &g_root_scr;
+
+    if (scr->fb_mem != NULL) {
+        scr->bg = 0x8B0000;
+        scr->fg = 0xAABBAA;
+        cons_reset_cursor(scr);
+        cons_clear_scr(scr, 0x393B39);
+    }
+}
+
+static void
+do_panic(const char *fmt, va_list *ap)
+{
+    syslog_silence(false);
+    kprintf(OMIT_TIMESTAMP "panic: ");
+    vkprintf(fmt, ap);
+    bas(true, REBOOT_HALT);
+
     __builtin_unreachable();
 }
 
@@ -75,11 +101,9 @@ panic(const char *fmt, ...)
     md_intoff();
     cpu_halt_others();
 
+    panic_screen();
     va_start(ap, fmt);
-    kprintf(OMIT_TIMESTAMP "\npanic: ");
-    vkprintf(fmt, &ap);
-    bas(true, REBOOT_HALT);
-
+    do_panic(fmt, &ap);
     __builtin_unreachable();
 }
 
