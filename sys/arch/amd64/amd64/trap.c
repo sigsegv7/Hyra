@@ -96,8 +96,8 @@ pf_code(uint64_t error_code)
     kprintf("code=[%s]\n", tab);
 }
 
-static void
-regdump(struct trapframe *tf)
+__dead static void
+trap_fatal(struct trapframe *tf)
 {
     uintptr_t cr3, cr2 = pf_faultaddr();
 
@@ -111,11 +111,12 @@ regdump(struct trapframe *tf)
         pf_code(tf->error_code);
     }
 
-    kprintf(OMIT_TIMESTAMP
+    panic("got fatal trap\n\n"
+        "-- DUMPING PROCESSOR STATE --\n"
         "RAX=%p RCX=%p RDX=%p\n"
         "RBX=%p RSI=%p RDI=%p\n"
         "RFL=%p CR2=%p CR3=%p\n"
-        "RBP=%p RSP=%p RIP=%p\n",
+        "RBP=%p RSP=%p RIP=%p\n\n",
         tf->rax, tf->rcx, tf->rdx,
         tf->rbx, tf->rsi, tf->rdi,
         tf->rflags, cr2, cr3,
@@ -192,6 +193,6 @@ trap_handler(struct trapframe *tf)
         return;
     }
 
-    regdump(tf);
-    panic("fatal trap - halting\n");
+    trap_fatal(tf);
+    __builtin_unreachable();
 }
