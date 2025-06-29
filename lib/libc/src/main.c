@@ -27,23 +27,50 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/exec.h>
 #include <stdint.h>
 #include <stddef.h>
 
 extern int __libc_stdio_init(void);
 extern int __malloc_mem_init(void);
+uint64_t __libc_auxv[_AT_MAX];
 
 int main(int argc, char **argv);
+
+struct auxv_entry {
+    uint64_t tag;
+    uint64_t val;
+};
 
 int
 __libc_entry(uint64_t *ctx)
 {
+    const struct auxv_entry *auxvp;
     int status;
-    uint64_t argc;
+    uint64_t argc, envc, tag;
     char **argv;
+    char **envp;
 
-    argc = *(ctx++);
-    argv = (char **)((ctx++));
+    argc = *ctx;
+    argv = (char **)(ctx + 1);
+    envp = (char **)(argv + argc + 1);
+
+    envc = 0;
+    while (envp[envc] != NULL) {
+        ++envc;
+    }
+
+    auxvp = (void *)(envp + envc + 1);
+    for (int i = 0; i < _AT_MAX; ++i) {
+        if (auxvp->tag == AT_NULL) {
+            break;
+        }
+        if (auxvp->tag < _AT_MAX) {
+            __libc_auxv[auxvp->tag] = auxvp->val;
+        }
+
+        ++auxvp;
+    }
 
     if ((status = __libc_stdio_init()) != 0) {
         return status;

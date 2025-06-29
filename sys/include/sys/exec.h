@@ -32,7 +32,6 @@
 
 #include <sys/types.h>
 
-#if defined(_KERNEL)
 
 /* Danger: Do not change these !! */
 #define AT_NULL 0
@@ -45,7 +44,9 @@
 #define AT_RANDOM 7
 #define AT_EXECFN 8
 #define AT_PAGESIZE 9
+#define _AT_MAX 16
 
+#if defined(_KERNEL)
 #define MAX_PHDRS 32
 #define STACK_PUSH(PTR, VAL) *(--(PTR)) = VAL
 #define AUXVAL(PTR, TAG, VAL)   \
