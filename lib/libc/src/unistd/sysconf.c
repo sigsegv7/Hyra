@@ -27,31 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UNISTD_H
-#define _UNISTD_H
+#include <unistd.h>
 
-#include <sys/exec.h>
-#include <sys/types.h>
-#include <sys/cdefs.h>
-#include <stddef.h>
+extern uint64_t __libc_auxv[_AT_MAX];
 
-#define F_OK 0
+int
+sysconf(int name)
+{
+    if (name >= _AT_MAX) {
+        return -1;
+    }
 
-/* lseek whence, follows Hyra ABI */
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
-
-__BEGIN_DECLS
-
-int sysconf(int name);
-ssize_t read(int fd, void *buf, size_t count);
-ssize_t write(int fd, const void *buf, size_t count);
-
-int close(int fd);
-int access(const char *path, int mode);
-off_t lseek(int fildes, off_t offset, int whence);
-
-__END_DECLS
-
-#endif  /* !_UNISTD_H */
+    return __libc_auxv[name];
+}
