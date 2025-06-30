@@ -55,8 +55,10 @@ __driver_init_td(void)
 
     for (dp = (void *)start; (uintptr_t)dp < end; ++dp) {
         var = dp->data;
-        dp->init();
-        var->deferred = 0;
+        if (var->deferred) {
+            dp->init();
+            var->deferred = 0;
+        }
     }
 
     exit1(td, 0);
