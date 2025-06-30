@@ -63,7 +63,7 @@
 #define PROMPT "[root::osmora]~ "
 
 static char buf[64];
-static uint8_t i;
+static uint8_t buf_i;
 static int running;
 static int bell_fd;
 static bool bs_bell = true; /* Beep on backspace */
@@ -209,7 +209,7 @@ getstr(void)
     int input;
     uint32_t beep_payload;
 
-    i = 0;
+    buf_i = 0;
 
     /*
      * Prepare the beep payload @ 500 Hz
@@ -230,22 +230,22 @@ getstr(void)
 
         /* return on newline */
         if (c == '\n') {
-            buf[i] = '\0';
+            buf[buf_i] = '\0';
             putchar('\n');
             return buf;
         }
 
         /* handle backspaces and DEL */
         if (c == '\b' || c == 127) {
-            if (i > 0) {
-                i--;
+            if (buf_i > 0) {
+                buf_i--;
                 fputs("\b \b", stdout);
             } else if (bell_fd > 0 && bs_bell) {
                 write(bell_fd, &beep_payload, sizeof(beep_payload));
             }
-        } else if (is_ascii(c) && i < sizeof(buf) - 1) {
+        } else if (is_ascii(c) && buf_i < sizeof(buf) - 1) {
             /* write to fd and add to buffer */
-            buf[i++] = c;
+            buf[buf_i++] = c;
             putchar(c);
         }
     }
@@ -383,7 +383,7 @@ main(int argc, char **argv)
         return open_script(argv[1]);
     }
 
-    i = 0;
+    buf_i = 0;
     running = 1;
     found = 0;
     bell_fd = open("/dev/beep", O_WRONLY);
