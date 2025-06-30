@@ -83,7 +83,6 @@ struct builtin_cmd {
 
 static struct builtin_cmd cmds[] = {
     {"help",cmd_help},
-    {"echo",cmd_echo},
     {"exit",cmd_exit},
     {"reboot",cmd_reboot},
     {"shutdown", cmd_shutdown},
@@ -114,16 +113,6 @@ static void
 cmd_shutdown(int argc, char *argv[])
 {
     cpu_reboot(REBOOT_POWEROFF | REBOOT_HALT);
-}
-
-static void
-cmd_echo(int argc, char *argv[])
-{
-    for (i = 1; i < argc; i++) {
-        fputs(argv[i], stdout);
-        putchar(' ');
-    }
-    putchar('\n');
 }
 
 static void
