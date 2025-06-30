@@ -35,6 +35,7 @@
 #include <sys/mman.h>
 #include <sys/proc.h>
 #include <sys/vfs.h>
+#include <sys/krq.h>
 
 scret_t(*g_sctab[])(struct syscall_args *) = {
     NULL,       /* SYS_none */
@@ -52,6 +53,7 @@ scret_t(*g_sctab[])(struct syscall_args *) = {
     sys_access, /* SYS_access */
     sys_lseek,  /* SYS_lseek */
     sys_sleep,  /* SYS_sleep */
+    sys_inject, /* SYS_inject */
 };
 
 const size_t MAX_SYSCALLS = NELEM(g_sctab);

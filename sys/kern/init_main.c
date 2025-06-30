@@ -128,7 +128,6 @@ main(void)
      * and here we go!
      */
     mp_bootstrap_aps(&g_bsp_ci);
-    DRIVERS_SCHED();
     sched_enter();
     __builtin_unreachable();
 }

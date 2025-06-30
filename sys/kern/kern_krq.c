@@ -27,52 +27,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SYSCALL_H_
-#define _SYS_SYSCALL_H_
+#include <sys/syscall.h>
+#include <sys/krq.h>
+#include <sys/errno.h>
+#include <sys/spinlock.h>
+#include <sys/driver.h>
+#include <sys/syslog.h>
 
-#if !defined(__ASSEMBLER__)
-#include <sys/types.h>
-#include <sys/cdefs.h>
-#if defined(_KERNEL) || defined(_OLIBC)
-#include <machine/syscall.h>
-#endif  /* _KERNEL || _OLIBC */
-#endif
+static struct spinlock krq_lock = {0};
 
-#define SYS_none    0
-#define SYS_exit    1
-#define SYS_open    2
-#define SYS_read    3
-#define SYS_close   4
-#define SYS_stat    5
-#define SYS_sysctl  6
-#define SYS_write   7
-#define SYS_spawn   8
-#define SYS_reboot  9
-#define SYS_mmap    10
-#define SYS_munmap  11
-#define SYS_access  12
-#define SYS_lseek   13
-#define SYS_sleep   14
-#define SYS_inject  15
+/*
+ * Load a kernel runtime quantum (KRQ)
+ *
+ * @arg0: path
+ *
+ * XXX: If the 'path' argument is NULL, all deferrable
+ *      drivers are loaded.
+ *
+ * TODO: Handle non-null paths where a completly seperate
+ *       module/krq can be loaded.
+ */
+scret_t
+sys_inject(struct syscall_args *scargs)
+{
+    if (scargs->arg0 != 0) {
+        return -EINVAL;
+    }
 
-#if defined(_KERNEL)
-/* Syscall return value and arg type */
-typedef ssize_t scret_t;
-typedef ssize_t scarg_t;
-
-struct syscall_args {
-    scarg_t arg0;
-    scarg_t arg1;
-    scarg_t arg2;
-    scarg_t arg3;
-    scarg_t arg4;
-    scarg_t arg5;
-    scarg_t arg6;
-    struct trapframe *tf;
-};
-
-extern const size_t MAX_SYSCALLS;
-extern scret_t(*g_sctab[])(struct syscall_args *);
-#endif  /* _KERNEL */
-
-#endif  /* _SYS_SYSCALL_H_ */
+    spinlock_acquire(&krq_lock);
+    DRIVERS_SCHED();
+    spinlock_release(&krq_lock);
+    return 0;
+}
