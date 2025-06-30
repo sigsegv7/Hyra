@@ -7,3 +7,4 @@ ARGS = -I$(ROOT)/builddeps LDSCRIPT=$(LDSCRIPT) USRDIR=$(USRDIR) ROOT=$(ROOT)
 all:
 	make -C init/ $(ARGS)
 	make -C install/ $(ARGS)
+	make -C inject/ $(ARGS)
