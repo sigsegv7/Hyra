@@ -57,7 +57,6 @@
 __static_assert(KBUF_SIZE <= (1 << 16), "KBUF_SIZE too high!");
 
 /* Global logger lock */
-static struct spinlock lock = {0};
 static struct spinlock kmsg_lock = {0};
 static bool no_cons_log = false;
 
