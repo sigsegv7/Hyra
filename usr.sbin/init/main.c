@@ -34,13 +34,22 @@
 #define INIT_RC_PATH "/usr/rc/init.rc"
 
 int
-main(void)
+main(int argc, char **argv)
 {
-    char *argv[] = { SHELL_PATH, INIT_RC_PATH, NULL };
-    char *envp[] = { NULL };
+    char *start_argv[] = { SHELL_PATH, INIT_RC_PATH, NULL };
+    char *start_envp[] = { NULL };
 
-    spawn(SHELL_PATH, argv, envp, 0);
-    argv[1] = NULL;
-    spawn(SHELL_PATH, argv, envp, SPAWN_WAIT);
+    spawn(SHELL_PATH, start_argv, start_envp, 0);
+    start_argv[1] = NULL;
+
+    /*
+     * We can override the start program header
+     * if there is something specified.
+     */
+    if (argc > 1) {
+        start_argv[0] = argv[1];
+    }
+
+    spawn(start_argv[0], start_argv, start_envp, SPAWN_WAIT);
     return 0;
 }

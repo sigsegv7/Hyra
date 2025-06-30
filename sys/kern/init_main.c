@@ -44,10 +44,11 @@
 #include <vm/vm.h>
 #include <string.h>
 
-#if defined(_INSTALL_MEDIA)
-#define _START_PATH "/usr/sbin/install"
-#else
 #define _START_PATH "/usr/sbin/init"
+#if defined(_INSTALL_MEDIA)
+#define _START_ARG "/usr/sbin/install"
+#else
+#define _START_ARG NULL
 #endif  /* _INSTALL_MEDIA  */
 
 struct proc g_proc0;
@@ -64,7 +65,7 @@ start_init(void)
 {
     struct proc *td = this_td();
     struct execve_args execve_args;
-    char *argv[] = { _START_PATH, NULL, NULL };
+    char *argv[] = { _START_PATH, _START_ARG, NULL };
     char *envp[] = { NULL };
 
     kprintf("starting init...\n");
