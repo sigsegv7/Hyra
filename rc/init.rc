@@ -4,5 +4,6 @@
 @ Hyra userspace startup script
 @
 
+/usr/sbin/inject
 beep 500 30
 beep 650 30
