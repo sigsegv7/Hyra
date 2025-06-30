@@ -256,16 +256,30 @@ cmd_run(const char *input, int argc, char *argv[], bool wait)
     char *envp[1] = { NULL };
     int error, spawn_flags = 0;
 
+    /* Should we wait or daemonize? */
+    if (wait) {
+        spawn_flags |= SPAWN_WAIT;
+    }
+
+    /*
+     * If we can access the raw input as a file, try to
+     * spawn it as a program. This case would run if for
+     * example, the user entered /usr/sbin/foo, or some
+     * path directly into the console.
+     */
+    if (access(input, F_OK) == 0) {
+        error = spawn(input, argv, envp, spawn_flags);
+        if (error < 0) {
+            return error;
+        }
+        return 0;
+    }
+
     snprintf(bin_path, sizeof(bin_path), "/usr/bin/%s", input);
 
     /* See if we can access it */
     if (access(bin_path, F_OK) != 0) {
         return -1;
-    }
-
-    /* Should we wait or daemonize? */
-    if (wait) {
-        spawn_flags |= SPAWN_WAIT;
     }
 
     if ((error = spawn(bin_path, argv, envp, spawn_flags)) < 0) {
