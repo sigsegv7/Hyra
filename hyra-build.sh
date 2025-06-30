@@ -111,7 +111,7 @@ stage1() {
 #################################
 stage2() {
     make clean
-    rm -f base/boot/hyra-kernel
+    rm -f base/boot/hyra.krq
 
     iso_root_skel
     sysroot_skel
