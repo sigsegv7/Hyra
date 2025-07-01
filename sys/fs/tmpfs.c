@@ -287,7 +287,6 @@ tmpfs_write(struct vnode *vp, struct sio_txn *sio)
     buf = np->data;
     memcpy(&buf[sio->offset], sio->buf, sio->len);
     spinlock_release(&np->lock);
-    kprintf("%d\n", sio->len);
     return sio->len;
 }
 
