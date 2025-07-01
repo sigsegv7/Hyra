@@ -211,6 +211,7 @@ tmpfs_create(struct vop_create_args *args)
     root_np = TAILQ_FIRST(&root);
     np->dirvp = dirvp;
     np->type = TMPFS_REG;
+    np->real_size = 0;
     memcpy(np->rpath, pcp, strlen(pcp) + 1);
     TAILQ_INSERT_TAIL(&root_np->dirents, np, link);
 
@@ -269,6 +270,14 @@ tmpfs_write(struct vnode *vp, struct sio_txn *sio)
     }
 
     /*
+     * Bring up the real size if we are writing
+     * more bytes.
+     */
+    if (sio->offset >= np->real_size) {
+        np->real_size = sio->offset;
+    }
+
+    /*
      * If the length to be written exceeds the residual byte
      * count. We will try to expand the buffer by the page
      * size. However, if this fails, we will split the write
@@ -315,11 +324,8 @@ tmpfs_read(struct vnode *vp, struct sio_txn *sio)
 
     spinlock_acquire(&np->lock);
 
-    if (sio->offset > np->len - 1) {
+    if (sio->offset > np->real_size) {
         return -EINVAL;
-    }
-    if ((sio->offset + sio->len) > np->len) {
-        sio->len = np->len;
     }
 
     buf = np->data;

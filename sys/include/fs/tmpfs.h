@@ -53,6 +53,7 @@ struct tmpfs_node;
  * @rpath: /tmp/ relative path (for lookups)
  * @type: The tmpfs node type [one-to-one to vtype]
  * @len: Length of buffer
+ * @real_size: Actual size of file
  * @data: The backing file data
  * @dirvp: Vnode of the parent node
  * @vp: Vnode of the current node
@@ -62,6 +63,7 @@ struct tmpfs_node {
     char rpath[PATH_MAX];
     uint8_t type;
     size_t len;
+    size_t real_size;
     void *data;
     struct vnode *dirvp;
     struct vnode *vp;
