@@ -35,9 +35,8 @@
 #include <sys/vnode.h>
 #include <sys/atomic.h>
 #include <sys/sio.h>
-#include <vm/vm_obj.h>
-
 #if defined(_KERNEL)
+#include <vm/vm_obj.h>
 
 struct vops;
 
