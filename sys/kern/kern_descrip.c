@@ -369,7 +369,7 @@ fd_seek(int fildes, off_t offset, int whence)
         return -EINVAL;
     }
 
-    return 0;
+    return tmp->offset;
 }
 
 /*
