@@ -212,6 +212,7 @@ tmpfs_create(struct vop_create_args *args)
     np->dirvp = dirvp;
     np->type = TMPFS_REG;
     np->real_size = 0;
+    np->mode = 0700;
     memcpy(np->rpath, pcp, strlen(pcp) + 1);
     TAILQ_INSERT_TAIL(&root_np->dirents, np, link);
 

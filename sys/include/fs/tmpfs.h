@@ -55,6 +55,7 @@ struct tmpfs_node;
  * @len: Length of buffer
  * @real_size: Actual size of file
  * @data: The backing file data
+ * @mode: File permissions
  * @dirvp: Vnode of the parent node
  * @vp: Vnode of the current node
  * @lock: Lock protecting this node
@@ -65,6 +66,7 @@ struct tmpfs_node {
     size_t len;
     size_t real_size;
     void *data;
+    mode_t mode;
     struct vnode *dirvp;
     struct vnode *vp;
     struct spinlock lock;
