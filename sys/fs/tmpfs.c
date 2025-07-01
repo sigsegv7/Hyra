@@ -335,6 +335,30 @@ tmpfs_read(struct vnode *vp, struct sio_txn *sio)
     return sio->len;
 }
 
+/*
+ * TMPFS get attribute callback for VFS
+ */
+static int
+tmpfs_getattr(struct vop_getattr_args *args)
+{
+    struct vnode *vp;
+    struct tmpfs_node *np;
+    struct vattr attr;
+
+    if ((vp = args->vp) == NULL) {
+        return -EIO;
+    }
+    if ((np = vp->data) == NULL) {
+        return -EIO;
+    }
+
+    memset(&attr, VNOVAL, sizeof(attr));
+    attr.size = np->real_size;
+    attr.mode = np->mode;
+    *args->res = attr;
+    return 0;
+}
+
 static int
 tmpfs_reclaim(struct vnode *vp)
 {
@@ -384,7 +408,7 @@ tmpfs_init(struct fs_info *fip)
 
 const struct vops g_tmpfs_vops = {
     .lookup = tmpfs_lookup,
-    .getattr = NULL,
+    .getattr = tmpfs_getattr,
     .read = tmpfs_read,
     .write = tmpfs_write,
     .reclaim = tmpfs_reclaim,
