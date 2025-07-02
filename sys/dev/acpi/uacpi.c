@@ -41,10 +41,10 @@
 #include <machine/cdefs.h>
 #include <machine/pio.h>
 #include <machine/cpu.h>
+#include <machine/intr.h>
 #if defined(__x86_64__)
 #include <machine/idt.h>
 #include <machine/ioapic.h>
-#include <machine/intr.h>
 #endif  /* __x86_64__ */
 #include <dev/acpi/uacpi.h>
 #include <dev/acpi/acpi.h>
