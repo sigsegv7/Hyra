@@ -235,7 +235,13 @@ cons_handle_special(struct cons_screen *scr, char c)
 static void
 cons_draw_cursor(struct cons_screen *scr, uint32_t color)
 {
+    struct console_feat *featp;
     size_t idx;
+
+    featp = &scr->feat;
+    if (!featp->show_curs) {
+        color = scr->bg;
+    }
 
     /* Past screen width? */
     if (scr->curs_col >= scr->ncols) {
@@ -437,14 +443,27 @@ static int
 ctl_feat_write(struct ctlfs_dev *cdp, struct sio_txn *sio)
 {
     struct cons_screen *scr = &g_root_scr;
-    struct console_feat *featp;
+    struct console_feat *featp, oldfeat;
 
     featp = &scr->feat;
+    oldfeat = *featp;
     if (sio->len > sizeof(*featp)) {
         sio->len = sizeof(*featp);
     }
 
     memcpy(featp, sio->buf, sio->len);
+
+    /*
+     * If we are suddenly trying to reset the cursor
+     * status, redraw it.
+     */
+    if (featp->show_curs != oldfeat.show_curs) {
+        if (featp->show_curs == 0) {
+            HIDE_CURSOR(scr);
+        } else {
+            SHOW_CURSOR(scr);
+        }
+    }
     return sio->len;
 }
 
@@ -528,6 +547,7 @@ cons_init(void)
 
     featp = &g_root_scr.feat;
     featp->ansi_esc = 1;
+    featp->show_curs = 1;
     g_root_scr.ch_col = 0;
     g_root_scr.ch_row = 0;
     g_root_scr.fg = CONSOLE_FG;

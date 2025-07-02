@@ -36,9 +36,11 @@
  * Console features
  *
  * @ansi_esc: If 1, ANSI escape codes are enabled
+ * @show_curs: If 1, show the cursor
  */
 struct console_feat {
     uint8_t ansi_esc : 1;
+    uint8_t show_curs : 1;
 };
 
 #endif  /* !_SYS_CONSOLE_H_ */
