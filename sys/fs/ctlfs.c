@@ -389,6 +389,36 @@ ctlfs_read(struct vnode *vp, struct sio_txn *sio)
     return iop->read(&dev, sio);
 }
 
+/*
+ * Write a control file
+ *
+ * Args passed to driver:
+ *   - ctlfs_dev.ctlname
+ *   - ctlfs_dev.iop
+ *   - ctlfs_dev.mode
+ */
+static int
+ctlfs_write(struct vnode *vp, struct sio_txn *sio)
+{
+    const struct ctlops *iop;
+    struct ctlfs_entry *enp;
+    struct ctlfs_dev dev;
+    int error;
+
+    if ((error = ctlfs_get_ops(vp, &enp, &iop)) < 0) {
+        return error;
+    }
+    if (iop->write == NULL) {
+        pr_trace("no write op for ctlfs entry\n");
+        return -EIO;
+    }
+
+    dev.ctlname = enp->name;
+    dev.ops = iop;
+    dev.mode = enp->mode;
+    return iop->write(&dev, sio);
+}
+
 static int
 ctlfs_reclaim(struct vnode *vp)
 {
@@ -400,7 +430,7 @@ static const struct vops ctlfs_vops = {
     .lookup = ctlfs_lookup,
     .read = ctlfs_read,
     .getattr = NULL,
-    .write = NULL,
+    .write = ctlfs_write,
     .reclaim = ctlfs_reclaim,
     .create = NULL
 };
