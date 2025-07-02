@@ -234,6 +234,35 @@ ctlfs_lookup(struct vop_lookup_args *args)
     return 0;
 }
 
+static int
+ctlfs_get_ops(struct vnode *vp, struct ctlfs_entry **enpres,
+    const struct ctlops **iopres)
+{
+    const struct ctlops *iop;
+    struct ctlfs_entry *enp;
+
+    if (enpres == NULL || iopres == NULL) {
+        return -EINVAL;
+    }
+
+    if ((enp = vp->data) == NULL) {
+        pr_error("no vnode data for ctlfs entry\n");
+        return -EIO;
+    }
+    if (enp->magic != CTLFS_ENTRY_MAG) {
+        pr_error("ctlfs entry has bad magic\n");
+        return -EIO;
+    }
+    if ((iop = enp->io) == NULL) {
+        pr_error("no i/o ops for ctlfs entry\n");
+        return -EIO;
+    }
+
+    *enpres = enp;
+    *iopres = iop;
+    return 0;
+}
+
 /*
  * Create a ctlfs node (directory) within the
  * root fs.
@@ -344,18 +373,10 @@ ctlfs_read(struct vnode *vp, struct sio_txn *sio)
     const struct ctlops *iop;
     struct ctlfs_entry *enp;
     struct ctlfs_dev dev;
+    int error;
 
-    if ((enp = vp->data) == NULL) {
-        pr_error("no vnode data for ctlfs entry\n");
-        return -EIO;
-    }
-    if (enp->magic != CTLFS_ENTRY_MAG) {
-        pr_error("ctlfs entry has bad magic\n");
-        return -EIO;
-    }
-    if ((iop = enp->io) == NULL) {
-        pr_error("no i/o ops for ctlfs entry\n");
-        return -EIO;
+    if ((error = ctlfs_get_ops(vp, &enp, &iop)) < 0) {
+        return error;
     }
     if (iop->read == NULL) {
         pr_trace("no read op for ctlfs entry\n");
