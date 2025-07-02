@@ -37,6 +37,7 @@
 #include <dev/cons/font.h>
 #include <dev/cons/cons.h>
 #include <fs/devfs.h>
+#include <fs/ctlfs.h>
 #include <vm/dynalloc.h>
 #include <string.h>
 
@@ -62,6 +63,7 @@
 
 struct cons_screen g_root_scr = {0};
 static struct cdevsw cons_cdevsw;
+static struct ctlops cons_feat_ctl;
 
 static void cons_draw_cursor(struct cons_screen *scr, uint32_t color);
 static int cons_handle_special(struct cons_screen *scr, char c);
@@ -412,6 +414,40 @@ cons_init_bufs(struct cons_screen *scr)
     return 0;
 }
 
+static int
+ctl_feat_read(struct ctlfs_dev *cdp, struct sio_txn *sio)
+{
+    struct cons_screen *scr = &g_root_scr;
+    struct console_feat *featp;
+
+    if (sio->buf == NULL || sio->len == 0) {
+        return -EINVAL;
+    }
+
+    featp = &scr->feat;
+    if (sio->len > sizeof(*featp)) {
+        sio->len = sizeof(*featp);
+    }
+
+    memcpy(sio->buf, featp, sio->len);
+    return sio->len;
+}
+
+static int
+ctl_feat_write(struct ctlfs_dev *cdp, struct sio_txn *sio)
+{
+    struct cons_screen *scr = &g_root_scr;
+    struct console_feat *featp;
+
+    featp = &scr->feat;
+    if (sio->len > sizeof(*featp)) {
+        sio->len = sizeof(*featp);
+    }
+
+    memcpy(featp, sio->buf, sio->len);
+    return sio->len;
+}
+
 /*
  * Reset console color.
  */
@@ -512,6 +548,7 @@ void
 cons_expose(void)
 {
     static int once = 0;
+    struct ctlfs_dev ctl;
     char devname[] = "console";
     devmajor_t major;
     dev_t dev;
@@ -526,10 +563,23 @@ cons_expose(void)
     dev = dev_alloc(major);
     dev_register(major, dev, &cons_cdevsw);
     devfs_create_entry(devname, major, dev, 0444);
+
+
+    /* Register the control file */
+    ctl.mode = 0666;
+    ctlfs_create_node(devname, &ctl);
+    ctl.devname = devname;
+    ctl.ops = &cons_feat_ctl;
+    ctlfs_create_entry("feat", &ctl);
     once ^= 1;
 }
 
 static struct cdevsw cons_cdevsw = {
     .read = dev_read,
     .write = dev_write
+};
+
+static struct ctlops cons_feat_ctl = {
+    .read = ctl_feat_read,
+    .write = ctl_feat_write
 };
