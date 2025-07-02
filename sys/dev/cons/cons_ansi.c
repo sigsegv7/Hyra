@@ -60,6 +60,8 @@ ansi_reset(struct ansi_state *statep)
 int
 ansi_feed(struct ansi_state *statep, char c)
 {
+    struct cons_screen *scr = &g_root_scr;
+
     /* Standard colors */
     static uint32_t colortab[] = {
         ANSI_BLACK, ANSI_RED,
@@ -90,7 +92,7 @@ ansi_feed(struct ansi_state *statep, char c)
         return c;
     case 2:
         if (c == 'H') {
-            cons_clear_scr(&g_root_scr, g_root_scr.bg);
+            cons_clear_scr(scr, g_root_scr.bg);
             return ANSI_UPDATE_CURSOR;
         }
         break;
@@ -100,7 +102,7 @@ ansi_feed(struct ansi_state *statep, char c)
         /* Reset attributes? */
         if (statep->reset_color) {
             ansi_reset(statep);
-            cons_reset_color(&g_root_scr);
+            cons_reset_color(scr);
             return ANSI_UPDATE_COLOR;
         }
 
@@ -149,7 +151,7 @@ ansi_feed(struct ansi_state *statep, char c)
         }
 
         if (c == 'm') {
-            cons_update_color(&g_root_scr, statep->fg, statep->bg);
+            cons_update_color(scr, statep->fg, statep->bg);
             ansi_reset(statep);
             return ANSI_UPDATE_COLOR;
         }
