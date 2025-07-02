@@ -488,7 +488,10 @@ void
 cons_init(void)
 {
     struct fbdev fbdev = fbdev_get();
+    struct console_feat *featp;
 
+    featp = &g_root_scr.feat;
+    featp->ansi_esc = 1;
     g_root_scr.ch_col = 0;
     g_root_scr.ch_row = 0;
     g_root_scr.fg = CONSOLE_FG;

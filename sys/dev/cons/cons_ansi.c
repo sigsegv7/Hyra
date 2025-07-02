@@ -29,6 +29,7 @@
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
+#include <sys/console.h>
 #include <dev/cons/cons.h>
 #include <dev/cons/ansi.h>
 #include <string.h>
@@ -61,6 +62,8 @@ int
 ansi_feed(struct ansi_state *statep, char c)
 {
     struct cons_screen *scr = &g_root_scr;
+    struct console_feat *featp;
+
 
     /* Standard colors */
     static uint32_t colortab[] = {
@@ -69,6 +72,11 @@ ansi_feed(struct ansi_state *statep, char c)
         ANSI_BLUE, ANSI_MAGENTA,
         ANSI_CYAN, ANSI_WHITE
     };
+
+    featp = &scr->feat;
+    if (!featp->ansi_esc) {
+        return 0;
+    }
 
     /*
      * Handle the control sequence introducer

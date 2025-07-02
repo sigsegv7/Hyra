@@ -27,54 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DEV_CONS_H_
-#define _DEV_CONS_H_
+#ifndef _SYS_CONSOLE_H_
+#define _SYS_CONSOLE_H_
 
 #include <sys/types.h>
-#include <sys/spinlock.h>
-#include <sys/console.h>
-#include <dev/video/fbdev.h>
-#include <dev/cons/consvar.h>
-#include <dev/cons/ansi.h>
 
-struct cons_char {
-    char c;
-    uint32_t fg;
-    uint32_t bg;
-    uint32_t x;
-    uint32_t y;
+/*
+ * Console features
+ *
+ * @ansi_esc: If 1, ANSI escape codes are enabled
+ */
+struct console_feat {
+    uint8_t ansi_esc : 1;
 };
 
-struct cons_screen {
-    struct fbdev fbdev;
-    struct ansi_state ansi_s;
-    struct console_feat feat;   /* Features */
-    uint32_t fg;
-    uint32_t bg;
-
-    /* Private */
-    uint32_t *fb_mem;
-    uint32_t nrows;
-    uint32_t ncols;
-    uint32_t ch_col;    /* Current col */
-    uint32_t ch_row;    /* Current row */
-    uint32_t curs_col;  /* Cursor col */
-    uint32_t curs_row;  /* Cursor row */
-    struct cons_buf *ib;  /* Input buffer */
-    struct cons_buf **ob; /* Output buffers */
-    struct cons_char last_chr;
-    struct spinlock lock;
-};
-
-void cons_init(void);
-void cons_expose(void);
-void cons_update_color(struct cons_screen *scr, uint32_t fg, uint32_t bg);
-void cons_clear_scr(struct cons_screen *scr, uint32_t bg);
-void cons_reset_color(struct cons_screen *scr);
-void cons_reset_cursor(struct cons_screen *scr);
-int cons_putch(struct cons_screen *scr, char c);
-int cons_putstr(struct cons_screen *scr, const char *s, size_t len);
-
-extern struct cons_screen g_root_scr;
-
-#endif  /* !_DEV_CONS_H_ */
+#endif  /* !_SYS_CONSOLE_H_ */
