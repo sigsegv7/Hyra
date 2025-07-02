@@ -564,7 +564,6 @@ cons_expose(void)
     dev_register(major, dev, &cons_cdevsw);
     devfs_create_entry(devname, major, dev, 0444);
 
-
     /* Register the control file */
     ctl.mode = 0666;
     ctlfs_create_node(devname, &ctl);
