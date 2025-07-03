@@ -343,6 +343,7 @@ cons_fast_putch(struct cons_screen *scr, char c)
 static int
 dev_write(dev_t dev, struct sio_txn *sio, int flags)
 {
+    cons_attach();
     cons_putstr(&g_root_scr, sio->buf, sio->len);
     cons_flush(&g_root_scr);
     return sio->len;
@@ -372,6 +373,7 @@ dev_read(dev_t dev, struct sio_txn *sio, int flags)
         return -EAGAIN;
     }
 
+    cons_attach();
     spinlock_acquire(&g_root_scr.lock);
     for (;;) {
         /* Buffer too small */
@@ -468,6 +470,69 @@ ctl_feat_write(struct ctlfs_dev *cdp, struct sio_txn *sio)
 }
 
 /*
+ * Detach the currently running process from the
+ * console.
+ */
+int
+cons_detach(void)
+{
+    struct cons_screen *scr;
+
+    scr = &g_root_scr;
+    if (scr->atproc == NULL) {
+        return 0;
+    }
+    if (scr->atproc_lock == NULL) {
+        return 0;
+    }
+
+    scr = &g_root_scr;
+    scr->atproc = NULL;
+    mutex_release(scr->atproc_lock);
+    return 0;
+}
+
+/*
+ * Attach the current process to the
+ * console.
+ */
+int
+cons_attach(void)
+{
+    struct cons_screen *scr;
+    struct proc *td, *atproc;
+
+    td = this_td();
+    if (td == NULL) {
+        return -1;
+    }
+
+    scr = &g_root_scr;
+    if (scr->atproc_lock == NULL) {
+        return 0;
+    }
+
+    scr = &g_root_scr;
+    atproc = scr->atproc;
+
+    if (atproc != NULL) {
+        if (atproc->pid == td->pid) {
+            return 0;
+        }
+
+        /*
+         * Do not release this here as we want
+         * any other process that tries to attach
+         * to wait.
+         */
+        mutex_acquire(scr->atproc_lock, 0);
+    }
+
+    scr->atproc = td;
+    return 0;
+}
+
+/*
  * Reset console color.
  */
 void
@@ -556,6 +621,8 @@ cons_init(void)
     g_root_scr.nrows = fbdev.height / FONT_HEIGHT;
     g_root_scr.ncols = fbdev.width / FONT_WIDTH;
     g_root_scr.fbdev = fbdev;
+    g_root_scr.atproc = NULL;
+    g_root_scr.atproc_lock = NULL;
     memset(&g_root_scr.lock, 0, sizeof(g_root_scr.lock));
     cons_init_bufs(&g_root_scr);
     SHOW_CURSOR(&g_root_scr);
@@ -577,6 +644,9 @@ cons_expose(void)
     if (once) {
         return;
     }
+
+    /* Init the attached proc mutex lock */
+    g_root_scr.atproc_lock = mutex_new("console0");
 
     /* Register the device here */
     major = dev_alloc_major();

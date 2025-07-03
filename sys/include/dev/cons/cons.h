@@ -32,6 +32,8 @@
 
 #include <sys/types.h>
 #include <sys/spinlock.h>
+#include <sys/proc.h>
+#include <sys/mutex.h>
 #include <sys/console.h>
 #include <dev/video/fbdev.h>
 #include <dev/cons/consvar.h>
@@ -49,6 +51,8 @@ struct cons_screen {
     struct fbdev fbdev;
     struct ansi_state ansi_s;
     struct console_feat feat;   /* Features */
+    struct proc *atproc;        /* Attached proc */
+    struct mutex *atproc_lock;
     uint32_t fg;
     uint32_t bg;
 
@@ -72,6 +76,8 @@ void cons_update_color(struct cons_screen *scr, uint32_t fg, uint32_t bg);
 void cons_clear_scr(struct cons_screen *scr, uint32_t bg);
 void cons_reset_color(struct cons_screen *scr);
 void cons_reset_cursor(struct cons_screen *scr);
+int cons_attach(void);
+int cons_detach(void);
 int cons_putch(struct cons_screen *scr, char c);
 int cons_putstr(struct cons_screen *scr, const char *s, size_t len);
 

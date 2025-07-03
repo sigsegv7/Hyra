@@ -34,6 +34,7 @@
 #include <sys/param.h>
 #include <sys/syslog.h>
 #include <sys/atomic.h>
+#include <dev/cons/cons.h>
 #include <machine/frame.h>
 #include <machine/cpu.h>
 #include <machine/cdefs.h>
@@ -221,6 +222,7 @@ sched_switch(struct trapframe *tf)
 
     ci = this_cpu();
     td = ci->curtd;
+    cons_detach();
 
     if (td != NULL) {
         if (td->pid == 0)
