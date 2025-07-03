@@ -35,6 +35,7 @@
 #include <sys/atomic.h>
 #include <sys/syslog.h>
 #include <sys/spinlock.h>
+#include <machine/cdefs.h>
 #include <dev/timer.h>
 #include <string.h>
 
@@ -83,7 +84,9 @@ spinlock_usleep(struct spinlock *lock, size_t usec_max)
 void
 spinlock_acquire(struct spinlock *lock)
 {
-    while (__atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE));
+    while (__atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE)) {
+        md_pause();
+    }
 }
 
 /*
