@@ -278,4 +278,4 @@ static struct cdevsw mc1468_cdevsw = {
     .write = mc1468_dev_write,
 };
 
-DRIVER_EXPORT(mc1468_init);
+DRIVER_EXPORT(mc1468_init, "mc1468");

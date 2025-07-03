@@ -135,4 +135,4 @@ static const struct ctlops fb_size_ctl = {
     .write = NULL,
 };
 
-DRIVER_EXPORT(fbdev_init);
+DRIVER_EXPORT(fbdev_init, "fbdev");

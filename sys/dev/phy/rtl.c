@@ -440,4 +440,4 @@ rt81xx_init(void)
     return rt_init_mac();
 }
 
-DRIVER_DEFER(rt81xx_init);
+DRIVER_DEFER(rt81xx_init, "rtl81xx");

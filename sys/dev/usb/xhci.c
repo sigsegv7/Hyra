@@ -545,4 +545,4 @@ xhci_init(void)
     return xhci_init_hc(&xhc);
 }
 
-DRIVER_EXPORT(xhci_init);
+DRIVER_EXPORT(xhci_init, "xhci");

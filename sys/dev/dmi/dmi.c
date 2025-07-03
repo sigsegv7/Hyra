@@ -248,4 +248,4 @@ dmi_init(void)
     return 0;
 }
 
-DRIVER_EXPORT(dmi_init);
+DRIVER_EXPORT(dmi_init, "dmi");

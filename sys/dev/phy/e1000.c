@@ -355,4 +355,4 @@ e1000_init(void)
     return 0;
 }
 
-DRIVER_EXPORT(e1000_init);
+DRIVER_EXPORT(e1000_init, "e1000");

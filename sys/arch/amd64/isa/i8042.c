@@ -435,4 +435,4 @@ i8042_init(void)
     return 0;
 }
 
-DRIVER_EXPORT(i8042_init);
+DRIVER_EXPORT(i8042_init, "i8042");

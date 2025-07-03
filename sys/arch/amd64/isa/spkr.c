@@ -119,4 +119,4 @@ static struct cdevsw beep_cdevsw = {
     .write = dev_write
 };
 
-DRIVER_EXPORT(beep_init);
+DRIVER_EXPORT(beep_init, "pcspkr");

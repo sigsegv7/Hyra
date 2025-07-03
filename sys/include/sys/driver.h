@@ -43,6 +43,7 @@ struct driver_var {
 
 struct driver {
     int(*init)(void);
+    const char *name;
     struct driver_var *data;
 };
 
@@ -56,7 +57,7 @@ extern char __drivers_init_end[];
 extern char __driversd_init_start[];
 extern char __driversd_init_end[];
 
-#define DRIVER_EXPORT(INIT)                         \
+#define DRIVER_EXPORT(INIT, NAME)                   \
     static struct driver_var __driver_var = {       \
         .deferred = 0                               \
     };                                              \
@@ -64,7 +65,8 @@ extern char __driversd_init_end[];
     __attribute__((used, section(".drivers")))      \
     static struct driver __driver_desc = {          \
         .init = INIT,                               \
-        .data = &__driver_var                       \
+        .data = &__driver_var,                      \
+        .name = NAME                                \
     }
 
 /*
@@ -84,7 +86,7 @@ extern char __driversd_init_end[];
  * context has yet to be initialized. The driver may
  * use this to defer requests for I/O.
  */
-#define DRIVER_DEFER(INIT)                           \
+#define DRIVER_DEFER(INIT, NAME)                     \
     static struct driver_var __driver_var = {        \
         .deferred = 1                                \
     };                                               \
@@ -92,7 +94,8 @@ extern char __driversd_init_end[];
     __attribute__((used, section(".drivers.defer"))) \
     static struct driver __driver_desc = {           \
         .init = INIT,                                \
-        .data = &__driver_var                        \
+        .data = &__driver_var,                       \
+        .name = NAME                                 \
     }
 
 #define DRIVER_DEFERRED() __driver_var.deferred
