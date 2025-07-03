@@ -31,6 +31,7 @@
 #include <sys/vnode.h>
 #include <sys/errno.h>
 #include <sys/stat.h>
+#include <sys/syslog.h>
 #include <sys/mount.h>
 #include <sys/device.h>
 #include <fs/devfs.h>
@@ -38,6 +39,7 @@
 #include <string.h>
 
 struct devfs_node {
+    struct devstat stat;
     char *name;
     uint8_t is_block : 1;
     mode_t mode;
@@ -180,6 +182,7 @@ static int
 devfs_read(struct vnode *vp, struct sio_txn *sio)
 {
     struct devfs_node *dnp;
+    struct devstat *statp;
     void *devsw;
 
     if ((dnp = vp->data) == NULL)
@@ -190,6 +193,9 @@ devfs_read(struct vnode *vp, struct sio_txn *sio)
     if (!dnp->is_block)
         return cdevsw_read(devsw, dnp->dev, sio);
 
+    statp = &dnp->stat;
+    ++statp->nreads;
+
     /* Block device */
     return bdevsw_read(devsw, dnp->dev, sio);
 }
@@ -198,6 +204,7 @@ static int
 devfs_write(struct vnode *vp, struct sio_txn *sio)
 {
     struct devfs_node *dnp;
+    struct devstat *statp;
     void *devsw;
 
     if ((dnp = vp->data) == NULL)
@@ -208,6 +215,9 @@ devfs_write(struct vnode *vp, struct sio_txn *sio)
     if (!dnp->is_block) {
         return cdevsw_write(devsw, dnp->dev, sio);
     }
+
+    statp = &dnp->stat;
+    ++statp->nwrites;
 
     /* Block device */
     return bdevsw_write(devsw, dnp->dev, sio);
@@ -233,6 +243,24 @@ devfs_init(struct fs_info *fip)
     return 0;
 }
 
+int
+devfs_devstat(struct vnode *vp, struct devstat *res)
+{
+    struct devfs_node *dnp;
+
+    if ((dnp = vp->data) == NULL) {
+        return -EIO;
+    }
+
+    /* Not supported on char devices */
+    if (!dnp->is_block) {
+        return -ENOTSUP;
+    }
+
+    *res = dnp->stat;
+    return 0;
+}
+
 /*
  * Create an entry within devfs.
  *
@@ -245,6 +273,7 @@ int
 devfs_create_entry(const char *name, devmajor_t major, dev_t dev, mode_t mode)
 {
     struct devfs_node *dnp;
+    struct devstat *statp;
     size_t name_len;
 
     dnp = dynalloc(sizeof(*dnp));
@@ -257,6 +286,10 @@ devfs_create_entry(const char *name, devmajor_t major, dev_t dev, mode_t mode)
         dynfree(dnp);
         return -ENOMEM;
     }
+
+    statp = &dnp->stat;
+    statp->nwrites = 0;
+    statp->nreads = 0;
 
     memcpy(dnp->name, name, name_len);
     dnp->name[name_len] = '\0';

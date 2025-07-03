@@ -27,17 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FS_DEVFS_H_
-#define _FS_DEVFS_H_
+#ifndef _SYS_DEVSTAT_H_
+#define _SYS_DEVSTAT_H_
 
-#include <sys/vnode.h>
 #include <sys/types.h>
-#include <sys/device.h>
-#include <sys/devstat.h>
 
-extern const struct vops g_devfs_vops;
+/*
+ * Stats for block devices
+ *
+ * @nwrites: Number of writes total
+ * @nreads: Number of reads total
+ */
+struct devstat {
+    size_t nwrites;
+    size_t nreads;
+};
 
-int devfs_create_entry(const char *name, devmajor_t major, dev_t dev, mode_t mode);
-int devfs_devstat(struct vnode *vp, struct devstat *res);
-
-#endif  /* !_FS_DEVFS_H_ */
+#endif  /* !_SYS_DEVSTAT_H_ */
