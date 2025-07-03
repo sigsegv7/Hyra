@@ -54,6 +54,8 @@
 #define SYS_lseek   13
 #define SYS_sleep   14
 #define SYS_inject  15
+#define SYS_getpid  16
+#define SYS_getppid 17
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */
