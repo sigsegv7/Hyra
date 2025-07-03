@@ -28,12 +28,15 @@
  */
 
 #include <sys/types.h>
+#include <sys/mutex.h>
 #include <sys/systm.h>
 #include <sys/errno.h>
+#include <sys/sched.h>
 #include <sys/atomic.h>
 #include <sys/syslog.h>
 #include <sys/spinlock.h>
 #include <dev/timer.h>
+#include <string.h>
 
 #define pr_trace(fmt, ...) kprintf("synch: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
@@ -135,4 +138,58 @@ void
 sysrel(void)
 {
     spinlock_release(&__syslock);
+}
+
+/*
+ * Create a new mutex lock object
+ */
+struct mutex *
+mutex_new(const char *name)
+{
+    struct mutex *mtx;
+    size_t namelen;
+
+    mtx = dynalloc(sizeof(*mtx));
+    if (mtx == NULL) {
+        return NULL;
+    }
+
+    mtx->lock = 0;
+    namelen = strlen(name);
+
+    /* Don't overflow the name buffer */
+    if (namelen >= MUTEX_NAME_LEN) {
+        namelen = MUTEX_NAME_LEN - 1;
+    }
+
+    memcpy(mtx->name, name, namelen);
+    return mtx;
+}
+
+/*
+ * Acquire a mutex
+ *
+ * @mtx: Mutex to acquire
+ * @flags: Optional flags
+ */
+int
+mutex_acquire(struct mutex *mtx, int flags)
+{
+    while (__atomic_test_and_set(&mtx->lock, __ATOMIC_ACQUIRE)) {
+        sched_yield();
+    }
+
+    return 0;
+}
+
+void
+mutex_release(struct mutex *mtx)
+{
+    __atomic_clear(&mtx->lock, __ATOMIC_RELEASE);
+}
+
+void
+mutex_free(struct mutex *mtx)
+{
+    dynfree(mtx);
 }
