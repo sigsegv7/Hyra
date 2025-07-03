@@ -55,6 +55,16 @@ __driver_init_td(void)
 
     for (dp = (void *)start; (uintptr_t)dp < end; ++dp) {
         var = dp->data;
+
+        /*
+         * Check the blacklist to see if this driver
+         * is marked to be ignored. If so, just continue
+         * to the next.
+         */
+        if (driver_blacklist_check(dp->name)) {
+            continue;
+        }
+
         if (var->deferred) {
             dp->init();
             var->deferred = 0;

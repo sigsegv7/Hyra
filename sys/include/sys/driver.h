@@ -104,11 +104,19 @@ extern char __driversd_init_end[];
     for (struct driver *__d = (struct driver *)__drivers_init_start;    \
          (uintptr_t)__d < (uintptr_t)__drivers_init_end; ++__d)         \
     {                                                                   \
+        if (driver_blacklist_check((__d)->name)) {                      \
+            continue;                                                   \
+        }                                                               \
         __d->init();                                                    \
     }
 
 #define DRIVERS_SCHED() \
     spawn(&g_proc0, __driver_init_td, NULL, 0, NULL)
+
+/* Driver blacklist framework */
+int driver_blacklist(const char *name);
+int driver_blacklist_check(const char *name);
+void driver_blacklist_init(void);
 
 void __driver_init_td(void);
 
