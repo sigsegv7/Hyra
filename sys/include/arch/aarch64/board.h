@@ -27,85 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/syslog.h>
-#include <sys/panic.h>
-#include <machine/cpu.h>
-#include <machine/sync.h>
-#include <machine/board.h>
+#ifndef _MACHINE_BOARD_H_
+#define _MACHINE_BOARD_H_
 
-struct cpu_info g_bsp_ci = {0};
-
-void md_cpu_init(void);
-
-void
-cpu_halt_others(void)
-{
-    /* TODO: STUB */
-    return;
-}
-
-void
-serial_init(void)
-{
-    /* TODO: STUB */
-    return;
-}
-
-void
-md_backtrace(void)
-{
-    /* TODO: STUB */
-    return;
-}
-
-void
-serial_putc(char c)
-{
-    /* TODO: STUB */
-    return;
-}
-
-int
-md_sync_all(void)
-{
-    /* TODO: STUB */
-    return 0;
-}
-
-void
-cpu_halt_all(void)
-{
-    /* TODO: Stub */
-    for (;;);
-}
+/* Board implementer */
+#define BOARD_ARM_LIMITED   0x41    /* ARM Limited */
+#define BOARD_BROADCOM      0x42    /* Broadcom corp */
+#define BOARD_CAVIUM        0x43    /* Calvium Inc */
+#define BOARD_DIGITAL_EQUIP 0x44    /* Digital Equipment Corporation */
+#define BOARD_FUJITSU       0x46    /* Fujitsu Ltd */
 
 /*
- * Get the descriptor for the currently
- * running processor.
+ * Board information, contains a part number
+ * and an implementer number.
  */
-struct cpu_info *
-this_cpu(void)
-{
-    struct cpu_info *ci;
+struct board_info {
+    uint8_t implementer;
+    uint16_t partno : 12;
+};
 
-    __ASMV("mrs %0, tpidr_el1" : "=r" (ci));
-    return ci;
-}
+void md_get_board(struct board_info *res);
 
-void
-cpu_startup(struct cpu_info *ci)
-{
-    ci->self = ci;
-    __ASMV("msr tpidr_el1, %0" :: "r" (ci));
-    md_cpu_init();
-}
-
-void
-md_get_board(struct board_info *res)
-{
-    uint64_t midr_el1;
-
-    __ASMV("mrs %0, midr_el1" : "=r" (midr_el1));
-    res->partno = (midr_el1 >> 4) & 0xFFF;
-    res->implementer = (midr_el1 >> 24) & 0xFF;
-}
+#endif  /* !_MACHINE_BOARD_H_ */
