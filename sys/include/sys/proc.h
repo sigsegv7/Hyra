@@ -90,6 +90,12 @@ struct proc *this_td(void);
 struct proc *get_child(struct proc *cur, pid_t pid);
 void proc_reap(struct proc *td);
 
+pid_t getpid(void);
+pid_t getppid(void);
+
+scret_t sys_getpid(struct syscall_args *scargs);
+scret_t sys_getppid(struct syscall_args *scargs);
+
 int md_spawn(struct proc *p, struct proc *parent, uintptr_t ip);
 
 scret_t sys_spawn(struct syscall_args *scargs);
