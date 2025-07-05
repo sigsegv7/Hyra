@@ -29,7 +29,13 @@
 
 #include <sys/types.h>
 #include <sys/proc.h>
+#include <sys/cdefs.h>
+#include <sys/vnode.h>
 #include <sys/syscall.h>
+#include <sys/filedesc.h>
+#include <sys/fcntl.h>
+#include <string.h>
+#include <crc32.h>
 
 pid_t
 getpid(void)
@@ -59,6 +65,39 @@ getppid(void)
     }
 
     return td->parent->pid;
+}
+
+void
+proc_coredump(struct proc *td, uintptr_t fault_addr)
+{
+    struct coredump core;
+    struct sio_txn sio;
+    struct vnode *vp;
+    char pathname[128];
+    int fd;
+
+    snprintf(pathname, sizeof(pathname), "/tmp/core.%d", td->pid);
+    fd = fd_open(pathname, O_RDWR | O_CREAT);
+
+    /* ... Hopefully not */
+    if (__unlikely(fd < 0)) {
+        return;
+    }
+
+    core.pid = td->pid;
+    core.fault_addr = fault_addr;
+    memcpy(&core.tf, &td->tf, sizeof(td->tf));
+
+    core.checksum = crc32(&core, sizeof(core) - sizeof(core.checksum));
+    vp = fd_get(fd)->vp;
+
+    sio.buf = &core;
+    sio.len = sizeof(core);
+    sio.offset = 0;
+
+    /* Write the core file */
+    vfs_vop_write(vp, &sio);
+    fd_close(fd);
 }
 
 scret_t

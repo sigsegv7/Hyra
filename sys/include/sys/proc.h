@@ -53,6 +53,26 @@
 #define PROC_MAX_FILEDES 256
 #define PROC_SIGMAX 64
 
+/*
+ * The coredump structure, contains information
+ * about crashes.
+ *
+ * @pid: PID of process that has crashed
+ * @fault_addr: Address of faulting memory access
+ * @tf: Copy of the programs trapframe
+ * @checksum: CRC32 checksum of entire coredump
+ *
+ * XXX: DO NOT REORDER (always add to the end before 'checksum')
+ */
+struct __packed coredump {
+    pid_t pid;
+    uintptr_t fault_addr;
+    struct trapframe tf;
+
+    /* XXX: Add entries above the checksum */
+    uint32_t checksum;
+};
+
 struct proc {
     pid_t pid;
     struct exec_prog exec;
@@ -88,7 +108,9 @@ struct proc {
 
 struct proc *this_td(void);
 struct proc *get_child(struct proc *cur, pid_t pid);
+
 void proc_reap(struct proc *td);
+void proc_coredump(struct proc *td, uintptr_t fault_addr);
 
 pid_t getpid(void);
 pid_t getppid(void);

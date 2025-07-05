@@ -127,6 +127,7 @@ static void
 trap_user(struct trapframe *tf)
 {
     struct proc *td = this_td();
+    uintptr_t fault_addr;
     sigset_t sigset;
 
     sigemptyset(&sigset);
@@ -147,6 +148,9 @@ trap_user(struct trapframe *tf)
         sigaddset(&sigset, SIGKILL);
         break;
     }
+
+    fault_addr = pf_faultaddr();
+    proc_coredump(td, fault_addr);
 
     /*
      * Send the signal then flush the signal queue right
