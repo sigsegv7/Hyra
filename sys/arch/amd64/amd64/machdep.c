@@ -314,6 +314,39 @@ md_sync_all(void)
 }
 
 void
+cpu_enable_smep(void)
+{
+    struct cpu_info *ci;
+    uint64_t cr4;
+
+    ci = this_cpu();
+    if (!ISSET(ci->feat, CPU_FEAT_SMEP)) {
+        pr_trace_bsp("SMEP not supported\n");
+        return;
+    }
+
+    cr4 = amd64_read_cr4();
+    cr4 |= BIT(20);         /* CR4.SMEP */
+    amd64_write_cr4(cr4);
+}
+
+void
+cpu_disable_smep(void)
+{
+    struct cpu_info *ci;
+    uint64_t cr4;
+
+    ci = this_cpu();
+    if (!ISSET(ci->feat, CPU_FEAT_SMEP)) {
+        return;
+    }
+
+    cr4 = amd64_read_cr4();
+    cr4 &= ~BIT(20);    /* CR4.SMEP */
+    amd64_write_cr4(cr4);
+}
+
+void
 cpu_startup(struct cpu_info *ci)
 {
     ci->self = ci;
@@ -328,6 +361,7 @@ cpu_startup(struct cpu_info *ci)
     try_mitigate_spectre();
 
     cpu_check_feat(ci);
+    cpu_enable_smep();
 
     enable_simd();
     lapic_init();

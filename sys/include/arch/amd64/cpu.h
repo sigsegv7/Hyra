@@ -61,6 +61,9 @@ __dead void cpu_halt_all(void);
 void cpu_halt_others(void);
 void cpu_startup(struct cpu_info *ci);
 
+void cpu_enable_smep(void);
+void cpu_disable_smep(void);
+
 struct cpu_info *cpu_get(uint32_t index);
 uint32_t cpu_count(void);
 void cpu_shootdown_tlb(vaddr_t va);
