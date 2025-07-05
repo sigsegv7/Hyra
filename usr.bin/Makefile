@@ -17,3 +17,4 @@ all:
 	make -C cat/ $(ARGS)
 	make -C getconf/ $(ARGS)
 	make -C echo/ $(ARGS)
+	make -C readcore/ $(ARGS)
