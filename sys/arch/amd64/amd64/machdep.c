@@ -178,6 +178,19 @@ enable_simd(void)
     }
 }
 
+static void
+cpu_check_feat(struct cpu_info *ci)
+{
+    uint32_t unused, ebx;
+
+    /* Extended features */
+    CPUID(0x07, unused, ebx, unused, unused);
+    if (ISSET(ebx, BIT(7)))
+        ci->feat |= CPU_FEAT_SMEP;
+    if (ISSET(ebx, BIT(20)))
+        ci->feat |= CPU_FEAT_SMAP;
+}
+
 void
 cpu_shootdown_tlb(vaddr_t va)
 {
@@ -304,6 +317,7 @@ void
 cpu_startup(struct cpu_info *ci)
 {
     ci->self = ci;
+    ci->feat = 0;
     gdt_load();
     idt_load();
 
@@ -312,6 +326,8 @@ cpu_startup(struct cpu_info *ci)
 
     init_tss(ci);
     try_mitigate_spectre();
+
+    cpu_check_feat(ci);
 
     enable_simd();
     lapic_init();

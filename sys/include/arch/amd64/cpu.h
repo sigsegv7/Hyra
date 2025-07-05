@@ -38,8 +38,13 @@
 
 #define CPU_IRQ(IRQ_N) (BIT((IRQ_N)) & 0xFF)
 
+/* Feature bits */
+#define CPU_FEAT_SMAP  BIT(0)
+#define CPU_FEAT_SMEP  BIT(1)
+
 struct cpu_info {
     uint32_t apicid;
+    uint32_t feat;
     uint8_t has_x2apic : 1;
     uint8_t tlb_shootdown : 1;
     uint8_t ipl;
