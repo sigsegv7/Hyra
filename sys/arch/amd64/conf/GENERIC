@@ -8,6 +8,7 @@
 option SPECTRE_IBRS no   // Enable the IBRS CPU feature
 option SERIAL_DEBUG yes  // Enable kmsg serial logging
 option USER_KMSG    no   // Show kmsg in user consoles
+option CPU_SMEP     yes  // Supervisor Memory Exec Protection
 
 // Kernel constants
 setval SCHED_NQUEUE 4    // Number of scheduler queues (for MLFQ)

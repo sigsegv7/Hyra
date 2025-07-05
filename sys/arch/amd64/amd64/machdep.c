@@ -61,6 +61,12 @@
 #define SPECTRE_IBRS 0
 #endif
 
+#if defined(__CPU_SMEP)
+#define CPU_SMEP __CPU_SMEP
+#else
+#define CPU_SMEP 0
+#endif
+
 int ibrs_enable(void);
 int simd_init(void);
 void syscall_isr(void);
@@ -319,6 +325,11 @@ cpu_enable_smep(void)
     struct cpu_info *ci;
     uint64_t cr4;
 
+    /* Don't bother if not enabled */
+    if (!CPU_SMEP) {
+        return;
+    }
+
     ci = this_cpu();
     if (!ISSET(ci->feat, CPU_FEAT_SMEP)) {
         pr_trace_bsp("SMEP not supported\n");
@@ -335,6 +346,10 @@ cpu_disable_smep(void)
 {
     struct cpu_info *ci;
     uint64_t cr4;
+
+    if (!CPU_SMEP) {
+        return;
+    }
 
     ci = this_cpu();
     if (!ISSET(ci->feat, CPU_FEAT_SMEP)) {
