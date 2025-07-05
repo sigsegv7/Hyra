@@ -369,7 +369,6 @@ tmpfs_reclaim(struct vnode *vp)
     }
 
     np->vp = NULL;
-    vp->data = NULL;
     return 0;
 }
 
