@@ -318,6 +318,15 @@ tmpfs_read(struct vnode *vp, struct sio_txn *sio)
         return -EIO;
     }
 
+    /*
+     * The node data is only allocated during writes, if
+     * we read this file before a write was ever done to it,
+     * np->data will be NULL. We must handle this.
+     */
+    if (np->data == NULL) {
+        return 0;
+    }
+
     /* Is this even a regular file? */
     if (np->type != VREG) {
         return -EISDIR;
