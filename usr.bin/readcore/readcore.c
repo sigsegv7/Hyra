@@ -73,5 +73,6 @@ main(int argc, char **argv)
     }
 
     parse_core(&core);
+    close(fd);
     return 0;
 }
