@@ -63,7 +63,7 @@ main(int argc, char **argv)
 
     fd = open(argv[1], O_RDONLY);
     if (fd < 2) {
-        printf("readcore: Could not open \"%s\"", argv[1]);
+        printf("readcore: Could not open \"%s\"\n", argv[1]);
         return fd;
     }
 
