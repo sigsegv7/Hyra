@@ -121,7 +121,7 @@ tmpfs_do_lookup(const char *rpath, struct tmpfs_node **res)
     }
 
     spinlock_release(&cnp->lock);
-    if (res == NULL) {
+    if (dirent == NULL) {
         return -ENOENT;
     }
 
