@@ -470,6 +470,12 @@ nvme_dev_read(dev_t dev, struct sio_txn *sio, int flags)
     return nvme_dev_rw(dev, sio, false);
 }
 
+static int
+nvme_dev_write(dev_t dev, struct sio_txn *sio, int flags)
+{
+    return nvme_dev_rw(dev, sio, true);
+}
+
 /*
  * Initializes an NVMe namespace.
  *
@@ -659,7 +665,7 @@ nvme_init(void)
 
 static struct bdevsw nvme_bdevsw = {
     .read = nvme_dev_read,
-    .write = nowrite
+    .write = nvme_dev_write
 };
 
 DRIVER_EXPORT(nvme_init, "nvme");
