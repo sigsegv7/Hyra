@@ -353,7 +353,7 @@ hba_port_reset(struct ahci_hba *hba, struct hba_port *port)
      * Wait for the link to become reestablished
      * between the port and the HBA.
      */
-    tmr.msleep(300);
+    tmr.msleep(8);
     sctl &= ~AHCI_DET_COMRESET;
     mmio_write32(&port->sctl,  sctl);
 
