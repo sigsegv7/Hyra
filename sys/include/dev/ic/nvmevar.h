@@ -34,6 +34,7 @@
 
 /* Admin commands */
 #define NVME_OP_CREATE_IOSQ     0x01
+#define NVME_OP_GET_LOGPAGE     0x02
 #define NVME_OP_CREATE_IOCQ     0x05
 #define NVME_OP_IDENTIFY        0x06
 
@@ -44,6 +45,67 @@
 /* I/O commands */
 #define NVME_OP_WRITE 0x01
 #define NVME_OP_READ 0x02
+
+/* Log page identifiers */
+#define NVME_LOGPAGE_SMART 0x02
+
+/*
+ * S.M.A.R.T health / information log
+ *
+ * See section 5.16.1.3, figure 207 of the
+ * NVMe base spec (rev 2.0a)
+ *
+ * @cwarn: Critical warning
+ * @temp: Composite tempature (kelvin)
+ * @avail_spare: Available spare (in percentage)
+ * @avail_spare_thr: Available spare threshold
+ * @percent_used: Estimate NVMe life used percentage
+ * @end_cwarn: Endurance group critical warning summary
+ * @data_units_read: Number of 512 byte data units read
+ * @data_units_written: Number of 512 byte data units written
+ * @host_reads: Number of host read commands completed
+ * @host_writes: Number of host write commands completed
+ * @ctrl_busy_time: Controller busy time
+ * @power_cycles: Number of power cycles
+ * @power_on_hours: Number of power on hours
+ * @unsafe_shutdowns: Number of unsafe shutdowns
+ * @media_errors: Media and data integrity errors
+ * @n_errlog_entries: Number of error log info entries
+ * @warning_temp_time: Warning composite tempature time
+ * @critical_comp_time: Critical composite tempature time
+ * @temp_sensor: Tempature sensor <n> data
+ * @temp1_trans_cnt: Tempature 1 transition count
+ * @temp2_trans_cnt: Tempature 2 transition count
+ * @temp1_total_time: Total time for tempature 1
+ * @temp2_total_time: Total time for tempature 2
+ */
+struct nvme_smart_data {
+    uint8_t cwarn;
+    uint16_t temp;
+    uint8_t avail_spare;
+    uint8_t avail_spare_thr;
+    uint8_t percent_used;
+    uint8_t end_cwarn;
+    uint8_t reserved[25];
+    uint8_t data_units_read[16];
+    uint8_t data_units_written[16];
+    uint8_t host_reads[16];
+    uint8_t host_writes[16];
+    uint8_t ctrl_busy_time[16];
+    uint8_t power_cycles[16];
+    uint8_t power_on_hours[16];
+    uint8_t unsafe_shutdowns[16];
+    uint8_t media_errors[16];
+    uint8_t n_errlog_entries[16];
+    uint32_t warning_temp_time;
+    uint32_t critical_comp_time;
+    uint16_t temp_sensor[8];
+    uint32_t temp1_trans_cnt;
+    uint32_t temp2_trans_cnt;
+    uint32_t temp1_total_time;
+    uint32_t temp2_total_time;
+    uint8_t reserved1[280];
+};
 
 struct nvme_identify_cmd {
     uint8_t opcode;
@@ -98,6 +160,26 @@ struct nvme_create_iosq_cmd {
     uint64_t unused3[2];
 };
 
+/* Get log page */
+struct nvme_get_logpage_cmd {
+    uint8_t opcode;
+    uint8_t flags;
+    uint16_t cid;
+    uint32_t nsid;
+    uint64_t unused[2];
+    uint64_t prp1;
+    uint64_t prp2;
+    uint8_t lid;
+    uint8_t lsp;
+    uint16_t numdl;
+    uint16_t numdu;
+    uint16_t lsi;
+    uint64_t lpo;
+    uint8_t unused1[3];
+    uint8_t csi;
+    uint32_t unused2;
+};
+
 /* Read/write */
 struct nvme_rw_cmd {
     uint8_t opcode;
@@ -123,6 +205,7 @@ struct nvme_cmd {
         struct nvme_identify_cmd identify;
         struct nvme_create_iocq_cmd create_iocq;
         struct nvme_create_iosq_cmd create_iosq;
+        struct nvme_get_logpage_cmd get_logpage;
         struct nvme_rw_cmd rw;
     };
 };

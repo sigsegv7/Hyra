@@ -309,6 +309,35 @@ nvme_poll_submit_cmd(struct nvme_queue *q, struct nvme_cmd cmd)
     return 0;
 }
 
+/*
+ * Get NVMe log page
+ *
+ * @ctrl: NVMe controller to target
+ * @buf: Data buffer
+ * @lid: Log identifier
+ * @len: Length (in bytes)
+ */
+static int
+nvme_get_logpage(struct nvme_ctrl *ctrl, void *buf, uint8_t lid, uint32_t len)
+{
+    struct nvme_cmd cmd = {0};
+    struct nvme_get_logpage_cmd *cmdp;
+
+    if (!is_4k_aligned(buf)) {
+        return -1;
+    }
+
+    cmdp = &cmd.get_logpage;
+    cmdp->opcode = NVME_OP_GET_LOGPAGE;
+    cmdp->nsid = 0xFFFFFFFF;
+    cmdp->lid = lid;
+    cmdp->numdl = len / 4;
+    cmdp->numdu = 0;
+    cmdp->prp1 = VIRT_TO_PHYS(buf);
+    cmdp->prp2 = 0;
+    return nvme_poll_submit_cmd(&ctrl->adminq, cmd);
+}
+
 static int
 nvme_identify(struct nvme_ctrl *ctrl, void *buf, uint32_t nsid, uint8_t cns)
 {
@@ -549,6 +578,7 @@ nvme_init_ctrl(struct nvme_bar *bar)
     uint16_t mqes;
     uint8_t *nsids;
     struct nvme_ctrl ctrl = { .bar = bar };
+    struct nvme_smart_data *smart;
     struct nvme_queue *adminq;
     struct nvme_id *id;
 
@@ -572,20 +602,39 @@ nvme_init_ctrl(struct nvme_bar *bar)
         return error;
     }
 
+    smart = dynalloc_memalign(sizeof(*smart), 0x1000);
+    if (smart == NULL) {
+        return -ENOMEM;
+    }
+
     id = dynalloc_memalign(sizeof(*id), 0x1000);
     if (id == NULL) {
+        dynfree(smart);
         return -ENOMEM;
     }
 
     nsids = dynalloc_memalign(0x1000, 0x1000);
     if (nsids == NULL) {
         dynfree(id);
+        dynfree(smart);
         return -ENOMEM;
     }
 
     nvme_identify(&ctrl, id, 0, ID_CNS_CTRL);
     nvme_log_ctrl_id(id);
     nvme_identify(&ctrl, nsids, 0, ID_CNS_NSID_LIST);
+
+    /*
+     * Attempt to read some SMART data but don't bother
+     * if it fails in any way.
+     */
+    error = nvme_get_logpage(&ctrl, smart, NVME_LOGPAGE_SMART, sizeof(*smart));
+    if (error == 0) {
+        if (smart->temp != 0 && smart->temp > 283)
+            pr_trace("temp: %d K\n", smart->temp);
+
+        pr_trace("%d%% used\n", smart->percent_used);
+    }
 
     ctrl.sqes = id->sqes >> 4;
     ctrl.cqes = id->cqes >> 4;
@@ -613,6 +662,7 @@ nvme_init_ctrl(struct nvme_bar *bar)
 
     dynfree(id);
     dynfree(nsids);
+    dynfree(smart);
     return 0;
 }
 
