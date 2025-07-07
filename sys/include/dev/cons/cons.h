@@ -51,6 +51,7 @@ struct cons_screen {
     struct fbdev fbdev;
     struct ansi_state ansi_s;
     struct console_feat feat;   /* Features */
+    struct console_attr attr;   /* Attributes */
     struct proc *atproc;        /* Attached proc */
     struct mutex *atproc_lock;
     uint32_t fg;

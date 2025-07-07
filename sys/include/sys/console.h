@@ -43,4 +43,15 @@ struct console_feat {
     uint8_t show_curs : 1;
 };
 
+/*
+ * Console attributes
+ *
+ * @cursor_x: Cursor x position
+ * @cursor_y: Cursor y position
+ */
+struct console_attr {
+    uint32_t cursor_x;
+    uint32_t cursor_y;
+};
+
 #endif  /* !_SYS_CONSOLE_H_ */

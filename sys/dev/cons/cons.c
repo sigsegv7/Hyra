@@ -64,6 +64,7 @@
 struct cons_screen g_root_scr = {0};
 static struct cdevsw cons_cdevsw;
 static struct ctlops cons_feat_ctl;
+static struct ctlops cons_attr_ctl;
 
 static void cons_draw_cursor(struct cons_screen *scr, uint32_t color);
 static int cons_handle_special(struct cons_screen *scr, char c);
@@ -469,6 +470,57 @@ ctl_feat_write(struct ctlfs_dev *cdp, struct sio_txn *sio)
     return sio->len;
 }
 
+static int
+ctl_attr_read(struct ctlfs_dev *cdp, struct sio_txn *sio)
+{
+    struct cons_screen *scr = &g_root_scr;
+    struct console_attr *attrp;
+
+    if (sio->buf == NULL || sio->len == 0) {
+        return -EINVAL;
+    }
+
+    attrp = &scr->attr;
+    if (sio->len > sizeof(*attrp)) {
+        sio->len = sizeof(*attrp);
+    }
+
+    memcpy(sio->buf, attrp, sio->len);
+    return sio->len;
+}
+
+static int
+ctl_attr_write(struct ctlfs_dev *cdp, struct sio_txn *sio)
+{
+    struct cons_screen *scr = &g_root_scr;
+    struct console_attr *attrp;
+
+    attrp = &scr->attr;
+    if (sio->len > sizeof(*attrp)) {
+        sio->len = sizeof(*attrp);
+    }
+
+    memcpy(attrp, sio->buf, sio->len);
+    spinlock_acquire(&scr->lock);
+
+    /* Clip the x/y positions */
+    if (attrp->cursor_x >= scr->ncols)
+        attrp->cursor_x = scr->ncols - 1;
+    if (attrp->cursor_y >= scr->nrows)
+        attrp->cursor_y = scr->nrows - 1;
+
+    /* Update cursor */
+    HIDE_CURSOR(scr);
+    scr->curs_col = attrp->cursor_x;
+    scr->curs_row = attrp->cursor_y;
+    scr->ch_col = attrp->cursor_x;
+    scr->ch_row = attrp->cursor_y;
+    SHOW_CURSOR(scr);
+
+    spinlock_release(&scr->lock);
+    return sio->len;
+}
+
 /*
  * Detach the currently running process from the
  * console.
@@ -654,12 +706,19 @@ cons_expose(void)
     dev_register(major, dev, &cons_cdevsw);
     devfs_create_entry(devname, major, dev, 0444);
 
-    /* Register the control file */
+    /* Register feat ctl */
     ctl.mode = 0666;
     ctlfs_create_node(devname, &ctl);
     ctl.devname = devname;
     ctl.ops = &cons_feat_ctl;
     ctlfs_create_entry("feat", &ctl);
+
+    /* Register attr ctl */
+    ctl.mode = 0666;
+    ctlfs_create_node(devname, &ctl);
+    ctl.devname = devname;
+    ctl.ops = &cons_attr_ctl;
+    ctlfs_create_entry("attr", &ctl);
     once ^= 1;
 }
 
@@ -671,4 +730,9 @@ static struct cdevsw cons_cdevsw = {
 static struct ctlops cons_feat_ctl = {
     .read = ctl_feat_read,
     .write = ctl_feat_write
+};
+
+static struct ctlops cons_attr_ctl = {
+    .read = ctl_attr_read,
+    .write = ctl_attr_write
 };
