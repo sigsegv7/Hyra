@@ -217,11 +217,11 @@ dmi_init(void)
 
     if (resp->entry_64 != 0) {
         entry64 = (void *)resp->entry_64;
-        hdr = (void *)entry64->addr;
+        hdr = PHYS_TO_VIRT(entry64->addr);
         smax_len = entry64->max_size;
     } else if (resp->entry_32 != 0) {
         entry32 = (void *)(uint64_t)resp->entry_32;
-        hdr = (void *)(uint64_t)entry32->addr;
+        hdr = PHYS_TO_VIRT((uint64_t)entry32->addr);
         scount = entry32->nstruct;
     } else {
         return -ENODEV;
