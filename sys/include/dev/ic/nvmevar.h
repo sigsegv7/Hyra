@@ -31,6 +31,7 @@
 #define _IC_NVMEVAR_H_
 
 #include <sys/types.h>
+#include <sys/cdefs.h>
 
 /* Admin commands */
 #define NVME_OP_CREATE_IOSQ     0x01
@@ -79,7 +80,7 @@
  * @temp1_total_time: Total time for tempature 1
  * @temp2_total_time: Total time for tempature 2
  */
-struct nvme_smart_data {
+struct __packed nvme_smart_data {
     uint8_t cwarn;
     uint16_t temp;
     uint8_t avail_spare;
