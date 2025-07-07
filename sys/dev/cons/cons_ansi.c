@@ -99,8 +99,17 @@ ansi_feed(struct ansi_state *statep, char c)
         statep->prev = c;
         return c;
     case 2:
-        if (c == 'H') {
+        if (c == '2') {
+            statep->csi = 3;
+            statep->prev = c;
+            return c;
+        }
+        break;
+    case 3:
+        /* Did we get '\033[2J' ? */
+        if (statep->prev == '2' && c == 'J') {
             cons_clear_scr(scr, g_root_scr.bg);
+            ansi_reset(statep);
             return ANSI_UPDATE_CURSOR;
         }
         break;
