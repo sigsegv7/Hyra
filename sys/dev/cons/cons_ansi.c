@@ -64,7 +64,6 @@ ansi_feed(struct ansi_state *statep, char c)
     struct cons_screen *scr = &g_root_scr;
     struct console_feat *featp;
 
-
     /* Standard colors */
     static uint32_t colortab[] = {
         ANSI_BLACK, ANSI_RED,
