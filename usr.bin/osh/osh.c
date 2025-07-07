@@ -118,7 +118,7 @@ cmd_shutdown(int argc, char *argv[])
 static void
 cmd_clear(int argc, char *argv[])
 {
-    fputs("\033[H", stdout);
+    fputs("\033[2J", stdout);
 }
 
 static void
