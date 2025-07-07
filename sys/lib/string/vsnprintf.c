@@ -96,6 +96,9 @@ vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
             c1 = (char )va_arg(ap, int);
             printc(s, size, &off, c1);
             break;
+        case '%':
+            printc(s, size, &off, c);
+            break;
         case 'd':
             num = va_arg(ap, int);
             itoa(num, num_buf, 10);
