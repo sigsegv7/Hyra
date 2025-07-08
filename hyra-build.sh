@@ -48,6 +48,7 @@ sysroot_skel() {
 
     cp -r rc/* base/usr/rc
     cp -f sys/include/sys/*.h base/usr/include/sys
+    cp -r etc base/etc/
 
     # Populate ESP
     make stand/boot/
