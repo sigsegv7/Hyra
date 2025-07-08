@@ -30,6 +30,7 @@
 #include <sys/proc.h>
 #include <sys/sched.h>
 #include <sys/syslog.h>
+#include <sys/panic.h>
 #include <vm/physmem.h>
 #include <vm/dynalloc.h>
 #include <vm/vm.h>
@@ -117,6 +118,10 @@ exit1(struct proc *td, int flags)
     struct proc *parent;
     struct cpu_info *ci;
     pid_t target_pid, curpid;
+
+    if (td->pid == 1) {
+        panic("init died\n");
+    }
 
     ci = this_cpu();
     target_pid = td->pid;
