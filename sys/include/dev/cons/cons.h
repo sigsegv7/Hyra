@@ -63,13 +63,14 @@ struct cons_screen {
     uint32_t ncols;
     uint32_t ch_col;    /* Current col */
     uint32_t ch_row;    /* Current row */
-    uint32_t curs_col;  /* Cursor col */
-    uint32_t curs_row;  /* Cursor row */
     struct cons_buf *ib;  /* Input buffer */
     struct cons_buf **ob; /* Output buffers */
     struct cons_char last_chr;
     struct spinlock lock;
 };
+
+#define curs_col attr.cursor_x
+#define curs_row attr.cursor_y
 
 void cons_init(void);
 void cons_expose(void);

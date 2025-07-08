@@ -500,17 +500,17 @@ ctl_attr_write(struct ctlfs_dev *cdp, struct sio_txn *sio)
         sio->len = sizeof(*attrp);
     }
 
-    memcpy(attrp, sio->buf, sio->len);
     spinlock_acquire(&scr->lock);
+    HIDE_CURSOR(scr);
+    memcpy(attrp, sio->buf, sio->len);
 
     /* Clip the x/y positions */
     if (attrp->cursor_x >= scr->ncols)
-        attrp->cursor_x = scr->ncols - 1;
+        attrp->cursor_x = scr->ncols - FONT_WIDTH;
     if (attrp->cursor_y >= scr->nrows)
-        attrp->cursor_y = scr->nrows - 1;
+        attrp->cursor_y = scr->nrows - FONT_HEIGHT;
 
     /* Update cursor */
-    HIDE_CURSOR(scr);
     scr->curs_col = attrp->cursor_x;
     scr->curs_row = attrp->cursor_y;
     scr->ch_col = attrp->cursor_x;
