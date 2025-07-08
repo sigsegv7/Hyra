@@ -27,21 +27,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STRING_H_
-#define _STRING_H_ 1
+#include <string.h>
 
-#include <stddef.h>
-#include <stdint.h>
+static char *
+__strtok(char *s, const char *delim, char **last)
+{
+    const char *spanp;
+    char *tok;
+    int c, sc;
 
-size_t strlen(const char *s);
-char *strtok(char *s, const char *delim);
+    if (s == NULL && (s = *last) == NULL) {
+        return NULL;
+    }
 
-void *memset(void *dst, int c, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
+cont:
+    c = *s++;
+    for (spanp = delim; (sc = *spanp++) != 0;) {
+        if (c == sc)
+            goto cont;
+    }
 
-char *itoa(int64_t value, char *buf, int base);
-void *memcpy(void *dest, const void *src, size_t n);
-int strcmp(const char *s1, const char *s2);
-int atoi(char *s);
+    if (c == 0) {
+        *last = NULL;
+        return NULL;
+    }
 
-#endif  /* !_STRING_H_ */
+    tok = s - 1;
+
+    /* Scan tokens */
+    for (;;) {
+        c = *s++;
+        spanp = delim;
+        do {
+            if ((sc = *spanp++) == c) {
+                if (c == 0)
+                    s = NULL;
+                else
+                    s[-1] = '\0';
+                *last = s;
+                return (tok);
+            }
+        } while (sc != 0);
+    }
+
+    __builtin_unreachable();
+}
+
+char *
+strtok(char *s, const char *delim)
+{
+    static char *last;
+
+    return __strtok(s, delim, &last);
+}
