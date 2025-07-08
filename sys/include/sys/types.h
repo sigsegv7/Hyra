@@ -100,6 +100,7 @@ typedef __size_t uintptr_t;
 typedef __size_t off_t;
 typedef int pid_t;
 typedef int dev_t;
+typedef uint32_t uid_t;
 typedef uint32_t mode_t;
 typedef uint32_t ino_t;
 typedef uint32_t nlink_t;
