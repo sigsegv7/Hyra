@@ -158,6 +158,7 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
     newproc->parent = cur;
     newproc->data = p;
     newproc->exit_status = -1;
+    newproc->cred = cur->cred;
 
     /* Initialize the mmap ledger */
     mlgdr->nbytes = 0;

@@ -38,6 +38,7 @@
 #include <sys/cdefs.h>
 #include <sys/syscall.h>
 #include <sys/exec.h>
+#include <sys/ucred.h>
 #include <sys/filedesc.h>
 #include <sys/signal.h>
 #include <sys/vnode.h>
@@ -76,6 +77,7 @@ struct __packed coredump {
 struct proc {
     pid_t pid;
     struct exec_prog exec;
+    struct ucred cred;
     struct ksiginfo *ksig_list[PROC_SIGMAX];
     struct filedesc *fds[PROC_MAX_FILEDES];
     struct mmap_lgdr *mlgdr;
