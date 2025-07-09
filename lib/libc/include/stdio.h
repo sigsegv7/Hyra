@@ -34,6 +34,7 @@
 #define __need_NULL
 #define __need_size_t
 #include <stddef.h>
+#include <unistd.h>
 #define __need_va_list
 #include <stdarg.h>
 
@@ -79,6 +80,7 @@ long ftell(FILE *stream);
 char *fgets(char *__restrict s, int size, FILE *__restrict stream);
 
 FILE *fopen(const char *__restrict path, const char *__restrict mode);
+int fseek(FILE *stream, long offset, int whence);
 int fclose(FILE *stream);
 
 int vsnprintf(char *s, size_t size, const char *fmt, va_list ap);
