@@ -48,8 +48,10 @@ struct ucred {
 };
 
 int setuid(uid_t new);
+uid_t getuid(void);
 
 #if defined(_KERNEL)
 scret_t sys_setuid(struct syscall_args *scargs);
+scret_t sys_getuid(struct syscall_args *scargs);
 #endif
 #endif  /* !_SYS_UCRED_H_ */

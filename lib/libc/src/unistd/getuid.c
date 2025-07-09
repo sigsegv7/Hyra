@@ -28,60 +28,11 @@
  */
 
 #include <sys/types.h>
-#include <sys/errno.h>
-#include <sys/ucred.h>
-#include <sys/proc.h>
-
-int
-setuid(uid_t new)
-{
-    struct proc *td;
-    struct ucred *cur_cred;
-
-    td = this_td();
-    cur_cred = &td->cred;
-
-    /*
-     * Only root can become other users. If you are not
-     * root, fuck off.
-     */
-    if (cur_cred->ruid != 0) {
-        return -EPERM;
-    }
-
-    spinlock_acquire(&cur_cred->lock);
-    cur_cred->euid = new;
-    cur_cred->ruid = new;
-    spinlock_release(&cur_cred->lock);
-    return 0;
-}
+#include <sys/syscall.h>
+#include <unistd.h>
 
 uid_t
 getuid(void)
 {
-    struct proc *td;
-
-    td = this_td();
-    if (td == NULL) {
-        return -1;
-    }
-
-    return td->cred.ruid;
-}
-
-/*
- * setuid() syscall
- *
- * arg0: `new'
- */
-scret_t
-sys_setuid(struct syscall_args *scargs)
-{
-    return setuid(scargs->arg0);
-}
-
-scret_t
-sys_getuid(struct syscall_args *scargs)
-{
-    return getuid();
+    return syscall(SYS_getuid);
 }

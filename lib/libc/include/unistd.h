@@ -47,6 +47,8 @@ __BEGIN_DECLS
 int sysconf(int name);
 int setuid(uid_t new);
 
+uid_t getuid(void);
+
 ssize_t read(int fd, void *buf, size_t count);
 ssize_t write(int fd, const void *buf, size_t count);
 
