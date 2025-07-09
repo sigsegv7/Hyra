@@ -31,6 +31,7 @@
 #include <sys/sysctl.h>
 #include <sys/reboot.h>
 #include <sys/types.h>
+#include <sys/ucred.h>
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/proc.h>
@@ -55,7 +56,8 @@ scret_t(*g_sctab[])(struct syscall_args *) = {
     sys_sleep,  /* SYS_sleep */
     sys_inject, /* SYS_inject */
     sys_getpid, /* SYS_getpid */
-    sys_getppid /* SYS_getppid */
+    sys_getppid, /* SYS_getppid */
+    sys_setuid,  /* SYS_setuid */
 };
 
 const size_t MAX_SYSCALLS = NELEM(g_sctab);

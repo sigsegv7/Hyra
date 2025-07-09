@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #if defined(_KERNEL)
 #include <sys/spinlock.h>
+#include <sys/syscall.h>
 #endif
 
 /*
@@ -47,4 +48,8 @@ struct ucred {
 };
 
 int setuid(uid_t new);
+
+#if defined(_KERNEL)
+scret_t sys_setuid(struct syscall_args *scargs);
+#endif
 #endif  /* !_SYS_UCRED_H_ */

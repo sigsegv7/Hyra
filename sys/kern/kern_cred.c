@@ -55,3 +55,14 @@ setuid(uid_t new)
     spinlock_release(&cur_cred->lock);
     return 0;
 }
+
+/*
+ * setuid() syscall
+ *
+ * arg0: `new'
+ */
+scret_t
+sys_setuid(struct syscall_args *scargs)
+{
+    return setuid(scargs->arg0);
+}
