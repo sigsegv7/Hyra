@@ -31,25 +31,21 @@
 #include <stddef.h>
 
 #define SHELL_PATH   "/usr/bin/osh"
+#define LOGIN_PATH   "/usr/bin/login"
 #define INIT_RC_PATH "/usr/rc/init.rc"
 
 int
 main(int argc, char **argv)
 {
+    char *login_argv[] = { LOGIN_PATH, NULL };
     char *start_argv[] = { SHELL_PATH, INIT_RC_PATH, NULL };
-    char *start_envp[] = { NULL };
+    char *envp[] = { NULL };
 
-    spawn(SHELL_PATH, start_argv, start_envp, 0);
+    /* Start the init.rc */
+    spawn(SHELL_PATH, start_argv, envp, 0);
     start_argv[1] = NULL;
 
-    /*
-     * We can override the start program header
-     * if there is something specified.
-     */
-    if (argc > 1) {
-        start_argv[0] = argv[1];
-    }
-
-    spawn(start_argv[0], start_argv, start_envp, SPAWN_WAIT);
+    /* Start the login manager */
+    spawn(login_argv[0], login_argv, envp, SPAWN_WAIT);
     return 0;
 }
