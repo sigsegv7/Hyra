@@ -27,24 +27,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_UCRED_H_
-#define _SYS_UCRED_H_
-
 #include <sys/types.h>
-#if defined(_KERNEL)
-#include <sys/spinlock.h>
-#endif
+#include <sys/errno.h>
+#include <sys/ucred.h>
+#include <sys/proc.h>
 
-/*
- * Kernel structure for user credentials
- */
-struct ucred {
-    uid_t euid;
-    uid_t ruid;
-#if defined(_KERNEL)
-    struct spinlock lock;
-#endif  /* _KERNEL */
-};
+int
+setuid(uid_t new)
+{
+    struct proc *td;
+    struct ucred *cur_cred;
 
-int setuid(uid_t new);
-#endif  /* !_SYS_UCRED_H_ */
+    td = this_td();
+    cur_cred = &td->cred;
+
+    /*
+     * Only root can become other users. If you are not
+     * root, fuck off.
+     */
+    if (cur_cred->ruid != 0) {
+        return -EPERM;
+    }
+
+    spinlock_acquire(&cur_cred->lock);
+    cur_cred->euid = new;
+    cur_cred->ruid = new;
+    spinlock_release(&cur_cred->lock);
+    return 0;
+}
