@@ -27,32 +27,77 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/spawn.h>
 #include <sys/types.h>
 #include <sys/errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-
-#define USERNAME "root"
 
 /* Row indices for /etc/passwd */
 #define ROW_USERNAME 0
+#define ROW_HASH     1
 #define ROW_USERID   2
 #define ROW_GRPID    3
 #define ROW_GECOS    4
 #define ROW_HOME     5
 #define ROW_SHELL    6
 
+#define is_ascii(C) ((C) >= 0 && (C) <= 128)
+#define is_digit(C) ((C >= '0' && C <= '9'))
+
+#define USERNAME "root"
+#define DEFAULT_SHELL "/usr/bin/osh"
+
+static char buf[64];
+static uint8_t buf_i;
+
+/*
+ * Verify a UID is valid
+ *
+ * Returns 0 on success
+ */
+static int
+check_uid(const char *uid)
+{
+    size_t len;
+
+    len = strlen(uid);
+
+    /* Must not be greater than 4 chars */
+    if (len > 4) {
+        return -1;
+    }
+
+    for (int i = 0; i < len; ++i) {
+        if (!is_digit(uid[i])) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /*
  * Check an /etc/passwd entry against an alias
  * (username)
  *
+ * @alias: Alias to lookup
+ * @entry: /etc/passwd entry
+ *
+ * Returns -1 on failure
  * Returns 0 if the entry matches
  */
 static int
 check_user(char *alias, char *entry)
 {
-    const char *p;
+    const char *p, *shell;
+    char *shell_argv[] = { DEFAULT_SHELL, NULL };
+    char *envp[] = { NULL };
     size_t row = 0;
+    short retval = -1;
+    size_t line = 1;
+    uid_t uid = -1;
 
     if (alias == NULL || entry == NULL) {
         return -EINVAL;
@@ -69,39 +114,112 @@ check_user(char *alias, char *entry)
     while (p != NULL) {
         switch (row) {
         case ROW_USERNAME:
-            printf("username: %s\n", p);
+            if (strcmp(p, alias) == 0) {
+                retval = 0;
+            }
             break;  /* UNREACHABLE */
         case ROW_USERID:
-            printf("UID: %s\n", p);
-            break;
-        case ROW_GRPID:
-            printf("GID: %s\n", p);
-            break;
-        case ROW_GECOS:
-            printf("GECOS: %s\n", p);
-            break;
-        case ROW_HOME:
-            printf("HOME: %s\n", p);
+            if (check_uid(p) != 0) {
+                printf("bad uid @ line %d\n", line);
+                return -1;
+            }
+
+            uid = atoi(p);
             break;
         case ROW_SHELL:
-            printf("SHELL: %s\n", p);
+            /* TODO */
             break;
-        defaukt:
         }
 
         p = strtok(NULL, ":");
         ++row;
+        ++line;
     }
 
-    return 0;
+    if (uid < 0) {
+        printf("failed to set uid\n");
+        return -1;
+    }
+    if (shell == NULL) {
+        printf("failed to read shell path\n");
+        return -1;
+    }
+
+    if (retval == 0) {
+        setuid(uid);
+        spawn(shell_argv[0], shell_argv, envp, SPAWN_WAIT);
+    }
+    return retval;
+}
+
+static char *
+getstr(void)
+{
+    char c;
+    int input;
+
+    buf_i = 0;
+
+
+    for (;;) {
+        if ((input = getchar()) < 0) {
+            continue;
+        }
+
+        c = (char)input;
+        if (c == '\t') {
+            continue;
+        }
+
+        /* return on newline */
+        if (c == '\n') {
+            buf[buf_i] = '\0';
+            putchar('\n');
+            return buf;
+        }
+
+        /* handle backspaces and DEL */
+        if (c == '\b' || c == 127) {
+            if (buf_i > 0) {
+                fputs("\b \b", stdout);
+                buf[--buf_i] = '\0';
+            }
+        } else if (is_ascii(c) && buf_i < sizeof(buf) - 1) {
+            /* write to fd and add to buffer */
+            buf[buf_i++] = c;
+            putchar(c);
+        }
+    }
+}
+
+static int
+getuser(FILE *fp)
+{
+    char *alias;
+    char entry[256];
+    int retval;
+
+    printf("username: ");
+    alias = getstr();
+    while (fgets(entry, sizeof(entry), fp) != NULL) {
+        retval = check_user(alias, entry);
+        if (retval == 0) {
+            printf("login: successful\n");
+            return 0;
+        }
+    }
+
+    printf("bad username \"%s\"\n", alias);
+    fseek(fp, 0, SEEK_SET);
+    memset(buf, 0, sizeof(buf));
+    buf_i = 0;
+    return -1;
 }
 
 int
 main(void)
 {
     FILE *fp;
-    char *alias, *p;
-    char entry[256];
 
     fp = fopen("/etc/passwd", "r");
     if (fp == NULL) {
@@ -109,8 +227,14 @@ main(void)
         return -1;
     }
 
-    while (fgets(entry, sizeof(entry), fp) != NULL) {
-        check_user(USERNAME, entry);
+    printf("- Please authenticate yourself -\n");
+    printf("Default user 'root'\n");
+    for (;;) {
+        if (getuser(fp) == 0) {
+            break;
+        }
     }
+
+    fclose(fp);
     return 0;
 }
