@@ -32,7 +32,7 @@
 #define IS_DIGIT(C) ((C >= '0' && C <= '9'))
 
 int
-atoi(char *s)
+atoi(const char *s)
 {
     int n, sign;
 
