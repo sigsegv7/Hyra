@@ -47,7 +47,6 @@
 #define is_ascii(C) ((C) >= 0 && (C) <= 128)
 #define is_digit(C) ((C >= '0' && C <= '9'))
 
-#define USERNAME "root"
 #define DEFAULT_SHELL "/usr/bin/osh"
 
 static char buf[64];
