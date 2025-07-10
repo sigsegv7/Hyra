@@ -27,22 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STRING_H_
-#define _STRING_H_ 1
+#include <string.h>
+#include <stdlib.h>
 
-#include <stddef.h>
-#include <stdint.h>
+char *
+strdup(const char *s)
+{
+    char *new_s;
+    size_t s_len;
 
-size_t strlen(const char *s);
-char *strtok(char *s, const char *delim);
-char *strdup(const char *s);
+    if (s == NULL) {
+        return NULL;
+    }
 
-void *memset(void *dst, int c, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
+    s_len = strlen(s);
+    new_s = malloc(s_len + 1);
+    if (new_s == NULL) {
+        return NULL;
+    }
 
-char *itoa(int64_t value, char *buf, int base);
-void *memcpy(void *dest, const void *src, size_t n);
-int strcmp(const char *s1, const char *s2);
-int atoi(const char *s);
-
-#endif  /* !_STRING_H_ */
+    memcpy(new_s, s, s_len);
+    return new_s;
+}
