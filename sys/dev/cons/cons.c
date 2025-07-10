@@ -375,7 +375,6 @@ dev_read(dev_t dev, struct sio_txn *sio, int flags)
     }
 
     cons_attach();
-    spinlock_acquire(&g_root_scr.lock);
     for (;;) {
         /* Buffer too small */
         if (n == 0) {
@@ -392,7 +391,6 @@ dev_read(dev_t dev, struct sio_txn *sio, int flags)
             break;
         }
     }
-    spinlock_release(&g_root_scr.lock);
     return sio->len;
 }
 

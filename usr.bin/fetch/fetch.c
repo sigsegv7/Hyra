@@ -32,18 +32,19 @@
 #include <string.h>
 #include <stdio.h>
 
+static const char *user = "unknown";
+
 #define ASCII_ART \
     "  ____      \n" \
     " | \\__\\     \n" \
-    " | /\\  \\     user: root\n" \
+    " | /\\  \\     user: %s\n" \
     " |/  \\  \\    OS:   Hyra/amd64 v"_OSVER"\n" \
     " \\ R. \\  \\   arch: "_OSARCH"\n" \
-    "  \\ I. \\  \\"
-
+    "  \\ I. \\  \\\n"
 
 int
 main(void)
 {
-    puts(ASCII_ART);
+    printf(ASCII_ART, getlogin());
     return 0;
 }
