@@ -23,6 +23,12 @@ After running the configure script, you can now actually build Hyra:
 
 This will generate a new `Hyra.iso` file.
 
+
+Default User:
+----------------
+Upon booting, the `login` program will ask for user credentials. The default username is `root` and the default
+password is also `root`.
+
 Documentation:
 --------------
 Documentation will be in the form of comments throughout the codebase and can also be found in the share/ directory within the project root.

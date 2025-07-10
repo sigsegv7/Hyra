@@ -30,6 +30,7 @@
 #include <sys/spawn.h>
 #include <sys/types.h>
 #include <sys/errno.h>
+#include <crypto/sha256.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,6 +52,7 @@
 
 static char buf[64];
 static uint8_t buf_i;
+static short echo_chars = 1;
 
 /*
  * Verify a UID is valid
@@ -83,13 +85,14 @@ check_uid(const char *uid)
  * (username)
  *
  * @alias: Alias to lookup
+ * @hash: Password hash
  * @entry: /etc/passwd entry
  *
  * Returns -1 on failure
  * Returns 0 if the entry matches
  */
 static int
-check_user(char *alias, char *entry)
+check_user(char *alias, char *hash, char *entry)
 {
     const char *p, *shell;
     char *shell_argv[] = { DEFAULT_SHELL, NULL };
@@ -118,6 +121,11 @@ check_user(char *alias, char *entry)
                 retval = 0;
             }
             break;  /* UNREACHABLE */
+        case ROW_HASH:
+            if (strcmp(p, hash) == 0) {
+                retval = 0;
+            }
+            break;
         case ROW_USERID:
             if (check_uid(p) != 0) {
                 printf("bad uid @ line %d\n", line);
@@ -155,11 +163,10 @@ check_user(char *alias, char *entry)
 static char *
 getstr(void)
 {
-    char c;
+    char c, printc;
     int input;
 
     buf_i = 0;
-
 
     for (;;) {
         if ((input = getchar()) < 0) {
@@ -170,6 +177,13 @@ getstr(void)
         if (c == '\t') {
             continue;
         }
+
+        /*
+         * If we want to echo characters, 'printc' becomes
+         * exactly the character we got. Otherwise, just
+         * print little stars to redact it.
+         */
+        printc = echo_chars ? c : '*';
 
         /* return on newline */
         if (c == '\n') {
@@ -187,7 +201,7 @@ getstr(void)
         } else if (is_ascii(c) && buf_i < sizeof(buf) - 1) {
             /* write to fd and add to buffer */
             buf[buf_i++] = c;
-            putchar(c);
+            putchar(printc);
         }
     }
 }
@@ -195,21 +209,36 @@ getstr(void)
 static int
 getuser(FILE *fp)
 {
+    char *pwtmp;
     char *alias;
     char entry[256];
+    char pwhash[SHA256_HEX_SIZE];
     int retval;
 
     printf("username: ");
     alias = getstr();
+
+    /* Grab the password now */
+    echo_chars = 0;
+    printf("password: ");
+    pwtmp = getstr();
+    sha256_hex(pwtmp, strlen(pwtmp), pwhash);
+
+    /* Paranoia */
+    pwtmp = NULL;
+    buf_i = 0;
+    memset(buf, 0, sizeof(buf));
+
+    /* See if anything matches */
     while (fgets(entry, sizeof(entry), fp) != NULL) {
-        retval = check_user(alias, entry);
+        retval = check_user(alias, pwhash, entry);
         if (retval == 0) {
             printf("login: successful\n");
             return 0;
         }
     }
 
-    printf("bad username \"%s\"\n", alias);
+    printf("bad username or password\n");
     fseek(fp, 0, SEEK_SET);
     memset(buf, 0, sizeof(buf));
     buf_i = 0;
@@ -228,7 +257,6 @@ main(void)
     }
 
     printf("- Please authenticate yourself -\n");
-    printf("Default user 'root'\n");
     for (;;) {
         if (getuser(fp) == 0) {
             break;
