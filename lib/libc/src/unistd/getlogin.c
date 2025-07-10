@@ -41,7 +41,7 @@ static int
 match_entry(uid_t uid, char *entry)
 {
     char uidstr[16];
-    static char *username = NULL;
+    char *username = NULL;
     char *p;
     size_t len;
     uint8_t row = 0;
@@ -66,7 +66,7 @@ match_entry(uid_t uid, char *entry)
              * username.
              */
             if (strcmp(uidstr, p) == 0) {
-                ucache = username;
+                ucache = strdup(username);
                 return 0;
             }
             break;
