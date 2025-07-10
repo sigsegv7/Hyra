@@ -60,7 +60,7 @@
     "clear    - Clear the screen\n"     \
     "exit     - Exit the shell"
 
-#define PROMPT "[root::osmora]~ "
+#define PROMPT "[%s::osmora]~ "
 
 static char buf[64];
 static uint8_t buf_i;
@@ -394,7 +394,7 @@ main(int argc, char **argv)
     puts(WELCOME);
     while (running) {
         memset(prog_argv, 0, sizeof(prog_argv));
-        fputs(PROMPT, stdout);
+        printf(PROMPT, getlogin());
 
         input = getstr();
         if (input[0] == '\0') {
