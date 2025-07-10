@@ -27,39 +27,83 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UNISTD_H
-#define _UNISTD_H
-
-#include <sys/exec.h>
 #include <sys/types.h>
-#include <sys/cdefs.h>
-#include <stddef.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 
-#define F_OK 0
+#define UNKNOWN_USER "unknown"
 
-/* lseek whence, follows Hyra ABI */
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
+static char *ucache = NULL;
 
-__BEGIN_DECLS
+static int
+match_entry(uid_t uid, char *entry)
+{
+    char uidstr[16];
+    static char *username = NULL;
+    char *p;
+    size_t len;
+    uint8_t row = 0;
 
-int sysconf(int name);
-int setuid(uid_t new);
+    if (itoa(uid, uidstr, 10) == NULL) {
+        return -1;
+    }
 
-uid_t getuid(void);
-char *getlogin(void);
+    p = strtok(entry, ":");
+    if (p == NULL) {
+        return -1;
+    }
 
-ssize_t read(int fd, void *buf, size_t count);
-ssize_t write(int fd, const void *buf, size_t count);
+    while (p != NULL) {
+        switch (row) {
+        case 0:
+            username = p;
+            break;
+        case 2:
+            /*
+             * If the user ID matches, we'll cache the
+             * username.
+             */
+            if (strcmp(uidstr, p) == 0) {
+                ucache = username;
+                return 0;
+            }
+            break;
+        }
 
-int close(int fd);
-int access(const char *path, int mode);
-off_t lseek(int fildes, off_t offset, int whence);
+        p = strtok(NULL, ":");
+        ++row;
+    }
 
-pid_t getpid(void);
-pid_t getppid(void);
+    return -1;
+}
 
-__END_DECLS
+char *
+getlogin(void)
+{
+    FILE *fp;
+    char entry[256];
+    int retval;
+    uid_t uid = getuid();
 
-#endif  /* !_UNISTD_H */
+    /* Get the user from the cache */
+    if (ucache != NULL) {
+        return ucache;
+    }
+
+    fp = fopen("/etc/passwd", "r");
+    if (fp == NULL) {
+        return UNKNOWN_USER;
+    }
+
+    while (fgets(entry, sizeof(entry), fp) != NULL) {
+        if (match_entry(uid, entry) == 0) {
+            fclose(fp);
+            return ucache;
+        }
+    }
+
+    fclose(fp);
+    return UNKNOWN_USER;
+}
