@@ -94,7 +94,7 @@ check_uid(const char *uid)
 static int
 check_user(char *alias, char *hash, char *entry)
 {
-    const char *p, *shell;
+    const char *p;
     char *shell_argv[] = { DEFAULT_SHELL, NULL };
     char *envp[] = { NULL };
     size_t row = 0;
@@ -146,10 +146,6 @@ check_user(char *alias, char *hash, char *entry)
 
     if (uid < 0) {
         printf("failed to set uid\n");
-        return -1;
-    }
-    if (shell == NULL) {
-        printf("failed to read shell path\n");
         return -1;
     }
 
