@@ -242,6 +242,7 @@ getuser(FILE *fp)
     fseek(fp, 0, SEEK_SET);
     memset(buf, 0, sizeof(buf));
     buf_i = 0;
+    echo_chars = 1;
     return -1;
 }
 
