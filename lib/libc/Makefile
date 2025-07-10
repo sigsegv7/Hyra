@@ -30,6 +30,7 @@ headers: sys/include/machine
 	cp -f include/*.h $(USRDIR)/include/
 	cp -f include/stdlib/*.h $(USRDIR)/include/
 	cp -rf include/ousi $(USRDIR)/include/
+	cp -rf include/crypto $(USRDIR)/include/
 
 .PHONY:
 build/:
