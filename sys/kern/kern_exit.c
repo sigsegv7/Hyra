@@ -31,6 +31,8 @@
 #include <sys/sched.h>
 #include <sys/syslog.h>
 #include <sys/panic.h>
+#include <sys/filedesc.h>
+#include <sys/vnode.h>
 #include <vm/physmem.h>
 #include <vm/dynalloc.h>
 #include <vm/vm.h>
@@ -83,8 +85,22 @@ void
 proc_reap(struct proc *td)
 {
     struct pcb *pcbp;
+    struct filedesc *fdp;
     vaddr_t stack_va;
     paddr_t stack_pa;
+
+    /* Clear out all fds */
+    for (size_t i = 4; i < PROC_MAX_FILEDES; ++i) {
+        fdp = td->fds[i];
+        if (fdp == NULL) {
+            continue;
+        }
+        if (fdp->refcnt == 1) {
+            vfs_release_vnode(fdp->vp);
+            dynfree(fdp);
+            fdp = NULL;
+        }
+    }
 
     pcbp = &td->pcb;
     unload_td(td);
