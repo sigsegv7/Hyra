@@ -29,6 +29,25 @@ Default User:
 Upon booting, the `login` program will ask for user credentials. The default username is `root` and the default
 password is also `root`.
 
+Programs:
+----------------
+The Hyra userspace provides the user various programs that they can run, examples of
+such programs include:
+
+- ``beep`` - Play a tone
+- ``cat`` - Print files to stdout
+- ``date`` - Get the current date or set system time
+- ``echo`` - Print a line of text
+- ``elfdump`` - Get information about an ELF binary
+- ``fetch`` - System fetch! A must have :~)
+- ``getconf`` - Get system configuration values
+- ``mex`` - OSMORA hexdump utility
+- ``sleep`` - Sleep for a number of seconds
+- ``kmsg`` - Read the kernel message buffer
+- ``readcore`` - Read coredump files
+
+And more! See ``usr.bin/*``
+
 Documentation:
 --------------
 Documentation will be in the form of comments throughout the codebase and can also be found in the share/ directory within the project root.
