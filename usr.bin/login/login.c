@@ -97,8 +97,10 @@ check_user(char *alias, char *hash, char *entry)
     char *shell_argv[] = { DEFAULT_SHELL, NULL };
     char *envp[] = { NULL };
     size_t row = 0;
-    short retval = -1;
     size_t line = 1;
+    short have_user = 0;
+    short have_pw = 0;
+    short have_uid = 0;
     uid_t uid = -1;
 
     if (alias == NULL || entry == NULL) {
@@ -117,12 +119,12 @@ check_user(char *alias, char *hash, char *entry)
         switch (row) {
         case ROW_USERNAME:
             if (strcmp(p, alias) == 0) {
-                retval = 0;
+                have_user = 1;
             }
             break;  /* UNREACHABLE */
         case ROW_HASH:
             if (strcmp(p, hash) == 0) {
-                retval = 0;
+                have_pw = 1;
             }
             break;
         case ROW_USERID:
@@ -132,6 +134,7 @@ check_user(char *alias, char *hash, char *entry)
             }
 
             uid = atoi(p);
+            have_uid = 1;
             break;
         case ROW_SHELL:
             /* TODO */
@@ -143,16 +146,18 @@ check_user(char *alias, char *hash, char *entry)
         ++line;
     }
 
-    if (uid < 0) {
-        printf("failed to set uid\n");
+    /*
+     * We need to have found the password hash,
+     * the username, AND the UID. If we have not,
+     * then this has failed.
+     */
+    if (!have_pw || !have_user || !have_uid) {
         return -1;
     }
 
-    if (retval == 0) {
-        setuid(uid);
-        spawn(shell_argv[0], shell_argv, envp, SPAWN_WAIT);
-    }
-    return retval;
+    setuid(uid);
+    spawn(shell_argv[0], shell_argv, envp, SPAWN_WAIT);
+    return 0;
 }
 
 static char *
@@ -204,34 +209,44 @@ getstr(void)
 static int
 getuser(FILE *fp)
 {
-    char *pwtmp;
-    char *alias;
+    char *pwtmp, *alias, *p;
     char entry[256];
     char pwhash[SHA256_HEX_SIZE];
     int retval;
 
     printf("username: ");
-    alias = getstr();
+    p = getstr();
+    alias = strdup(p);
 
     /* Grab the password now */
     echo_chars = 0;
     printf("password: ");
-    pwtmp = getstr();
+    p = getstr();
+    pwtmp = strdup(p);
     sha256_hex(pwtmp, strlen(pwtmp), pwhash);
 
     /* Paranoia */
-    pwtmp = NULL;
+    memset(pwtmp, 0, strlen(pwtmp));
     buf_i = 0;
     memset(buf, 0, sizeof(buf));
+
+    /* Clean up */
+    free(pwtmp);
+    pwtmp = NULL;
 
     /* See if anything matches */
     while (fgets(entry, sizeof(entry), fp) != NULL) {
         retval = check_user(alias, pwhash, entry);
         if (retval == 0) {
             printf("login: successful\n");
+            free(alias);
             return 0;
         }
     }
+
+    /* If we reach this point, bad creds */
+    free(alias);
+    alias = NULL;
 
     printf("bad username or password\n");
     fseek(fp, 0, SEEK_SET);
