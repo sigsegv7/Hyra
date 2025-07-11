@@ -37,12 +37,15 @@
 struct sysvar {
     const char *var;
     uint8_t auxv : 1;
-    uint8_t val;
+    uint32_t val;
 };
 
 static struct sysvar vartab[] = {
     { "PAGESIZE", 1, AT_PAGESIZE },
     { "CHAR_BIT", 0, CHAR_BIT },
+    { "NAME_MAX", 0, NAME_MAX },
+    { "PATH_MAX", 0, PATH_MAX },
+    { "SSIZE_MAX", 0, SSIZE_MAX },
     { NULL, 0, 0 }
 };
 
