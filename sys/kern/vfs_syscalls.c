@@ -68,7 +68,7 @@ vfs_dostat(const char *path, struct stat *sbuf)
     vp = nd.vp;
     gattr.vp = vp;
     gattr.res = &attr;
-    error = vfs_vop_getattr(vp, &gattr);
+    error = vfs_vop_getattr(&gattr);
 
     if (error != 0) {
         return error;

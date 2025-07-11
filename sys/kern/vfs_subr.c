@@ -141,8 +141,9 @@ vfs_release_vnode(struct vnode *vp)
 }
 
 int
-vfs_vop_lookup(struct vnode *vp, struct vop_lookup_args *args)
+vfs_vop_lookup(struct vop_lookup_args *args)
 {
+    const struct vnode *vp = args->dirvp;
     const struct vops *vops = vp->vops;
 
     if (vops == NULL)
@@ -180,8 +181,9 @@ vfs_vop_write(struct vnode *vp, struct sio_txn *sio)
 }
 
 int
-vfs_vop_getattr(struct vnode *vp, struct vop_getattr_args *args)
+vfs_vop_getattr(struct vop_getattr_args *args)
 {
+    const struct vnode *vp = args->vp;
     const struct vops *vops = vp->vops;
 
     if (vops == NULL)

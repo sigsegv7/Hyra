@@ -92,6 +92,16 @@ struct vop_create_args {
     struct vnode **vpp;     /* Result vnode */
 };
 
+struct vop_getattr_args {
+    struct vnode *vp;       /* Target vnode */
+    struct vattr *res;      /* Result vattr */
+};
+
+struct vop_readdir_args {
+    struct vnode *vp;       /* Target vnode */
+    struct sio_txn *sio;    /* SIO data to read into */
+};
+
 /*
  * A field in this structure is unavailable
  * if it has a value of VNOVAL.
@@ -101,14 +111,10 @@ struct vattr {
     size_t size;
 };
 
-struct vop_getattr_args {
-    struct vnode *vp;
-    struct vattr *res;
-};
-
 struct vops {
     int(*lookup)(struct vop_lookup_args *args);
     int(*getattr)(struct vop_getattr_args *args);
+    int(*readdir)(struct vop_readdir_args *args);
     int(*read)(struct vnode *vp, struct sio_txn *sio);
     int(*write)(struct vnode *vp, struct sio_txn *sio);
     int(*reclaim)(struct vnode *vp);
@@ -117,19 +123,21 @@ struct vops {
 
 extern struct vnode *g_root_vnode;
 
+/* Vnode cache operations */
 int vfs_vcache_type(void);
 int vfs_vcache_migrate(int newtype);
-
 int vfs_vcache_enter(struct vnode *vp);
 struct vnode *vfs_recycle_vnode(void);
 
+/* Vnode operations */
 int vfs_alloc_vnode(struct vnode **res, int type);
 int vfs_release_vnode(struct vnode *vp);
 
-int vfs_vop_lookup(struct vnode *vp, struct vop_lookup_args *args);
+/* Vnode operation wrappers */
+int vfs_vop_lookup(struct vop_lookup_args *args);
+int vfs_vop_getattr(struct vop_getattr_args *args);
 int vfs_vop_read(struct vnode *vp, struct sio_txn *sio);
 int vfs_vop_write(struct vnode *vp, struct sio_txn *sio);
-int vfs_vop_getattr(struct vnode *vp, struct vop_getattr_args *args);
 
 #endif  /* _KERNEL */
 #endif  /* !_SYS_VNODE_H_ */

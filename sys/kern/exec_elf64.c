@@ -112,7 +112,7 @@ elf_get_file(const char *pathname, struct elf_file *res)
 
     getattr_args.res = &vattr;
     getattr_args.vp = vp;
-    status = vfs_vop_getattr(vp, &getattr_args);
+    status = vfs_vop_getattr(&getattr_args);
     if (status != 0)
         goto done;
 

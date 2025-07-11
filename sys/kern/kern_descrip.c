@@ -351,7 +351,7 @@ fd_seek(int fildes, off_t offset, int whence)
 
     getattr_args.vp = tmp->vp;
     getattr_args.res = &attr;
-    if ((vfs_vop_getattr(tmp->vp, &getattr_args)) < 0) {
+    if ((vfs_vop_getattr(&getattr_args)) < 0) {
         return -EPIPE;
     }
 

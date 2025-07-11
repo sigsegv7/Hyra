@@ -181,7 +181,7 @@ namei_mp_search(struct mount *mp, const char *path, struct nameidata *ndp)
         lookup_args.dirvp = vp;
         lookup_args.vpp = &vp;
 
-        status = vfs_vop_lookup(vp, &lookup_args);
+        status = vfs_vop_lookup(&lookup_args);
         dynfree(name);
 
         if (status != 0) {
@@ -234,7 +234,7 @@ namei(struct nameidata *ndp)
     lookup_args.name = path;
     lookup_args.dirvp = g_root_vnode;
     lookup_args.vpp = &vp;
-    status = vfs_vop_lookup(lookup_args.dirvp, &lookup_args);
+    status = vfs_vop_lookup(&lookup_args);
 
     /* Did we find it in the root */
     if (status == 0) {

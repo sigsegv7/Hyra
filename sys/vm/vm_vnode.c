@@ -73,7 +73,7 @@ vn_io(struct vnode *vp, struct vm_page **pgs, unsigned int npages, int rw)
     args.res = &vattr;
     c = MAX(vattr.size / DEFAULT_PAGESIZE, 1);
 
-    if ((err = vfs_vop_getattr(vp, &args)) != 0) {
+    if ((err = vfs_vop_getattr(&args)) != 0) {
         return err;
     }
 
