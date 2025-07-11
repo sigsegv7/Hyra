@@ -19,3 +19,4 @@ all:
 	make -C echo/ $(ARGS)
 	make -C readcore/ $(ARGS)
 	make -C login/ $(ARGS)
+	make -C sleep/ $(ARGS)
