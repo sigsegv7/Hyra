@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
 
 #define MONTHS_PER_YEAR 12
 #define DAYS_PER_WEEK 7
@@ -51,19 +52,63 @@ static const char *daytab[] = {
     "Fri"
 };
 
+static int
+set_time(int clock_fd, struct date *dp, char *timestr)
+{
+    uint32_t hour, min, sec;
+    char *p;
+
+    /* Hour */
+    p = strtok(timestr, ":");
+    if (p == NULL)
+        return -1;
+    hour = atoi(p);
+
+    /* Minute */
+    p = strtok(NULL, ":");
+    if (p == NULL)
+        return -1;
+    min = atoi(p);
+
+    /* Second */
+    p = strtok(NULL, ":");
+    if (p == NULL)
+        return -1;
+    sec = atoi(p);
+
+    /* Set the time */
+    dp->hour = hour;
+    dp->min = min;
+    dp->sec = sec;
+    write(clock_fd, dp, sizeof(*dp));
+    return 0;
+}
+
 int
-main(void)
+main(int argc, char **argv)
 {
     const char *day, *month;
     char date_str[32];
     struct date d;
-    int rtc_fd;
+    int rtc_fd, error = 0;
 
-    if ((rtc_fd = open("/dev/rtc", O_RDONLY)) < 0) {
+    if ((rtc_fd = open("/dev/rtc", O_RDWR)) < 0) {
         return rtc_fd;
     }
 
+
     read(rtc_fd, &d, sizeof(d));
+
+    /*
+     * If a time was specified to be set in the
+     * 'hh:mm:ss' format, attempt to write it.
+     */
+    if (argc > 1) {
+        error = set_time(rtc_fd, &d, argv[1]);
+        if (error < 0)
+            printf("bad time specified, not set\n");
+    }
+
     close(rtc_fd);
 
     /* This should not happen */
