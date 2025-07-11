@@ -258,8 +258,27 @@ sched_enter(void)
 void
 sched_yield(void)
 {
+    struct proc *td;
+    struct cpu_info *ci = this_cpu();
+
+    if ((td = ci->curtd) == NULL) {
+        return;
+    }
+
+    td->rested = true;
+
+    /* FIXME: Hang yielding when waited on */
+    if (ISSET(td->flags, PROC_WAITED)) {
+        return;
+    }
+
+    ci->curtd = NULL;
     md_inton();
     sched_oneshot(false);
+
+    md_hlt();
+    md_intoff();
+    ci->curtd = td;
 }
 
 void
