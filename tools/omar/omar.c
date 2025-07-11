@@ -53,6 +53,9 @@
 #define OMAR_ARCHIVE  0
 #define OMAR_EXTRACT  1
 
+/* Revision */
+#define OMAR_REV 2
+
 #define ALIGN_UP(value, align)        (((value) + (align)-1) & ~((align)-1))
 #define BLOCK_SIZE 512
 
@@ -68,12 +71,16 @@ static const char *outpath = NULL;
  * @magic: Header magic ("OMAR")
  * @len: Length of the file
  * @namelen: Length of the filename
+ * @rev: OMAR revision
+ * @mode: File permissions
  */
 struct omar_hdr {
     char magic[4];
     uint8_t type;
     uint8_t namelen;
     uint32_t len;
+    uint8_t rev;
+    uint32_t mode;
 } __attribute__((packed));
 
 static inline void
@@ -112,7 +119,7 @@ strip_root(const char *path)
  * Recursive mkdir
  */
 static void
-mkpath(const char *path)
+mkpath(struct omar_hdr *hdr, const char *path)
 {
     size_t len;
     char buf[256];
@@ -126,12 +133,12 @@ mkpath(const char *path)
     for (p = (char *)buf + 1; *p != '\0'; ++p) {
         if (*p == '/') {
             *p = '\0';
-            mkdir(buf, 0700);
+            mkdir(buf, hdr->mode);
             *p = '/';
         }
     }
 
-    mkdir(buf, 0700);
+    mkdir(buf, hdr->mode);
 }
 
 /*
@@ -166,9 +173,11 @@ file_push(const char *pathname, const char *name)
         if (S_ISDIR(sb.st_mode)) {
             hdr.type = OMAR_DIR;
         }
+        hdr.mode = sb.st_mode;
     }
 
     hdr.len = (pathname == NULL) ? 0 : sb.st_size;
+    hdr.rev = OMAR_REV;
     hdr.namelen = strlen(name);
 
     /*
@@ -282,16 +291,17 @@ archive_create(const char *base, const char *dirname)
 /*
  * Extract a single file
  *
+ * @hp: File header
  * @data: Data to extract
  * @len: Length of data
  * @path: Path to output file
  */
 static int
-extract_single(char *data, size_t len, const char *path)
+extract_single(struct omar_hdr *hp, char *data, size_t len, const char *path)
 {
     int fd;
 
-    if ((fd = open(path, O_WRONLY | O_CREAT, 0700)) < 0) {
+    if ((fd = open(path, O_WRONLY | O_CREAT, hp->mode)) < 0) {
         return fd;
     }
 
@@ -312,8 +322,10 @@ archive_extract(void)
     struct stat sb;
     struct omar_hdr *hdr;
     int fd, error;
+    size_t len;
     off_t off;
     char namebuf[256];
+    char pathbuf[256];
 
     if ((fd = open(inpath, O_RDONLY)) < 0) {
         perror("open");
@@ -351,20 +363,31 @@ archive_extract(void)
             fprintf(stderr, "bad magic\n");
             break;
         }
+        if (hdr->rev != OMAR_REV) {
+            fprintf(stderr, "cannot extract rev %d archive\n", hdr->rev);
+            fprintf(stderr, "current OMAR revision: %d\n", OMAR_REV);
+        }
 
         name = (char *)hdr + sizeof(struct omar_hdr);
         memcpy(namebuf, name, hdr->namelen);
         namebuf[hdr->namelen] = '\0';
-        printf("unpacking %s\n", namebuf);
+
+        /* Get the full path */
+        len = snprintf(pathbuf, sizeof(pathbuf), "%s/%s", outpath, namebuf);
+        if (len < 0) {
+            free(buf);
+            return len;
+        }
+        printf("unpacking %s\n", pathbuf);
 
         if (hdr->type == OMAR_DIR) {
             off = 512;
-            mkpath(namebuf);
+            mkpath(hdr, pathbuf);
         } else {
-            off = ALIGN_UP(sizeof(hdr) + hdr->namelen + hdr->len, BLOCK_SIZE);
+            off = ALIGN_UP(sizeof(*hdr) + hdr->namelen + hdr->len, BLOCK_SIZE);
             p = (char *)hdr + sizeof(struct omar_hdr);
             p += hdr->namelen;
-            extract_single(p, hdr->len, namebuf);
+            extract_single(hdr, p, hdr->len, pathbuf);
         }
 
         hdr = (struct omar_hdr *)((char *)hdr + off);

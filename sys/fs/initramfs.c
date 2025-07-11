@@ -61,12 +61,16 @@ struct initramfs_node {
  * @magic: Header magic ("OMAR")
  * @len: Length of the file
  * @namelen: Length of the filename
+ * @rev: OMAR revision
+ * @mode: File permissions
  */
 struct __packed omar_hdr {
     char magic[4];
     uint8_t type;
     uint8_t namelen;
     uint32_t len;
+    uint8_t rev;
+    uint32_t mode;
 };
 
 static volatile struct limine_module_request mod_req = {
