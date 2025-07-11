@@ -67,7 +67,7 @@ gen_iso_root() {
     cp $RAMFS_NAME iso_root/boot/
     cp builddeps/limine.conf stand/limine/limine-bios.sys \
         stand/limine/limine-bios-cd.bin stand/limine/limine-uefi-cd.bin iso_root/
-    cp builddeps/tree.jpg iso_root/boot/
+    cp builddeps/wallpaper.jpg iso_root/boot/
 }
 
 ##################################
