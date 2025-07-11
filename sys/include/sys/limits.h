@@ -31,6 +31,7 @@
 #define _SYS_LIMITS_H_
 
 #define PATH_MAX 1024
+#define NAME_MAX 256
 #define SSIZE_MAX 32767
 #define ARG_MAX 4096
 #define CHAR_BIT 8
