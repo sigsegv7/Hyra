@@ -33,6 +33,7 @@
 #include <sys/syslog.h>
 #include <sys/spinlock.h>
 #include <sys/param.h>
+#include <sys/ascii.h>
 #include <sys/proc.h>
 #include <sys/reboot.h>
 #include <sys/queue.h>
@@ -75,7 +76,7 @@ static int i8042_kb_getc(uint8_t sc, char *chr);
 static void i8042_drain(void);
 
 static char keytab[] = {
-    '\0', '\0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+    '\0', '\x1B', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
     '-', '=', '\b', '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
     'o', 'p', '[', ']', '\n', '\0', 'a', 's', 'd', 'f', 'g', 'h',
     'j', 'k', 'l', ';', '\'', '`', '\0', '\\', 'z', 'x', 'c', 'v',
@@ -276,6 +277,9 @@ i8042_kb_getc(uint8_t sc, char *chr)
     bool release = ISSET(sc, BIT(7));
 
     switch (sc) {
+    case 0x76:
+        *chr = ASCII_ESC;
+        return 0;
     /* Caps lock [press] */
     case 0x3A:
         /*
