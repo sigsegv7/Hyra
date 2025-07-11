@@ -94,13 +94,15 @@ static int
 check_user(char *alias, char *hash, char *entry)
 {
     const char *p;
+    char shell_path[256];
     char *shell_argv[] = { DEFAULT_SHELL, NULL };
     char *envp[] = { NULL };
-    size_t row = 0;
+    size_t len, row = 0;
     size_t line = 1;
     short have_user = 0;
     short have_pw = 0;
     short have_uid = 0;
+    short have_shell = 0;
     uid_t uid = -1;
 
     if (alias == NULL || entry == NULL) {
@@ -137,7 +139,15 @@ check_user(char *alias, char *hash, char *entry)
             have_uid = 1;
             break;
         case ROW_SHELL:
-            /* TODO */
+            len = strlen(p) - 1;
+            if (len >= sizeof(shell_path) - 1) {
+                printf("bad shell path @ line %d\n", line);
+                return -1;
+            }
+
+            memcpy(shell_path, p, len);
+            shell_path[len] = '\0';
+            have_shell = 1;
             break;
         }
 
@@ -155,7 +165,13 @@ check_user(char *alias, char *hash, char *entry)
         return -1;
     }
 
+    /* Do we have the shell path? */
+    if (!have_shell) {
+        return -1;
+    }
+
     setuid(uid);
+    shell_argv[0] = shell_path;
     spawn(shell_argv[0], shell_argv, envp, SPAWN_WAIT);
     return 0;
 }
