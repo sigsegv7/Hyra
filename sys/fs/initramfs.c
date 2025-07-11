@@ -144,7 +144,7 @@ initramfs_get_file(const char *path, struct initramfs_node *res)
         p += hdr->namelen;
 
         if (strcmp(namebuf, path) == 0) {
-            node.mode = 0700;
+            node.mode = hdr->mode;
             node.size = hdr->len;
             node.data = (void *)p;
             *res = node;
