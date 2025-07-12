@@ -159,6 +159,9 @@ this_td(void)
     struct cpu_info *ci;
 
     ci = this_cpu();
+    if (ci == NULL) {
+        return NULL;
+    }
     return ci->curtd;
 }
 
