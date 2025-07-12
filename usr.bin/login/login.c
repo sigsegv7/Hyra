@@ -254,7 +254,6 @@ getuser(FILE *fp)
     while (fgets(entry, sizeof(entry), fp) != NULL) {
         retval = check_user(alias, pwhash, entry);
         if (retval == 0) {
-            printf("login: successful\n");
             free(alias);
             return 0;
         }
