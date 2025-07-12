@@ -107,6 +107,7 @@ main(int argc, char **argv)
         error = set_time(rtc_fd, &d, argv[1]);
         if (error < 0)
             printf("bad time specified, not set\n");
+        read(rtc_fd, &d, sizeof(d));
     }
 
     close(rtc_fd);
