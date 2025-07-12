@@ -298,6 +298,10 @@ this_cpu(void)
 {
     struct cpu_info *ci;
 
+    if (rdmsr(IA32_GS_BASE) == 0) {
+        return NULL;
+    }
+
     /*
      * This might look crazy but we are just leveraging the "m"
      * constraint to add the offset of the self field within
