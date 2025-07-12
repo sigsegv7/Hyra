@@ -68,9 +68,6 @@ sys_sleep(struct syscall_args *scargs)
 
     timeout_msec = ts.tv_nsec / 1000000;
     timeout_msec += ts.tv_sec * 1000;
-
-    md_inton();
     tmr.msleep(timeout_msec);
-    md_intoff();
     return 0;
 }
