@@ -33,6 +33,7 @@
 #include <sys/panic.h>
 #include <sys/filedesc.h>
 #include <sys/vnode.h>
+#include <dev/cons/cons.h>
 #include <vm/physmem.h>
 #include <vm/dynalloc.h>
 #include <vm/vm.h>
@@ -88,6 +89,8 @@ proc_reap(struct proc *td)
     struct filedesc *fdp;
     vaddr_t stack_va;
     paddr_t stack_pa;
+
+    cons_detach();
 
     /* Clear out all fds */
     for (size_t i = 4; i < PROC_MAX_FILEDES; ++i) {
