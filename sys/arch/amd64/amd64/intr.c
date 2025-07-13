@@ -129,6 +129,7 @@ intr_register(const char *name, const struct intr_hand *ih)
         ih_new->priority = ih->priority;
         ih_new->irq = ih->irq;
         ih_new->vector = i;
+        ih_new->nintr = 0;
         g_intrs[i] = ih_new;
 
         if (ih->irq >= 0) {

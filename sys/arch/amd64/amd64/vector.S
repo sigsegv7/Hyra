@@ -51,16 +51,22 @@ ioapic_common_func:
     jz 1f                       // Nope, return
 
     mov (%rdx), %rbx            // intr_hand.func
-    add $8, %rdx                // Get interrupt data
+    add $16, %rdx               // Get interrupt data
     mov %rdx, %rdi              // Pass the interrupt data
     push %rcx                   // Save our counter
+    push %rdx
     call *%rbx                  // Call the handler
+    pop %rdx
     pop %rcx                    // Restore our counter
     or %rax, %rax               // Was it theirs? (RET >= 1)
-    jnz done                    // Yes, we are done.
+    jnz handled                 // Yes, we are done.
 1:  inc %rcx                    // Next
     cmp $256, %rcx              // Did we reach the end?
     jl .walk                    // Nope, keep going
+    jmp done                    // Out of entries
+handled:
+    sub $8, %rdx
+    addq $1, (%rdx)
 done:
     call lapic_eoi
     retq

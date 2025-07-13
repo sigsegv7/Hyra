@@ -69,9 +69,11 @@ struct intr_data {
  * [r]: Required for intr_register()
  * [o]: Not required for intr_register()
  * [v]: Returned by intr_register()
+ * [i]: Internal
  *
  * @func: The actual handler        [r]
  * @data: Interrupt data            [o/v]
+ * @nintr: Number of times it fired [o]
  * @name: Interrupt name            [v]
  * @priority: Interrupt priority    [r]
  * @irq: Interrupt request number   [o]
@@ -91,6 +93,7 @@ struct intr_data {
  */
 struct intr_hand {
     int(*func)(void *);
+    size_t nintr;
     struct intr_data data;
     char *name;
     int priority;
