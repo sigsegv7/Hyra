@@ -187,7 +187,7 @@ enable_simd(void)
 }
 
 static void
-cpu_check_feat(struct cpu_info *ci)
+cpu_get_info(struct cpu_info *ci)
 {
     uint32_t unused, ebx;
 
@@ -383,7 +383,7 @@ cpu_startup(struct cpu_info *ci)
     init_tss(ci);
     try_mitigate_spectre();
 
-    cpu_check_feat(ci);
+    cpu_get_info(ci);
     cpu_enable_smep();
 
     enable_simd();
