@@ -44,6 +44,8 @@
 #include <machine/intr.h>
 #include <machine/cdefs.h>
 #include <machine/isa/i8042var.h>
+#include <dev/cons/cons.h>
+#include <string.h>
 
 #define pr_trace(fmt, ...) kprintf("cpu: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
@@ -224,6 +226,7 @@ md_backtrace(void)
     uintptr_t rip;
     off_t off;
     const char *name;
+    char line[256];
 
     __ASMV("mov %%rbp, %0" : "=r" (rbp) :: "memory");
     while (1) {
@@ -236,7 +239,8 @@ md_backtrace(void)
         if (name == NULL)
             name = "???";
 
-        kprintf(OMIT_TIMESTAMP "%p  @ <%s+0x%x>\n", rip, name, off);
+        snprintf(line, sizeof(line), "%p @ <%s+0x%x>\n", rip, name, off);
+        cons_putstr(&g_root_scr, line, strlen(line));
     }
 }
 

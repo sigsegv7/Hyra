@@ -34,12 +34,22 @@
 #include <dev/cons/cons.h>
 #include <machine/cdefs.h>
 #include <machine/cpu.h>
+#include <string.h>
 
 #if defined(__PANIC_SCR)
 #define PANIC_SCR  __PANIC_SCR
 #else
 #define PANIC_SCR 0
 #endif
+
+static void
+panic_puts(const char *str)
+{
+    size_t len;
+
+    len = strlen(str);
+    cons_putstr(&g_root_scr, str, len);
+}
 
 /*
  * Burn and sizzle - the core logic that really ends
@@ -56,11 +66,11 @@ bas(bool do_trace, int reboot_type)
     spinlock_acquire(&lock);    /* Never released */
 
     if (do_trace) {
-        kprintf(OMIT_TIMESTAMP "** backtrace\n");
+        panic_puts(" ** backtrace\n");
         md_backtrace();
     }
 
-    kprintf(OMIT_TIMESTAMP "\n-- ALL CORES HAVE BEEN HALTED --\n");
+    panic_puts("\n-- ALL CORES HAVE BEEN HALTED --\n");
     cpu_reboot(reboot_type);
     __builtin_unreachable();
 }
@@ -82,7 +92,8 @@ static void
 do_panic(const char *fmt, va_list *ap)
 {
     syslog_silence(false);
-    kprintf(OMIT_TIMESTAMP "panic: ");
+    spinlock_release(&g_root_scr.lock);
+    panic_puts("panic: ");
     vkprintf(fmt, ap);
     bas(true, REBOOT_HALT);
 
