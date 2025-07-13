@@ -53,6 +53,13 @@
 #include <string.h>
 #include <assert.h>
 
+/* From kconf(9) */
+#if !defined(__I8042_POLL)
+#define I8042_POLL 0
+#else
+#define I8042_POLL __I8042_POLL
+#endif
+
 #define KEY_REP_MAX 2
 
 #define pr_trace(fmt, ...) kprintf("i8042: " fmt, ##__VA_ARGS__)
@@ -424,13 +431,20 @@ i8042_init(void)
         quirks |= I8042_HOSTILE;
         pr_trace("ThinkPad T420s detected, assuming hostile\n");
         pr_trace("disabling irq 1, polling as fallback\n");
-        spawn(&polltd, i8042_sync_loop, NULL, 0, NULL);
     }
 
-    if (!ISSET(quirks, I8042_HOSTILE)) {
+    /*
+     * If the i8042 has the hostile quirk or we are
+     * configured to poll for events, spawn the polling
+     * thread.
+     */
+    if (!ISSET(quirks, I8042_HOSTILE) && !I8042_POLL) {
         /* Enable interrupts */
         i8042_drain();
         i8042_en_intr();
+    } else if (ISSET(quirks, I8042_HOSTILE) || I8042_POLL) {
+        spawn(&polltd, i8042_sync_loop, NULL, 0, NULL);
+        pr_trace("polling events\n");
     }
 
     i8042_write(I8042_CMD, I8042_ENABLE_PORT0);

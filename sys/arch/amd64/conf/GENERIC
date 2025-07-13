@@ -10,6 +10,7 @@ option SERIAL_DEBUG yes  // Enable kmsg serial logging
 option USER_KMSG    no   // Show kmsg in user consoles
 option CPU_SMEP     yes  // Supervisor Memory Exec Protection
 option PANIC_SCR    no   // Clear screen on panic
+option I8042_POLL   yes  // Use polling for the i8042
 
 // Kernel constants
 setval SCHED_NQUEUE 4    // Number of scheduler queues (for MLFQ)
