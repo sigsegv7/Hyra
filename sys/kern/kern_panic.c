@@ -35,6 +35,12 @@
 #include <machine/cdefs.h>
 #include <machine/cpu.h>
 
+#if defined(__PANIC_SCR)
+#define PANIC_SCR  __PANIC_SCR
+#else
+#define PANIC_SCR 0
+#endif
+
 /*
  * Burn and sizzle - the core logic that really ends
  * things ::)
@@ -101,7 +107,9 @@ panic(const char *fmt, ...)
     md_intoff();
     cpu_halt_others();
 
-    panic_screen();
+    if (PANIC_SCR) {
+        panic_screen();
+    }
     va_start(ap, fmt);
     do_panic(fmt, &ap);
     __builtin_unreachable();
