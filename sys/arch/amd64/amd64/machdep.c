@@ -189,7 +189,8 @@ enable_simd(void)
 static void
 cpu_get_info(struct cpu_info *ci)
 {
-    uint32_t unused, ebx;
+    uint32_t eax, ebx, unused;
+    uint8_t ext_model, ext_family;
 
     /* Extended features */
     CPUID(0x07, unused, ebx, unused, unused);
@@ -197,6 +198,33 @@ cpu_get_info(struct cpu_info *ci)
         ci->feat |= CPU_FEAT_SMEP;
     if (ISSET(ebx, BIT(20)))
         ci->feat |= CPU_FEAT_SMAP;
+
+    /*
+     * Processor info and feature bits
+     */
+    CPUID(0x01, eax, unused, unused, unused);
+    ci->model = (eax >> 4) & 0xF;
+    ci->family = (eax >> 8) & 0xF;
+
+    /*
+     * If the family ID is 15 then the actual family
+     * ID is the sum of the extended family and the
+     * family ID fields.
+     */
+    if (ci->family == 0xF) {
+        ext_family = (eax >> 20) & 0xFF;
+        ci->family += ext_family;
+    }
+
+    /*
+     * If the family has the value of either 6 or 15,
+     * then the extended model number would be used.
+     * Slap them together if this is the case.
+     */
+    if (ci->family == 6 || ci->family == 15) {
+        ext_model = (eax >> 16) & 0xF;
+        ci->model |= (ext_model << 4);
+    }
 }
 
 void
