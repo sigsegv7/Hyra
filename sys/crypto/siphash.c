@@ -29,7 +29,7 @@
     Jean-Philippe Aumasson (https://131002.net/siphash/siphash24.c)
 */
 
-#include <dev/random/siphash.h>
+#include <crypto/siphash.h>
 #include <stdint.h>
 
 #if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && \

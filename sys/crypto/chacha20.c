@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dev/random/chacha20.h>
+#include <crypto/chacha20.h>
 
 static const char sigma[16] = "expand 32-byte k";
 

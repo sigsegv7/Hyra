@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <dev/random/entropy.h>
-#include <dev/random/siphash.h>
+#include <crypto/siphash.h>
 
 void
 mix_entropy(struct entropy_pool *ep, const uint8_t *input,

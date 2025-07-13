@@ -30,9 +30,9 @@
 #include <sys/sio.h>
 #include <sys/device.h>
 #include <sys/driver.h>
-#include <dev/random/chacha20.h>
-#include <dev/random/siphash.h>
 #include <dev/random/entropy.h>
+#include <crypto/chacha20.h>
+#include <crypto/siphash.h>
 #include <fs/devfs.h>
 #include <string.h>
 
