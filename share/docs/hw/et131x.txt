@@ -153,6 +153,20 @@ PCI BAR 0.
             [bits 23]:      Unused (undefined)
             [bits 30:24]:   Non B2B IPG 1
             [bits 31]:      Reserved
+      @ hfdp:
+            [bits 9:0]:     Collision window
+            [bits 11:10]:   Reserved
+            [bits 15:12]:   Re-transmit max
+            [bits 16]:      Excess defer
+            [bits 17]:      No backoff
+            [bits 18]:      BP no backoff
+            [bits 19]:      Alt BEB enable      [1]
+            [bits 23-20]:   Alt BEB trunc       [1]
+            [bits 31-24]:   Reserved
+            |
+            ++ [1]: BEB refers to Binary Exponential Backoff which is
+                    a method to mitigate collisions by doubling the TX
+                    backoff window (throttling TX rate) per collision.
       -------------------------------------
 
 
