@@ -84,6 +84,77 @@ PCI BAR 0.
     if_stat                 [dword] (BAR[0] + 0x503C)
     station_addr1           [dword] (BAR[0] + 0x5040)
     station_addr2           [dword] (BAR[0] + 0x5044)
+    NOTES:
+      [REGISTER INFORMATION]
+      - cfg1:
+            First MAC configuration register.
+      - cfg2:
+            Second MAC configuration register.
+      - ipg:
+            MAC Interpacket Gap configuration register.
+      - hfdp:
+            MAC Half Duplex configuration register.
+      - max_fm_len:
+            Max packet length (bytes) sent through MAC without
+            truncation.
+      - mac_test:
+            MAC test registers
+      - mii_mgmt_cfg:
+            MAC MII Management Config register.
+      - mii_mgmt_cmd:
+            MAC MII Management Command register.
+      - mii_mgmt_ctrl:
+            MAC MII Management Control register.
+      - mii_mgmt_stat:
+            MAC MII Management Status register.
+      - mii_mgmt_indicator:
+            MAC MII Management Indicator register.
+      - if_ctrl:
+            MAC interface control register.
+      - station_addr1:
+            First MAC station address register.
+      - station_addr2:
+            Second MAC station address register.
+      [BITS]
+      -------------------------------------
+      @ cfg1:
+            [bits 0]:       TX enable
+            [bits 1]:       Syncd TX enable
+            [bits 2]:       RX enable
+            [bits 3]:       Syncd TX enable
+            [bits 4]:       TX flow
+            [bits 5]:       RX flow
+            [bits 7:6]:     Reserved
+            [bits 8]:       Loopback
+            [bits 15:9]:    Reserved
+            [bits 16]:      Reset TX func
+            [bits 17]:      Reset RX func
+            [bits 18]:      Reset TX MC
+            [bits 19]:      Reset RX MC
+            [bits 29:20]:   Reserved
+            [bits 30]:      Sim reset
+            [bits 31]:      Soft reset
+      @ cfg2:
+            [bits 0]:       Full-duplex
+            [bits 1]:       CRC enable
+            [bits 2]:       Pad CRC
+            [bits 3]:       Unused (undefined)
+            [bits 4]:       Length check
+            [bits 5]:       Huge frame
+            [bits 7:6]:     Reserved
+            [bits 9:8]:     Interface mode
+            [bits 11:10]:   Reserved
+            [bits 15:12]:   Preamble
+            [bits 31:16]:   Reserved
+      @ ipg:
+            [bits 7:0]:     B2B IPG
+            [bits 15:8]:    Minimum IFG enforce
+            [bits 22:16]:   Non B2B IPG 2
+            [bits 23]:      Unused (undefined)
+            [bits 30:24]:   Non B2B IPG 1
+            [bits 31]:      Reserved
+      -------------------------------------
+
 
 ------------------------------------------------------------------
 ET131X REGISTER SPACE NOTES:
