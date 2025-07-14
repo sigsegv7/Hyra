@@ -50,7 +50,12 @@
 #define pr_trace(fmt, ...) kprintf("et131x: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
+struct netcard {
+    struct et131x_iospace *io;
+};
+
 static struct pci_device *dev;
+static struct netcard g_card;
 static struct timer tmr;
 
 /*
@@ -59,8 +64,9 @@ static struct timer tmr;
  * @io: Register space
  */
 static void
-et131x_soft_reset(struct et131x_iospace *io)
+et131x_soft_reset(struct netcard *card)
 {
+    struct et131x_iospace *io = card->io;
     uint32_t tmp;
 
     tmp = (
@@ -99,8 +105,9 @@ et131x_soft_reset(struct et131x_iospace *io)
  * @v: Value to write
  */
 static int
-et131x_mii_write(struct et131x_iospace *io, uint8_t addr, uint8_t reg, uint16_t v)
+et131x_mii_write(struct netcard *card, uint8_t addr, uint8_t reg, uint16_t v)
 {
+    struct et131x_iospace *io = card->io;
     uint16_t mii_addr;
     uint32_t tmp, mgmt_addr_old;
     uint32_t mgmt_cmd_old;
@@ -169,16 +176,16 @@ et131x_init_pci(void)
  * @delay: Millisecond delay between blinks
  */
 static void
-et131x_blink(struct et131x_iospace *io, uint32_t count, uint16_t delay)
+et131x_blink(struct netcard *card, uint32_t count, uint16_t delay)
 {
     uint16_t on_val;
 
     on_val =  (LED_ON << LED_LINK_SHIFT);
     on_val |= (LED_ON << LED_TXRX_SHIFT);
     for (uint32_t i = 0; i < count; ++i) {
-        et131x_mii_write(io, 0, PHY_LED2, on_val);
+        et131x_mii_write(card, 0, PHY_LED2, on_val);
         tmr.msleep(delay);
-        et131x_mii_write(io, 0, PHY_LED2, LED_ALL_OFF);
+        et131x_mii_write(card, 0, PHY_LED2, LED_ALL_OFF);
         tmr.msleep(delay);
     }
 }
@@ -187,7 +194,6 @@ static int
 et131x_init(void)
 {
     struct pci_lookup lookup;
-    struct et131x_iospace *bar;
     int error;
 
     lookup.vendor_id = VENDOR_ID;
@@ -213,13 +219,13 @@ et131x_init(void)
         return -ENODEV;
     }
 
-    if ((error = pci_map_bar(dev, 0, (void *)&bar)) != 0) {
+    if ((error = pci_map_bar(dev, 0, (void *)&g_card.io)) != 0) {
         return error;
     }
 
     et131x_init_pci();
-    et131x_soft_reset(bar);
-    et131x_blink(bar, 4, 150);
+    et131x_soft_reset(&g_card);
+    et131x_blink(&g_card, 4, 150);
     return 0;
 }
 
