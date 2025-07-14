@@ -228,9 +228,24 @@ struct mac_regs {
 /* LED register defines */
 #define PHY_LED2    0x1C
 
-/* LED control register 2 values */
+/*
+ * LED control register 2 values
+ */
+#define LED_BLINK       0xD
 #define LED_ON          0xE
-#define LED_OFF         0xFFFF
+#define LED_OFF         0xF
+#define LED_ALL_OFF     0xFFFF
+
+/*
+ * LED register bit-shift constants
+ *
+ * Bits [3:0]:   100BASE-T LED
+ * Bits [7:4]:   100BASE-TX LED
+ * Bits [11:8]:  TX/RX LED
+ * Bits [15:12]: Link LED
+ */
+#define LED_TXRX_SHIFT  8
+#define LED_LINK_SHIFT  12
 
 
 struct et131x_iospace {

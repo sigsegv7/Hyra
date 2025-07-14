@@ -162,7 +162,7 @@ et131x_init_pci(void)
 }
 
 /*
- * Blink the LED of the card
+ * Blink both LEDs of the card
  *
  * @io: Register space
  * @count: Number of times to blink
@@ -171,10 +171,14 @@ et131x_init_pci(void)
 static void
 et131x_blink(struct et131x_iospace *io, uint32_t count, uint16_t delay)
 {
+    uint16_t on_val;
+
+    on_val =  (LED_ON << LED_LINK_SHIFT);
+    on_val |= (LED_ON << LED_TXRX_SHIFT);
     for (uint32_t i = 0; i < count; ++i) {
-        et131x_mii_write(io, 0, PHY_LED2, LED_ON);
+        et131x_mii_write(io, 0, PHY_LED2, on_val);
         tmr.msleep(delay);
-        et131x_mii_write(io, 0, PHY_LED2, LED_OFF);
+        et131x_mii_write(io, 0, PHY_LED2, LED_ALL_OFF);
         tmr.msleep(delay);
     }
 }
