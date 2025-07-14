@@ -1,0 +1,130 @@
+--------------------------------------
+Unofficial ET131X datasheet. If Agere
+doesn't give you shit, OSMORA will
+
+Author: Ian Marco Moffett
+--------------------------------------
+
+-- PCI information
+
+VENDOR ID: 0x11C1 (Agere)
+Device ID: 0xED00
+
+The ET131X exposes its register interface through
+PCI BAR 0.
+
+-- Device register map (register set list)
+|
+++ GLOBAL REGS (GLOBAL):
+    // JAGCore register map (offset BAR[0] + 0x0000)
+    TX_queue_start_addr     [dword] (BAR[0] + 0x0000)
+    TX_queue_end_addr       [dword] (BAR[0] + 0x0004)
+    RX_queue_start_addr     [dword] (BAR[0] + 0x0008)
+    RX_queue_end_addr       [dword] (BAR[0] + 0x000C)
+    PM_CSR                  [dword] (BAR[0] + 0x0010)
+    unused                  [dword] (BAR[0] + 0x0014)
+    int_status              [dword] (BAR[0] + 0x0018)
+    int_mask                [dword] (BAR[0] + 0x001C)
+    int_alias_clr_en        [dword] (BAR[0] + 0x0020)
+    int_status_alias        [dword] (BAR[0] + 0x0024)
+    sw_reset                [dword] (BAR[0] + 0x0028)
+    slv_timer               [dword] (BAR[0] + 0x002C)
+    msi_config              [dword] (BAR[0] + 0x0030)
+    loopback                [dword] (BAR[0] + 0x0034)
+    watchdog_timer          [dword] (BAR[0] + 0x0038)
+    ----------------------------------------
+    NOTES:
+      [REGISTER INFORMATION]
+      - TX_queue_start_addr:
+            Address of transmit queue start in internal RAM.
+      - TX_queue_end_addr:
+            Address of transmit queue end in internal RAM.
+      - RX_queue_start_addr:
+            Address of receive queue start in internal RAM.
+      - RX_queue_end_addr:
+            Address of receive queue end in internal RAM.
+      - PM_CSR:
+            Power management control/status register.
+      - unused:
+            Not used, leave alone.
+      - int_status:
+            Interrupt status register.
+      - int_mask:
+            Interrupt mask register
+      - int_alias_clr_en:
+            ????
+      - int_status_alias:
+            ????
+      - slv_timer:
+            ???? - for some sort of timeout
+      - loopback:
+            Loopback control register
+            [0x00000001] -> LOOP MAC
+            [0x00000002] -> LOOP DMA
+      - watchdog_timer:
+            Watchdog timer regieter (nanoseconds)
+|           [0] -> DISABLED
+++ MAC REGISTERS (MAC_REGS):
+    // JAGCore MAC registers (offset BAR[0] + 0x5000)
+    cfg1                    [dword] (BAR[0] + 0x5000)
+    cfg2                    [dword] (BAR[0] + 0x5004)
+    ipg                     [dword] (BAR[0] + 0x5008)
+    hfdp                    [dword] (BAR[0] + 0x500C)
+    max_fm_len              [dword] (BAR[0] + 0x5010)
+    reserved1               [dword] (BAR[0] + 0x5014)
+    reserved2               [dword] (BAR[0] + 0x5018)
+    mac_test                [dword] (BAR[0] + 0x501C)
+    mii_mgmt_cfg            [dword] (BAR[0] + 0x5020)
+    mii_mgmt_cmd            [dword] (BAR[0] + 0x5024)
+    mii_mgmt_addr           [dword] (BAR[0] + 0x5028)
+    mii_mgmt_ctrl           [dword] (BAR[0] + 0x502C)
+    mii_mgmt_stat           [dword] (BAR[0] + 0x5030)
+    mii_mgmt_indicator      [dword] (BAR[0] + 0x5034)
+    if_ctrl                 [dword] (BAR[0] + 0x5038)
+    if_stat                 [dword] (BAR[0] + 0x503C)
+    station_addr1           [dword] (BAR[0] + 0x5040)
+    station_addr2           [dword] (BAR[0] + 0x5044)
+
+------------------------------------------------------------------
+ET131X REGISTER SPACE NOTES:
+------------------------------------------------------------------
+[Padding]:
+    Each register set exists within a 4096 byte region and some
+    register sets do not fully span that full length. Therefore
+    when defining the register space within a struct, one must
+    be sure to account for such gaps by including 'n' bytes of
+    padding after each register set. Where 'n' is how many bytes
+    left to fully span 4096 bytes in other words, '4096 - regset_len'.
+
+------------------------------------------------------------------
+SOFTWARE RESET PROCCESS:
+------------------------------------------------------------------
+#define MAC_CFG1_SOFTRST        0x80000000  /* Soft reset */
+#define MAC_CFG1_SIMRST         0x40000000  /* SIM reset */
+#define MAC_CFG1_RESET_RXMC     0x00080000  /* RX MC reset */
+#define MAC_CFG1_RESET_TXMC     0x00040000  /* TX MC reset */
+#define MAC_CFG1_RESET_RXFUNC   0x00020000  /* RX func reset */
+#define MAC_CFG1_RESET_TXFUNC   0x00010000  /* TX func reset */
+#define GBL_RESET_ALL	        0x007F      /* Global reset */
+------------------------------------------------------------------
+To perform a software reset, one must write the value of MAC_CFG1_SOFTRST,
+MAC_CFG1_SIMRST, MAC_CFG1_RESET_RXMC, MAC_CFG1_RESET_TXMC, MAC_CFG1_RESET_RXFUNC,
+and MAC_CFG1_RESET_TXMC combined together with a bitwise OR to the 'cfg1' register
+of the 'MAC_REGS' register set.
+
+This results in the MAC core (aka JAGCore) resetting all internal state
+and being brought to halt.
+
+Once the MAC core is reset, you must be sure to also reset the rest of the card,
+(I know, just when you thought you were done). This may be done by writing the
+value of GBL_RESET_ALL to the 'sw_reset' register of the 'GLOBAL' register set.
+This results in the reset of further state such as state machines for TX DMA, RX DMA,
+MAC TX, MAC RX, etc cetera.
+
+To ensure the TX/RX paths of the MAC core are in a known state, one
+must write the value of MAC_CFG1_RESET_RXMC, MAC_CFG1_RESET_TXMC, MAC_CFG1_RESET_RXFUNC,
+and MAC_CFG1_RESET_TXMC combined together with a bitwise OR to the 'cfg1' register
+of the 'MAC_REGS' register set.
+
+And finally, you must also make sure the 'cfg1' register of the 'MAC_REGS' register
+set is also in a known state by clearing it to 0x00000000.
