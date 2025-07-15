@@ -225,8 +225,15 @@ struct mac_regs {
 #define MAC_MGMT_BUSY 0x00000001
 #define MAC_MGMT_WAIT 0x00000005
 
+/* MAC management config values */
+#define MAC_MIIMGMT_CLK_RST 0x00007
+
 /* LED register defines */
 #define PHY_LED2    0x1C
+
+/* PCI config space offsets */
+#define PCI_EEPROM_STATUS   0xB2
+#define PCI_MAC_ADDRESS     0xA4
 
 /*
  * LED control register 2 values
@@ -246,7 +253,6 @@ struct mac_regs {
  */
 #define LED_TXRX_SHIFT  8
 #define LED_LINK_SHIFT  12
-
 
 struct et131x_iospace {
 #define _IO_PAD(NAME, REGSET) uint8_t NAME[4096 - sizeof(struct REGSET)]

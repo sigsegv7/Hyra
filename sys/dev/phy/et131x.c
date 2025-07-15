@@ -43,12 +43,17 @@
 #include <dev/pci/pciregs.h>
 #include <dev/phy/et131xregs.h>
 #include <dev/timer.h>
+#include <net/if_var.h>
 
 #define VENDOR_ID 0x11C1 /* Agere */
 #define DEVICE_ID 0xED00
 
 #define pr_trace(fmt, ...) kprintf("et131x: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
+
+/* Helpful constants */
+#define ETHERFRAME_LEN 1518         /* Length of ethernet frame */
+#define ETHER_FCS_LEN  4            /* Length of frame check seq */
 
 struct netcard {
     struct et131x_iospace *io;
@@ -190,6 +195,78 @@ et131x_blink(struct netcard *card, uint32_t count, uint16_t delay)
     }
 }
 
+/*
+ * Initialize the MAC into a functional
+ * state.
+ *
+ * @io: Register space.
+ */
+static void
+et131x_mac_init(struct netcard *card)
+{
+    struct et131x_iospace *io = card->io;
+    struct mac_regs *mac = &io->mac;
+    struct netif_addr addr;
+    uint32_t ipg_tmp, tmp;
+
+    /*
+     * Okay so we need to reset the card so it doesn't
+     * do undefined bullshit. God forbid we get undefined
+     * behaviour without having a fucking official datasheet.
+     * Most would end themselves right then and there.
+     *
+     * Now, after we've done that, we must ensure that any
+     * packets larger than ETHERFRAME_LEN are truncated by
+     * the MAC. Again, something like an internal buffer
+     * overrun during TX/RX would be quite fucking horrible.
+     *
+     * We also want to clear the MAC interface control and MII
+     * clock to ensure it is in a known state.
+     */
+    et131x_soft_reset(card);
+    mmio_write32(&mac->max_fm_len, ETHERFRAME_LEN);
+    mmio_write32(&mac->if_ctrl, 0);
+    mmio_write32(&mac->mii_mgmt_cfg, MAC_MIIMGMT_CLK_RST);
+
+    /*
+     * Set up half duplex config
+     *
+     * - BEB trunc      (0xA)
+     * - Excess defer
+     * - Re-transmit    (0xF)
+     * - Collision window
+     */
+    mmio_write32(&mac->hfdp, 0x00A1F037);
+
+    /*
+     * Setup the MAC interpacket gap register
+     *
+     * - IPG1 (0x38)
+     * - IPG2 (0x58)
+     * - B2B  (0x60)
+     */
+    ipg_tmp = ((0x50 << 8) | 0x38005860);
+    mmio_write32(&mac->ipg, ipg_tmp);
+
+    /* MAC address dword 0 */
+    tmp = pci_readl(dev, PCI_MAC_ADDRESS);
+    addr.data[0] = tmp & 0xFF;
+    addr.data[1] = (tmp >> 8) & 0xFF;
+    addr.data[2] = (tmp >> 16) & 0xFF;
+    addr.data[3] = (tmp >> 24) & 0xFF;
+
+    /* MAC address word 1 */
+    tmp = pci_readl(dev, PCI_MAC_ADDRESS + 4);
+    addr.data[4] = tmp & 0xFF;
+    addr.data[5] = (tmp >> 8) & 0xFF;
+
+    /* Print out the MAC address */
+    pr_trace("MAC address: %x:%x:%x:%x:%x:%x\n",
+        (uint64_t)addr.data[0], (uint64_t)addr.data[1],
+        (uint64_t)addr.data[2], (uint64_t)addr.data[3],
+        (uint64_t)addr.data[4], (uint64_t)addr.data[5]);
+}
+
 static int
 et131x_init(void)
 {
@@ -224,7 +301,7 @@ et131x_init(void)
     }
 
     et131x_init_pci();
-    et131x_soft_reset(&g_card);
+    et131x_mac_init(&g_card);
     et131x_blink(&g_card, 4, 150);
     return 0;
 }
