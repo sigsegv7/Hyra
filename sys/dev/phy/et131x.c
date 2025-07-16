@@ -228,6 +228,11 @@ et131x_mac_init(struct netcard *card)
     mmio_write32(&mac->if_ctrl, 0);
     mmio_write32(&mac->mii_mgmt_cfg, MAC_MIIMGMT_CLK_RST);
 
+    /* Disable loopbacks, watchdog timer, clear MSI config */
+    mmio_write32(&global->loopback, 0);
+    mmio_write32(&global->msi_config, 0);
+    mmio_write32(&global->watchdog_timer, 0);
+
     /*
      * Set up half duplex config
      *
