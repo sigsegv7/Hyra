@@ -30,6 +30,7 @@
 #include <sys/proc.h>
 #include <sys/sched.h>
 #include <sys/syslog.h>
+#include <sys/atomic.h>
 #include <sys/panic.h>
 #include <sys/filedesc.h>
 #include <sys/vnode.h>
@@ -43,6 +44,8 @@
 
 #define pr_trace(fmt, ...) kprintf("exit: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
+
+extern volatile size_t g_nthreads;
 
 static void
 unload_td(struct proc *td)
@@ -149,6 +152,9 @@ exit1(struct proc *td, int flags)
     curpid = curtd->pid;
     td->flags |= PROC_EXITING;
     parent = td->parent;
+
+    /* We have one less process in the system! */
+    atomic_dec_64(&g_nthreads);
 
     /* If we have any children, kill them too */
     if (td->nleaves > 0) {
