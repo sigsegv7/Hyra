@@ -49,7 +49,7 @@
 #define ARGVP_MAX (ARG_MAX / sizeof(void *))
 
 static size_t next_pid = 1;
-volatile size_t g_nthreads = 0;
+extern volatile size_t g_nthreads;
 
 /*
  * TODO: envp

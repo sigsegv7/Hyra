@@ -42,7 +42,7 @@
 void sched_accnt_init(void);
 
 static struct ctlops sched_stat_ctl;
-extern volatile size_t g_nthreads;
+volatile size_t g_nthreads;
 
 static int
 ctl_stat_read(struct ctlfs_dev *cdp, struct sio_txn *sio)
