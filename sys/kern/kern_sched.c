@@ -46,6 +46,7 @@
 #define pr_trace(fmt, ...) kprintf("ksched: " fmt, ##__VA_ARGS__)
 
 void sched_switch(struct trapframe *tf);
+void sched_accnt_init(void);
 
 static sched_policy_t policy = SCHED_POLICY_MLFQ;
 
@@ -306,4 +307,6 @@ sched_init(void)
 
     pr_trace("prepared %d queues (policy=0x%x)\n",
         SCHED_NQUEUE, policy);
+
+    sched_accnt_init();
 }

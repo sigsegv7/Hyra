@@ -27,36 +27,68 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SCHED_H_
-#define _SYS_SCHED_H_
+/*
+ * System Accounting
+ */
 
+#include <sys/sched.h>
+#include <sys/schedvar.h>
 #include <sys/proc.h>
-#include <sys/cdefs.h>
+#include <fs/ctlfs.h>
+#include <machine/cpu.h>
+#include <string.h>
+
+/* Called within kern_sched.c */
+void sched_accnt_init(void);
+
+static struct ctlops sched_stat_ctl;
+extern volatile size_t g_nthreads;
+
+static int
+ctl_stat_read(struct ctlfs_dev *cdp, struct sio_txn *sio)
+{
+    struct sched_stat stat;
+
+    if (sio->len > sizeof(stat)) {
+        sio->len = sizeof(stat);
+    }
+
+    sched_stat(&stat);
+    memcpy(sio->buf, &stat, sio->len);
+    return sio->len;
+}
 
 /*
- * Scheduler statistics
+ * Get scheduler accounting information
  *
- * @nproc: Number processes running
- * @ncpu: Number of CPU cores
- * @quantum_usec: Scheduler quantum (microseconds)
+ * @statp: Info gets copied here
  */
-struct sched_stat {
-    size_t nproc;
-    uint16_t ncpu;
-    uint32_t quantum_usec;
+void
+sched_stat(struct sched_stat *statp)
+{
+    statp->nproc = atomic_load_64(&g_nthreads);
+    statp->ncpu = cpu_count();
+    statp->quantum_usec = DEFAULT_TIMESLICE_USEC;
+}
+
+void
+sched_accnt_init(void)
+{
+    char devname[] = "sched";
+    struct ctlfs_dev ctl;
+
+    /*
+     * Register some accounting information in
+     * '/ctl/sched/stat'
+     */
+    ctl.mode = 0444;
+    ctlfs_create_node(devname, &ctl);
+    ctl.devname = devname;
+    ctl.ops = &sched_stat_ctl;
+    ctlfs_create_entry("stat", &ctl);
+}
+
+static struct ctlops sched_stat_ctl = {
+    .read = ctl_stat_read,
+    .write = NULL
 };
-
-#if defined(_KERNEL)
-
-void sched_stat(struct sched_stat *statp);
-void sched_init(void);
-void sched_yield(void);
-
-void sched_switch_to(struct trapframe *tf, struct proc *td);
-void sched_detach(struct proc *td);
-
-__dead void sched_enter(void);
-void sched_enqueue_td(struct proc *td);
-
-#endif  /* _KERNEL */
-#endif  /* !_SYS_SCHED_H_ */
