@@ -154,6 +154,10 @@ fd_rw(unsigned int fd, void *buf, size_t count, uint8_t write)
     struct sio_txn sio;
     scret_t retval = 0;
 
+    if (fd > PROC_MAX_FILEDES) {
+        return -EBADF;
+    }
+
     if (count > SSIZE_MAX) {
         retval = -EINVAL;
         goto done;
