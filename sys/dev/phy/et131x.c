@@ -51,9 +51,22 @@
 #define pr_trace(fmt, ...) kprintf("et131x: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
+/*
+ * The ET131X has 1024 words of internal RAM used to
+ * store/buffer packet data before reception or transmission.
+ * The card allows us to decide how large the TX/RX buffers would
+ * be split up. We split the RX/TX 50/50 as a nice balanced default.
+ * Might need to later adjust based on various system needs
+ * (e.g., heavy TX or RX) to avoid thrashing any of the buffers.
+ *
+ */
+#define INTERNAL_MEMSIZE    1024    /* In words */
+#define INTERNAL_MEM_RXOFF  0x1FF   /* 50/50 split */
+
 /* Helpful constants */
 #define ETHERFRAME_LEN 1518         /* Length of ethernet frame */
 #define ETHER_FCS_LEN  4            /* Length of frame check seq */
+#define RX_MEM_END     0x2BC
 
 struct netcard {
     struct et131x_iospace *io;
@@ -206,6 +219,7 @@ et131x_mac_init(struct netcard *card)
 {
     struct et131x_iospace *io = card->io;
     struct mac_regs *mac = &io->mac;
+    struct global_regs *global = &io->global;
     struct netif_addr addr;
     uint32_t ipg_tmp, tmp;
 
@@ -227,6 +241,16 @@ et131x_mac_init(struct netcard *card)
     mmio_write32(&mac->max_fm_len, ETHERFRAME_LEN);
     mmio_write32(&mac->if_ctrl, 0);
     mmio_write32(&mac->mii_mgmt_cfg, MAC_MIIMGMT_CLK_RST);
+
+    /*
+     * Split the RX/TX memory 50/50, put the internal RX
+     * buffer right at the start into the first half, and
+     * the TX buffer right after the RX buffer.
+     */
+    mmio_write32(&global->rxq_start, 0);
+    mmio_write32(&global->rxq_end, RX_MEM_END);
+    mmio_write32(&global->txq_start, RX_MEM_END + 1);
+    mmio_write32(&global->txq_end, INTERNAL_MEMSIZE - 1);
 
     /* Disable loopbacks, watchdog timer, clear MSI config */
     mmio_write32(&global->loopback, 0);
