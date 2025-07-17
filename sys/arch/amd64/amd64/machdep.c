@@ -111,8 +111,16 @@ tlb_shootdown_isr(void *p)
 }
 
 static void
-setup_vectors(void)
+setup_vectors(struct cpu_info *ci)
 {
+    union tss_stack scstack;
+
+    /* Try to allocate a syscall stack */
+    if (tss_alloc_stack(&scstack, DEFAULT_PAGESIZE) != 0) {
+        panic("failed to allocate syscall stack\n");
+    }
+
+    tss_update_ist(ci, scstack, IST_SYSCALL);
     idt_set_desc(0x0, IDT_TRAP_GATE, ISR(arith_err), 0);
     idt_set_desc(0x2, IDT_TRAP_GATE, ISR(nmi), 0);
     idt_set_desc(0x3, IDT_TRAP_GATE, ISR(breakpoint_handler), 0);
@@ -125,7 +133,7 @@ setup_vectors(void)
     idt_set_desc(0xC, IDT_TRAP_GATE, ISR(ss_fault), 0);
     idt_set_desc(0xD, IDT_TRAP_GATE, ISR(general_prot), 0);
     idt_set_desc(0xE, IDT_TRAP_GATE, ISR(page_fault), 0);
-    idt_set_desc(0x80, IDT_USER_INT_GATE, ISR(syscall_isr), 0);
+    idt_set_desc(0x80, IDT_USER_INT_GATE, ISR(syscall_isr), IST_SYSCALL);
     idt_set_desc(HALT_VECTOR, IDT_INT_GATE, ISR(cpu_halt_isr), 0);
     idt_set_desc(TLB_VECTOR, IDT_INT_GATE, ISR(tlb_shootdown_isr), 0);
     pin_isr_load();
@@ -405,10 +413,10 @@ cpu_startup(struct cpu_info *ci)
     gdt_load();
     idt_load();
 
-    setup_vectors();
     wrmsr(IA32_GS_BASE, (uintptr_t)ci);
-
     init_tss(ci);
+    setup_vectors(ci);
+
     try_mitigate_spectre();
 
     cpu_get_info(ci);
