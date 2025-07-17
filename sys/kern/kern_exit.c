@@ -46,6 +46,7 @@
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
 extern volatile size_t g_nthreads;
+extern struct proc g_init;
 
 static void
 unload_td(struct proc *td)
@@ -150,17 +151,17 @@ exit1(struct proc *td, int flags)
     curtd = this_td();
 
     curpid = curtd->pid;
+
     td->flags |= PROC_EXITING;
     parent = td->parent;
 
     /* We have one less process in the system! */
     atomic_dec_64(&g_nthreads);
 
-    /* If we have any children, kill them too */
+    /* Reassign children to init */
     if (td->nleaves > 0) {
         TAILQ_FOREACH(procp, &td->leafq, leaf_link) {
-            if (!ISSET(procp->flags, PROC_EXITING))
-                exit1(procp, flags);
+            procp->parent = &g_init;
         }
     }
 
