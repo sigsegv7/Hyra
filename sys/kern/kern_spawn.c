@@ -208,6 +208,9 @@ get_child(struct proc *cur, pid_t pid)
     struct proc *procp;
 
     TAILQ_FOREACH(procp, &cur->leafq, leaf_link) {
+        if (procp == NULL) {
+            continue;
+        }
         if (procp->pid == pid) {
             return procp;
         }
