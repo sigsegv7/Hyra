@@ -56,6 +56,7 @@ static void
 ap_trampoline(struct limine_smp_info *si)
 {
     struct cpu_info *ci;
+    struct proc *idle;
 
     ci = dynalloc(sizeof(*ci));
     __assert(ci != NULL);
@@ -64,6 +65,11 @@ ap_trampoline(struct limine_smp_info *si)
     cpu_startup(ci);
     spinlock_acquire(&ci_list_lock);
     ci_list[ncpu_up] = ci;
+
+    ci->id = ncpu_up;
+    spawn(&g_proc0, sched_enter, NULL, 0, &idle);
+    proc_pin(idle, ci->id);
+
     spinlock_release(&ci_list_lock);
 
     atomic_inc_int(&ncpu_up);
@@ -110,6 +116,7 @@ mp_bootstrap_aps(struct cpu_info *ci)
 {
     struct limine_smp_response *resp = g_smp_req.response;
     struct limine_smp_info **cpus;
+    struct proc *idle;
     size_t cpu_init_counter;
     uint32_t ncpu;
 
@@ -120,6 +127,10 @@ mp_bootstrap_aps(struct cpu_info *ci)
     ncpu = resp->cpu_count;
     cpu_init_counter = ncpu - 1;
     ci_list[0] = ci;
+
+    /* Pin an idle thread to the BSP */
+    spawn(&g_proc0, sched_enter, NULL, 0, &idle);
+    proc_pin(idle, 0);
 
     if (resp->cpu_count == 1) {
         pr_trace("CPU has 1 core, no APs to bootstrap...\n");
@@ -134,12 +145,6 @@ mp_bootstrap_aps(struct cpu_info *ci)
         }
 
         cpus[i]->goto_address = ap_trampoline;
-    }
-
-    /* Start up idle threads */
-    pr_trace("kicking %d idle threads...\n", ncpu);
-    for (uint32_t i = 0; i < ncpu; ++i) {
-        spawn(&g_proc0, sched_enter, NULL, 0, NULL);
     }
 
     /* Wait for all cores to be ready */
