@@ -74,6 +74,14 @@ struct __packed coredump {
     uint32_t checksum;
 };
 
+/*
+ * Sometimes we may need to pin a process
+ * to a specific CPU. This type represents
+ * the (machine independent) logical processor
+ * ID for a process to be pinned to.
+ */
+typedef int16_t affinity_t;
+
 struct proc {
     pid_t pid;
     struct exec_prog exec;
@@ -86,6 +94,7 @@ struct proc {
     struct trapframe tf;
     struct pcb pcb;
     struct proc *parent;
+    affinity_t affinity;
     void *data;
     size_t priority;
     int exit_status;
@@ -107,9 +116,13 @@ struct proc {
 #define PROC_WAITED     BIT(4)  /* Being waited on by parent */
 #define PROC_KTD        BIT(5)  /* Kernel thread */
 #define PROC_SLEEP      BIT(6)  /* Thread execution paused */
+#define PROC_PINNED     BIT(7)  /* Pinned to CPU */
 
 struct proc *this_td(void);
 struct proc *get_child(struct proc *cur, pid_t pid);
+
+void proc_pin(struct proc *td, affinity_t cpu);
+void proc_unpin(struct proc *td);
 
 void proc_reap(struct proc *td);
 void proc_coredump(struct proc *td, uintptr_t fault_addr);

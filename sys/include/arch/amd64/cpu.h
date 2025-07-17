@@ -46,6 +46,7 @@
 struct cpu_info {
     uint32_t apicid;
     uint32_t feat;
+    uint8_t id;                 /* MI Logical ID */
     uint8_t model : 4;          /* CPU model number */
     uint8_t family : 4;         /* CPU family ID */
     uint8_t has_x2apic : 1;

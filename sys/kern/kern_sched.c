@@ -78,13 +78,37 @@ sched_oneshot(bool now)
     timer.oneshot_us(usec);
 }
 
+/*
+ * Returns true if a processor is associated
+ * with a specific thread
+ *
+ * @ci: CPU that wants to take 'td'
+ * @td: Thread to check against
+ */
+static bool
+cpu_is_assoc(struct cpu_info *ci, struct proc *td)
+{
+    /*
+     * If we are not pinned, any processor is
+     * associated.
+     */
+    if (!ISSET(td->flags, PROC_PINNED)) {
+        return true;
+    }
+
+    return ci->id == td->affinity;
+}
+
 struct proc *
 sched_dequeue_td(void)
 {
     struct sched_queue *queue;
     struct proc *td = NULL;
+    struct cpu_info *ci;
+    uint32_t ncpu = 0;
 
     spinlock_acquire(&tdq_lock);
+    ci = this_cpu();
 
     for (size_t i = 0; i < SCHED_NQUEUE; ++i) {
         queue = &qlist[i];
@@ -98,6 +122,19 @@ sched_dequeue_td(void)
         }
 
         while (ISSET(td->flags, PROC_SLEEP)) {
+            td = TAILQ_NEXT(td, link);
+            if (td == NULL) {
+                break;
+            }
+        }
+
+        /*
+         * If we are on a multicore system and this isn't
+         * our process, don't take it. Some threads might
+         * be pinned to a specific processor.
+         */
+        ncpu = cpu_count();
+        while (!cpu_is_assoc(ci, td) && ncpu > 1) {
             td = TAILQ_NEXT(td, link);
             if (td == NULL) {
                 break;
@@ -247,6 +284,35 @@ sched_detach(struct proc *td)
 
     TAILQ_REMOVE(&queue->q, td, link);
     spinlock_release(&tdq_lock);
+}
+
+/*
+ * Pin a process to a specific processor
+ *
+ * @td: Process to pin
+ * @cpu: Logical processor ID to pin `td' to.
+ *
+ * XXX: 'cpu' is a machine independent value, representing
+ *      CPU<n>
+ */
+void
+proc_pin(struct proc *td, affinity_t cpu)
+{
+    td->affinity = cpu;
+    td->flags |= PROC_PINNED;
+}
+
+/*
+ * Unpin a pinned process, allowing it to be
+ * picked up by any processor
+ *
+ * @td: Process to unpin
+ */
+void
+proc_unpin(struct proc *td)
+{
+    td->affinity = 0;
+    td->flags &= ~PROC_PINNED;
 }
 
 void
