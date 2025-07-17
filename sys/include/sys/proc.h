@@ -119,6 +119,7 @@ pid_t getppid(void);
 
 scret_t sys_getpid(struct syscall_args *scargs);
 scret_t sys_getppid(struct syscall_args *scargs);
+scret_t sys_waitpid(struct syscall_args *scargs);
 
 int md_spawn(struct proc *p, struct proc *parent, uintptr_t ip);
 

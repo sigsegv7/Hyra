@@ -28,6 +28,7 @@
  */
 
 #include <sys/spawn.h>
+#include <sys/wait.h>
 #include <sys/proc.h>
 #include <sys/exec.h>
 #include <sys/mman.h>
@@ -94,6 +95,35 @@ spawn_thunk(void)
         exit1(this_td(), 0);
     }
     __builtin_unreachable();
+}
+
+pid_t
+waitpid(pid_t pid, int *wstatus, int options)
+{
+    struct proc *child, *td;
+    pid_t ret;
+
+    td = this_td();
+    child = get_child(td, pid);
+
+    if (child == NULL) {
+        return -1;
+    }
+
+    /* Wait for it to be done */
+    while (!ISSET(child->flags, PROC_ZOMB)) {
+        sched_yield();
+    }
+
+
+    /* Give back the status */
+    if (wstatus != NULL) {
+        copyout(&child->exit_status, wstatus, sizeof(*wstatus));
+    }
+
+    ret = child->pid;
+    proc_reap(child);
+    return ret;
 }
 
 /*
@@ -217,6 +247,27 @@ get_child(struct proc *cur, pid_t pid)
     }
 
     return NULL;
+}
+
+/*
+ * arg0: PID
+ * arg1: wstatus
+ * arg2: options
+ *
+ * Returns PID of terminated child, returns
+ * -1 on failure.
+ */
+scret_t
+sys_waitpid(struct syscall_args *scargs)
+{
+    pid_t pid;
+    int *u_wstatus;
+    int options;
+
+    pid = scargs->arg0;
+    u_wstatus = (void *)scargs->arg1;
+    options = scargs->arg2;
+    return waitpid(pid, u_wstatus, options);
 }
 
 /*

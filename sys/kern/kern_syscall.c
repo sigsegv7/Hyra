@@ -59,6 +59,7 @@ scret_t(*g_sctab[])(struct syscall_args *) = {
     sys_getppid, /* SYS_getppid */
     sys_setuid,  /* SYS_setuid */
     sys_getuid,  /* SYS_getuid */
+    sys_waitpid, /* SYS_waitpid */
 };
 
 const size_t MAX_SYSCALLS = NELEM(g_sctab);

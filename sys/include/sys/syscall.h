@@ -58,6 +58,7 @@
 #define SYS_getppid 17
 #define SYS_setuid  18
 #define SYS_getuid  19
+#define SYS_waitpid 20
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */
