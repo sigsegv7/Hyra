@@ -60,5 +60,11 @@ struct sched_queue {
     size_t nthread;
 };
 
+struct proc *sched_dequeue_td(void);
+void mi_sched_switch(struct proc *from);
+
+void md_sched_switch(struct trapframe *tf);
+void sched_oneshot(bool now);
+
 #endif  /* _KERNEL */
 #endif  /* !_SYS_SCHEDVAR_H_ */

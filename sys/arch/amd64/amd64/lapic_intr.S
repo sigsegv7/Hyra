@@ -33,6 +33,6 @@
     .globl lapic_tmr_isr
 INTRENTRY(lapic_tmr_isr, handle_lapic_tmr)
 handle_lapic_tmr:
-    call sched_switch       // Context switch per every timer IRQ
+    call md_sched_switch    // Context switch per every timer IRQ
     call lapic_eoi          // Done! Signal that we finished to the Local APIC
     retq

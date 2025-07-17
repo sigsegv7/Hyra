@@ -45,7 +45,7 @@
 
 #define pr_trace(fmt, ...) kprintf("ksched: " fmt, ##__VA_ARGS__)
 
-void sched_switch(struct trapframe *tf);
+void md_sched_switch(struct trapframe *tf);
 void sched_accnt_init(void);
 
 static sched_policy_t policy = SCHED_POLICY_MLFQ;
@@ -65,7 +65,7 @@ __cacheline_aligned static struct spinlock tdq_lock = {0};
 /*
  * Perform timer oneshot
  */
-static inline void
+void
 sched_oneshot(bool now)
 {
     struct timer timer;
@@ -78,25 +78,7 @@ sched_oneshot(bool now)
     timer.oneshot_us(usec);
 }
 
-/*
- * Save thread state and enqueue it back into one
- * of the ready queues.
- */
-static void
-sched_save_td(struct proc *td, struct trapframe *tf)
-{
-    /*
-     * Save trapframe to process structure only
-     * if PROC_EXEC is not set.
-     */
-    if (!ISSET(td->flags, PROC_EXEC)) {
-        memcpy(&td->tf, tf, sizeof(td->tf));
-    }
-
-    sched_enqueue_td(td);
-}
-
-static struct proc *
+struct proc *
 sched_dequeue_td(void)
 {
     struct sched_queue *queue;
@@ -198,52 +180,22 @@ td_pri_update(struct proc *td)
     }
 }
 
-void
-sched_switch_to(struct trapframe *tf, struct proc *td)
-{
-    struct cpu_info *ci;
-    struct pcb *pcbp;
-
-    ci = this_cpu();
-
-    if (tf != NULL) {
-        memcpy(tf, &td->tf, sizeof(*tf));
-    }
-
-    ci->curtd = td;
-    pcbp = &td->pcb;
-    pmap_switch_vas(pcbp->addrsp);
-}
-
 /*
- * Perform a context switch.
+ * MI work to be done during a context
+ * switch. Called by md_sched_switch()
  */
 void
-sched_switch(struct trapframe *tf)
+mi_sched_switch(struct proc *from)
 {
-    struct proc *next_td, *td;
-    struct cpu_info *ci;
-
-    ci = this_cpu();
-    td = ci->curtd;
-    cons_detach();
-
-    if (td != NULL) {
-        if (td->pid == 0)
+    if (from != NULL) {
+        if (from->pid == 0)
             return;
 
-        dispatch_signals(td);
-        td_pri_update(td);
-        sched_save_td(td, tf);
+        dispatch_signals(from);
+        td_pri_update(from);
     }
 
-    if ((next_td = sched_dequeue_td()) == NULL) {
-        sched_oneshot(false);
-        return;
-    }
-
-    sched_switch_to(tf, next_td);
-    sched_oneshot(false);
+    cons_detach();
 }
 
 /*

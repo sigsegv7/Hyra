@@ -32,6 +32,8 @@
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/exec.h>
+#include <sys/sched.h>
+#include <sys/schedvar.h>
 #include <machine/frame.h>
 #include <machine/gdt.h>
 #include <machine/cpu.h>
@@ -219,4 +221,68 @@ md_spawn(struct proc *p, struct proc *parent, uintptr_t ip)
     p->stack_base = stack_base;
     tfp->rsp = ALIGN_DOWN((stack_base + PROC_STACK_SIZE) - 1, 16);
     return 0;
+}
+
+/*
+ * Save thread state and enqueue it back into one
+ * of the ready queues.
+ */
+static void
+sched_save_td(struct proc *td, struct trapframe *tf)
+{
+    /*
+     * Save trapframe to process structure only
+     * if PROC_EXEC is not set.
+     */
+    if (!ISSET(td->flags, PROC_EXEC)) {
+        memcpy(&td->tf, tf, sizeof(td->tf));
+    }
+
+    sched_enqueue_td(td);
+}
+
+static void
+sched_switch_to(struct trapframe *tf, struct proc *td)
+{
+    struct cpu_info *ci;
+    struct pcb *pcbp;
+
+    ci = this_cpu();
+
+    if (tf != NULL) {
+        memcpy(tf, &td->tf, sizeof(*tf));
+    }
+
+    ci->curtd = td;
+    pcbp = &td->pcb;
+    pmap_switch_vas(pcbp->addrsp);
+}
+
+/*
+ * Perform a context switch.
+ */
+void
+md_sched_switch(struct trapframe *tf)
+{
+    struct proc *next_td, *td;
+    struct cpu_info *ci;
+
+    ci = this_cpu();
+    td = ci->curtd;
+    mi_sched_switch(td);
+
+    if (td != NULL) {
+        if (td->pid == 0)
+            return;
+
+        sched_save_td(td, tf);
+    }
+
+    if ((next_td = sched_dequeue_td()) == NULL) {
+        sched_oneshot(false);
+        return;
+    }
+
+    sched_switch_to(tf, next_td);
+    sched_oneshot(false);
 }

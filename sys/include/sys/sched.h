@@ -50,9 +50,8 @@ struct sched_stat {
 
 void sched_stat(struct sched_stat *statp);
 void sched_init(void);
-void sched_yield(void);
 
-void sched_switch_to(struct trapframe *tf, struct proc *td);
+void sched_yield(void);
 void sched_detach(struct proc *td);
 
 __dead void sched_enter(void);
