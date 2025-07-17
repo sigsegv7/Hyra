@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/proc.h>
+#include <sys/sched.h>
 #include <sys/spinlock.h>
 #include <machine/tss.h>
 
@@ -53,6 +54,7 @@ struct cpu_info {
     size_t lapic_tmr_freq;
     uint8_t irq_mask;
     vaddr_t shootdown_va;
+    struct sched_cpu stat;
     struct tss_entry *tss;
     struct proc *curtd;
     struct spinlock lock;
@@ -67,6 +69,8 @@ void cpu_enable_smep(void);
 void cpu_disable_smep(void);
 
 struct cpu_info *cpu_get(uint32_t index);
+struct sched_cpu *cpu_get_stat(uint32_t cpu_index);
+
 uint32_t cpu_count(void);
 void cpu_shootdown_tlb(vaddr_t va);
 

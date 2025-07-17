@@ -81,6 +81,24 @@ cpu_get(uint32_t index)
     return ci_list[index];
 }
 
+/*
+ * Grab the CPU stat structured of a specified
+ * processor
+ *
+ * @cpu_index: CPU index number
+ */
+struct sched_cpu *
+cpu_get_stat(uint32_t cpu_index)
+{
+    struct cpu_info *ci;
+
+    if ((ci = cpu_get(cpu_index)) == NULL) {
+        return NULL;
+    }
+
+    return &ci->stat;
+}
+
 uint32_t
 cpu_count(void)
 {

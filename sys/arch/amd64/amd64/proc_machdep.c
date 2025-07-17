@@ -245,6 +245,7 @@ static void
 sched_switch_to(struct trapframe *tf, struct proc *td)
 {
     struct cpu_info *ci;
+    struct sched_cpu *cpustat;
     struct pcb *pcbp;
 
     ci = this_cpu();
@@ -252,6 +253,10 @@ sched_switch_to(struct trapframe *tf, struct proc *td)
     if (tf != NULL) {
         memcpy(tf, &td->tf, sizeof(*tf));
     }
+
+    /* Update stats */
+    cpustat = &ci->stat;
+    cpustat->nswitch++;
 
     ci->curtd = td;
     pcbp = &td->pcb;

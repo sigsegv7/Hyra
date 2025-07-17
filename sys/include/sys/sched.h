@@ -32,6 +32,17 @@
 
 #include <sys/proc.h>
 #include <sys/cdefs.h>
+#include <sys/limits.h>
+
+/*
+ * Scheduler CPU information
+ *
+ * @nswitch: Number of context switches
+ * @idle: Number of milliseconds idle
+ */
+struct sched_cpu {
+    uint32_t nswitch;
+};
 
 /*
  * Scheduler statistics
@@ -44,6 +55,7 @@ struct sched_stat {
     size_t nproc;
     uint16_t ncpu;
     uint32_t quantum_usec;
+    struct sched_cpu cpus[CPU_MAX];
 };
 
 #if defined(_KERNEL)

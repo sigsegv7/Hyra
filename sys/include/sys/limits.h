@@ -35,7 +35,5 @@
 #define SSIZE_MAX 32767
 #define ARG_MAX 4096
 #define CHAR_BIT 8
-#if defined(_KERNEL)
 #define CPU_MAX 256
-#endif  /* _KERNEL */
 #endif  /* !_SYS_LIMITS_H_ */

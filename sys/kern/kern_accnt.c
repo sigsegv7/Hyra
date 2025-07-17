@@ -66,9 +66,23 @@ ctl_stat_read(struct ctlfs_dev *cdp, struct sio_txn *sio)
 void
 sched_stat(struct sched_stat *statp)
 {
+    struct sched_cpu *cpustat;
+
     statp->nproc = atomic_load_64(&g_nthreads);
     statp->ncpu = cpu_count();
     statp->quantum_usec = DEFAULT_TIMESLICE_USEC;
+
+    /*
+     * Setup the per-cpu info/statistics
+     */
+    for (int i = 0; i < CPU_MAX; ++i) {
+        cpustat = cpu_get_stat(i);
+        if (cpustat == NULL) {
+            break;
+        }
+
+        statp->cpus[i] = *cpustat;
+    }
 }
 
 void
