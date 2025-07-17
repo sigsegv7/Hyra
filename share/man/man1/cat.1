@@ -25,24 +25,23 @@
 .\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 .\" POSSIBILITY OF SUCH DAMAGE.
 .Dd Jul 17 2025
-.Dt MEX 1
+.Dt CAT 1
 .Os HYRA
 .Sh NAME
-.Nm mex - perform a hexdump on a file
+.Nm cat - concatenate files and print to standard output
 .Sh SYNOPSIS
-mex [ /path/to/file ]
+cat [FILE] ...
 
 .Sh DESCRIPTION
 
 The
 .Nm
-command dumps the bytes of a given file (specified by a path) in
-base-16 (hexadecimal) representation. It is useful for debugging,
-binary analysis, and satisfying ones nagging curiosity.
+command can be used concatenate files or simply write their contents
+to standard output.
 
 .Sh SEE ALSO
 
-cat(1)
+mex(1)
 
 .Sh AUTHORS
 .An Ian Moffett Aq Mt ian@osmora.org
