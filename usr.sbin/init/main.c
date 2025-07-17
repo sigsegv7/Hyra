@@ -46,6 +46,7 @@ main(int argc, char **argv)
     start_argv[1] = NULL;
 
     /* Start the login manager */
-    spawn(login_argv[0], login_argv, envp, SPAWN_WAIT);
+    spawn(login_argv[0], login_argv, envp, 0);
+    for (;;);
     return 0;
 }

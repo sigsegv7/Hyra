@@ -104,6 +104,7 @@ check_user(char *alias, char *hash, char *entry)
     short have_uid = 0;
     short have_shell = 0;
     uid_t uid = -1;
+    pid_t shell_pid;
 
     if (alias == NULL || entry == NULL) {
         return -EINVAL;
@@ -172,7 +173,7 @@ check_user(char *alias, char *hash, char *entry)
 
     setuid(uid);
     shell_argv[0] = shell_path;
-    spawn(shell_argv[0], shell_argv, envp, SPAWN_WAIT);
+    shell_pid = spawn(shell_argv[0], shell_argv, envp, 0);
     return 0;
 }
 

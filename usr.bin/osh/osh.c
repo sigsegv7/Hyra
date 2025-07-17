@@ -31,6 +31,7 @@
 #include <sys/cdefs.h>
 #include <sys/reboot.h>
 #include <sys/spawn.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -250,16 +251,11 @@ builtin_run(struct builtin_cmd *cmd, int argc, char *argv[])
 }
 
 static int
-cmd_run(const char *input, int argc, char *argv[], bool wait)
+cmd_run(const char *input, int argc, char *argv[])
 {
     char bin_path[512];
     char *envp[1] = { NULL };
-    int error, spawn_flags = 0;
-
-    /* Should we wait or daemonize? */
-    if (wait) {
-        spawn_flags |= SPAWN_WAIT;
-    }
+    pid_t child;
 
     /*
      * If we can access the raw input as a file, try to
@@ -268,11 +264,11 @@ cmd_run(const char *input, int argc, char *argv[], bool wait)
      * path directly into the console.
      */
     if (access(input, F_OK) == 0) {
-        error = spawn(input, argv, envp, spawn_flags);
-        if (error < 0) {
-            return error;
+        child = spawn(input, argv, envp, 0);
+        if (child < 0) {
+            return child;
         }
-        return 0;
+        return child;
     }
 
     snprintf(bin_path, sizeof(bin_path), "/usr/bin/%s", input);
@@ -282,11 +278,11 @@ cmd_run(const char *input, int argc, char *argv[], bool wait)
         return -1;
     }
 
-    if ((error = spawn(bin_path, argv, envp, spawn_flags)) < 0) {
-        return error;
+    if ((child = spawn(bin_path, argv, envp, 0)) < 0) {
+        return child;
     }
 
-    return 0;
+    return child;
 }
 
 /*
@@ -295,27 +291,29 @@ cmd_run(const char *input, int argc, char *argv[], bool wait)
  * @input: Command input
  * @argc: Argument count
  * @argv: Argument vector
- * @wait: If false, program will be daemonized
  */
-static void
-command_match(const char *input, int argc, char *argv[], bool wait)
+static int
+command_match(const char *input, int argc, char *argv[])
 {
     int found = 0;
     int i;
+    pid_t child = -1;
 
     for (i = 0; cmds[i].name != NULL; i++) {
         if (strcmp(input, cmds[i].name) == 0) {
             builtin_run(&cmds[i], argc, argv);
             found = 1;
-            break;
         }
     }
 
     if (found == 0) {
-        if (cmd_run(input, argc, argv, wait) < 0) {
+        if ((child = cmd_run(input, argc, argv)) < 0) {
             puts("Unrecognized command");
+            return -1;
         }
     }
+
+    return child;
 }
 
 static void
@@ -335,6 +333,7 @@ open_script(const char *pathname)
     int fd, argc, buf_i = 0;
     char c, *input, *argv[16];
     char buf[256];
+    pid_t child;
 
     fd = open(pathname, O_RDONLY);
     if (fd < 0) {
@@ -361,7 +360,11 @@ open_script(const char *pathname)
         if (c == '\n') {
             buf[buf_i] = '\0';
             argc = parse_args(buf, argv, sizeof(argv));
-            command_match(buf, argc, argv, true);
+
+            child = command_match(buf, argc, argv);
+            if (child > 0) {
+                waitpid(child, NULL, 0);
+            }
 
             argv[0] = NULL;
             argv[1] = NULL;
@@ -381,6 +384,7 @@ main(int argc, char **argv)
     int stdout_fd;
     char *input, *prog_argv[16], *p;
     char c;
+    pid_t child;
 
     if (argc > 1) {
         return open_script(argv[1]);
@@ -406,7 +410,11 @@ main(int argc, char **argv)
             continue;
         }
 
-        command_match(input, prog_argc, prog_argv, true);
+        child = command_match(input, prog_argc, prog_argv);
+        if (child > 0) {
+            waitpid(child, NULL, 0);
+        }
+
         found = 0;
         buf[0] = '\0';
     }

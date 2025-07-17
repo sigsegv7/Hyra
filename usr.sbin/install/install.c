@@ -32,6 +32,7 @@
 #include <sys/fbdev.h>
 #include <sys/reboot.h>
 #include <sys/spawn.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <stdio.h>
@@ -85,6 +86,7 @@ pre_installer(void)
     char *argv[] = { "/usr/bin/osh", NULL };
     char *envp[] = { NULL };
     char c;
+    pid_t child = -1;
 
     puts("[S]hell/[I]nstall");
     for (;;) {
@@ -92,12 +94,16 @@ pre_installer(void)
         if (c == 's') {
             puts("\033[0m");
             installer_clearscr(0x000000, false);
-            spawn(argv[0], argv, envp, SPAWN_WAIT);
+            child = spawn(argv[0], argv, envp, 0);
             installer_clearscr(INSTALLER_BG, true);
             break;
         } else if (c == 'i') {
             break;
         }
+    }
+
+    if (child > 0) {
+        waitpid(child, NULL, 0);
     }
 }
 

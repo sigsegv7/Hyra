@@ -203,24 +203,6 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
     signals_init(newproc);
     sched_enqueue_td(newproc);
     pid = newproc->pid;
-
-    if (ISSET(flags, SPAWN_WAIT)) {
-        cur->flags |= PROC_SLEEP;
-
-        while (ISSET(cur->flags, PROC_SLEEP)) {
-            sched_yield();
-        }
-        while (!ISSET(newproc->flags, PROC_ZOMB)) {
-            sched_yield();
-        }
-
-        if (newproc->exit_status < 0) {
-            pid = newproc->exit_status;
-        }
-
-        proc_reap(newproc);
-    }
-
     return pid;
 }
 
