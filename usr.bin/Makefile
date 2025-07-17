@@ -20,3 +20,4 @@ all:
 	make -C readcore/ $(ARGS)
 	make -C login/ $(ARGS)
 	make -C sleep/ $(ARGS)
+	make -C kstat/ $(ARGS)
