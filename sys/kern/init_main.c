@@ -52,6 +52,7 @@
 #endif  /* _INSTALL_MEDIA  */
 
 struct proc g_proc0;
+struct proc *g_init;
 
 static void
 copyright(void)
@@ -114,7 +115,7 @@ main(void)
     memset(&g_proc0, 0, sizeof(g_proc0));
 
     /* Startup pid 1 */
-    spawn(&g_proc0, start_init, NULL, 0, NULL);
+    spawn(&g_proc0, start_init, NULL, 0, &g_init);
     md_inton();
 
     /* Load all early drivers */
