@@ -57,6 +57,7 @@
 struct verb_handler;
 
 static int poke_nerve(const char *nerve, struct verb_handler *h);
+static int nerve_to_def(const char *nerve);
 
 /*
  * Contains verb handlers called when a verb
@@ -170,24 +171,18 @@ poke_nerve(const char *nerve, struct verb_handler *h)
         return -EINVAL;
     }
 
-    /*
-     * Now we need to parse the nerve string
-     * and see if it matches with anything
-     * that we know.
-     */
-    switch (*nerve) {
-    case 'c':
-        if (strcmp(nerve, SNERVE_CONSATTR) == 0) {
-            nerve_idx = NERVE_CONSATTR;
-        } else if (strcmp(nerve, SNERVE_CONSFEAT) == 0) {
-            nerve_idx = NERVE_CONSFEAT;
-        }
+    /* Grab the nerve table index */
+    nerve_idx = nerve_to_def(nerve);
+    if (nerve_idx == NERVE_UNKNOWN) {
+        printf("[&^]: This is not my nerve.\n");
+        return -1;
+    }
 
-        error = get_nerve_payload(h->argc, h->argv, &payload);
-        if (error < 0) {
-            printf("[!] nerve error\n");
-            return -1;
-        }
+    /* Grab the payload passed by the user */
+    error = get_nerve_payload(h->argc, h->argv, &payload);
+    if (error < 0) {
+        printf("[!] nerve error\n");
+        return -1;
     }
 
     switch (nerve_idx) {
@@ -218,11 +213,36 @@ poke_nerve(const char *nerve, struct verb_handler *h)
             break;
         }
     default:
-        printf("[&^]: This is not my nerve.\n");
         break;
     }
 
     return -1;
+}
+
+/*
+ * Convert a nerve name into a numeric nerve
+ * definition
+ *
+ * @nerve: Nerve name to convert
+ */
+static int
+nerve_to_def(const char *nerve)
+{
+    /*
+     * Now we need to parse the nerve string
+     * and see if it matches with anything
+     * that we know.
+     */
+    switch (*nerve) {
+    case 'c':
+        if (strcmp(nerve, SNERVE_CONSATTR) == 0) {
+            return NERVE_CONSATTR;
+        } else if (strcmp(nerve, SNERVE_CONSFEAT) == 0) {
+            return NERVE_CONSFEAT;
+        }
+    }
+
+    return NERVE_UNKNOWN;
 }
 
 /*
