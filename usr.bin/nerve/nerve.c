@@ -45,9 +45,11 @@
 /* Nerve numeric defs (see string defs) */
 #define NERVE_UNKNOWN  -1
 #define NERVE_CONSATTR 0x0000
+#define NERVE_CONSFEAT 0x0001
 
 /* Nerve string defs (see numeric defs) */
 #define SNERVE_CONSATTR "consattr"
+#define SNERVE_CONSFEAT "consfeat"
 
 /* Misc defines */
 #define NERVE_PACKET_LEN 16
@@ -106,6 +108,7 @@ help(void)
         "verb 'poke': Poke a control (/ctl) nerve\n"
         "???????????????? NERVES ????????????????\n"
         "consattr: Console attributes\n"
+        "consfeat: Console features\n"
     );
 }
 
@@ -172,12 +175,14 @@ poke_nerve(const char *nerve, struct verb_handler *h)
     case 'c':
         if (strcmp(nerve, SNERVE_CONSATTR) == 0) {
             nerve_idx = NERVE_CONSATTR;
-            error = get_nerve_payload(h->argc, h->argv, &payload);
+        } else if (strcmp(nerve, SNERVE_CONSFEAT) == 0) {
+            nerve_idx = NERVE_CONSFEAT;
+        }
 
-            if (error < 0) {
-                printf("[!] nerve error\n");
-                return -1;
-            }
+        error = get_nerve_payload(h->argc, h->argv, &payload);
+        if (error < 0) {
+            printf("[!] nerve error\n");
+            return -1;
         }
     }
 
@@ -195,6 +200,16 @@ poke_nerve(const char *nerve, struct verb_handler *h)
             close(fd);
             break;
         }
+    case NERVE_CONSFEAT:
+        {
+            struct console_feat f;
+            int fd;
+
+            f.ansi_esc = payload.packet[0] & 0xFF;
+            f.show_curs = payload.packet[1] & 0xFF;
+
+            fd = open("/ctl/console/feat", O_WRONLY);
+            write(fd, &f, sizeof(f));
             close(fd);
             break;
         }
