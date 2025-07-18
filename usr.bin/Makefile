@@ -22,3 +22,4 @@ all:
 	make -C sleep/ $(ARGS)
 	make -C kstat/ $(ARGS)
 	make -C nerve/ $(ARGS)
+	make -C whoami/ $(ARGS)
