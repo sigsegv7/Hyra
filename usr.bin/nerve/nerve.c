@@ -191,7 +191,10 @@ poke_nerve(const char *nerve, struct verb_handler *h)
             c.cursor_y = payload.packet[1];
 
             fd = open("/ctl/console/attr", O_WRONLY);
-            write(fd, payload.packet, sizeof(c));
+            write(fd, &c, sizeof(c));
+            close(fd);
+            break;
+        }
             close(fd);
             break;
         }
