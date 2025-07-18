@@ -38,9 +38,11 @@
 /* Verb numeric defs (see string defs) */
 #define VERB_UNKNOWN    -1
 #define VERB_POKE       0x0000
+#define VERB_PEEK       0x0001
 
 /* Verb string defs (see numeric defs) */
 #define SVERB_POKE "poke"
+#define SVERB_PEEK "peek"
 
 /* Nerve numeric defs (see string defs) */
 #define NERVE_UNKNOWN  -1
@@ -57,6 +59,7 @@
 struct verb_handler;
 
 static int poke_nerve(const char *nerve, struct verb_handler *h);
+static int peek_nerve(const char *nerve, struct verb_handler *h);
 static int nerve_to_def(const char *nerve);
 
 /*
@@ -94,7 +97,8 @@ struct nerve_payload {
  * its respective handler is called.
  */
 static struct verb_handler verbtab[] = {
-    { poke_nerve }
+    { poke_nerve },
+    { peek_nerve }
 };
 
 /*
@@ -147,6 +151,62 @@ get_nerve_payload(int argc, char *argv[], struct nerve_payload *res)
         payload_str = argv[i];
         datum = atoi(payload_str);
         res->packet[res->len++] = datum;
+    }
+
+    return 0;
+}
+
+/*
+ * Peek at a control nerve located in /ctl/
+ *
+ * @nerve: Name of nerve to peek at
+ * @h: Verb handler, instance of self
+ *
+ * Returns less than zero if the nerve does
+ * not match.
+ */
+static int
+peek_nerve(const char *nerve, struct verb_handler *h)
+{
+    int error, nerve_idx = -1;
+
+    if (nerve == NULL || h == NULL) {
+        return -EINVAL;
+    }
+
+    /* Grab the nerve table index */
+    nerve_idx = nerve_to_def(nerve);
+    if (nerve_idx == NERVE_UNKNOWN) {
+        printf("[&^]: This is not my nerve.\n");
+        return -1;
+    }
+
+    switch (nerve_idx) {
+    case NERVE_CONSATTR:
+        {
+            struct console_attr c;
+            int fd;
+
+            fd = open("/ctl/console/attr", O_RDONLY);
+            read(fd, &c, sizeof(c));
+            printf("(cursx=%d, cursy=%d)\n", c.cursor_x, c.cursor_y);
+            close(fd);
+            break;
+        }
+    case NERVE_CONSFEAT:
+        {
+            struct console_feat f;
+            int fd;
+
+            fd = open("/ctl/console/feat", O_RDONLY);
+            read(fd, &f, sizeof(f));
+            printf("ansi_esc=%d\n", f.ansi_esc);
+            printf("show_curs=%d\n", f.show_curs);
+            close(fd);
+            break;
+        }
+    default:
+        break;
     }
 
     return 0;
@@ -262,8 +322,6 @@ verb_to_def(const char *verb)
      * Parse the verb and try to match it against
      * a constant.
      *
-     * TODO: Add 'peek'
-     *
      * XXX: Here we are first matching the first character
      *      before we match the entire verb as that is more
      *      efficient than scanning each entire string until
@@ -273,6 +331,9 @@ verb_to_def(const char *verb)
     case 'p':
         if (strcmp(verb, SVERB_POKE) == 0) {
             return VERB_POKE;
+        }
+        if (strcmp(verb, SVERB_PEEK) == 0) {
+            return VERB_PEEK;
         }
     default:
         printf("[!] bad verb \"%s\"\n", verb);

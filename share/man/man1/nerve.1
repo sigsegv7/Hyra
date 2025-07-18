@@ -34,7 +34,9 @@ nerve <verb> [ .. payload for pokes ..]
 
 verb 'poke': Poke a nerve
 
-nerve ending 'consattr': Console attributes <x, y>
+verb 'peek': Peek at a nerve
+
+nerve ending 'consattr': Console attributes
 
 nerve ending 'consfeat': Console features
 
@@ -51,6 +53,20 @@ is moving the cursor position to the HOME (0, 0) position:
 nerve poke consattr 0  0
       /       /    /  /
      verb  nerve [x] [y]
+.Ed
+
+A nerve may also be peeked at by using the 'peek' verb. Here is an example of the usage
+of this verb:
+
+.Bd -literal
+nerve peek consfeat
+      /       /
+     verb  nerve
+
+output:
+    ansi_esc=1
+    show_curs=0
+    ...
 .Ed
 
 .Sh AUTHORS
