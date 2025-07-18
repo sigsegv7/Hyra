@@ -139,6 +139,10 @@ get_nerve_payload(int argc, char *argv[], struct nerve_payload *res)
 
     /* Start grabbing bytes */
     for (int i = 3; i < argc; ++i) {
+        if (res->len >= NERVE_PACKET_LEN) {
+            printf("[*] truncated packet\n");
+            break;
+        }
         payload_str = argv[i];
         datum = atoi(payload_str);
         res->packet[res->len++] = datum;
