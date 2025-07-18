@@ -125,7 +125,7 @@ static int
 get_nerve_payload(int argc, char *argv[], struct nerve_payload *res)
 {
     char *payload_str;
-    uint8_t datum;
+    uint32_t datum;
 
     /* Do we have a nerve payload? */
     if (argc < 4) {
