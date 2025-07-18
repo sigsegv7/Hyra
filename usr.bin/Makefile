@@ -21,3 +21,4 @@ all:
 	make -C login/ $(ARGS)
 	make -C sleep/ $(ARGS)
 	make -C kstat/ $(ARGS)
+	make -C nerve/ $(ARGS)
