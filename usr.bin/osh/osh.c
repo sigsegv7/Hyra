@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/reboot.h>
+#include <sys/errno.h>
 #include <sys/spawn.h>
 #include <sys/wait.h>
 #include <fcntl.h>
@@ -66,7 +67,6 @@
 #define PROMPT "[%s::osmora]~ "
 
 static char buf[64];
-static uint8_t buf_i;
 static int running;
 static int bell_fd;
 static bool bs_bell = true; /* Beep on backspace */
@@ -194,14 +194,18 @@ parse_args(char *input, char *argv[], int max_args)
     return argc;
 }
 
-static char *
+/*
+ * Grab a string from stdin and return
+ * the resulting offset within the input
+ * buffer we are at.
+ */
+static uint8_t
 getstr(void)
 {
     char c;
     int input;
     uint32_t beep_payload;
-
-    buf_i = 0;
+    uint8_t buf_i = 0;
 
     /*
      * Prepare the beep payload @ 500 Hz
@@ -224,7 +228,7 @@ getstr(void)
         if (c == '\n') {
             buf[buf_i] = '\0';
             putchar('\n');
-            return buf;
+            return buf_i;
         }
 
         /* handle backspaces and DEL */
@@ -329,13 +333,45 @@ script_skip_comment(int fd)
     }
 }
 
+/*
+ * Parse a single line typed in from the
+ * user.
+ *
+ * @input: Input line
+ */
+static int
+parse_line(char *input)
+{
+    int argc;
+    char *argv[16];
+    pid_t child;
+
+    /* Ensure the aux vector is zeored */
+    memset(argv, 0, sizeof(argv));
+
+    /*
+     * Grab args from the user, there should be
+     * at least one.
+     */
+    argc = parse_args(input, argv, sizeof(argv));
+    if (argc == 0) {
+        return -EAGAIN;
+    }
+
+    child = command_match(input, argc, argv);
+    if (child > 0) {
+        waitpid(child, NULL, 0);
+    }
+
+    return 0;
+}
+
 static int
 open_script(const char *pathname)
 {
     int fd, argc, buf_i = 0;
-    char c, *input, *argv[16];
+    char c, *input;
     char buf[256];
-    pid_t child;
 
     fd = open(pathname, O_RDONLY);
     if (fd < 0) {
@@ -361,15 +397,7 @@ open_script(const char *pathname)
 
         if (c == '\n') {
             buf[buf_i] = '\0';
-            argc = parse_args(buf, argv, sizeof(argv));
-
-            child = command_match(buf, argc, argv);
-            if (child > 0) {
-                waitpid(child, NULL, 0);
-            }
-
-            argv[0] = NULL;
-            argv[1] = NULL;
+            parse_line(buf);
             buf_i = 0;
             continue;
         }
@@ -384,7 +412,8 @@ main(int argc, char **argv)
 {
     int found, prog_argc;
     int stdout_fd;
-    char *input, *prog_argv[16], *p;
+    uint8_t buf_i;
+    char *p;
     char c;
     pid_t child;
 
@@ -392,32 +421,23 @@ main(int argc, char **argv)
         return open_script(argv[1]);
     }
 
-    buf_i = 0;
     running = 1;
-    found = 0;
     bell_fd = open("/dev/beep", O_WRONLY);
-
     puts(WELCOME);
+
     while (running) {
-        memset(prog_argv, 0, sizeof(prog_argv));
         printf(PROMPT, getlogin());
 
-        input = getstr();
-        if (input[0] == '\0') {
+        buf_i = getstr();
+        if (buf[0] == '\0') {
             continue;
         }
 
-        prog_argc = parse_args(input, prog_argv, sizeof(prog_argv));
-        if (prog_argc == 0) {
+        buf[buf_i] = '\0';
+        if (parse_line(buf) < 0) {
             continue;
         }
 
-        child = command_match(input, prog_argc, prog_argv);
-        if (child > 0) {
-            waitpid(child, NULL, 0);
-        }
-
-        found = 0;
         buf[0] = '\0';
     }
     return 0;
