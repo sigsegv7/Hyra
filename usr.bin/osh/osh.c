@@ -84,6 +84,15 @@ struct builtin_cmd {
     void (*func)(int argc, char *argv[]);
 };
 
+/*
+ * Results after parsing a command
+ *
+ * @bg: Run command in background
+ */
+struct parse_state {
+    uint8_t bg : 1;
+};
+
 static struct builtin_cmd cmds[] = {
     {"help",cmd_help},
     {"exit",cmd_exit},
@@ -146,7 +155,7 @@ cmd_bell(int argc, char *argv[])
 }
 
 static int
-parse_args(char *input, char *argv[], int max_args)
+parse_args(char *input, char *argv[], int max_args, struct parse_state *p)
 {
     int argc = 0;
 
@@ -155,6 +164,10 @@ parse_args(char *input, char *argv[], int max_args)
         return 0;
     }
 
+    /* setup default state */
+    p->bg = 0;
+
+    /* parse loop */
     while (*input != '\0') {
         /* skip leading spaces */
         while (*input == ' ') {
@@ -169,6 +182,11 @@ parse_args(char *input, char *argv[], int max_args)
         /* comment? */
         if (*input == COMMENT) {
             break;
+        }
+
+        /* run in background? */
+        if (*input == '&') {
+            p->bg = 1;
         }
 
         if (argc < max_args) {
@@ -344,6 +362,7 @@ parse_line(char *input)
 {
     int argc;
     char *argv[16];
+    struct parse_state state = {0};
     pid_t child;
 
     /* Ensure the aux vector is zeored */
@@ -353,13 +372,13 @@ parse_line(char *input)
      * Grab args from the user, there should be
      * at least one.
      */
-    argc = parse_args(input, argv, sizeof(argv));
+    argc = parse_args(input, argv, sizeof(argv), &state);
     if (argc == 0) {
         return -EAGAIN;
     }
 
     child = command_match(input, argc, argv);
-    if (child > 0) {
+    if (child > 0 && !state.bg) {
         waitpid(child, NULL, 0);
     }
 
