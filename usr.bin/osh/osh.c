@@ -39,7 +39,9 @@
 #include <string.h>
 #include <stdio.h>
 
+#define is_printable(C) ((C) >= 32 && (C) <= 126)
 #define is_ascii(C) ((C) >= 0 && (C) <= 128)
+
 #define COMMENT '@'
 #define WELCOME \
     ":::::::::::::::::::::::::::::::::::::::\n" \
@@ -233,7 +235,7 @@ getstr(void)
             } else if (bell_fd > 0 && bs_bell) {
                 write(bell_fd, &beep_payload, sizeof(beep_payload));
             }
-        } else if (is_ascii(c) && buf_i < sizeof(buf) - 1) {
+        } else if (is_printable(c) && buf_i < sizeof(buf) - 1) {
             /* write to fd and add to buffer */
             buf[buf_i++] = c;
             putchar(c);
