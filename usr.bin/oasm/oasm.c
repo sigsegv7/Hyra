@@ -35,11 +35,12 @@
 #define OASM_DBG
 #include <oasm/log.h>
 
-static struct oasm_state state;
+struct oasm_state g_state;
 
 static void
 oasm_start(struct oasm_state *state)
 {
+    state->line = 1;
     parse_enter(state);
 }
 
@@ -51,13 +52,14 @@ main(int argc, char **argv)
         return -1;
     }
 
-    state.in_fd = open(argv[1], O_RDONLY);
-    if (state.in_fd < 0) {
+    g_state.in_fd = open(argv[1], O_RDONLY);
+    if (g_state.in_fd < 0) {
         printf("could not open \"%s\"\n", argv[1]);
         return -1;
     }
 
-    oasm_start(&state);
-    close(state.in_fd);
+    g_state.filename = argv[1];
+    oasm_start(&g_state);
+    close(g_state.in_fd);
     return 0;
 }

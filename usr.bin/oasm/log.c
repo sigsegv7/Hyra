@@ -27,29 +27,55 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _OASM_STATE_H_
-#define _OASM_STATE_H_
+#include <oasm/log.h>
+#include <oasm/state.h>
+#include <stdarg.h>
+#include <stdio.h>
 
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <oasm/lex.h>
+/* TODO FIXME: Use stdarg.h */
+#define __va_start(ap, fmt)  __builtin_va_start(ap, fmt)
+#define __va_end(ap)  __builtin_va_end(ap)
 
-/*
- * OASM state:
- *
- * @filename: Filname of unit we are parsing
- * @in_fd: Input file descriptor
- * @out_fd: Resulting binary output file descriptor
- * @line: Current line number
- * @last: Last token
- */
-struct oasm_state {
-    char *filename;
-    int in_fd;
-    int out_fd;
-    off_t line;
-    tt_t last;
-};
+extern struct oasm_state g_state;
 
-#endif  /* !_OASM_STATE_H_ */
+void
+oasm_debug(const char *fmt, ...)
+{
+    char buf[512];
+    va_list ap;
+    int ret;
+
+    __va_start(ap, fmt);
+    ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+    printf("[debug]: %s\033[0m", buf);
+    printf("\033[0m");
+    __va_end(ap);
+}
+
+void
+oasm_err(const char *fmt, ...)
+{
+    char buf[512];
+    va_list ap;
+    int ret;
+
+    __va_start(ap, fmt);
+    ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+    printf(ERROR_COLOR "error: %s\033[0m", buf);
+    printf("%s: line %d\n", g_state.filename, g_state.line);
+    __va_end(ap);
+}
+
+void
+oasm_warn(const char *fmt, ...)
+{
+    char buf[512];
+    va_list ap;
+    int ret;
+
+    __va_start(ap, fmt);
+    ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+    printf(WARN_COLOR "warning: %s\033[0m", buf);
+    printf("line %d\n", g_state.filename, g_state.line);
+    __va_end(ap);
+}
