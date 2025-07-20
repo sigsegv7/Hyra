@@ -95,10 +95,92 @@ static const char *tokstr[] = {
     [ TT_V7 ]  = "v7",
 };
 
+static int
+parse_reg(struct oasm_state *state, struct oasm_token *tok)
+{
+    const char *p;
+
+    /* Valid instructions that go with regs */
+    switch (state->last) {
+    case TT_MOV:
+    case TT_DEC:
+    case TT_INC:
+        state->last = tok->type;
+        break;
+    default:
+        p = tokstr[state->last];
+        oasm_err("bad instruction '%s' for regop\n", p);
+        return -1;
+    }
+
+    switch (tok->type) {
+    case TT_X0:
+    case TT_X1:
+    case TT_X2:
+    case TT_X3:
+    case TT_X4:
+    case TT_X5:
+    case TT_X6:
+    case TT_X7:
+    case TT_X8:
+    case TT_X9:
+    case TT_X10:
+    case TT_X11:
+    case TT_X12:
+    case TT_X13:
+    case TT_X14:
+        state->last = tok->type;
+        break;
+    default:
+        p = tokstr[tok->type];
+        oasm_err("bad register %s\n", p);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int
+parse_tok(struct oasm_state *state, struct oasm_token *tok)
+{
+    const char *p;
+    int error;
+
+    switch (tok->type) {
+    case TT_MOV:
+        state->last = tok->type;
+        break;
+    case TT_DEC:
+        state->last = tok->type;
+        break;
+    case TT_IMM:
+        p = tokstr[TT_MOV];
+        if (state->last != TT_MOV) {
+            oasm_err("previous token must be %s\n", p);
+            return -1;
+        }
+        break;
+    default:
+        if (!tok->is_reg) {
+            oasm_err("syntax error\n");
+            return -1;
+        }
+
+        error = parse_reg(state, tok);
+        if (error < 0) {
+            return error;
+        }
+        break;
+    }
+
+    return 0;
+}
+
 void
 parse_enter(struct oasm_state *state)
 {
     struct oasm_token tok;
+    const char *type, *raw;
     int error = 0;
 
     for (;;) {
@@ -106,6 +188,14 @@ parse_enter(struct oasm_state *state)
         if (error < 0) {
             break;
         }
+
+        if (parse_tok(state, &tok) < 0) {
+            break;
+        }
+
+        type = tokstr[tok.type];
+        raw = tok.raw;
+        oasm_debug("got token type %s (%s)\n", type, raw);
 
         if (tok.raw != NULL) {
             free(tok.raw);
