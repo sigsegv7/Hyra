@@ -44,6 +44,7 @@ static const char *tokstr[] = {
     [ TT_INC ] = "inc",
     [ TT_DEC ] = "dec",
     [ TT_MOV ] = "mov",
+    [ TT_IMM ]  = "<imm>",
 
     /* X<n> registers */
     [ TT_X0 ]  = "x0",
