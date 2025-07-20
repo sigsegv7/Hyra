@@ -50,14 +50,15 @@ static char putback = '\0';
  * skippable token. Otherwise, -1
  */
 static inline int
-lex_skippable(char c)
+lex_skippable(struct oasm_state *state, char c)
 {
     switch (c) {
-    case ' ':
-    case '\f':
-    case '\t':
-    case '\r':
+    case ' ':  return 0;
+    case '\f': return 0;
+    case '\t': return 0;
+    case '\r': return 0;
     case '\n':
+        ++state->line;
         return 0;
     }
 
@@ -135,6 +136,7 @@ lex_nomstr(struct oasm_state *state, char **res)
             break;
         }
         if (tmp == '\n') {
+            ++state->line;
             retval = tmp;
             break;
 
@@ -231,7 +233,7 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
      * Grab characters. If they are skippable,
      * don't use them.
      */
-    while (lex_skippable(c) == 0) {
+    while (lex_skippable(state, c) == 0) {
         if ((c = lex_cin(state)) == 0) {
             return -1;
         }
@@ -239,6 +241,7 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
 
     switch (c) {
     case '\n':
+        ++state->line;
         return 0;
     case '\0':
         return -1;

@@ -33,9 +33,12 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <oasm/lex.h>
 
 struct oasm_state {
     int in_fd;
+    off_t line;
+    tt_t last;
 };
 
 #endif  /* !_OASM_STATE_H_ */
