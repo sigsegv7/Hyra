@@ -29,6 +29,7 @@
 
 #include <sys/errno.h>
 #include <string.h>
+#include <stdlib.h>
 #include <oasm/state.h>
 #include <oasm/lex.h>
 #include <oasm/log.h>
@@ -63,6 +64,20 @@ lex_skippable(struct oasm_state *state, char c)
     }
 
     return -1;
+}
+
+/*
+ * For cleaning up allocated sources
+ * during error conditions
+ *
+ * @p: Memory to free
+ */
+static inline void
+lex_try_free(void *p)
+{
+    if (p != NULL) {
+        free(p);
+    }
 }
 
 /*
@@ -231,7 +246,7 @@ token_reg(char *p)
 int
 lex_tok(struct oasm_state *state, struct oasm_token *ttp)
 {
-    char *p;
+    char *p = NULL;
     char c = ' ';
     int tmp;
     tt_t tok;
@@ -269,6 +284,7 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
         if ((tok = token_arith(p)) != TT_UNKNOWN) {
             ttp->type = tok;
             ttp->raw = p;
+            lex_try_free(p);
             return 0;
         }
 
@@ -277,6 +293,7 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
             ttp->is_reg = 1;
             ttp->type = tok;
             ttp->raw = p;
+            lex_try_free(p);
             return 0;
         }
 
@@ -284,6 +301,7 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
         if ((tok = token_operand(p)) != TT_UNKNOWN) {
             ttp->type = tok;
             ttp->raw = p;
+            lex_try_free(p);
             return 0;
         }
         oasm_err("bad token \"%s\"\n", p);
