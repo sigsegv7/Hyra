@@ -206,6 +206,17 @@ token_xreg(char *p)
 }
 
 static tt_t
+token_operand(char *p)
+{
+    /* Is this a numeric constant? */
+    if (p[0] == '#') {
+        return TT_IMM;
+    }
+
+    return TT_UNKNOWN;
+}
+
+static tt_t
 token_reg(char *p)
 {
     tt_t tok;
@@ -263,6 +274,14 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
 
         /* Register? */
         if ((tok = token_reg(p)) != TT_UNKNOWN) {
+            ttp->is_reg = 1;
+            ttp->type = tok;
+            ttp->raw = p;
+            return 0;
+        }
+
+        /* Immediate operand? */
+        if ((tok = token_operand(p)) != TT_UNKNOWN) {
             ttp->type = tok;
             ttp->raw = p;
             return 0;
