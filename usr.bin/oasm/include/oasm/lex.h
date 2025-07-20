@@ -31,7 +31,8 @@
 #define _OASM_LEX_H_
 
 #include <stdint.h>
-#include <oasm/state.h>
+
+struct oasm_state;
 
 #define __XN_REGS   \
     TT_X0,          \
@@ -94,15 +95,16 @@ typedef enum {
     TT_DIV,         /* 'div' */
 
     /* Register ops */
-    TT_MOV,
-    TT_INC,
-    TT_DEC,
+    TT_MOV,         /* 'mov' */
+    TT_INC,         /* 'inc' */
+    TT_DEC,         /* 'dec' */
+    TT_IMM,         /* #<n> */
 
     /* Register sets */
-    __XN_REGS,
-    __FN_REGS,
-    __DN_REGS,
-    __VN_REGS,
+    __XN_REGS,      /* x0-x15 */
+    __FN_REGS,      /* f0-f7 */
+    __DN_REGS,      /* d0-d7 */
+    __VN_REGS,      /* v0-v7 */
 
     /* Symbols */
     TT_COMMA,       /* ',' */
@@ -110,6 +112,7 @@ typedef enum {
 
 struct oasm_token {
     tt_t type;
+    uint8_t is_reg : 1;
     char *raw;
 };
 
