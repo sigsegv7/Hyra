@@ -264,7 +264,7 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
             ttp->raw = p;
             return 0;
         }
-        oasm_err("bad token %s\n", p);
+        oasm_err("bad token \"%s\"\n", p);
         return -1;
     }
 
