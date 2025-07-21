@@ -95,6 +95,7 @@ typedef enum {
     TT_SUB,         /* 'sub' */
     TT_MUL,         /* 'mul' */
     TT_DIV,         /* 'div' */
+    TT_HLT,         /* 'hlt' */
 
     /* Register ops */
     TT_MOV,         /* 'mov' */

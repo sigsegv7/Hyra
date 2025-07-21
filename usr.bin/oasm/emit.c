@@ -220,6 +220,26 @@ emit_encode_add(struct emit_state *state, struct oasm_token *tok)
     return TAILQ_NEXT(tok, link);
 }
 
+/*
+ * Encode a HLT instruction
+ *
+ * 'hlt' - no operands
+ *
+ * Returns the next token on success,
+ * otherwise NULL.
+ */
+static struct oasm_token *
+emit_encode_hlt(struct emit_state *state, struct oasm_token *tok)
+{
+    inst_t curinst;
+
+    curinst.opcode = OSMX64_HLT;
+    curinst.rd = 0;
+    curinst.unused = 0;
+    emit_bytes(state, &curinst, sizeof(curinst));
+    return TAILQ_NEXT(tok, link);
+}
+
 int
 emit_osxm64(struct emit_state *state, struct oasm_token *tp)
 {
@@ -300,6 +320,9 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
             break;
         case TT_ADD:
             curtok = emit_encode_add(emit, curtok);
+            break;
+        case TT_HLT:
+            curtok = emit_encode_hlt(emit, curtok);
             break;
         default:
             curtok = TAILQ_NEXT(curtok, link);

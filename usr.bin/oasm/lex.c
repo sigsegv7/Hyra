@@ -45,6 +45,7 @@ static char putback = '\0';
 #define S_IMN_DIV  "div"
 #define S_IMN_INC  "inc"
 #define S_IMN_DEC  "dec"
+#define S_IMN_HLT  "hlt"
 
 /*
  * Returns 0 if a char is counted as a
@@ -179,6 +180,8 @@ token_arith(char *p)
         return TT_SUB;
     } else if (strcmp(p, S_IMN_DIV) == 0) {
         return TT_DIV;
+    } else if (strcmp(p, S_IMN_HLT) == 0) {
+        return TT_HLT;
     }
 
     return TT_UNKNOWN;

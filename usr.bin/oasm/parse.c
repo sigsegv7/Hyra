@@ -42,6 +42,7 @@ static const char *tokstr[] = {
     [ TT_SUB ] = "sub",
     [ TT_MUL ] = "mul",
     [ TT_DIV ] = "div",
+    [ TT_HLT ] = "hlt",
     [ TT_COMMA ] = ",",
     [ TT_INC ] = "inc",
     [ TT_DEC ] = "dec",
@@ -140,6 +141,9 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
     int error;
 
     switch (tok->type) {
+    case TT_HLT:
+        state->last = tok->type;
+        emit_osxm64(&emit_state, tok);
     case TT_MOV:
         state->last = tok->type;
         emit_osxm64(&emit_state, tok);
