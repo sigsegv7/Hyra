@@ -113,6 +113,7 @@ typedef enum {
 struct oasm_token {
     tt_t type;
     uint8_t is_reg : 1;
+    uint16_t imm;
     char *raw;
 };
 

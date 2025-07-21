@@ -297,6 +297,10 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
 
         /* Immediate operand? */
         if ((tok = token_operand(p)) != TT_UNKNOWN) {
+            if (tok == TT_IMM) {
+                ttp->imm = atoi(&p[1]);
+            }
+
             ttp->type = tok;
             ttp->raw = p;
             return 0;
