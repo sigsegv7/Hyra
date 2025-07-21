@@ -103,7 +103,6 @@ emit_encode_mov(struct emit_state *state, struct oasm_token *tok)
         return NULL;
     }
 
-
     /* Next token should be an IMM */
     tok = TAILQ_NEXT(tok, link);
     if (tok == NULL) {
