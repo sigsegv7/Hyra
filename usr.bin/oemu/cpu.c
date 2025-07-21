@@ -163,6 +163,12 @@ cpu_kick(struct oemu_cpu *cpu, struct sysmem *mem)
             break;
         }
 
+        /* Is this a halt instruction? */
+        if (inst->opcode == INST_HLT) {
+            printf("HALTED\n");
+            break;
+        }
+
         if (regs->ip >= MEMORY_SIZE) {
             break;
         }
