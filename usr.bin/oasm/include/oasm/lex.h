@@ -119,4 +119,35 @@ struct oasm_token {
 
 int lex_tok(struct oasm_state *state, struct oasm_token *ttp);
 
+
+/*
+ * Check if a token is an X<n> register.
+ * Returns true on match.
+ */
+__always_inline static inline bool
+tok_is_xreg(tt_t tok)
+{
+    switch (tok) {
+    case TT_X0:
+    case TT_X1:
+    case TT_X2:
+    case TT_X3:
+    case TT_X4:
+    case TT_X5:
+    case TT_X6:
+    case TT_X7:
+    case TT_X8:
+    case TT_X9:
+    case TT_X10:
+    case TT_X11:
+    case TT_X12:
+    case TT_X13:
+    case TT_X14:
+    case TT_X15:
+        return true;
+    }
+
+    return false;
+}
+
 #endif  /* !_OASM_LEX_H_ */

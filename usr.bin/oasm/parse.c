@@ -113,27 +113,9 @@ parse_reg(struct oasm_state *state, struct oasm_token *tok)
         return -1;
     }
 
-    switch (tok->type) {
-    case TT_X0:
-    case TT_X1:
-    case TT_X2:
-    case TT_X3:
-    case TT_X4:
-    case TT_X5:
-    case TT_X6:
-    case TT_X7:
-    case TT_X8:
-    case TT_X9:
-    case TT_X10:
-    case TT_X11:
-    case TT_X12:
-    case TT_X13:
-    case TT_X14:
-        state->last = tok->type;
-        break;
-    default:
+    if (!tok_is_xreg(tok->type)) {
         p = tokstr[tok->type];
-        oasm_err("bad register %s\n", p);
+        oasm_err("bad register \"%s\"\n", p);
         return -1;
     }
 
@@ -154,9 +136,9 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
         state->last = tok->type;
         break;
     case TT_IMM:
-        p = tokstr[TT_MOV];
-        if (state->last != TT_MOV) {
-            oasm_err("previous token must be %s\n", p);
+        p = tokstr[state->last];
+        if (!tok_is_xreg(state->last)) {
+            printf("expected X<n> but got %s\n", p);
             return -1;
         }
         break;
