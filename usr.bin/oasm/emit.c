@@ -169,6 +169,57 @@ emit_encode_incdec(struct emit_state *state, struct oasm_token *tok)
     return TAILQ_NEXT(tok, link);
 }
 
+/*
+ * Encode an ADD instruction
+ *
+ * add [r], <imm>
+ *
+ * Returns the next token on success,
+ * otherwise NULL.
+ */
+static struct oasm_token *
+emit_encode_add(struct emit_state *state, struct oasm_token *tok)
+{
+    inst_t curinst;
+    reg_t rd;
+
+    /*
+     * The next operand must be an X<n>
+     * register.
+     */
+    tok = TAILQ_NEXT(tok, link);
+    if (tok == NULL) {
+        return NULL;
+    }
+    if (!tok_is_xreg(tok->type)) {
+        oasm_err("[emit error]: bad 'add' order\n");
+        return NULL;
+    }
+
+    /* Get the register and validate it */
+    rd = ir_to_reg(tok->type);
+    if (rd == OSMX64_R_BAD) {
+        oasm_err("[emit error]: got bad reg in 'add'\n");
+        return NULL;
+    }
+
+    /* The next token should be an <imm> */
+    tok = TAILQ_NEXT(tok, link);
+    if (tok == NULL) {
+        return NULL;
+    }
+    if (tok->type != TT_IMM) {
+        oasm_err("[emit error]: expected <imm> in 'add'\n");
+        return NULL;
+    }
+
+    curinst.opcode = OSMX64_ADD;
+    curinst.rd = rd;
+    curinst.imm = tok->imm;
+    emit_bytes(state, &curinst, sizeof(curinst));
+    return TAILQ_NEXT(tok, link);
+}
+
 int
 emit_osxm64(struct emit_state *state, struct oasm_token *tp)
 {
@@ -246,6 +297,9 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
         case TT_INC:
         case TT_DEC:
             curtok = emit_encode_incdec(emit, curtok);
+            break;
+        case TT_ADD:
+            curtok = emit_encode_add(emit, curtok);
             break;
         default:
             curtok = TAILQ_NEXT(curtok, link);
