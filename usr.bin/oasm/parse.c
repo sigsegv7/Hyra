@@ -29,11 +29,13 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <oasm/emit.h>
 #include <oasm/state.h>
 #include <oasm/lex.h>
 #include <oasm/parse.h>
 #include <oasm/log.h>
 
+static struct emit_state emit_state;
 static const char *tokstr[] = {
     [ TT_UNKNOWN] = "bad",
     [ TT_ADD ] = "add",
@@ -119,6 +121,14 @@ parse_reg(struct oasm_state *state, struct oasm_token *tok)
         return -1;
     }
 
+    state->last = tok->type;
+    emit_osxm64(&emit_state, tok);
+    return 0;
+}
+
+static int
+parse_imm(struct oasm_token *tok, tt_t last)
+{
     return 0;
 }
 
@@ -131,9 +141,11 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
     switch (tok->type) {
     case TT_MOV:
         state->last = tok->type;
+        emit_osxm64(&emit_state, tok);
         break;
     case TT_DEC:
         state->last = tok->type;
+        emit_osxm64(&emit_state, tok);
         break;
     case TT_IMM:
         p = tokstr[state->last];
@@ -141,6 +153,7 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
             printf("expected X<n> but got %s\n", p);
             return -1;
         }
+        emit_osxm64(&emit_state, tok);
         break;
     default:
         if (!tok->is_reg) {
@@ -165,6 +178,8 @@ parse_enter(struct oasm_state *state)
     const char *type, *raw;
     int error = 0;
 
+    emit_init(&emit_state);
+
     for (;;) {
         error = lex_tok(state, &tok);
         if (error < 0) {
@@ -178,9 +193,9 @@ parse_enter(struct oasm_state *state)
         type = tokstr[tok.type];
         raw = tok.raw;
         oasm_debug("got token type %s (%s)\n", type, raw);
-
-        if (tok.raw != NULL) {
-            free(tok.raw);
-        }
     }
+
+    /* Process then destroy the emit state */
+    emit_process(state, &emit_state);
+    emit_destroy(&emit_state);
 }

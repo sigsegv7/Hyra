@@ -30,6 +30,8 @@
 #ifndef _OASM_LEX_H_
 #define _OASM_LEX_H_
 
+#include <sys/queue.h>
+#include <sys/cdefs.h>
 #include <stdint.h>
 
 struct oasm_state;
@@ -115,6 +117,7 @@ struct oasm_token {
     uint8_t is_reg : 1;
     uint16_t imm;
     char *raw;
+    TAILQ_ENTRY(oasm_token) link;
 };
 
 int lex_tok(struct oasm_state *state, struct oasm_token *ttp);

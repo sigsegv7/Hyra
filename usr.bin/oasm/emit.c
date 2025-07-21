@@ -1,0 +1,206 @@
+/*
+ * Copyright (c) 2023-2025 Ian Marco Moffett and the Osmora Team.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of Hyra nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include <sys/errno.h>
+#include <oasm/emit.h>
+#include <oasm/log.h>
+#include <stdlib.h>
+#include <string.h>
+
+static inline void
+emit_bytes(struct emit_state *state, void *p, size_t len)
+{
+    write(state->out_fd, p, len);
+}
+
+/*
+ * Convert an IR register to an OSMX64
+ * valid register value that can be encoded
+ * into the instruction.
+ */
+static inline reg_t
+ir_to_reg(tt_t ir)
+{
+    switch (ir) {
+        case TT_X0: return OSMX64_R_X0;
+        case TT_X1: return OSMX64_R_X1;
+        case TT_X2: return OSMX64_R_X2;
+        case TT_X3: return OSMX64_R_X3;
+        case TT_X4: return OSMX64_R_X4;
+        case TT_X5: return OSMX64_R_X5;
+        case TT_X6: return OSMX64_R_X6;
+        case TT_X7: return OSMX64_R_X7;
+        case TT_X8: return OSMX64_R_X8;
+        case TT_X9: return OSMX64_R_X9;
+        case TT_X10: return OSMX64_R_X10;
+        case TT_X11: return OSMX64_R_X11;
+        case TT_X12: return OSMX64_R_X12;
+        case TT_X13: return OSMX64_R_X13;
+        case TT_X14: return OSMX64_R_X14;
+        case TT_X15: return OSMX64_R_X15;
+    }
+
+    return OSMX64_R_BAD;
+}
+
+/*
+ * Encode a MOV instruction
+ *
+ * mov [r], [r/imm]
+ *
+ * Returns the next token on success,
+ * otherwise NULL.
+ */
+static struct oasm_token *
+emit_encode_mov(struct emit_state *state, struct oasm_token *tok)
+{
+    inst_t curinst;
+    reg_t rd;
+
+    if (state == NULL || tok == NULL) {
+        return NULL;
+    }
+
+    /* Next token should be a register */
+    tok = TAILQ_NEXT(tok, link);
+    if (tok == NULL) {
+        return NULL;
+    }
+    if (!tok_is_xreg(tok->type)) {
+        oasm_err("[emit error]: bad 'mov' order\n");
+        return NULL;
+    }
+
+    rd = ir_to_reg(tok->type);
+    if (rd == OSMX64_R_BAD) {
+        oasm_err("[emit error]: got bad reg in 'mov'\n");
+        return NULL;
+    }
+
+
+    /* Next token should be an IMM */
+    tok = TAILQ_NEXT(tok, link);
+    if (tok == NULL) {
+        oasm_err("[emit error]: bad 'move' order\n");
+        return NULL;
+    }
+    if (tok->type != TT_IMM) {
+        oasm_err("[emit error]: expected <imm>\n");
+        return NULL;
+    }
+
+    curinst.opcode = OSMX64_MOV_IMM;
+    curinst.rd = rd;
+    curinst.imm = tok->imm;
+    emit_bytes(state, &curinst, sizeof(curinst));
+    return TAILQ_NEXT(tok, link);
+}
+
+int
+emit_osxm64(struct emit_state *state, struct oasm_token *tp)
+{
+    struct oasm_token *toknew;
+
+    if (state == NULL || tp == NULL) {
+        return -EINVAL;
+    }
+
+    /*
+     * We need to create a copy of the object as the
+     * caller will likely end up destroying it.
+     */
+    toknew = malloc(sizeof(*toknew));
+    if (toknew == NULL) {
+        return -ENOMEM;
+    }
+
+    memcpy(toknew, tp, sizeof(*toknew));
+    TAILQ_INSERT_TAIL(&state->ir, toknew, link);
+    return 0;
+}
+
+int
+emit_init(struct emit_state *state)
+{
+    state->last_token = TT_UNKNOWN;
+    state->is_init = 1;
+    TAILQ_INIT(&state->ir);
+    return 0;
+}
+
+int
+emit_destroy(struct emit_state *state)
+{
+    struct oasm_token *curtok, *last = NULL;
+
+    TAILQ_FOREACH(curtok, &state->ir, link) {
+        if (last != NULL) {
+            free(last);
+            last = NULL;
+        }
+        if (curtok->raw != NULL) {
+            free(curtok->raw);
+        }
+
+        last = curtok;
+    }
+
+    /* Clean up any last objects */
+    if (last != NULL) {
+        free(last);
+    }
+
+    return 0;
+}
+
+int
+emit_process(struct oasm_state *oasm, struct emit_state *emit)
+{
+    struct oasm_token *curtok;
+    tt_t last_tok;
+
+    if (!emit->is_init) {
+        return -1;
+    }
+
+    emit->out_fd = oasm->out_fd;
+    TAILQ_FOREACH(curtok, &emit->ir, link) {
+        switch (curtok->type) {
+        case TT_MOV:
+            curtok = emit_encode_mov(emit, curtok);
+            break;
+        }
+
+        if (curtok == NULL) {
+            break;
+        }
+    }
+
+    return 0;
+}
