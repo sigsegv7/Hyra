@@ -252,7 +252,6 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
             curtok = TAILQ_NEXT(curtok, link);
             break;
         }
-
     }
 
     return 0;
