@@ -29,9 +29,12 @@
 
 #include <sys/proc.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/errno.h>
+#include <sys/mman.h>
 #include <sys/exec.h>
 #include <sys/systm.h>
+#include <vm/vm.h>
 #include <string.h>
 
 /*
@@ -45,6 +48,8 @@ static bool
 check_uaddr(const void *uaddr)
 {
     vaddr_t stack_start, stack_end;
+    struct mmap_lgdr *lp;
+    struct mmap_entry find, *res;
     struct exec_prog exec;
     struct proc *td;
     uintptr_t addr;
@@ -60,6 +65,22 @@ check_uaddr(const void *uaddr)
         return true;
     if (addr >= stack_start && addr <= stack_end)
         return true;
+
+    /* Try to grab the mmap ledger */
+    if ((lp = td->mlgdr) == NULL) {
+        return false;
+    }
+
+    /*
+     * Now give an attempt at looking through the
+     * mmap ledger. Perhaps this memory was allocated
+     * in the user heap?
+     */
+    find.va_start = ALIGN_DOWN(addr, DEFAULT_PAGESIZE);
+    res = RBT_FIND(lgdr_entries, &lp->hd, &find);
+    if (res != NULL) {
+        return true;
+    }
 
     return false;
 }
