@@ -144,6 +144,7 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
         emit_osxm64(&emit_state, tok);
         break;
     case TT_DEC:
+    case TT_INC:
         state->last = tok->type;
         emit_osxm64(&emit_state, tok);
         break;
