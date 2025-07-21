@@ -47,7 +47,7 @@ oasm_start(struct oasm_state *state)
 int
 main(int argc, char **argv)
 {
-    if (argc < 2) {
+    if (argc < 3) {
         printf("oasm: usage: oasm <file> <output>\n");
         return -1;
     }
@@ -58,8 +58,16 @@ main(int argc, char **argv)
         return -1;
     }
 
+    g_state.out_fd = open(argv[2], O_CREAT | O_WRONLY);
+    if (g_state.out_fd < 0) {
+        printf("could not open output \"%s\"\n", argv[2]);
+        close(g_state.in_fd);
+        return -1;
+    }
+
     g_state.filename = argv[1];
     oasm_start(&g_state);
     close(g_state.in_fd);
+    close(g_state.out_fd);
     return 0;
 }
