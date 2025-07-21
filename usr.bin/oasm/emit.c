@@ -190,16 +190,17 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
     }
 
     emit->out_fd = oasm->out_fd;
-    TAILQ_FOREACH(curtok, &emit->ir, link) {
+    curtok = TAILQ_FIRST(&emit->ir);
+    while (curtok != NULL) {
         switch (curtok->type) {
         case TT_MOV:
             curtok = emit_encode_mov(emit, curtok);
             break;
-        }
-
-        if (curtok == NULL) {
+        default:
+            curtok = TAILQ_NEXT(curtok, link);
             break;
         }
+
     }
 
     return 0;
