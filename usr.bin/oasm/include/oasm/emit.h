@@ -91,7 +91,10 @@ typedef uint16_t imm_t;
 typedef struct {
     uint8_t opcode;
     uint8_t rd;
-    uint16_t imm;
+    union {
+        uint16_t imm;
+        uint16_t unused;
+    };
 } inst_t;
 
 struct emit_state {
