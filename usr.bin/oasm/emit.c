@@ -122,6 +122,54 @@ emit_encode_mov(struct emit_state *state, struct oasm_token *tok)
     return TAILQ_NEXT(tok, link);
 }
 
+/*
+ * Encode a INC/DEC instruction
+ *
+ * inc/dec [r]
+ *
+ * Returns the next token on success,
+ * otherwise NULL.
+ */
+static struct oasm_token *
+emit_encode_incdec(struct emit_state *state, struct oasm_token *tok)
+{
+    inst_t curinst;
+    reg_t rd;
+    uint8_t opcode = OSMX64_INC;
+    char *inst_str = "inc";
+
+    if (state == NULL || tok == NULL) {
+        return NULL;
+    }
+
+    if (tok->type == TT_DEC) {
+        inst_str = "dec";
+        opcode = OSMX64_DEC;
+    }
+
+    /* Next token should be a register */
+    tok = TAILQ_NEXT(tok, link);
+    if (tok == NULL) {
+        return NULL;
+    }
+    if (!tok_is_xreg(tok->type)) {
+        oasm_err("[emit error]: bad '%s' order\n", inst_str);
+        return NULL;
+    }
+
+    rd = ir_to_reg(tok->type);
+    if (rd == OSMX64_R_BAD) {
+        oasm_err("[emit error]: got bad reg in '%s'\n", inst_str);
+        return NULL;
+    }
+
+    curinst.opcode = opcode;
+    curinst.rd = rd;
+    curinst.unused = 0;
+    emit_bytes(state, &curinst, sizeof(curinst));
+    return TAILQ_NEXT(tok, link);
+}
+
 int
 emit_osxm64(struct emit_state *state, struct oasm_token *tp)
 {
@@ -195,6 +243,10 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
         switch (curtok->type) {
         case TT_MOV:
             curtok = emit_encode_mov(emit, curtok);
+            break;
+        case TT_INC:
+        case TT_DEC:
+            curtok = emit_encode_incdec(emit, curtok);
             break;
         default:
             curtok = TAILQ_NEXT(curtok, link);
