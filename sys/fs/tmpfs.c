@@ -238,6 +238,7 @@ static int
 tmpfs_write(struct vnode *vp, struct sio_txn *sio)
 {
     struct tmpfs_node *np;
+    off_t res_off;
     uint8_t *buf;
 
     if (sio->buf == NULL || sio->len == 0) {
@@ -274,8 +275,9 @@ tmpfs_write(struct vnode *vp, struct sio_txn *sio)
      * Bring up the real size if we are writing
      * more bytes.
      */
-    if (sio->offset >= np->real_size) {
-        np->real_size = sio->offset;
+    res_off = sio->offset + sio->len;
+    if (res_off > np->real_size) {
+        np->real_size = res_off;
     }
 
     /*
@@ -285,7 +287,7 @@ tmpfs_write(struct vnode *vp, struct sio_txn *sio)
      * into a suitable size that does not overflow what we
      * have left.
      */
-    if ((sio->offset + sio->len) > np->len) {
+    if (res_off > np->len) {
         np->data = dynrealloc(np->data, (sio->offset + sio->len));
         if (np->data == NULL) {
             sio->len = np->len;
