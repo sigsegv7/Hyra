@@ -48,6 +48,7 @@
 #define INST_SRL      0x12    /* Shift right logical operation */
 #define INST_MOV_IMM  0x13    /* Data move operation from IMM */
 #define INST_HLT      0x14    /* Halt */
+#define INST_BR       0x15    /* Branch */
 
 /* Registers */
 #define REG_X0   0x00

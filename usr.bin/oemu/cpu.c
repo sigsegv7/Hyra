@@ -198,6 +198,33 @@ cpu_div(struct oemu_cpu *cpu, inst_t *inst)
 }
 
 /*
+ * Decode the INST_DIV instruction
+ */
+static void
+cpu_br(struct oemu_cpu *cpu, inst_t *inst)
+{
+    struct cpu_regs *regs = &cpu->regs;
+    imm_t imm;
+    addr_t br_to;
+
+    if (inst->rd > NELEM(regs->xreg)) {
+        printf("bad register operand for 'br'\n");
+        return;
+    }
+
+    /*
+     * If we are branching to the reset vector, might
+     * as well reset all state.
+     */
+    br_to = regs->xreg[inst->rd];
+    if (br_to == 0) {
+        cpu_reset(cpu);
+    }
+
+    regs->ip = br_to;
+}
+
+/*
  * Reset a CPU to a default state
  */
 void
@@ -279,6 +306,9 @@ cpu_kick(struct oemu_cpu *cpu, struct sysmem *mem)
             break;
         case INST_DIV:
             cpu_div(cpu, inst);
+            break;
+        case INST_BR:
+            cpu_br(cpu, inst);
             break;
         }
 
