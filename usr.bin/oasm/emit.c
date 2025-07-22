@@ -190,6 +190,10 @@ emit_encode_arith(struct emit_state *state, struct oasm_token *tok)
         inst_str = "sub";
         opcode = OSMX64_SUB;
         break;
+    case TT_MUL:
+        inst_str = "mul";
+        opcode = OSMX64_MUL;
+        break;
     }
 
     /*
@@ -329,6 +333,7 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
             break;
         case TT_ADD:
         case TT_SUB:
+        case TT_MUL:
             curtok = emit_encode_arith(emit, curtok);
             break;
         case TT_HLT:

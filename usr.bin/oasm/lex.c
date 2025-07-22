@@ -42,6 +42,7 @@ static char putback = '\0';
 #define S_IMN_MOV  "mov"
 #define S_IMN_ADD  "add"
 #define S_IMN_SUB  "sub"
+#define S_IMN_MUL  "mul"
 #define S_IMN_DIV  "div"
 #define S_IMN_INC  "inc"
 #define S_IMN_DEC  "dec"
@@ -182,6 +183,8 @@ token_arith(char *p)
         return TT_DIV;
     } else if (strcmp(p, S_IMN_HLT) == 0) {
         return TT_HLT;
+    } else if (strcmp(p, S_IMN_MUL) == 0) {
+        return TT_MUL;
     }
 
     return TT_UNKNOWN;
