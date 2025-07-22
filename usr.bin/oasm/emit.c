@@ -250,7 +250,7 @@ emit_encode_hlt(struct emit_state *state, struct oasm_token *tok)
 }
 
 int
-emit_osxm64(struct emit_state *state, struct oasm_token *tp)
+emit_osmx64(struct emit_state *state, struct oasm_token *tp)
 {
     struct oasm_token *toknew;
 

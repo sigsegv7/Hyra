@@ -108,6 +108,6 @@ struct emit_state {
 int emit_init(struct emit_state *state);
 int emit_destroy(struct emit_state *state);
 int emit_process(struct oasm_state *oasm, struct emit_state *emit);
-int emit_osxm64(struct emit_state *state, struct oasm_token *tp);
+int emit_osmx64(struct emit_state *state, struct oasm_token *tp);
 
 #endif  /* !_EMIT_H_ */

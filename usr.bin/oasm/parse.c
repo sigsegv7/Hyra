@@ -125,7 +125,7 @@ parse_reg(struct oasm_state *state, struct oasm_token *tok)
     }
 
     state->last = tok->type;
-    emit_osxm64(&emit_state, tok);
+    emit_osmx64(&emit_state, tok);
     return 0;
 }
 
@@ -144,23 +144,24 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
     switch (tok->type) {
     case TT_HLT:
         state->last = tok->type;
-        emit_osxm64(&emit_state, tok);
+        emit_osmx64(&emit_state, tok);
+        break;
     case TT_MOV:
         state->last = tok->type;
-        emit_osxm64(&emit_state, tok);
+        emit_osmx64(&emit_state, tok);
         break;
     case TT_ADD:
         state->last = tok->type;
-        emit_osxm64(&emit_state, tok);
+        emit_osmx64(&emit_state, tok);
         break;
     case TT_SUB:
         state->last = tok->type;
-        emit_osxm64(&emit_state, tok);
+        emit_osmx64(&emit_state, tok);
         break;
     case TT_DEC:
     case TT_INC:
         state->last = tok->type;
-        emit_osxm64(&emit_state, tok);
+        emit_osmx64(&emit_state, tok);
         break;
     case TT_IMM:
         p = tokstr[state->last];
@@ -168,7 +169,7 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
             printf("expected X<n> but got %s\n", p);
             return -1;
         }
-        emit_osxm64(&emit_state, tok);
+        emit_osmx64(&emit_state, tok);
         break;
     default:
         if (!tok->is_reg) {
