@@ -170,7 +170,7 @@ emit_encode_incdec(struct emit_state *state, struct oasm_token *tok)
 }
 
 /*
- * Encode an ADD instruction
+ * Encode an arithmetic instruction
  *
  * add [r], <imm>
  *
@@ -178,10 +178,19 @@ emit_encode_incdec(struct emit_state *state, struct oasm_token *tok)
  * otherwise NULL.
  */
 static struct oasm_token *
-emit_encode_add(struct emit_state *state, struct oasm_token *tok)
+emit_encode_arith(struct emit_state *state, struct oasm_token *tok)
 {
     inst_t curinst;
     reg_t rd;
+    uint8_t opcode = OSMX64_ADD;
+    char *inst_str = "add";
+
+    switch (tok->type) {
+    case TT_SUB:
+        inst_str = "sub";
+        opcode = OSMX64_SUB;
+        break;
+    }
 
     /*
      * The next operand must be an X<n>
@@ -192,14 +201,14 @@ emit_encode_add(struct emit_state *state, struct oasm_token *tok)
         return NULL;
     }
     if (!tok_is_xreg(tok->type)) {
-        oasm_err("[emit error]: bad 'add' order\n");
+        oasm_err("[emit error]: bad '%s' order\n", inst_str);
         return NULL;
     }
 
     /* Get the register and validate it */
     rd = ir_to_reg(tok->type);
     if (rd == OSMX64_R_BAD) {
-        oasm_err("[emit error]: got bad reg in 'add'\n");
+        oasm_err("[emit error]: got bad reg in '%s'\n", inst_str);
         return NULL;
     }
 
@@ -209,11 +218,11 @@ emit_encode_add(struct emit_state *state, struct oasm_token *tok)
         return NULL;
     }
     if (tok->type != TT_IMM) {
-        oasm_err("[emit error]: expected <imm> in 'add'\n");
+        oasm_err("[emit error]: expected <imm> in '%s'\n", inst_str);
         return NULL;
     }
 
-    curinst.opcode = OSMX64_ADD;
+    curinst.opcode = opcode;
     curinst.rd = rd;
     curinst.imm = tok->imm;
     emit_bytes(state, &curinst, sizeof(curinst));
@@ -319,7 +328,8 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
             curtok = emit_encode_incdec(emit, curtok);
             break;
         case TT_ADD:
-            curtok = emit_encode_add(emit, curtok);
+        case TT_SUB:
+            curtok = emit_encode_arith(emit, curtok);
             break;
         case TT_HLT:
             curtok = emit_encode_hlt(emit, curtok);
