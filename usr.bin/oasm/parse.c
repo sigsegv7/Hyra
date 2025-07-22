@@ -111,6 +111,7 @@ parse_reg(struct oasm_state *state, struct oasm_token *tok)
     case TT_ADD:
     case TT_SUB:
     case TT_MUL:
+    case TT_DIV:
         state->last = tok->type;
         break;
     default:
@@ -148,6 +149,10 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
         emit_osmx64(&emit_state, tok);
         break;
     case TT_MUL:
+        state->last = tok->type;
+        emit_osmx64(&emit_state, tok);
+        break;
+    case TT_DIV:
         state->last = tok->type;
         emit_osmx64(&emit_state, tok);
         break;
