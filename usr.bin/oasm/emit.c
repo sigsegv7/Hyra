@@ -257,6 +257,45 @@ emit_encode_hlt(struct emit_state *state, struct oasm_token *tok)
     return TAILQ_NEXT(tok, link);
 }
 
+/*
+ * Encode a BR instruction
+ *
+ * br [r]
+ *
+ * Returns the next token on success,
+ * otherwise NULL.
+ */
+static struct oasm_token *
+emit_encode_br(struct emit_state *state, struct oasm_token *tok)
+{
+    inst_t curinst;
+    reg_t rd;
+    uint8_t opcode = OSMX64_BR;
+    char *inst_str = "br";
+
+    /* Grab the register */
+    tok = TAILQ_NEXT(tok, link);
+    if (tok == NULL) {
+        return NULL;
+    }
+    if (!tok_is_xreg(tok->type)) {
+        oasm_err("[emit error]: expected register in '%s'\n", inst_str);
+        return NULL;
+    }
+
+    rd = ir_to_reg(tok->type);
+    if (rd == OSMX64_R_BAD) {
+        oasm_err("[emit error]: got bad in register in '%s'\n", inst_str);
+        return NULL;
+    }
+
+    curinst.opcode = opcode;
+    curinst.rd = rd;
+    curinst.unused = 0;
+    emit_bytes(state, &curinst, sizeof(curinst));
+    return TAILQ_NEXT(tok, link);
+}
+
 int
 emit_osmx64(struct emit_state *state, struct oasm_token *tp)
 {
@@ -340,6 +379,9 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
         case TT_MUL:
         case TT_DIV:
             curtok = emit_encode_arith(emit, curtok);
+            break;
+        case TT_BR:
+            curtok = emit_encode_br(emit, curtok);
             break;
         case TT_HLT:
             curtok = emit_encode_hlt(emit, curtok);

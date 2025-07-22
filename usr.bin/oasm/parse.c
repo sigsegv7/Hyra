@@ -43,6 +43,7 @@ static const char *tokstr[] = {
     [ TT_MUL ] = "mul",
     [ TT_DIV ] = "div",
     [ TT_HLT ] = "hlt",
+    [ TT_BR  ] = "br",
     [ TT_COMMA ] = ",",
     [ TT_INC ] = "inc",
     [ TT_DEC ] = "dec",
@@ -112,6 +113,7 @@ parse_reg(struct oasm_state *state, struct oasm_token *tok)
     case TT_SUB:
     case TT_MUL:
     case TT_DIV:
+    case TT_BR:
         state->last = tok->type;
         break;
     default:
@@ -144,6 +146,10 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
     int error;
 
     switch (tok->type) {
+    case TT_BR:
+        state->last = tok->type;
+        emit_osmx64(&emit_state, tok);
+        break;
     case TT_HLT:
         state->last = tok->type;
         emit_osmx64(&emit_state, tok);

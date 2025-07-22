@@ -47,6 +47,7 @@ static char putback = '\0';
 #define S_IMN_INC  "inc"
 #define S_IMN_DEC  "dec"
 #define S_IMN_HLT  "hlt"
+#define S_IMN_BR   "br"
 
 /*
  * Returns 0 if a char is counted as a
@@ -190,6 +191,19 @@ token_arith(char *p)
     return TT_UNKNOWN;
 }
 
+/*
+ * Control flow instructions
+ */
+static tt_t
+token_cfi(char *p)
+{
+    if (strcmp(p, S_IMN_BR) == 0) {
+        return TT_BR;
+    }
+
+    return TT_UNKNOWN;
+}
+
 static tt_t
 token_xreg(char *p)
 {
@@ -288,6 +302,13 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
 
         /* Arithmetic operation? */
         if ((tok = token_arith(p)) != TT_UNKNOWN) {
+            ttp->type = tok;
+            ttp->raw = p;
+            return 0;
+        }
+
+        /* Control flow instruction? */
+        if ((tok = token_cfi(p)) != TT_UNKNOWN) {
             ttp->type = tok;
             ttp->raw = p;
             return 0;
