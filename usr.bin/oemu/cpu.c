@@ -205,8 +205,16 @@ cpu_reset(struct oemu_cpu *cpu)
 {
     struct cpu_regs *regs;
 
+    /*
+     * When an OSMX64 processor first starts up, it will
+     * initially be executing in supervisor mode with all
+     * of its registeres initialized to zeros.
+     */
     regs = &cpu->regs;
     regs->ip = 0;
+    regs->sr_state = CPU_SRS_SV;
+    regs->blr = 0x0;
+    regs->ilr = 0x0;
     memset(regs->xreg, 0x0, sizeof(regs->xreg));
 }
 
@@ -222,7 +230,8 @@ cpu_regdump(struct oemu_cpu *cpu)
         "X6=%p, X7=%p, X8=%p\n"
         "X9=%p, X10=%p, X11=%p\n"
         "X12=%p, X13=%p, X14=%p\n"
-        "X15=%p, IP=%p\n",
+        "X15=%p, IP=%p,  SRS=%p\n"
+        "BLR=%p, ILR=%p\n",
         regs->xreg[0], regs->xreg[1],
         regs->xreg[2], regs->xreg[3],
         regs->xreg[4], regs->xreg[5],
@@ -231,7 +240,8 @@ cpu_regdump(struct oemu_cpu *cpu)
         regs->xreg[10], regs->xreg[11],
         regs->xreg[12], regs->xreg[13],
         regs->xreg[14], regs->xreg[15],
-        regs->ip
+        regs->ip, regs->sr_state,
+        regs->blr, regs->ilr
     );
 }
 

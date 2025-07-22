@@ -31,11 +31,18 @@
 #define _OEMU_CPU_H_
 
 #include <sys/types.h>
+#include <sys/param.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <oemu/types.h>
 
 #define MEMORY_SIZE 512
+
+/*
+ * Processor state register
+ */
+#define CPU_SRS_SV      BIT(1)  /* Supervisor flag */
+#define CPU_SRS_CARRY   BIT(2)  /* Carry flag */
 
 /*
  * System memory
@@ -53,10 +60,16 @@ struct sysmem {
  *
  * @xreg: X<n>
  * @ip: Instruction pointer
+ * @sr_state: Processor state register
+ * @blr: Branch link register
+ * @ilr: Interrupt link register
  */
 struct cpu_regs {
     reg_t xreg[16];
     reg_t ip;
+    reg_t sr_state;
+    reg_t blr;
+    reg_t ilr;
 };
 
 struct oemu_cpu {
