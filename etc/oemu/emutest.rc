@@ -1,0 +1,5 @@
+@ Test emulator
+echo Generating /tmp/a.out
+oasm /etc/oemu/test-00.s /tmp/a.out
+echo Running emulator...
+oemu /tmp/a.out
