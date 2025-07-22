@@ -34,6 +34,7 @@
 #include <oasm/lex.h>
 #include <oasm/log.h>
 
+#define COMMENT '!'
 #define is_num(c) ((c) >= '0' && (c) <= '9')
 
 static char putback = '\0';
@@ -268,6 +269,7 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
 {
     char *p = NULL;
     char c = ' ';
+    short in_comment = 0;
     int tmp;
     tt_t tok;
 
@@ -276,12 +278,18 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
     }
 
     /*
-     * Grab characters. If they are skippable,
-     * don't use them.
+     * Grab characters. If they are skippable or
+     * comments, don't use them.
      */
-    while (lex_skippable(state, c) == 0) {
+    while (lex_skippable(state, c) == 0 || in_comment) {
         if ((c = lex_cin(state)) == 0) {
             return -1;
+        }
+
+        if (c == COMMENT) {
+            in_comment = 1;
+        } else if (c == '\n') {
+            in_comment = 0;
         }
     }
 
