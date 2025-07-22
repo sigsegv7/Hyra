@@ -123,6 +123,29 @@ cpu_add(struct oemu_cpu *cpu, inst_t *inst)
 }
 
 /*
+ * Decode the INST_SUB instruction
+ *
+ * @cpu: CPU that is executing
+ * @inst: Instruction dword
+ */
+static void
+cpu_sub(struct oemu_cpu *cpu, inst_t *inst)
+{
+    struct cpu_regs *regs = &cpu->regs;
+    imm_t imm;
+
+    if (inst->rd > NELEM(regs->xreg)) {
+        printf("bad register operand for 'sub'\n");
+        return;
+    }
+
+    imm = regs->xreg[inst->rd];
+    regs->xreg[inst->rd] -= inst->imm;
+    printf("%d - %d -> X%d, new=%d\n",
+        imm, inst->imm, inst->rd, regs->xreg[inst->rd]);
+}
+
+/*
  * Reset a CPU to a default state
  */
 void
@@ -160,6 +183,9 @@ cpu_kick(struct oemu_cpu *cpu, struct sysmem *mem)
             break;
         case INST_ADD:
             cpu_add(cpu, inst);
+            break;
+        case INST_SUB:
+            cpu_sub(cpu, inst);
             break;
         }
 
