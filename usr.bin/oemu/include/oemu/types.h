@@ -33,7 +33,8 @@
 #include <sys/types.h>
 
 typedef uint64_t reg_t;
-typedef uintptr_t paddr_t;
+typedef uintptr_t addr_t;
 typedef uint16_t imm_t;
+typedef addr_t paddr_t;
 
 #endif  /* !_OEMU_TYPES_H_ */
