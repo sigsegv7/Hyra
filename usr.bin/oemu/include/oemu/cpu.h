@@ -63,6 +63,7 @@ struct oemu_cpu {
     struct cpu_regs regs;
 };
 
+void cpu_regdump(struct oemu_cpu *cpu);
 void cpu_reset(struct oemu_cpu *cpu);
 void cpu_kick(struct oemu_cpu *cpu, struct sysmem *mem);
 

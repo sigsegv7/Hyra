@@ -210,6 +210,31 @@ cpu_reset(struct oemu_cpu *cpu)
     memset(regs->xreg, 0x0, sizeof(regs->xreg));
 }
 
+void
+cpu_regdump(struct oemu_cpu *cpu)
+{
+    struct cpu_regs *regs;
+
+    regs = &cpu->regs;
+    printf(
+        "X0=%p, X1=%p, X2=%p\n"
+        "X3=%p, X4=%p, X5=%p\n"
+        "X6=%p, X7=%p, X8=%p\n"
+        "X9=%p, X10=%p, X11=%p\n"
+        "X12=%p, X13=%p, X14=%p\n"
+        "X15=%p, IP=%p\n",
+        regs->xreg[0], regs->xreg[1],
+        regs->xreg[2], regs->xreg[3],
+        regs->xreg[4], regs->xreg[5],
+        regs->xreg[6], regs->xreg[7],
+        regs->xreg[8], regs->xreg[9],
+        regs->xreg[10], regs->xreg[11],
+        regs->xreg[12], regs->xreg[13],
+        regs->xreg[14], regs->xreg[15],
+        regs->ip
+    );
+}
+
 /*
  * Main instruction execution loop.
  */
@@ -259,4 +284,6 @@ cpu_kick(struct oemu_cpu *cpu, struct sysmem *mem)
 
         regs->ip += sizeof(*inst);
     }
+
+    cpu_regdump(cpu);
 }
