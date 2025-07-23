@@ -182,7 +182,7 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
     case TT_IMM:
         p = tokstr[state->last];
         if (!tok_is_xreg(state->last)) {
-            printf("expected X<n> but got %s\n", p);
+            oasm_err("expected X<n> but got %s\n", p);
             return -1;
         }
         emit_osmx64(&emit_state, tok);
