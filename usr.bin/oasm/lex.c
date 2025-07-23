@@ -50,6 +50,20 @@ static char putback = '\0';
 #define S_IMN_HLT  "hlt"
 #define S_IMN_BR   "br"
 
+/* Instruction length */
+#define OSMX64_INST_LEN 4
+
+/*
+ * Update the state when the caller encounters
+ * a newline.
+ */
+static inline void
+lex_newline(struct oasm_state *state)
+{
+    ++state->line;
+    state->pip += OSMX64_INST_LEN;
+}
+
 /*
  * Returns 0 if a char is counted as a
  * skippable token. Otherwise, -1
@@ -63,7 +77,7 @@ lex_skippable(struct oasm_state *state, char c)
     case '\t': return 0;
     case '\r': return 0;
     case '\n':
-        ++state->line;
+        lex_newline(state);
         return 0;
     }
 
@@ -151,6 +165,10 @@ lex_nomstr(struct oasm_state *state, char **res)
      */
     while ((tmp = lex_cin(state)) != 0) {
         if (tmp == ' ' || tmp == ',') {
+            retval = tmp;
+            break;
+        }
+        if (tmp == ':') {
             retval = tmp;
             break;
         }
@@ -295,7 +313,7 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
 
     switch (c) {
     case '\n':
-        ++state->line;
+        lex_newline(state);
         return 0;
     case '\0':
         return -1;
@@ -306,7 +324,14 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
         ttp->raw = NULL;
 
         lex_putback(c);
-        lex_nomstr(state, &p);
+        c = lex_nomstr(state, &p);
+
+        while (c == ':') {
+            ttp->type = TT_LABEL;
+            ttp->raw = p;
+            state->label_ip = state->pip;
+            return 0;
+        }
 
         /* Arithmetic operation? */
         if ((tok = token_arith(p)) != TT_UNKNOWN) {
@@ -340,6 +365,7 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
             ttp->raw = p;
             return 0;
         }
+
         oasm_err("bad token \"%s\"\n", p);
         lex_try_free(p);
         return -1;

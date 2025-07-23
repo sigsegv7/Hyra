@@ -39,6 +39,8 @@
  * OASM state:
  *
  * @filename: Filname of unit we are parsing
+ * @pip: Pseudo instruction pointer
+ * @label_ip: IP at current label start
  * @in_fd: Input file descriptor
  * @out_fd: Resulting binary output file descriptor
  * @line: Current line number
@@ -46,6 +48,8 @@
  */
 struct oasm_state {
     char *filename;
+    off_t pip;
+    off_t label_ip;
     int in_fd;
     int out_fd;
     off_t line;

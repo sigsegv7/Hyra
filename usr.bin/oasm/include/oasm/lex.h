@@ -103,6 +103,7 @@ typedef enum {
     TT_INC,         /* 'inc' */
     TT_DEC,         /* 'dec' */
     TT_IMM,         /* #<n> */
+    TT_LABEL,       /* 'label: ...' */
 
     /* Register sets */
     __XN_REGS,      /* x0-x15 */

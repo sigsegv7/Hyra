@@ -49,6 +49,8 @@ static const char *tokstr[] = {
     [ TT_DEC ] = "dec",
     [ TT_MOV ] = "mov",
     [ TT_IMM ]  = "<imm>",
+    [ TT_LABEL] = "<label>",
+
 
     /* X<n> registers */
     [ TT_X0 ]  = "x0",
@@ -149,6 +151,9 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
     case TT_BR:
         state->last = tok->type;
         emit_osmx64(&emit_state, tok);
+        break;
+    case TT_LABEL:
+        state->last = tok->type;
         break;
     case TT_HLT:
         state->last = tok->type;
