@@ -23,3 +23,5 @@ all:
 	make -C kstat/ $(ARGS)
 	make -C nerve/ $(ARGS)
 	make -C whoami/ $(ARGS)
+	make -C oasm/ $(ARGS)
+	make -C oemu/ $(ARGS)
