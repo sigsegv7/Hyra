@@ -377,6 +377,10 @@ cpu_kick(struct oemu_cpu *cpu, struct sysmem *mem)
         inst = (inst_t *)&memp[regs->ip];
 
         switch (inst->opcode) {
+        case INST_NOP:
+            /* NOP */
+            regs->ip += sizeof(*inst);
+            continue;
         case INST_MOV_IMM:
             cpu_mov_imm(cpu, inst);
             break;
