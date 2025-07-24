@@ -27,7 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if !defined(_KERNEL)
+#include <stdint.h>
+#include <stddef.h>
+#else
 #include <sys/types.h>
+#endif  /* !_KERNEL */
 
 #ifndef _QUEUE_H_
 #define _QUEUE_H_
