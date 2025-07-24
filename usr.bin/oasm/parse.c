@@ -34,6 +34,7 @@
 #include <oasm/lex.h>
 #include <oasm/parse.h>
 #include <oasm/log.h>
+#include <oasm/label.h>
 
 static struct emit_state emit_state;
 static const char *tokstr[] = {
@@ -159,6 +160,7 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
         break;
     case TT_LABEL:
         state->last = tok->type;
+        label_enter(tok->raw, state->pip);
         break;
     case TT_HLT:
         state->last = tok->type;
@@ -246,4 +248,5 @@ parse_enter(struct oasm_state *state)
     /* Process then destroy the emit state */
     emit_process(state, &emit_state);
     emit_destroy(&emit_state);
+    labels_destroy();
 }
