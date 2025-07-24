@@ -49,6 +49,10 @@ static char putback = '\0';
 #define S_IMN_DEC  "dec"
 #define S_IMN_HLT  "hlt"
 #define S_IMN_BR   "br"
+#define S_IMN_MROB "mrob"
+#define S_IMN_MROW "mrow"
+#define S_IMN_MROD "mrod"
+#define S_IMN_MROQ "mroq"
 
 /* Instruction length */
 #define OSMX64_INST_LEN 4
@@ -223,6 +227,41 @@ token_cfi(char *p)
     return TT_UNKNOWN;
 }
 
+/*
+ * Bitwise MRO instructions
+ */
+static tt_t
+token_bitw_mro(char *p)
+{
+    if (strcmp(p, S_IMN_MROB) == 0) {
+        return TT_MROB;
+    } else if (strcmp(p, S_IMN_MROW) == 0) {
+        return TT_MROW;
+    } else if (strcmp(p, S_IMN_MROD) == 0) {
+        return TT_MROD;
+    } else if (strcmp(p, S_IMN_MROQ) == 0) {
+        return TT_MROQ;
+    }
+
+    return TT_UNKNOWN;
+}
+
+/*
+ * Bitwise instructions
+ */
+static tt_t
+token_bitw(char *p)
+{
+    tt_t token;
+
+    token = token_bitw_mro(p);
+    if (token != TT_UNKNOWN) {
+        return token;
+    }
+
+    return TT_UNKNOWN;
+}
+
 static tt_t
 token_xreg(char *p)
 {
@@ -350,6 +389,12 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
         /* Register? */
         if ((tok = token_reg(p)) != TT_UNKNOWN) {
             ttp->is_reg = 1;
+            ttp->type = tok;
+            ttp->raw = p;
+            return 0;
+        }
+
+        if ((tok = token_bitw(p)) != TT_UNKNOWN) {
             ttp->type = tok;
             ttp->raw = p;
             return 0;

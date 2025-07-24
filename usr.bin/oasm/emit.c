@@ -296,6 +296,67 @@ emit_encode_br(struct emit_state *state, struct oasm_token *tok)
     return TAILQ_NEXT(tok, link);
 }
 
+/*
+ * Encode the MRO type instructions
+ *
+ * mrob x1[7:0]
+ * mrow x1[15:0]   ! Mrowwww :3333
+ * mrod x1[31:0]
+ * mroq x[63:0]
+ *
+ * Returns the next token on success,
+ * otherwise NULL.
+ */
+static struct oasm_token *
+emit_encode_mro(struct emit_state *state, struct oasm_token *tok)
+{
+    inst_t curinst;
+    reg_t rd;
+    uint8_t opcode = OSMX64_MROB;
+    char *inst_str = "mrob";
+
+    switch (tok->type) {
+    case TT_MROW:
+        opcode = OSMX64_MROW;
+        inst_str = "mrow";
+        break;
+    case TT_MROD:
+        opcode = OSMX64_MROD;
+        inst_str = "mrod";
+        break;
+    case TT_MROQ:
+        opcode = OSMX64_MROQ;
+        inst_str = "mroq";
+        break;
+    }
+
+    /* Next token should be a register */
+    tok = TAILQ_NEXT(tok, link);
+    if (!tok_is_xreg(tok->type)) {
+        oasm_err("[emit error]: expected register in '%s'\n", inst_str);
+        return NULL;
+    }
+
+    rd = ir_to_reg(tok->type);
+    if (rd == OSMX64_R_BAD) {
+        oasm_err("[emit error]: got bad register in '%s'\n", inst_str);
+        return NULL;
+    }
+
+    /* Next token should be an IMM */
+    tok = TAILQ_NEXT(tok, link);
+    if (tok->type != TT_IMM) {
+        oasm_err("[emit error]: expected <imm> after reg in '%s'\n", inst_str);
+        return NULL;
+    }
+
+    curinst.opcode = opcode;
+    curinst.rd = rd;
+    curinst.imm = tok->imm;
+    emit_bytes(state, &curinst, sizeof(curinst));
+    return TAILQ_NEXT(tok, link);
+}
+
 int
 emit_osmx64(struct emit_state *state, struct oasm_token *tp)
 {
@@ -387,6 +448,10 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
             curtok = emit_encode_hlt(emit, curtok);
             break;
         default:
+            if (lex_is_mro(curtok->type)) {
+                curtok = emit_encode_mro(emit, curtok);
+                break;
+            }
             curtok = TAILQ_NEXT(curtok, link);
             break;
         }

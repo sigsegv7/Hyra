@@ -62,6 +62,10 @@
 #define OSMX64_MOV_IMM  0x13    /* Data move operation from IMM */
 #define OSMX64_HLT      0x14    /* Halt the processor */
 #define OSMX64_BR       0x15    /* Branch */
+#define OSMX64_MROB     0x16    /* Mask register over byte */
+#define OSMX64_MROW     0x17    /* Mask register over word */
+#define OSMX64_MROD     0x18    /* Mask register over dword */
+#define OSMX64_MROQ     0x19    /* Mask register over qword */
 
 /*
  * OSMX64 register definitions

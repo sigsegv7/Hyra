@@ -97,6 +97,10 @@ typedef enum {
     TT_DIV,         /* 'div' */
     TT_HLT,         /* 'hlt' */
     TT_BR,          /* 'br'  */
+    TT_MROB,        /* 'mrob' */
+    TT_MROW,        /* 'mrow' */
+    TT_MROD,        /* 'mrod' */
+    TT_MROQ,        /* 'mroq' */
 
     /* Register ops */
     TT_MOV,         /* 'mov' */
@@ -150,6 +154,24 @@ tok_is_xreg(tt_t tok)
     case TT_X13:
     case TT_X14:
     case TT_X15:
+        return true;
+    }
+
+    return false;
+}
+
+/*
+ * Check if a token is of an MRO type
+ * instruction. Returns true on match.
+ */
+__always_inline static inline bool
+lex_is_mro(tt_t tok)
+{
+    switch (tok) {
+    case TT_MROB:
+    case TT_MROW:
+    case TT_MROD:
+    case TT_MROQ:
         return true;
     }
 

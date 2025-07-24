@@ -51,6 +51,12 @@ static const char *tokstr[] = {
     [ TT_IMM ]  = "<imm>",
     [ TT_LABEL] = "<label>",
 
+    /* Bitwise */
+    [ TT_MROB ] = "mrob",
+    [ TT_MROW ] = "mrow",
+    [ TT_MROD ] = "mrod",
+    [ TT_MROQ ] = "mroq",
+
 
     /* X<n> registers */
     [ TT_X0 ]  = "x0",
@@ -119,6 +125,11 @@ parse_reg(struct oasm_state *state, struct oasm_token *tok)
         state->last = tok->type;
         break;
     default:
+        if (lex_is_mro(state->last)) {
+            state->last = tok->type;
+            break;
+        }
+
         p = tokstr[state->last];
         oasm_err("bad instruction '%s' for regop\n", p);
         return -1;
@@ -187,6 +198,12 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
         emit_osmx64(&emit_state, tok);
         break;
     default:
+        if (lex_is_mro(tok->type)) {
+            state->last = tok->type;
+            emit_osmx64(&emit_state, tok);
+            return 0;
+        }
+
         if (!tok->is_reg) {
             oasm_err("syntax error\n");
             return -1;
