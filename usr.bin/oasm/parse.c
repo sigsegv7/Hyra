@@ -39,6 +39,7 @@
 static struct emit_state emit_state;
 static const char *tokstr[] = {
     [ TT_UNKNOWN] = "bad",
+    [ TT_NOP ]    = "nop",
     [ TT_ADD ] = "add",
     [ TT_SUB ] = "sub",
     [ TT_MUL ] = "mul",
@@ -154,6 +155,10 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
     int error;
 
     switch (tok->type) {
+    case TT_NOP:
+        state->last = tok->type;
+        emit_osmx64(&emit_state, tok);
+        break;
     case TT_BR:
         state->last = tok->type;
         emit_osmx64(&emit_state, tok);

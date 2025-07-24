@@ -357,6 +357,26 @@ emit_encode_mro(struct emit_state *state, struct oasm_token *tok)
     return TAILQ_NEXT(tok, link);
 }
 
+/*
+ * Encode a NOP instruction
+ *
+ * 'nop' - no operands
+ *
+ * Returns the next token on success,
+ * otherwise NULL.
+ */
+static struct oasm_token *
+emit_encode_nop(struct emit_state *state, struct oasm_token *tok)
+{
+    inst_t curinst;
+
+    curinst.opcode = OSMX64_NOP;
+    curinst.rd = 0;
+    curinst.unused = 0;
+    emit_bytes(state, &curinst, sizeof(curinst));
+    return TAILQ_NEXT(tok, link);
+}
+
 int
 emit_osmx64(struct emit_state *state, struct oasm_token *tp)
 {
@@ -428,6 +448,9 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
     curtok = TAILQ_FIRST(&emit->ir);
     while (curtok != NULL) {
         switch (curtok->type) {
+        case TT_NOP:
+            curtok = emit_encode_nop(emit, curtok);
+            break;
         case TT_MOV:
             curtok = emit_encode_mov(emit, curtok);
             break;

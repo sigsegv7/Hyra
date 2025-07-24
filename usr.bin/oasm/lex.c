@@ -40,6 +40,7 @@
 static char putback = '\0';
 
 /* Instruction mnemonic strings */
+#define S_IMN_NOP  "nop"
 #define S_IMN_MOV  "mov"
 #define S_IMN_ADD  "add"
 #define S_IMN_SUB  "sub"
@@ -369,6 +370,13 @@ lex_tok(struct oasm_state *state, struct oasm_token *ttp)
             ttp->type = TT_LABEL;
             ttp->raw = p;
             state->label_ip = state->pip;
+            return 0;
+        }
+
+        /* No operation? */
+        if (strcmp(p, S_IMN_NOP) == 0) {
+            ttp->type = TT_NOP;
+            ttp->raw = p;
             return 0;
         }
 

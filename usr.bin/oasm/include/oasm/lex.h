@@ -90,6 +90,7 @@ struct oasm_state;
  */
 typedef enum {
     TT_UNKNOWN,     /* Unknown token */
+    TT_NOP,         /* No operation */
 
     /* Arithmetic instructions */
     TT_ADD,         /* 'add' */
