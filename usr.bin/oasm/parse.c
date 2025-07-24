@@ -136,12 +136,6 @@ parse_reg(struct oasm_state *state, struct oasm_token *tok)
 }
 
 static int
-parse_imm(struct oasm_token *tok, tt_t last)
-{
-    return 0;
-}
-
-static int
 parse_tok(struct oasm_state *state, struct oasm_token *tok)
 {
     const char *p;
