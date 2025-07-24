@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 static struct oasm_label *labels[MAX_LABELS];
 static size_t label_count = 0;

@@ -33,6 +33,7 @@
 #include <sys/queue.h>
 #include <sys/cdefs.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 struct oasm_state;
 
