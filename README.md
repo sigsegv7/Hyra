@@ -45,6 +45,8 @@ such programs include:
 - ``sleep`` - Sleep for a number of seconds
 - ``kmsg`` - Read the kernel message buffer
 - ``readcore`` - Read coredump files
+- ``oasm`` - OSMORA [OSMX64](https://github.com/sigsegv7/OSMX64) Assembler
+- ``oemu`` - OSMORA [OSMX64](https://github.com/sigsegv7/OSMX64) Emulator
 
 And more! See ``usr.bin/*``
 
