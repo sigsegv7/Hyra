@@ -43,16 +43,16 @@
 #define INST_OR       0x07    /* Bitwise OR operation */
 #define INST_XOR      0x08    /* Bitwise XOR operation */
 #define INST_AND      0x09    /* Bitwise AND operation */
-#define INST_NOT      0x10    /* Bitwise NOT operation */
-#define INST_SLL      0x11    /* Shift left logical operation */
-#define INST_SRL      0x12    /* Shift right logical operation */
-#define INST_MOV_IMM  0x13    /* Data move operation from IMM */
-#define INST_HLT      0x14    /* Halt */
-#define INST_BR       0x15    /* Branch */
-#define INST_MROB     0x16    /* Mask register over byte */
-#define INST_MROW     0x17    /* Mask register over word */
-#define INST_MROD     0x18    /* Mask register over dword */
-#define INST_MROQ     0x19    /* Mask register over qword */
+#define INST_NOT      0x0A    /* Bitwise NOT operation */
+#define INST_SLL      0x0B    /* Shift left logical operation */
+#define INST_SRL      0x0C    /* Shift right logical operation */
+#define INST_MOV_IMM  0x0D    /* Data move operation from IMM */
+#define INST_HLT      0x0E    /* Halt */
+#define INST_BR       0x0F    /* Branch */
+#define INST_MROB     0x10    /* Mask register over byte */
+#define INST_MROW     0x11    /* Mask register over word */
+#define INST_MROD     0x12    /* Mask register over dword */
+#define INST_MROQ     0x13    /* Mask register over qword */
 
 /* Registers */
 #define REG_X0   0x00

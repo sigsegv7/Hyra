@@ -56,16 +56,16 @@
 #define OSMX64_OR       0x07    /* Bitwise OR operation */
 #define OSMX64_XOR      0x08    /* Bitwise XOR operation */
 #define OSMX64_AND      0x09    /* Bitwise AND operation */
-#define OSMX64_NOT      0x10    /* Bitwise NOT operation */
-#define OSMX64_SLL      0x11    /* Shift left logical operation */
-#define OSMX64_SRL      0x12    /* Shift right logical operation */
-#define OSMX64_MOV_IMM  0x13    /* Data move operation from IMM */
-#define OSMX64_HLT      0x14    /* Halt the processor */
-#define OSMX64_BR       0x15    /* Branch */
-#define OSMX64_MROB     0x16    /* Mask register over byte */
-#define OSMX64_MROW     0x17    /* Mask register over word */
-#define OSMX64_MROD     0x18    /* Mask register over dword */
-#define OSMX64_MROQ     0x19    /* Mask register over qword */
+#define OSMX64_NOT      0x0A    /* Bitwise NOT operation */
+#define OSMX64_SLL      0x0B    /* Shift left logical operation */
+#define OSMX64_SRL      0x0C    /* Shift right logical operation */
+#define OSMX64_MOV_IMM  0x0D    /* Data move operation from IMM */
+#define OSMX64_HLT      0x0E    /* Halt the processor */
+#define OSMX64_BR       0x0F    /* Branch */
+#define OSMX64_MROB     0x10    /* Mask register over byte */
+#define OSMX64_MROW     0x11    /* Mask register over word */
+#define OSMX64_MROD     0x12    /* Mask register over dword */
+#define OSMX64_MROQ     0x13    /* Mask register over qword */
 
 /*
  * OSMX64 register definitions
