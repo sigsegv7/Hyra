@@ -49,6 +49,10 @@
 #define INST_MOV_IMM  0x13    /* Data move operation from IMM */
 #define INST_HLT      0x14    /* Halt */
 #define INST_BR       0x15    /* Branch */
+#define INST_MROB     0x16    /* Mask register over byte */
+#define INST_MROW     0x17    /* Mask register over word */
+#define INST_MROD     0x18    /* Mask register over dword */
+#define INST_MROQ     0x19    /* Mask register over qword */
 
 /* Registers */
 #define REG_X0   0x00

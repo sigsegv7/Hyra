@@ -27,13 +27,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/types.h>
 #include <sys/param.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <oemu/cpu.h>
 #include <oemu/types.h>
 #include <oemu/osmx64.h>
+
+/*
+ * Return true if the instruction is an
+ * MRO type instruction.
+ */
+static bool
+cpu_is_mro(inst_t *inst)
+{
+    switch (inst->opcode) {
+    case INST_MROB:
+    case INST_MROW:
+    case INST_MROD:
+    case INST_MROQ:
+        return true;
+    }
+
+    return false;
+}
 
 /*
  * Decode the INST_MOV_IMM instruction
@@ -225,6 +245,77 @@ cpu_br(struct oemu_cpu *cpu, inst_t *inst)
 }
 
 /*
+ * Decode MRO type instructions
+ */
+static void
+cpu_mro(struct oemu_cpu *cpu, inst_t *inst)
+{
+    inst_t *next_inst;
+    struct cpu_regs *regs = &cpu->regs;
+    char *inst_str = "bad";
+    uint64_t mask = 0;
+    bool set_mask = false;
+    imm_t imm;
+
+    switch (inst->imm) {
+    case 0: break;
+    case 1:
+        set_mask = true;
+        break;
+    default:
+        imm = inst->imm & 1;
+        if (inst->imm == 1) {
+            set_mask = true;
+        }
+        break;
+    }
+
+    switch (inst->opcode) {
+    case INST_MROB:
+        inst_str = "mrob";
+        if (!set_mask) {
+            break;
+        }
+        mask |= MASK(8);
+        break;
+    case INST_MROW:
+        inst_str = "mrow";
+        if (!set_mask) {
+            break;
+        }
+        mask |= MASK(16);
+        break;
+    case INST_MROD:
+        inst_str = "mrod";
+        if (!set_mask) {
+            break;
+        }
+        mask |= MASK(32);
+        break;
+    case INST_MROQ:
+        inst_str = "mroq";
+        if (!set_mask) {
+            break;
+        }
+        mask |= __UINT64_MAX;
+        break;
+    }
+
+    if (inst->rd > NELEM(regs->xreg)) {
+        printf("bad register operand for '%s'\n", inst_str);
+        return;
+    }
+
+    if (set_mask) {
+        imm = regs->xreg[inst->rd] |= mask;
+        printf("set %x->x%d, new=%x\n", mask, inst->rd, imm);
+    } else {
+        imm = regs->xreg[inst->rd] &= ~mask;
+        printf("cleared %x->x%d, new=%x\n", mask, inst->rd, imm);
+    }
+}
+
+/*
  * Reset a CPU to a default state
  */
 void
@@ -309,6 +400,11 @@ cpu_kick(struct oemu_cpu *cpu, struct sysmem *mem)
             break;
         case INST_BR:
             cpu_br(cpu, inst);
+            break;
+        default:
+            if (cpu_is_mro(inst)) {
+                cpu_mro(cpu, inst);
+            }
             break;
         }
 
