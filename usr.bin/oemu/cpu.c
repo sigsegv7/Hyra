@@ -408,6 +408,13 @@ cpu_kick(struct oemu_cpu *cpu, struct sysmem *mem)
             break;
         }
 
+        /*
+         * X0 is readonly and should always be zero, undo
+         * any writes or side effects from any operations
+         * upon this register.
+         */
+        regs->xreg[0] = 0;
+
         /* Is this a halt instruction? */
         if (inst->opcode == INST_HLT) {
             printf("HALTED\n");
