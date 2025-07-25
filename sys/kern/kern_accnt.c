@@ -58,6 +58,25 @@ ctl_stat_read(struct ctlfs_dev *cdp, struct sio_txn *sio)
     return sio->len;
 }
 
+static uint16_t
+cpu_nhlt(void)
+{
+    uint16_t nhlt = 0;
+    struct cpu_info *ci;
+
+    for (size_t i = 0; i < CPU_MAX; ++i) {
+        ci = cpu_get(i);
+        if (ci == NULL) {
+            continue;
+        }
+        if (!ci->online) {
+            ++nhlt;
+        }
+    }
+
+    return nhlt;
+}
+
 /*
  * Get scheduler accounting information
  *
@@ -71,6 +90,7 @@ sched_stat(struct sched_stat *statp)
     statp->nproc = atomic_load_64(&g_nthreads);
     statp->ncpu = cpu_count();
     statp->quantum_usec = DEFAULT_TIMESLICE_USEC;
+    statp->nhlt = cpu_nhlt();
 
     /*
      * Setup the per-cpu info/statistics

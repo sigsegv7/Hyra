@@ -49,11 +49,13 @@ struct sched_cpu {
  *
  * @nproc: Number processes running
  * @ncpu: Number of CPU cores
+ * @nhlt: Number of halted CPU cores
  * @quantum_usec: Scheduler quantum (microseconds)
  */
 struct sched_stat {
     size_t nproc;
     uint16_t ncpu;
+    uint16_t nhlt;
     uint32_t quantum_usec;
     struct sched_cpu cpus[CPU_MAX];
 };
