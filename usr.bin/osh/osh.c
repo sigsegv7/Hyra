@@ -43,6 +43,9 @@
 #define is_printable(C) ((C) >= 32 && (C) <= 126)
 #define is_ascii(C) ((C) >= 0 && (C) <= 128)
 
+#define INPUT_SIZE 64
+
+#define REPEAT  "!!"
 #define COMMENT '@'
 #define WELCOME \
     ":::::::::::::::::::::::::::::::::::::::\n" \
@@ -66,7 +69,8 @@
 
 #define PROMPT "[%s::osmora]~ "
 
-static char buf[64];
+static char last_command[INPUT_SIZE];
+static char buf[INPUT_SIZE];
 static int running;
 static int bell_fd;
 static bool bs_bell = true; /* Beep on backspace */
@@ -365,6 +369,18 @@ parse_line(char *input)
     struct parse_state state = {0};
     pid_t child;
 
+    /*
+     * If we are using the REPEAT shorthand,
+     * repeat the last command. We return -EAGAIN
+     * to indicate we did not parse a normal command
+     * so the repeat command isn't pushed into the last
+     * command buffer and we enter a recursive hell.
+     */
+    if (strcmp(input, REPEAT) == 0) {
+        parse_line(last_command);
+        return -EAGAIN;
+    }
+
     /* Ensure the aux vector is zeored */
     memset(argv, 0, sizeof(argv));
 
@@ -476,6 +492,7 @@ main(int argc, char **argv)
             continue;
         }
 
+        memcpy(last_command, buf, buf_i + 1);
         buf[0] = '\0';
     }
     return 0;
