@@ -128,7 +128,6 @@ parse_reg(struct oasm_state *state, struct oasm_token *tok)
         break;
     default:
         if (tok_is_mro(state->last)) {
-            state->last = tok->type;
             break;
         }
 
