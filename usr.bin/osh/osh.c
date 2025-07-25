@@ -426,6 +426,25 @@ open_script(const char *pathname)
     return 0;
 }
 
+static void
+dump_file(const char *pathname)
+{
+    FILE *file;
+    char buf[64];
+    int fd;
+
+    file = fopen(pathname, "r");
+    if (file == NULL) {
+        return;
+    }
+
+    while (fgets(buf, sizeof(buf), file) != NULL) {
+        printf("%s", buf);
+    }
+
+    fclose(file);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -442,7 +461,7 @@ main(int argc, char **argv)
 
     running = 1;
     bell_fd = open("/dev/beep", O_WRONLY);
-    puts(WELCOME);
+    dump_file("/etc/motd");
 
     while (running) {
         printf(PROMPT, getlogin());
