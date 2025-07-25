@@ -84,6 +84,9 @@ vsnprintf(char *s, size_t size, const char *fmt, va_list ap)
 
         c = *fmt++;
         switch (c) {
+        case '%':
+            printc(s, size, &off, c);
+            break;
         case 'c':
             c1 = (char )__va_arg(ap, int);
             printc(s, size, &off, c1);
