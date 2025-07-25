@@ -70,6 +70,18 @@ sigsegv_default(int signo)
     exit1(td, 0);
 }
 
+void
+sigterm_default(int signo)
+{
+    static struct proc *td;
+
+    td = this_td();
+    syslog_silence(false);
+    kprintf(OMIT_TIMESTAMP "Terminated (pid=%d)\n", td->pid);
+    syslog_silence(true);
+    exit1(td, 0);
+}
+
 int
 dev_noread(void)
 {

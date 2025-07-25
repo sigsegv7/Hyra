@@ -37,6 +37,7 @@
 #define SIGFPE      8   /* Floating point exception */
 #define SIGKILL     9   /* Kill */
 #define SIGSEGV     11  /* Segmentation violation */
+#define SIGTERM     15  /* Terminate gracefully */
 
 typedef uint32_t sigset_t;
 
@@ -80,5 +81,6 @@ int sigismember(const sigset_t *set, int signo);
 void sigfpe_default(int signo);
 void sigkill_default(int signo);
 void sigsegv_default(int signo);
+void sigterm_default(int signo);
 #endif  /* _KERNEL */
 #endif  /* !_SYS_SIGNAL_H_ */

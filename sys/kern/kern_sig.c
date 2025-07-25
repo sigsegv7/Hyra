@@ -58,6 +58,12 @@ static struct sigaction sa_tab[] = {
         .sa_flags = 0,
         .sa_sigaction = NULL
     },
+    [SIGTERM] = {
+        .sa_handler = sigterm_default,
+        .sa_mask = 0,
+        .sa_flags = 0,
+        .sa_sigaction = NULL
+    }
 };
 
 /*
