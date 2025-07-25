@@ -31,6 +31,7 @@
 #define _AMD64_CDEFS_H_
 
 #include <sys/cdefs.h>
+#include <machine/cpu.h>
 
 /*
  * Please use CLI wisely, it is a good idea to use
@@ -40,7 +41,7 @@
 #define md_pause()  __ASMV("rep; nop")      /* (F3 90) PAUSE */
 #define md_intoff() __ASMV("cli")           /* Clear interrupts */
 #define md_inton()  __ASMV("sti")           /* Enable interrupts */
-#define md_hlt()    __ASMV("hlt")           /* Halt the processor */
+#define md_hlt() cpu_halt()                 /* Halt the processor */
 
 /*
  * AMD64 specific defines

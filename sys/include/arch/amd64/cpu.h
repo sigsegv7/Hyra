@@ -36,6 +36,7 @@
 #include <sys/sched.h>
 #include <sys/spinlock.h>
 #include <machine/tss.h>
+#include <machine/cdefs.h>
 
 #define CPU_IRQ(IRQ_N) (BIT((IRQ_N)) & 0xFF)
 
@@ -51,6 +52,7 @@ struct cpu_info {
     uint8_t family : 4;         /* CPU family ID */
     uint8_t has_x2apic : 1;
     uint8_t tlb_shootdown : 1;
+    uint8_t online : 1;         /* CPU online */
     uint8_t ipl;
     size_t lapic_tmr_freq;
     uint8_t irq_mask;
@@ -79,5 +81,19 @@ struct cpu_info *this_cpu(void);
 void mp_bootstrap_aps(struct cpu_info *ci);
 
 extern struct cpu_info g_bsp_ci;
+
+__always_inline static inline void
+cpu_halt(void)
+{
+    struct cpu_info *ci = this_cpu();
+
+    if (ci != NULL)
+        ci->online = 0;
+
+    __ASMV("hlt");
+
+    if (ci != NULL)
+        ci->online = 1;
+}
 
 #endif  /* !_MACHINE_CPU_H_ */
