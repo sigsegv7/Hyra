@@ -127,7 +127,7 @@ parse_reg(struct oasm_state *state, struct oasm_token *tok)
         state->last = tok->type;
         break;
     default:
-        if (lex_is_mro(state->last)) {
+        if (tok_is_mro(state->last)) {
             state->last = tok->type;
             break;
         }
@@ -205,7 +205,7 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
         emit_osmx64(&emit_state, tok);
         break;
     default:
-        if (lex_is_mro(tok->type)) {
+        if (tok_is_mro(tok->type)) {
             state->last = tok->type;
             emit_osmx64(&emit_state, tok);
             return 0;

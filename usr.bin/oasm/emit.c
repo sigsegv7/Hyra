@@ -471,7 +471,7 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
             curtok = emit_encode_hlt(emit, curtok);
             break;
         default:
-            if (lex_is_mro(curtok->type)) {
+            if (tok_is_mro(curtok->type)) {
                 curtok = emit_encode_mro(emit, curtok);
                 break;
             }

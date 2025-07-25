@@ -167,7 +167,7 @@ tok_is_xreg(tt_t tok)
  * instruction. Returns true on match.
  */
 __always_inline static inline bool
-lex_is_mro(tt_t tok)
+tok_is_mro(tt_t tok)
 {
     switch (tok) {
     case TT_MROB:
