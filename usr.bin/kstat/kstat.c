@@ -37,6 +37,8 @@ get_sched_stat(void)
 {
     struct sched_stat stat;
     struct sched_cpu *cpu;
+    double nonline, noffline;
+    uint16_t online_percent;
     int fd;
 
     fd = open("/ctl/sched/stat", O_RDONLY);
@@ -50,10 +52,15 @@ get_sched_stat(void)
     }
 
     close(fd);
+    noffline = stat.nhlt;
+    nonline = (stat.ncpu - noffline);
+    online_percent = (uint16_t)(((double)nonline / (nonline + noffline)) * 100);
+
     printf("-------------------------------\n");
     printf("Number of tasks: %d\n", stat.nproc);
     printf("Number of cores online: %d\n", stat.ncpu);
     printf("Scheduler quantum: %d usec\n", stat.quantum_usec);
+    printf("CPU is %d%% online\n", online_percent);
     printf("-------------------------------\n");
 
     /*
