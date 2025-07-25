@@ -133,7 +133,7 @@ parse_reg(struct oasm_state *state, struct oasm_token *tok)
         }
 
         p = tokstr[state->last];
-        oasm_err("bad instruction '%s' for regop\n", p);
+        oasm_err("bad token '%s' for regop\n", p);
         return -1;
     }
 
