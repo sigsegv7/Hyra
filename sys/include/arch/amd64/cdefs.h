@@ -31,7 +31,6 @@
 #define _AMD64_CDEFS_H_
 
 #include <sys/cdefs.h>
-#include <machine/sync.h>
 
 /*
  * Please use CLI wisely, it is a good idea to use
