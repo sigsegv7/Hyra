@@ -36,4 +36,6 @@
 #define ARG_MAX 4096
 #define CHAR_BIT 8
 #define CPU_MAX 256
+#define VSR_MAX_DOMAIN 16
+#define VSR_MAX_CAPSULE 16
 #endif  /* !_SYS_LIMITS_H_ */

@@ -39,6 +39,8 @@
 #include <sys/syscall.h>
 #include <sys/exec.h>
 #include <sys/ucred.h>
+#include <sys/limits.h>
+#include <sys/vsr.h>
 #include <sys/filedesc.h>
 #include <sys/signal.h>
 #include <sys/vnode.h>
@@ -88,6 +90,7 @@ struct proc {
     struct ucred cred;
     struct ksiginfo *ksig_list[PROC_SIGMAX];
     struct filedesc *fds[PROC_MAX_FILEDES];
+    struct vsr_domain *vsr_tab[VSR_MAX_DOMAIN];
     struct mmap_lgdr *mlgdr;
     struct vcache *vcache;
     struct spinlock vcache_lock;
