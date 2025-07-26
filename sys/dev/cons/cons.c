@@ -356,6 +356,7 @@ dev_write(dev_t dev, struct sio_txn *sio, int flags)
 static int
 dev_read(dev_t dev, struct sio_txn *sio, int flags)
 {
+    struct cons_screen *scr = &g_root_scr;
     struct cons_input input;
     uint8_t *p;
     int retval;
@@ -369,7 +370,7 @@ dev_read(dev_t dev, struct sio_txn *sio, int flags)
         return -EFAULT;
     }
 
-    retval = cons_ibuf_pop(&g_root_scr, &input);
+    retval = cons_ibuf_pop(scr, &input);
     if (retval < 0) {
         return -EAGAIN;
     }
@@ -386,7 +387,7 @@ dev_read(dev_t dev, struct sio_txn *sio, int flags)
         n -= 2;
 
         /* Try to get the next byte */
-        retval = cons_ibuf_pop(&g_root_scr, &input);
+        retval = cons_ibuf_pop(scr, &input);
         if (retval < 0) {
             break;
         }
