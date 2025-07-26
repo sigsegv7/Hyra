@@ -33,8 +33,18 @@
 /*
  * c_iflag: Input flags
  */
-#define ISTRIP 0x00000000
-#define ICRNL  0x00000001
+#define ISTRIP 0x00000001   /* Strip char */
+#define ICRNL  0x00000002   /* Map CR to NL */
+#define BRKINT 0x00000004   /* Signal interrupt on break */
+#define IGNBRK 0x00000008   /* Ignore break condition */
+#define IGNCR  0x00000010   /* Ignore CR */
+#define IGNPAR 0x00000020   /* Ignore chars with parity errors */
+#define INCLR  0x00000040   /* Map NL to CR */
+#define INPCK  0x00000080   /* Enable input parity check */
+#define IXANY  0x00000100   /* Enable any char to restart output */
+#define IXOFF  0x00000200   /* Enable start/stop control */
+#define PARMRK 0x00000400   /* Mark parity errors */
+
 
 #define NCCS 20
 
