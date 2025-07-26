@@ -45,6 +45,21 @@
 #define IXOFF  0x00000200   /* Enable start/stop control */
 #define PARMRK 0x00000400   /* Mark parity errors */
 
+/*
+ * c_oflag: Output flags
+ */
+#define OPOST  0x00000001   /* Post-process output */
+#define ONLCR  0x00000002   /* Map NL to CR-NL on output */
+#define OCRNL  0x00000004   /* Map CR to NL on output */
+#define ONOCR  0x00000008   /* Map CR to output at col 0 */
+#define ONLRET 0x00000010   /* NL performs CR function */
+#define OFILL  0x00000020   /* Use fill chars for delay */
+#define NLDLY  0x00000040   /* Select newline type  */
+#define CRDLY  0x00000080   /* Select carriage-return delays */
+#define TABDLY 0x00000100   /* Select horizontal-tab delays */
+#define BSDLY  0x00000200   /* Select backspace delays */
+#define VTDLY  0x00000400   /* Select veritcal tab delays */
+#define FFDLY  0x00000800   /* Select form-feed delays */
 
 #define NCCS 20
 
