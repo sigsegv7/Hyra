@@ -27,27 +27,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _LIB_STRING_H_
-#define _LIB_STRING_H_
+#include <string.h>
+#include <vm/dynalloc.h>
 
-#include <sys/types.h>
-#include <stdarg.h>
+char *
+strdup(const char *s)
+{
+    size_t s_len;
+    char *p;
 
-size_t strlen(const char *s);
-char *itoa(int64_t value, char *buf, int base);
-char *strdup(const char *s);
+    /* Make sure size is not zero */
+    if ((s_len = strlen(s)) == 0) {
+        return NULL;
+    }
 
-int vsnprintf(char *s, size_t size, const char *fmt, va_list ap);
-int snprintf(char *s, size_t size, const char *fmt, ...);
+    /* Allocate new memory for this string */
+    p = dynalloc(s_len + 1);
+    if (p == NULL) {
+        return NULL;
+    }
 
-void *memcpy(void *dest, const void *src, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
-
-void *memset(void *s, int c, size_t n);
-int strcmp(const char *s1, const char *s2);
-
-int strncmp(const char *s1, const char *s2, size_t n);
-int atoi(char *s);
-void *memmove(void *s1, const void *s2, size_t n);
-
-#endif  /* !_LIB_STRING_H_ */
+    memcpy(p, s, s_len);
+    return p;
+}
