@@ -39,6 +39,8 @@
 #include <sys/mutex.h>
 #endif  /* _KERNEL */
 
+struct proc;
+
 #define VSR_FILE    0x00000000  /* Represented by file */
 
 /*
@@ -152,12 +154,12 @@ struct vsr_domain {
     struct vsr_table table;
 };
 
-void vsr_init_domains(void);
-void vsr_destroy_domains(void);
+void vsr_init_domains(struct proc *td);
+void vsr_destroy_domains(struct proc *td);
 
-struct vsr_domain *vsr_new_domain(vsr_domain_t type);
-struct vsr_capsule *vsr_new_capsule(vsr_domain_t type, const char *name);
-struct vsr_capsule *vsr_lookup_capsule(vsr_domain_t type, const char *name);
+struct vsr_domain *vsr_new_domain(struct proc *td, vsr_domain_t type);
+struct vsr_capsule *vsr_new_capsule(struct proc *td, vsr_domain_t type, const char *name);
+struct vsr_capsule *vsr_lookup_capsule(struct proc *td, vsr_domain_t type, const char *name);
 
 #endif  /* _KERNEL */
 #endif  /* !_SYS_VSR_H_ */

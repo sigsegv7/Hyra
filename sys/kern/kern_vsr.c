@@ -208,20 +208,19 @@ vsr_destroy_table(struct vsr_table *tab)
 /*
  * Allocate a new VSR capsule and add it to
  * VSR domain.
+ *
+ * @type: Domain type (e.g., VSR_FILE)
+ * @name: Capsule name (e.g., "mod0.data")
+ * @sz: Length of capsulized data
  */
 struct vsr_capsule *
-vsr_new_capsule(vsr_domain_t type, const char *name)
+vsr_new_capsule(struct proc *td, vsr_domain_t type, const char *name)
 {
     struct vsr_capsule *capsule;
     struct vsr_domain *domain;
-    struct proc *td = this_td();
 
-    /* Valid type? */
-    if (type >= VSR_MAX_DOMAIN) {
-        return NULL;
-    }
-
-    if (__unlikely(td == NULL)) {
+    /* Valid args? */
+    if (type >= VSR_MAX_DOMAIN || td == NULL) {
         return NULL;
     }
 
@@ -250,27 +249,17 @@ vsr_new_capsule(vsr_domain_t type, const char *name)
 
 /*
  * Allocate a new VSR domain and add it to
- * the current process.
+ * a specific process.
  *
  * @type: VSR type (e.g., VSR_FILE)
  */
 struct vsr_domain *
-vsr_new_domain(vsr_domain_t type)
+vsr_new_domain(struct proc *td, vsr_domain_t type)
 {
     struct vsr_domain *domain;
-    struct vsr_table *tablep;
-    struct proc *td = this_td();
 
-    /* Valid type? */
-    if (type >= VSR_MAX_DOMAIN) {
-        return NULL;
-    }
-
-    /*
-     * The scheduler should be set up before any
-     * calls to vsr_new_vec() should be made.
-     */
-    if (__unlikely(td == NULL)) {
+    /* Valid args? */
+    if (type >= VSR_MAX_DOMAIN || td == NULL) {
         return NULL;
     }
 
@@ -293,8 +282,6 @@ vsr_new_domain(vsr_domain_t type)
     memset(domain, 0, sizeof(*domain));
     domain->type = type;
 
-    /* Initialize the domain's table */
-    tablep = &domain->table;
     td->vsr_tab[type] = domain;
     return domain;
 }
@@ -304,13 +291,11 @@ vsr_new_domain(vsr_domain_t type)
  * process.
  */
 struct vsr_capsule *
-vsr_lookup_capsule(vsr_domain_t type, const char *name)
+vsr_lookup_capsule(struct proc *td, vsr_domain_t type, const char *name)
 {
     struct vsr_domain *domain;
-    struct proc *td = this_td();
 
-    /* Must be on a process */
-    if (__unlikely(td == NULL)) {
+    if (td == NULL) {
         return NULL;
     }
 
@@ -330,9 +315,9 @@ vsr_lookup_capsule(vsr_domain_t type, const char *name)
  * Initialize per-process domains
  */
 void
-vsr_init_domains(void)
+vsr_init_domains(struct proc *td)
 {
-    if (vsr_new_domain(VSR_FILE) == NULL) {
+    if (vsr_new_domain(td, VSR_FILE) == NULL) {
         pr_error("failed to initialize VSR file domain\n");
     }
 }
@@ -341,12 +326,11 @@ vsr_init_domains(void)
  * Destroy per-process domains
  */
 void
-vsr_destroy_domains(void)
+vsr_destroy_domains(struct proc *td)
 {
-    struct proc *td = this_td();
     struct vsr_domain *domain;
 
-    if (__unlikely(td == NULL)) {
+    if (td == NULL) {
         return;
     }
 
