@@ -221,6 +221,23 @@ cpu_or(struct oemu_cpu *cpu, inst_t *inst)
         inst->rd, inst->imm, inst->rd, regs->xreg[inst->rd]);
 }
 
+static void
+cpu_xor(struct oemu_cpu *cpu, inst_t *inst)
+{
+    struct cpu_regs *regs = &cpu->regs;
+    imm_t imm;
+
+    if (inst->rd > NELEM(regs->xreg)) {
+        printf("bad register operand for 'xor'\n");
+        return;
+    }
+
+    imm = inst->imm;
+    regs->xreg[inst->rd] ^= imm;
+    printf("X%d ^ %x -> X%d, new=%d\n",
+        inst->rd, inst->imm, inst->rd, regs->xreg[inst->rd]);
+}
+
 /*
  * Decode the INST_DIV instruction
  *
@@ -439,6 +456,9 @@ cpu_kick(struct oemu_cpu *cpu, struct sysmem *mem)
             break;
         case INST_OR:
             cpu_or(cpu, inst);
+            break;
+        case INST_XOR:
+            cpu_xor(cpu, inst);
             break;
         case INST_BR:
             cpu_br(cpu, inst);
