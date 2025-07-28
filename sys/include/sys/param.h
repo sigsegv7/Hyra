@@ -30,9 +30,18 @@
 #ifndef _SYS_PARAM_H_
 #define _SYS_PARAM_H_
 
+#if defined(_KERNEL)
+#include <machine/param.h>
+#endif
+
 /* Assumed cache line size */
 #ifndef COHERENCY_UNIT
 #define COHERENCY_UNIT 64
+#endif
+
+/* Assumed machine word size */
+#ifndef M_WORD_SIZE
+#define M_WORD_SIZE 4
 #endif
 
 /* Bit related macros */
@@ -47,6 +56,7 @@
 /* Align up/down a value */
 #define ALIGN_DOWN(value, align)      ((value) & ~((align)-1))
 #define ALIGN_UP(value, align)        (((value) + (align)-1) & ~((align)-1))
+#define MALIGN(value)                 ALIGN_UP((value), M_WORD_SIZE)
 
 /* Bitmap helper macros */
 #define setbit(a, b) ((a)[(b) >> 3] |= BIT(b % 8))
