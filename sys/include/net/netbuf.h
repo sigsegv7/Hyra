@@ -30,6 +30,8 @@
 #ifndef _NET_NETBUF_H_
 #define _NET_NETBUF_H_
 
+#include <sys/types.h>
+
 #define NETBUF_LEN 256
 
 struct netbuf {
