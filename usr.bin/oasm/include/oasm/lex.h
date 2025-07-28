@@ -105,6 +105,7 @@ typedef enum {
     TT_MROQ,        /* 'mroq' */
     TT_AND,         /* 'and' */
     TT_OR,          /* 'or' */
+    TT_XOR,         /* 'xor' */
 
     /* Register ops */
     TT_MOV,         /* 'mov' */
