@@ -338,6 +338,108 @@ bind(int sockfd, const struct sockaddr *addr, socklen_t len)
     return 0;
 }
 
+/*
+ * socket(7) syscall
+ *
+ * arg0: domain
+ * arg1: type
+ * arg2: protocol
+ */
+scret_t
+sys_socket(struct syscall_args *scargs)
+{
+    int domain = scargs->arg0;
+    int type = scargs->arg1;
+    int protocol = scargs->arg2;
+
+    return socket(domain, type, protocol);
+}
+
+/*
+ * bind(2) syscall
+ *
+ * arg0: sockfd
+ * arg1: addr
+ * arg2: len
+ */
+scret_t
+sys_bind(struct syscall_args *scargs)
+{
+    const struct sockaddr *u_addr = (void *)scargs->arg1;
+    struct sockaddr addr_copy;
+    int sockfd = scargs->arg0;
+    int len = scargs->arg2;
+    int error;
+
+    error = copyin(u_addr, &addr_copy, sizeof(addr_copy));
+    if (error < 0) {
+        return error;
+    }
+
+    return bind(sockfd, &addr_copy, len);
+}
+
+/*
+ * recv(2) syscall
+ *
+ * arg0: sockfd
+ * arg1: buf
+ * arg2: size
+ * arg3: flags
+ */
+scret_t
+sys_recv(struct syscall_args *scargs)
+{
+    char buf[NETBUF_LEN];
+    void *u_buf = (void *)scargs->arg1;
+    int sockfd = scargs->arg0;
+    size_t len = scargs->arg2;
+    int error, flags = scargs->arg3;
+
+    if (len > sizeof(buf)) {
+        return -ENOBUFS;
+    }
+
+    error = recv(sockfd, buf, len, flags);
+    if (error < 0) {
+        pr_error("sys_recv: recv() fail (fd=%d)\n", sockfd);
+        return error;
+    }
+
+    error = copyout(buf, u_buf, len);
+    return (error == 0) ? len : error;
+}
+
+/*
+ * send(2) syscall
+ *
+ * arg0: sockfd
+ * arg1: buf
+ * arg2: size
+ * arg3: flags
+ */
+scret_t
+sys_send(struct syscall_args *scargs)
+{
+    char buf[NETBUF_LEN];
+    const void *u_buf = (void *)scargs->arg1;
+    int sockfd = scargs->arg0;
+    size_t len = scargs->arg2;
+    int error, flags = scargs->arg3;
+
+    if (len > sizeof(buf)) {
+        return -ENOBUFS;
+    }
+
+    error = copyin(u_buf, buf, len);
+    if (error < 0) {
+        pr_error("sys_send: copyin() failure (fd=%d)\n", sockfd);
+        return error;
+    }
+
+    return send(sockfd, buf, len, flags);
+}
+
 static struct vops socket_vops = {
     .read = NULL,
     .write = NULL,

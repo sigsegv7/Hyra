@@ -59,6 +59,10 @@
 #define SYS_setuid  18
 #define SYS_getuid  19
 #define SYS_waitpid 20
+#define SYS_socket  21
+#define SYS_bind    22
+#define SYS_recv    23
+#define SYS_send    24
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */

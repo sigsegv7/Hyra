@@ -81,6 +81,11 @@ struct ksocket {
     struct sockbuf buf;
     struct mutex *mtx;
 };
+
+scret_t sys_socket(struct syscall_args *scargs);
+scret_t sys_bind(struct syscall_args *scargs);
+scret_t sys_recv(struct syscall_args *scargs);
+scret_t sys_send(struct syscall_args *scargs);
 #endif  /* _KERNEL */
 
 int socket(int domain, int type, int protocol);

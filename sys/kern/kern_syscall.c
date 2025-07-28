@@ -29,6 +29,7 @@
 
 #include <sys/syscall.h>
 #include <sys/sysctl.h>
+#include <sys/socket.h>
 #include <sys/reboot.h>
 #include <sys/types.h>
 #include <sys/ucred.h>
@@ -60,6 +61,10 @@ scret_t(*g_sctab[])(struct syscall_args *) = {
     sys_setuid,  /* SYS_setuid */
     sys_getuid,  /* SYS_getuid */
     sys_waitpid, /* SYS_waitpid */
+    sys_socket,  /* SYS_socket */
+    sys_bind,    /* SYS_bind */
+    sys_recv,    /* SYS_recv */
+    sys_send,    /* SYS_send */
 };
 
 const size_t MAX_SYSCALLS = NELEM(g_sctab);
