@@ -187,6 +187,22 @@ cpu_mul(struct oemu_cpu *cpu, inst_t *inst)
     printf("%d * %d -> X%d, new=%d\n",
         imm, inst->imm, inst->rd, regs->xreg[inst->rd]);
 }
+static void
+cpu_and(struct oemu_cpu *cpu, inst_t *inst)
+{
+    struct cpu_regs *regs = &cpu->regs;
+    imm_t imm;
+
+    if (inst->rd > NELEM(regs->xreg)) {
+        printf("bad register operand for 'and'\n");
+        return;
+    }
+
+    imm = inst->imm;
+    regs->xreg[inst->rd] &= inst->imm;
+    printf("X%d & %x -> X%d, new=%d\n",
+        inst->rd, inst->imm, inst->rd, regs->xreg[inst->rd]);
+}
 
 /*
  * Decode the INST_DIV instruction
@@ -335,7 +351,6 @@ cpu_reset(struct oemu_cpu *cpu)
     regs->ilr = 0x0;
     memset(regs->xreg, 0x0, sizeof(regs->xreg));
 }
-
 void
 cpu_regdump(struct oemu_cpu *cpu)
 {
@@ -401,6 +416,9 @@ cpu_kick(struct oemu_cpu *cpu, struct sysmem *mem)
             break;
         case INST_DIV:
             cpu_div(cpu, inst);
+            break;
+        case INST_AND:
+            cpu_and(cpu, inst);
             break;
         case INST_BR:
             cpu_br(cpu, inst);
