@@ -76,6 +76,7 @@ struct vcache {
 #define VDIR    0x02    /* Directory */
 #define VCHR    0x03    /* Character device */
 #define VBLK    0x04    /* Block device */
+#define VSOCK   0x05    /* Socket */
 
 #define VNOVAL -1
 
