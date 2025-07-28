@@ -12,7 +12,13 @@ some_label:      ! X
     inc x1       ! ~ 0x00000018
     add x2, #3   ! ~ 0x0000001C
     mrow x4, #0  ! ~ 0x00000020
+<<<<<<< HEAD
     nop          ! ~ 0x00000024
     or x1, #3    ! ~ 0x00000028
     xor x2, #3   ! ~ 0x0000002C
     hlt          ! ~ 0x00000030
+=======
+    and x1, #3   ! ~ 0x00000024
+    or x2, #7    ! ~ 0x00000028
+    hlt          ! ~ 0x0000002C
+>>>>>>> 521cc2b (etc: oemu: Add example for 'OR' in test-00.s)
