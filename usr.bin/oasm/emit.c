@@ -377,6 +377,60 @@ emit_encode_nop(struct emit_state *state, struct oasm_token *tok)
     return TAILQ_NEXT(tok, link);
 }
 
+/*
+ * Encode a bitwise instruction:
+ *
+ * and r, r/imm
+ * or r, r/imm
+ * xor r, r/imm
+ */
+static struct oasm_token *
+emit_encode_bitw(struct emit_state *state, struct oasm_token *tok)
+{
+    inst_t curinst;
+    imm_t imm;
+    reg_t rd;
+    uint8_t opcode = OSMX64_AND;
+    char *inst_str = "and";
+
+    /* Next token should be a register */
+    tok = TAILQ_NEXT(tok, link);
+    if (tok == NULL) {
+        oasm_err("[emit error]: expected register for '%s'\n", inst_str);
+        return NULL;
+    }
+    if (!tok_is_xreg(tok->type)) {
+        oasm_err("[emit error]: bad register for '%s'\n", inst_str);
+        return NULL;
+    }
+
+    rd = ir_to_reg(tok->type);
+    tok = TAILQ_NEXT(tok, link);
+    if (tok == NULL) {
+        oasm_err("[emit error]: missing operand in '%s'\n", inst_str);
+        return NULL;
+    }
+
+    /*
+     * Check that the next token is an immediate
+     * value.
+     *
+     * TODO: Allow a register operand to be passed
+     *       to these instructions.
+     */
+    if (tok->type != TT_IMM) {
+        oasm_err("[emit error]: expected <imm> for '%s'\n", inst_str);
+        return NULL;
+    }
+
+    imm = tok->imm;
+    curinst.opcode = opcode;
+    curinst.rd = rd;
+    curinst.imm = imm;
+    emit_bytes(state, &curinst, sizeof(curinst));
+    return TAILQ_NEXT(tok, link);
+}
+
 int
 emit_osmx64(struct emit_state *state, struct oasm_token *tp)
 {
@@ -463,6 +517,9 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
         case TT_MUL:
         case TT_DIV:
             curtok = emit_encode_arith(emit, curtok);
+            break;
+        case TT_AND:
+            curtok = emit_encode_bitw(emit, curtok);
             break;
         case TT_BR:
             curtok = emit_encode_br(emit, curtok);

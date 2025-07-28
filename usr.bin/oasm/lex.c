@@ -54,6 +54,7 @@ static char putback = '\0';
 #define S_IMN_MROW "mrow"
 #define S_IMN_MROD "mrod"
 #define S_IMN_MROQ "mroq"
+#define S_IMN_AND  "and"
 
 /* Instruction length */
 #define OSMX64_INST_LEN 4
@@ -242,6 +243,8 @@ token_bitw_mro(char *p)
         return TT_MROD;
     } else if (strcmp(p, S_IMN_MROQ) == 0) {
         return TT_MROQ;
+    } else if (strcmp(p, S_IMN_AND) == 0) {
+        return TT_AND;
     }
 
     return TT_UNKNOWN;
