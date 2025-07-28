@@ -20,5 +20,10 @@ some_label:      ! X
 =======
     and x1, #3   ! ~ 0x00000024
     or x2, #7    ! ~ 0x00000028
+<<<<<<< HEAD
     hlt          ! ~ 0x0000002C
 >>>>>>> 521cc2b (etc: oemu: Add example for 'OR' in test-00.s)
+=======
+    xor x2, #3   ! ~ 0x0000002C
+    hlt          ! ~ 0x00000030
+>>>>>>> 5d27983 (etc: oemu: Add XOR example to test-00.s)
