@@ -393,6 +393,13 @@ emit_encode_bitw(struct emit_state *state, struct oasm_token *tok)
     uint8_t opcode = OSMX64_AND;
     char *inst_str = "and";
 
+    switch (tok->type) {
+    case TT_OR:
+        opcode = OSMX64_OR;
+        inst_str = "or";
+        break;
+    }
+
     /* Next token should be a register */
     tok = TAILQ_NEXT(tok, link);
     if (tok == NULL) {
@@ -519,6 +526,7 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
             curtok = emit_encode_arith(emit, curtok);
             break;
         case TT_AND:
+        case TT_OR:
             curtok = emit_encode_bitw(emit, curtok);
             break;
         case TT_BR:

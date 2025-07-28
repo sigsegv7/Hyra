@@ -59,6 +59,7 @@ static const char *tokstr[] = {
     [ TT_MROD ] = "mrod",
     [ TT_MROQ ] = "mroq",
     [ TT_AND  ] = "and",
+    [ TT_OR   ] = "or",
 
     /* X<n> registers */
     [ TT_X0 ]  = "x0",
@@ -168,6 +169,10 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
         label_enter(tok->raw, state->pip);
         break;
     case TT_AND:
+        state->last = tok->type;
+        emit_osmx64(&emit_state, tok);
+        break;
+    case TT_OR:
         state->last = tok->type;
         emit_osmx64(&emit_state, tok);
         break;
