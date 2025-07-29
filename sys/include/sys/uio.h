@@ -27,16 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_LIMITS_H_
-#define _SYS_LIMITS_H_
+#ifndef _SYS_UIO_H_
+#define _SYS_UIO_H_
 
-#define PATH_MAX 1024
-#define NAME_MAX 256
-#define SSIZE_MAX 32767
-#define ARG_MAX 4096
-#define CHAR_BIT 8
-#define CPU_MAX 256
-#define VSR_MAX_DOMAIN 16
-#define VSR_MAX_CAPSULE 16
-#define IOVEC_MAX 512
-#endif  /* !_SYS_LIMITS_H_ */
+#if defined(_KERNEL)
+#include <sys/types.h>
+#else
+#include <stdint.h>
+#include <stddef.h>
+#endif  /* _KERNEL */
+
+/*
+ * POSIX I/O vector
+ */
+struct iovec {
+    void *iov_base;
+    size_t iov_len;
+};
+
+ssize_t readv(int filedes, const struct iovec *iov, int iovcnt);
+ssize_t writev(int filedes, const struct iovec *iov, int iovcnt);
+
+#endif  /* !_SYS_UIO_H_ */
