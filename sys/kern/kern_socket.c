@@ -547,6 +547,103 @@ sys_send(struct syscall_args *scargs)
     return send(sockfd, buf, len, flags);
 }
 
+/*
+ * recvmsg(3) syscall
+ *
+ * arg0: socket
+ * arg1: msg
+ * arg2: flags
+ */
+scret_t
+sys_recvmsg(struct syscall_args *scargs)
+{
+    struct msghdr *u_msg = (void *)scargs->arg1;
+    void *u_control;
+    size_t controllen;
+    struct iovec msg_iov;
+    struct msghdr msg;
+    ssize_t retval;
+    int socket = scargs->arg0;
+    int flags = scargs->arg2;
+    int error;
+
+    /* Read the message header */
+    error = copyin(u_msg, &msg, sizeof(msg));
+    if (error < 0) {
+        pr_error("sys_recvmsg: bad msg\n");
+        return error;
+    }
+
+    /* Grab the message I/O vector */
+    error = uio_copyin(msg.msg_iov, &msg_iov, msg.msg_iovlen);
+    if (error < 0) {
+        return error;
+    }
+
+    /* Save control fields */
+    u_control = msg.msg_control;
+    controllen = msg.msg_controllen;
+
+    /* Allocate a new control field to copy in */
+    msg.msg_control = dynalloc(controllen);
+    if (msg.msg_control == NULL) {
+        uio_copyin_clean(&msg_iov, msg.msg_iovlen);
+        return -ENOMEM;
+    }
+
+    error = copyin(u_control, msg.msg_control, controllen);
+    if (error < 0) {
+        retval = error;
+        goto done;
+    }
+
+    msg.msg_iov = &msg_iov;
+    retval = recvmsg(socket, &msg, flags);
+done:
+    uio_copyin_clean(&msg_iov, msg.msg_iovlen);
+    dynfree(msg.msg_control);
+    return retval;
+}
+
+/*
+ * sendmsg(3) syscall
+ *
+ * arg0: socket
+ * arg1: msg
+ * arg2: flags
+ */
+scret_t
+sys_sendmsg(struct syscall_args *scargs)
+{
+    struct iovec msg_iov;
+    struct msghdr *u_msg = (void *)scargs->arg1;
+    struct msghdr msg;
+    ssize_t retval;
+    int socket = scargs->arg0;
+    int flags = scargs->arg2;
+    int error;
+
+    /* Read the message header */
+    error = copyin(u_msg, &msg, sizeof(msg));
+    if (error < 0) {
+        pr_error("sys_sendmsg: bad msg\n");
+        return error;
+    }
+
+    /* Grab the message I/O vector */
+    error = uio_copyin(msg.msg_iov, &msg_iov, msg.msg_iovlen);
+    if (error < 0) {
+        return error;
+    }
+
+    msg.msg_name = NULL;
+    msg.msg_namelen = 0;
+    msg.msg_iov = &msg_iov;
+    retval = sendmsg(socket, &msg, flags);
+    uio_copyin_clean(&msg_iov, msg.msg_iovlen);
+    return retval;
+}
+
 static struct vops socket_vops = {
     .read = NULL,
     .write = NULL,

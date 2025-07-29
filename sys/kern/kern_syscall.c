@@ -65,6 +65,8 @@ scret_t(*g_sctab[])(struct syscall_args *) = {
     sys_bind,    /* SYS_bind */
     sys_recv,    /* SYS_recv */
     sys_send,    /* SYS_send */
+    sys_sendmsg, /* SYS_sendmsg */
+    sys_recvmsg, /* SYS_recvmsg */
 };
 
 const size_t MAX_SYSCALLS = NELEM(g_sctab);
