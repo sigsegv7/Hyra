@@ -28,10 +28,30 @@
  */
 
 #include <sys/limits.h>
+#include <sys/systm.h>
 #include <sys/errno.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/filedesc.h>
+
+/*
+ * Clean up after a UIO copyin() operation
+ *
+ * @iov: iovec copy to clean up
+ * @iovcnt: Number of iovec entries
+ */
+void
+uio_copyin_clean(struct iovec *iov, int iovcnt)
+{
+    for (int i = 0; i < iovcnt; ++i) {
+        if (iov[i].iov_base == NULL) {
+            continue;
+        }
+
+        dynfree(iov[i].iov_base);
+        iov[i].iov_base = NULL;
+    }
+}
 
 /*
  * Read data into POSIX.1‐2017 iovec
@@ -153,4 +173,100 @@ writev(int filedes, const struct iovec *iov, int iovcnt)
     }
 
     return bytes_written;
+}
+
+/*
+ * Validate iovecs coming in from userland
+ * and copy it to a kernel buffer.
+ *
+ * XXX: A new buffer is allocated in k_iov[i]->iov_base
+ *      and must be freed with dynfree() after use.
+ *
+ * @u_iov: Userspace source iovecs
+ * @k_iov: Kernel destination iovec
+ * @iovcnt: Number of iovecs to copy
+ */
+int
+uio_copyin(const struct iovec *u_iov, struct iovec *k_iov, int iovcnt)
+{
+    struct iovec *iov_dest;
+    const struct iovec *iov_src;
+    size_t len;
+    void *old_base;
+    int error;
+
+    if (u_iov == NULL || k_iov == NULL) {
+        return -EINVAL;
+    }
+
+    for (int i = 0; i < iovcnt; ++i) {
+        iov_dest = &k_iov[i];
+        iov_src = &u_iov[i];
+        error = copyin(iov_src, iov_dest, sizeof(*iov_dest));
+
+        if (error < 0) {
+            uio_copyin_clean(iov_dest, i + 1);
+            return error;
+        }
+
+        /*
+         * Save the old base so that we may copy the data to
+         * the new kernel buffer. First we'd need to allocate
+         * one of course.
+         */
+        old_base = iov_dest->iov_base;
+        len = iov_dest->iov_len;
+        iov_dest->iov_base = dynalloc(len);
+
+        /* Did it fail? */
+        if (iov_dest->iov_base == NULL) {
+            uio_copyin_clean(iov_dest, i + 1);
+            return -ENOMEM;
+        }
+
+        /* Copy actual data in */
+        error = copyin(old_base, iov_dest->iov_base, len);
+        if (error < 0) {
+            uio_copyin_clean(iov_dest, i + 1);
+            return error;
+        }
+    }
+
+    return 0;
+}
+
+
+/*
+ * Validate iovecs going out from kernel space (us)
+ * before actually sending it out.
+ *
+ * @k_iov: Kernel iovec to copyout
+ * @u_iov: Userspace destination
+ * @iovcnt: Number of iovecs
+ */
+int
+uio_copyout(const struct iovec *k_iov, struct iovec *u_iov, int iovcnt)
+{
+    struct iovec iov_shadow, *iov_dest;
+    const struct iovec *iov_src;
+    int error;
+
+    for (int i = 0; i < iovcnt; ++i) {
+        iov_dest = &u_iov[i];
+        iov_src = &k_iov[i];
+
+        /* Grab a shadow copy */
+        error = copyin(iov_src, &iov_shadow, sizeof(iov_shadow));
+        if (error < 0) {
+            return error;
+        }
+
+        /* Copy out actual data */
+        error = copyout(iov_src->iov_base, iov_dest->iov_base, iov_dest->iov_len);
+        if (error < 0) {
+            return error;
+        }
+    }
+
+    return 0;
 }

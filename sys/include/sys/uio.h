@@ -48,4 +48,11 @@ struct iovec {
 ssize_t readv(int filedes, const struct iovec *iov, int iovcnt);
 ssize_t writev(int filedes, const struct iovec *iov, int iovcnt);
 
+#if defined(_KERNEL)
+
+int uio_copyin(const struct iovec *u_iov, struct iovec *k_iov, int iovcnt);
+int uio_copyout(const struct iovec *k_iov, struct iovec *u_iov, int iovcnt);
+void uio_copyin_clean(struct iovec *copy, int iovcnt);
+
+#endif  /* _KERNEL */
 #endif  /* !_SYS_UIO_H_ */
