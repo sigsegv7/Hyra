@@ -403,6 +403,7 @@ ssize_t
 recvmsg(int socket, struct msghdr *msg, int flags)
 {
     struct ksocket *ksock;
+    struct sockaddr_un *un;
     struct cmsg *cmsg, *tmp;
     struct cmsghdr *cmsghdr;
     struct cmsg_list *clp;
@@ -416,6 +417,12 @@ recvmsg(int socket, struct msghdr *msg, int flags)
     /* Grab the socket descriptor */
     if ((error = get_ksock(socket, &ksock)) < 0) {
         return error;
+    }
+
+    /* Must be a unix domain socket */
+    un = &ksock->un;
+    if (un->sun_family != AF_UNIX) {
+        return -EBADF;
     }
 
     /* Grab the control message list */
