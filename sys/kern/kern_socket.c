@@ -323,6 +323,7 @@ int
 bind(int sockfd, const struct sockaddr *addr, socklen_t len)
 {
     struct ksocket *ksock;
+    struct cmsg_list *clp;
     int error;
 
     if ((error = get_ksock(sockfd, &ksock)) < 0) {
@@ -335,6 +336,112 @@ bind(int sockfd, const struct sockaddr *addr, socklen_t len)
     if (ksock->mtx == NULL) {
         return -ENOMEM;
     }
+
+    /* Initialize the cmsg list queue */
+    clp = &ksock->cmsg_list;
+    TAILQ_INIT(&clp->list);
+    clp->is_init = 1;
+    return 0;
+}
+
+/*
+ * Send socket control message - POSIX.1-2008
+ *
+ * @socket: Socket to transmit on
+ * @msg: Further arguments
+ * @flags: Optional flags
+ *
+ * Returns zero on success, otherwise a less
+ * than zero errno.
+ */
+ssize_t
+sendmsg(int socket, const struct msghdr *msg, int flags)
+{
+    struct ksocket *ksock;
+    struct cmsg *cmsg;
+    struct sockaddr_un *un;
+    struct cmsg_list *clp;
+    size_t control_len = 0;
+    int error;
+
+    if ((error = get_ksock(socket, &ksock)) < 0) {
+        return error;
+    }
+
+    /* We cannot do sendmsg() non domain sockets */
+    un = &ksock->un;
+    if (un->sun_family != AF_UNIX) {
+        return -EBADF;
+    }
+
+    control_len = MALIGN(msg->msg_controllen);
+
+    /* Allocate a new cmsg */
+    cmsg = dynalloc(control_len + sizeof(struct cmsg));
+    if (cmsg == NULL) {
+        return -EINVAL;
+    }
+
+    memcpy(cmsg->buf, msg->msg_control, control_len);
+    clp = &ksock->cmsg_list;
+    cmsg->control_len = control_len;
+    TAILQ_INSERT_TAIL(&clp->list, cmsg, link);
+    return 0;
+}
+
+/*
+ * Receive socket control message - POSIX.1‐2017
+ *
+ * @socket: Socket to receive on
+ * @msg: Further arguments
+ * @flags: Optional flags
+ *
+ * Returns zero on success, otherwise a less
+ * than zero errno.
+ */
+ssize_t
+recvmsg(int socket, struct msghdr *msg, int flags)
+{
+    struct ksocket *ksock;
+    struct cmsg *cmsg, *tmp;
+    struct cmsghdr *cmsghdr;
+    struct cmsg_list *clp;
+    uint8_t *fds;
+    int error;
+
+    if (socket < 0) {
+        return -EINVAL;
+    }
+
+    /* Grab the socket descriptor */
+    if ((error = get_ksock(socket, &ksock)) < 0) {
+        return error;
+    }
+
+    /* Grab the control message list */
+    clp = &ksock->cmsg_list;
+    cmsg = TAILQ_FIRST(&clp->list);
+
+    while (cmsg != NULL) {
+        cmsghdr = &cmsg->hdr;
+
+        /* Check the control message type */
+        switch (cmsghdr->cmsg_type) {
+        case SCM_RIGHTS:
+            {
+                fds = (uint8_t *)CMSG_DATA(cmsghdr);
+                pr_trace("SCM_RIGHTS -> fd %d\n", fds[0]);
+                break;
+            }
+        }
+
+        tmp = cmsg;
+        cmsg = TAILQ_NEXT(cmsg, link);
+
+        TAILQ_REMOVE(&clp->list, tmp, link);
+        dynfree(tmp);
+    }
+
     return 0;
 }
 

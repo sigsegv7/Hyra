@@ -31,6 +31,9 @@
 #define _SYS_SOCKET_H_
 
 #include <sys/socketvar.h>
+#include <sys/queue.h>
+#include <sys/param.h>
+#include <sys/uio.h>
 #if defined(_KERNEL)
 #include <sys/types.h>
 #include <sys/syscall.h>
@@ -49,6 +52,11 @@ typedef uint32_t sa_family_t;
 #define _SOCKLEN_T_DEFINED_
 typedef uint32_t socklen_t;
 #endif  /* !_SOCKLEN_T_DEFINED_ */
+
+/*
+ * Socket level number
+ */
+#define SOL_SOCKET 0xFFFF
 
 /*
  * Address family defines
@@ -70,7 +78,75 @@ struct sockaddr {
     char sa_data[14];
 };
 
+/*
+ * POSIX message header for recvmsg()
+ * and sendmsg() calls.
+ */
+struct msghdr {
+    void *msg_name;             /* Optional address */
+    socklen_t msg_namelen;      /* Size of address */
+    struct iovec *msg_iov;      /* Scatter/gather array */
+    int msg_iovlen;             /* Members in msg_iov */
+    void *msg_control;          /* Ancillary data, see below */
+    socklen_t msg_controllen;   /* Ancillary data buffer len */
+    int msg_flags;              /* Message flags */
+};
+
+/*
+ * POSIX control message header for
+ * ancillary data objects.
+ */
+struct cmsghdr {
+    socklen_t cmsg_len;
+    int cmsg_level;
+    int cmsg_type;
+};
+
+#define CMSG_SPACE(len) (MALIGN(sizeof(struct cmsghdr)) + MALIGN(len))
+
+/* Return pointer to cmsg data */
+#define CMSG_DATA(cmsg) PTR_OFFSET(cmsg, sizeof(struct cmsghdr))
+
+/* Return length of control message */
+#define CMSG_LEN(len) (MALIGN(sizeof(struct cmsghdr)) + MALIGN(len))
+
+/* Return pointer to next cmsghdr */
+#define CMSG_NXTHDR(mhdr, cmsg) \
+    PTR_OFFSET(cmsg, MALIGN((cmsg)>cmsg_len)) + \
+        MALIGN(sizeof(struct cmsghdr))  > \
+        PTR_OFFSET((mhdr)->msg_control, (mhdr)->msg_controllen) ? \
+        (struct cmsghdr *)NULL :    \
+        (struct cmsghdr *)PTR_OFFSET(cmsg, MALIGN((cmsg)->cmsg_len))
+
+/* Return pointer to first header */
+#define CMSG_FIRSTHDR(mhdr) \
+    ((mhdr)->msg_controllen >= sizeof(struct cmsghdr) ? \
+        (struct cmsghdr *)(mhdr)->msg_control : \
+        (struct cmsghdr *)NULL);
+
+/* Socket level control messages */
+#define SCM_RIGHTS 0x01
+
 #if defined(_KERNEL)
+
+struct cmsg {
+    union {
+        struct cmsghdr hdr;
+        uint8_t buf[CMSG_SPACE(sizeof(int))];
+    };
+
+    size_t control_len;
+    TAILQ_ENTRY(cmsg) link;
+};
+
+/*
+ * List of cmsg headers and data, queued up
+ * during sendmsg()
+ */
+struct cmsg_list {
+    TAILQ_HEAD(, cmsg) list;
+    uint8_t is_init : 1;
+};
 
 struct ksocket {
     int sockfd;
@@ -78,12 +154,14 @@ struct ksocket {
         struct sockaddr sockaddr;
         struct sockaddr_un un;
     };
+    struct cmsg_list cmsg_list;
     struct sockbuf buf;
     struct mutex *mtx;
 };
 
 scret_t sys_socket(struct syscall_args *scargs);
 scret_t sys_bind(struct syscall_args *scargs);
+
 scret_t sys_recv(struct syscall_args *scargs);
 scret_t sys_send(struct syscall_args *scargs);
 #endif  /* _KERNEL */
@@ -93,5 +171,8 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t len);
 
 ssize_t send(int sockfd, const void *buf, size_t size, int flags);
 ssize_t recv(int sockfd, void *buf, size_t len, int flags);
+
+ssize_t sendmsg(int socket, const struct msghdr *msg, int flags);
+ssize_t recvmsg(int socket, struct msghdr *msg, int flags);
 
 #endif  /* !_SYS_SOCKET_H_ */
