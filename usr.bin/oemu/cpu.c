@@ -295,6 +295,31 @@ cpu_br(struct oemu_cpu *cpu, inst_t *inst)
 }
 
 /*
+ * Decode a logical shift instruction:
+ *
+ * LSR r, r/imm
+ * LSL r, r/imm
+ */
+static void
+cpu_lshift(struct oemu_cpu *cpu, inst_t *inst)
+{
+    struct cpu_regs *regs = &cpu->regs;
+    reg_t reg = inst->rd;
+    imm_t shift = inst->imm;
+
+    switch (inst->opcode) {
+    case INST_LSR:
+        regs->xreg[reg] >>= shift;
+        printf("X%d >> %d -> %d\n", reg, shift, regs->xreg[reg]);
+        break;
+    case INST_LSL:
+        regs->xreg[reg] <<= shift;
+        printf("X%d << %d -> %d\n", reg, shift, regs->xreg[reg]);
+        break;
+    }
+}
+
+/*
  * Decode MRO type instructions
  */
 static void
@@ -462,6 +487,10 @@ cpu_kick(struct oemu_cpu *cpu, struct sysmem *mem)
             break;
         case INST_BR:
             cpu_br(cpu, inst);
+            break;
+        case INST_LSL:
+        case INST_LSR:
+            cpu_lshift(cpu, inst);
             break;
         default:
             if (cpu_is_mro(inst)) {

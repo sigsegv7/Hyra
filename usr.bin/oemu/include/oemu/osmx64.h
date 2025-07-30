@@ -53,6 +53,8 @@
 #define INST_MROW     0x11    /* Mask register over word */
 #define INST_MROD     0x12    /* Mask register over dword */
 #define INST_MROQ     0x13    /* Mask register over qword */
+#define INST_LSR      0x14    /* Logical shift right */
+#define INST_LSL      0x15    /* Logical shift left */
 
 /* Registers */
 #define REG_X0   0x00
