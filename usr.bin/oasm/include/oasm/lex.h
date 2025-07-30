@@ -106,6 +106,8 @@ typedef enum {
     TT_AND,         /* 'and' */
     TT_OR,          /* 'or' */
     TT_XOR,         /* 'xor' */
+    TT_LSR,         /* 'lsr' */
+    TT_LSL,         /* 'lsl' */
 
     /* Register ops */
     TT_MOV,         /* 'mov' */

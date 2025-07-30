@@ -402,6 +402,14 @@ emit_encode_bitw(struct emit_state *state, struct oasm_token *tok)
         opcode = OSMX64_XOR;
         inst_str = "xor";
         break;
+    case TT_LSR:
+        opcode = OSMX64_LSR;
+        inst_str = "lsr";
+        break;
+    case TT_LSL:
+        opcode = OSMX64_LSL;
+        inst_str = "lsl";
+        break;
     }
 
     /* Next token should be a register */
@@ -532,6 +540,8 @@ emit_process(struct oasm_state *oasm, struct emit_state *emit)
         case TT_AND:
         case TT_OR:
         case TT_XOR:
+        case TT_LSR:
+        case TT_LSL:
             curtok = emit_encode_bitw(emit, curtok);
             break;
         case TT_BR:

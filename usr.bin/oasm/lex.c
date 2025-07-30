@@ -57,6 +57,8 @@ static char putback = '\0';
 #define S_IMN_AND  "and"
 #define S_IMN_OR   "or"
 #define S_IMN_XOR  "xor"
+#define S_IMN_LSL  "lsl"
+#define S_IMN_LSR  "lsr"
 
 /* Instruction length */
 #define OSMX64_INST_LEN 4
@@ -267,6 +269,12 @@ token_bitw(char *p)
     token = token_bitw_mro(p);
     if (token != TT_UNKNOWN) {
         return token;
+    }
+
+    if (strcmp(p, S_IMN_LSL) == 0) {
+        return TT_LSL;
+    } else if (strcmp(p, S_IMN_LSR) == 0) {
+        return TT_LSR;
     }
 
     return TT_UNKNOWN;

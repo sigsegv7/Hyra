@@ -51,7 +51,9 @@ static const char *tokstr[] = {
     [ TT_DEC ] = "dec",
     [ TT_MOV ] = "mov",
     [ TT_IMM ]  = "<imm>",
-    [ TT_LABEL] = "<label>",
+    [ TT_LABEL ] = "<label>",
+    [ TT_LSR ] = "lsr",
+    [ TT_LSL ] = "lsl",
 
     /* Bitwise */
     [ TT_MROB ] = "mrob",
@@ -129,6 +131,8 @@ parse_reg(struct oasm_state *state, struct oasm_token *tok)
     case TT_AND:
     case TT_OR:
     case TT_XOR:
+    case TT_LSR:
+    case TT_LSL:
         state->last = tok->type;
         break;
     default:
@@ -192,6 +196,14 @@ parse_tok(struct oasm_state *state, struct oasm_token *tok)
         emit_osmx64(&emit_state, tok);
         break;
     case TT_DIV:
+        state->last = tok->type;
+        emit_osmx64(&emit_state, tok);
+        break;
+    case TT_LSR:
+        state->last = tok->type;
+        emit_osmx64(&emit_state, tok);
+        break;
+    case TT_LSL:
         state->last = tok->type;
         emit_osmx64(&emit_state, tok);
         break;

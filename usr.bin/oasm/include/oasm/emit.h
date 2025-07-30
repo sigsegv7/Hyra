@@ -66,6 +66,8 @@
 #define OSMX64_MROW     0x11    /* Mask register over word */
 #define OSMX64_MROD     0x12    /* Mask register over dword */
 #define OSMX64_MROQ     0x13    /* Mask register over qword */
+#define OSMX64_LSR      0x14    /* Logical shift right */
+#define OSMX64_LSL      0x15    /* Logical shift left */
 
 /*
  * OSMX64 register definitions
