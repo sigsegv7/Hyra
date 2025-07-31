@@ -82,11 +82,11 @@ typedef __uint64_t      uint64_t;
 #endif
 
 #if __SIZEOF_SIZE_T__ == 8
-typedef uint64_t    __size_t;
-typedef int64_t     __ssize_t;       /* Byte count or error */
+typedef __uint64_t    __size_t;
+typedef __int64_t     __ssize_t;       /* Byte count or error */
 #elif __SIZEOF_SIZE_T__ == 4
-typedef uint32_t    __size_t;
-typedef int32_t     __ssize_t;       /* Byte count or error */
+typedef __uint32_t    __size_t;
+typedef __int32_t     __ssize_t;       /* Byte count or error */
 #else
 #error "Unsupported size_t size"
 #endif
@@ -100,15 +100,15 @@ typedef __size_t uintptr_t;
 typedef __size_t off_t;
 typedef int pid_t;
 typedef int dev_t;
-typedef uint32_t uid_t;
-typedef uint32_t mode_t;
-typedef uint32_t ino_t;
-typedef uint32_t nlink_t;
-typedef uint32_t uid_t;
-typedef uint32_t gid_t;
-typedef uint32_t blksize_t;
-typedef uint32_t blkcnt_t;
-typedef uint64_t time_t;
+typedef __uint32_t uid_t;
+typedef __uint32_t mode_t;
+typedef __uint32_t ino_t;
+typedef __uint32_t nlink_t;
+typedef __uint32_t uid_t;
+typedef __uint32_t gid_t;
+typedef __uint32_t blksize_t;
+typedef __uint32_t blkcnt_t;
+typedef __uint64_t time_t;
 #if defined(_HAVE_PTRDIFF_T)
 typedef __ptrdiff_t ptrdiff_t;
 #endif  /* _HAVE_PTRDIFF_T */
