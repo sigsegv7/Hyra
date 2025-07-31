@@ -173,6 +173,7 @@ scret_t sys_sendmsg(struct syscall_args *scargs);
 
 int socket(int domain, int type, int protocol);
 int bind(int sockfd, const struct sockaddr *addr, socklen_t len);
+int connect(int sockfd, const struct sockaddr *addr, socklen_t len);
 
 ssize_t send(int sockfd, const void *buf, size_t size, int flags);
 ssize_t recv(int sockfd, void *buf, size_t len, int flags);

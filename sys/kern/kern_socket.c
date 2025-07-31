@@ -394,6 +394,49 @@ bind(int sockfd, const struct sockaddr *addr, socklen_t len)
 }
 
 /*
+ * Connect to a socket
+ *
+ * @sockfd: File descriptor to connect
+ * @addr: Address to connect to
+ * @len: Length of address
+ */
+int
+connect(int sockfd, const struct sockaddr *addr, socklen_t len)
+{
+    struct ksocket *ksock;
+    int error = -1;
+
+    if ((error = get_ksock(sockfd, &ksock)) < 0) {
+        return error;
+    }
+
+    switch (addr->sa_family) {
+    case AF_UNIX:
+        {
+            struct sockaddr_un *un;
+
+            un = (struct sockaddr_un *)addr;
+            if (un->sun_path[0] == '\0') {
+                pr_error("connect: bad socket path\n");
+                return -1;
+            }
+
+            /* Wait for the connection to be established */
+            do {
+                error = connect_domain(sockfd, ksock, un);
+                if (error != 0) {
+                    sched_yield();
+                }
+            } while (error != 0);
+
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+/*
  * Send socket control message - POSIX.1-2008
  *
  * @socket: Socket to transmit on
