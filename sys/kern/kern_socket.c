@@ -571,7 +571,11 @@ sys_recv(struct syscall_args *scargs)
         return -ENOBUFS;
     }
 
-    error = recv(sockfd, buf, len, flags);
+    do {
+        error = recv(sockfd, buf, len, flags);
+        sched_yield();
+    } while (error == -EAGAIN);
+
     if (error < 0) {
         pr_error("sys_recv: recv() fail (fd=%d)\n", sockfd);
         return error;
