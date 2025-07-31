@@ -485,7 +485,9 @@ recvmsg(int socket, struct msghdr *msg, int flags)
         case SCM_RIGHTS:
             {
                 fds = (uint8_t *)CMSG_DATA(cmsghdr);
-                pr_trace("SCM_RIGHTS -> fd %d\n", fds[0]);
+                pr_trace("SCM_RIGHTS -> fd %d (from pid %d)\n", fds[0],
+                    ksock->owner->pid);
+
                 break;
             }
         }
