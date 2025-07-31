@@ -53,3 +53,21 @@ recv(int sockfd, void *buf, size_t len, int flags)
 {
     return syscall(SYS_recv, sockfd, (uintptr_t)buf, len, flags);
 }
+
+ssize_t
+sendmsg(int socket, const struct msghdr *msg, int flags)
+{
+    return syscall(SYS_sendmsg, socket, (uintptr_t)msg, flags);
+}
+
+ssize_t
+recvmsg(int socket, struct msghdr *msg, int flags)
+{
+    return syscall(SYS_recvmsg, socket, (uintptr_t)msg, flags);
+}
+
+int
+connect(int socket, const struct sockaddr *address, socklen_t len)
+{
+    return syscall(SYS_connect, socket, (uintptr_t)address, len);
+}
