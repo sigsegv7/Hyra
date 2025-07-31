@@ -31,9 +31,11 @@
 #include <sys/sio.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
+#include <sys/namei.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/filedesc.h>
+#include <sys/fcntl.h>
 #include <sys/vnode.h>
 #include <vm/dynalloc.h>
 #include <string.h>
@@ -112,6 +114,72 @@ socket_reclaim(struct vnode *vp)
     fd_close(ksock->sockfd);
     mutex_free(ksock->mtx);
     dynfree(ksock);
+    return 0;
+}
+
+/*
+ * Create a socket file from the sockaddr
+ * structure
+ *
+ * @ksock: Socket to create a file for
+ * @sockaddr_un: domain sockaddr
+ */
+static int
+socket_mkfile(struct ksocket *ksock, struct sockaddr_un *un)
+{
+    struct filedesc *fdesc;
+    struct vnode *vp;
+    int fd;
+
+    fd = fd_open(un->sun_path, O_CREAT | O_RDONLY);
+    if (fd < 0) {
+        return fd;
+    }
+
+    /* Grab the actual handle now */
+    fdesc = fd_get(NULL, fd);
+    if (fdesc == NULL) {
+        fd_close(fd);
+        return -EIO;
+    }
+
+    /* Hijack the vnode */
+    vp = fdesc->vp;
+    vp->type = VSOCK;
+    vp->vops = &socket_vops;
+    vp->data = ksock;
+    return fd;
+}
+
+/*
+ * Connect to a domain socket - used by connect()
+ *
+ * @sockfd: Socket file descriptor
+ * @ksock: Current ksock
+ * @un: Current sockaddr_un
+ */
+static int
+connect_domain(int sockfd, struct ksocket *ksock, struct sockaddr_un *un)
+{
+    int error;
+    struct nameidata ndp;
+    struct filedesc *filedesc;
+    struct vnode *vp;
+
+    ndp.path = un->sun_path;
+    ndp.flags = 0;
+    if ((error = namei(&ndp)) < 0) {
+        return error;
+    }
+
+    vp = ndp.vp;
+    filedesc = fd_get(NULL, sockfd);
+    if (filedesc == NULL) {
+        pr_error("connect: no filedesc for current\n");
+        return -EIO;
+    }
+
+    filedesc->vp = vp;
     return 0;
 }
 
@@ -242,37 +310,16 @@ recv(int sockfd, void *buf, size_t len, int flags)
 int
 socket(int domain, int type, int protocol)
 {
-    struct vnode *vp = NULL;
     struct ksocket *ksock = NULL;
-    struct filedesc *fdesc = NULL;
     struct sockbuf *sbuf = NULL;
+    struct proc *td = this_td();
     int fd, error = -1;
-
-    if ((error = fd_alloc(NULL, &fdesc)) < 0) {
-        return error;
-    }
-
-    fd = fdesc->fdno;
-
-    /* Grab a new socket vnode */
-    if ((error = vfs_alloc_vnode(&vp, VSOCK)) < 0) {
-        fd_close(fd);
-        return error;
-    }
-
-    if (vp == NULL) {
-        error = -ENOBUFS;
-        goto fail;
-    }
 
     ksock = dynalloc(sizeof(*ksock));
     if (ksock == NULL) {
         error = -ENOMEM;
         goto fail;
     }
-
-    fdesc->vp = vp;
-    vp->vops = &socket_vops;
 
     sbuf = &ksock->buf;
     sbuf->head = 0;
@@ -286,13 +333,10 @@ socket(int domain, int type, int protocol)
             un = &ksock->un;
             sbuf->watermark = NETBUF_LEN;
 
-            /*
-             * XXX: We could allow actual paths within the
-             *      file system for sockets.
-             */
+            /* Set up a path and create a socket file */
             un->sun_family = domain;
-            un->sun_path[0] = '\0';
-            vp->data = ksock;
+            snprintf(un->sun_path, sizeof(un->sun_path), "/tmp/%d-sock0", td->pid);
+            fd = socket_mkfile(ksock, un);
         }
         return fd;
     default:
@@ -303,8 +347,6 @@ socket(int domain, int type, int protocol)
 fail:
     if (ksock != NULL)
         dynfree(ksock);
-    if (vp != NULL)
-        vfs_release_vnode(vp);
 
     fd_close(fd);
     return error;
