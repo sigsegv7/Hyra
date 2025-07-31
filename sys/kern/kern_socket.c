@@ -626,7 +626,7 @@ scret_t
 sys_recvmsg(struct syscall_args *scargs)
 {
     struct msghdr *u_msg = (void *)scargs->arg1;
-    void *u_control;
+    void *u_control, *control = NULL;
     size_t controllen;
     struct iovec msg_iov;
     struct msghdr msg;
@@ -653,23 +653,36 @@ sys_recvmsg(struct syscall_args *scargs)
     controllen = msg.msg_controllen;
 
     /* Allocate a new control field to copy in */
-    msg.msg_control = dynalloc(controllen);
+    control = dynalloc(controllen);
+    msg.msg_control = control;
     if (msg.msg_control == NULL) {
         uio_copyin_clean(&msg_iov, msg.msg_iovlen);
         return -ENOMEM;
     }
 
+    memset(msg.msg_control, 0, controllen);
     error = copyin(u_control, msg.msg_control, controllen);
     if (error < 0) {
         retval = error;
         goto done;
     }
 
+    /*
+     * Now wait until we get a control
+     * message
+     */
     msg.msg_iov = &msg_iov;
-    retval = recvmsg(socket, &msg, flags);
+    for (;;) {
+        retval = recvmsg(socket, &msg, flags);
+        if (retval == 0) {
+            break;
+        }
+
+        sched_yield();
+    }
 done:
     uio_copyin_clean(&msg_iov, msg.msg_iovlen);
-    dynfree(msg.msg_control);
+    dynfree(control);
     return retval;
 }
 
