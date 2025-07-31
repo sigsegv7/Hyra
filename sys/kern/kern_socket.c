@@ -32,6 +32,7 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
+#include <sys/sched.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/filedesc.h>
@@ -476,6 +477,12 @@ recvmsg(int socket, struct msghdr *msg, int flags)
     /* Grab the control message list */
     clp = &ksock->cmsg_list;
     cmsg = TAILQ_FIRST(&clp->list);
+
+    /* Empty? */
+    while (cmsg == NULL) {
+        sched_yield();
+        cmsg = TAILQ_FIRST(&clp->list);
+    }
 
     while (cmsg != NULL) {
         cmsghdr = &cmsg->hdr;
