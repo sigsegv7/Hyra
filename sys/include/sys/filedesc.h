@@ -55,12 +55,12 @@ int fd_close(unsigned int fd);
 int fd_read(unsigned int fd, void *buf, size_t count);
 int fd_write(unsigned int fd, void *buf, size_t count);
 
-int fd_alloc(struct filedesc **fd_out);
+int fd_alloc(struct proc *td, struct filedesc **fd_out);
 int fd_open(const char *pathname, int flags);
 off_t fd_seek(int fildes, off_t offset, int whence);
 
-int fd_dup(int fd);
-struct filedesc *fd_get(unsigned int fdno);
+int fd_dup(struct proc *td, int fd);
+struct filedesc *fd_get(struct proc *td, unsigned int fdno);
 
 scret_t sys_lseek(struct syscall_args *scargs);
 

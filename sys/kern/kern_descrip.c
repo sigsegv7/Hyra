@@ -41,6 +41,7 @@
 /*
  * Allocate a file descriptor.
  *
+ * @td: Process to allocate from (null for CURRENT)
  * @fd_out: Pointer to allocated file descriptor output.
  *
  * This routine will create a new file descriptor
@@ -49,10 +50,13 @@
  * Returns 0 on success.
  */
 int
-fd_alloc(struct filedesc **fd_out)
+fd_alloc(struct proc *td, struct filedesc **fd_out)
 {
     struct filedesc *fd;
-    struct proc *td = this_td();
+
+    if (td == NULL) {
+        td = this_td();
+    }
 
     /* Find free fd table entry */
     for (size_t i = 3; i < PROC_MAX_FILEDES; ++i) {
@@ -85,12 +89,15 @@ fd_alloc(struct filedesc **fd_out)
  * Fetch a file descriptor from a file descriptor
  * number.
  *
+ * @td: Process to get fd from (NULL for current)
  * @fdno: File descriptor to fetch
  */
 struct filedesc *
-fd_get(unsigned int fdno)
+fd_get(struct proc *td, unsigned int fdno)
 {
-    struct proc *td = this_td();
+    if (td == NULL) {
+        td = this_td();
+    }
 
     if (fdno > PROC_MAX_FILEDES) {
         return NULL;
@@ -111,7 +118,7 @@ fd_close(unsigned int fd)
     struct filedesc *filedes;
     struct proc *td;
 
-    if ((filedes = fd_get(fd)) == NULL) {
+    if ((filedes = fd_get(NULL, fd)) == NULL) {
         return -EBADF;
     }
 
@@ -163,7 +170,7 @@ fd_rw(unsigned int fd, void *buf, size_t count, uint8_t write)
         goto done;
     }
 
-    filedes = fd_get(fd);
+    filedes = fd_get(NULL, fd);
     seal = filedes->flags;
 
     /* Check the seal */
@@ -300,7 +307,7 @@ fd_open(const char *pathname, int flags)
         return error;
     }
 
-    if ((error = fd_alloc(&filedes)) != 0) {
+    if ((error = fd_alloc(NULL, &filedes)) != 0) {
         vfs_release_vnode(nd.vp);
         return error;
     }
@@ -321,18 +328,25 @@ fd_open(const char *pathname, int flags)
 /*
  * Duplicate a file descriptor. New file descriptor
  * points to the same vnode.
+ *
+ * @td: Process of fd to dup (NULL for current)
+ * @fd: File descriptor to dup
  */
 int
-fd_dup(int fd)
+fd_dup(struct proc *td, int fd)
 {
     int error;
     struct filedesc *new_desc, *tmp;
 
-    tmp = fd_get(fd);
+    if (td == NULL) {
+        td = this_td();
+    }
+
+    tmp = fd_get(td, fd);
     if (tmp == NULL)
         return -EBADF;
 
-    if ((error = fd_alloc(&new_desc)) != 0)
+    if ((error = fd_alloc(td, &new_desc)) != 0)
         return error;
 
     /* Ref that vnode before we point to it */
@@ -348,7 +362,7 @@ fd_seek(int fildes, off_t offset, int whence)
     struct vattr attr;
     struct vop_getattr_args getattr_args;
 
-    tmp = fd_get(fildes);
+    tmp = fd_get(NULL, fildes);
     if (tmp == NULL) {
         return -EBADF;
     }

@@ -89,7 +89,7 @@ proc_coredump(struct proc *td, uintptr_t fault_addr)
     memcpy(&core.tf, &td->tf, sizeof(td->tf));
 
     core.checksum = crc32(&core, sizeof(core) - sizeof(core.checksum));
-    vp = fd_get(fd)->vp;
+    vp = fd_get(NULL, fd)->vp;
 
     sio.buf = &core;
     sio.len = sizeof(core);

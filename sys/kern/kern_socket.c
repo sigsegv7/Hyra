@@ -64,7 +64,7 @@ get_ksock(int sockfd, struct ksocket **res)
     }
 
     /* Grab the file descriptor */
-    fdesc = fd_get(sockfd);
+    fdesc = fd_get(NULL, sockfd);
     if (fdesc == NULL) {
         return -EBADF;
     }
@@ -247,7 +247,7 @@ socket(int domain, int type, int protocol)
     struct sockbuf *sbuf = NULL;
     int fd, error = -1;
 
-    if ((error = fd_alloc(&fdesc)) < 0) {
+    if ((error = fd_alloc(NULL, &fdesc)) < 0) {
         return error;
     }
 

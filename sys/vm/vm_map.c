@@ -192,7 +192,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
      * is shared.
      */
     if (ISSET(flags, MAP_SHARED)) {
-        fdp = fd_get(fildes);
+        fdp = fd_get(NULL, fildes);
         if (fdp == NULL) {
             pr_error("mmap: no such fd (fd=%d)\n", fildes);
             return NULL;
