@@ -163,6 +163,7 @@ struct ksocket {
 
 scret_t sys_socket(struct syscall_args *scargs);
 scret_t sys_bind(struct syscall_args *scargs);
+scret_t sys_connect(struct syscall_args *scargs);
 
 scret_t sys_recv(struct syscall_args *scargs);
 scret_t sys_send(struct syscall_args *scargs);

@@ -763,9 +763,48 @@ sys_sendmsg(struct syscall_args *scargs)
     msg.msg_name = NULL;
     msg.msg_namelen = 0;
     msg.msg_iov = &msg_iov;
-    retval = sendmsg(socket, &msg, flags);
+
+    for (;;) {
+        retval = sendmsg(socket, &msg, flags);
+        if (retval == 0) {
+            break;
+        }
+        sched_yield();
+    }
     uio_copyin_clean(&msg_iov, msg.msg_iovlen);
     return retval;
+}
+
+/*
+ * connnect(3) syscall
+ *
+ * arg0: sockfd
+ * arg1: address
+ * arg2: len
+ */
+scret_t
+sys_connect(struct syscall_args *scargs)
+{
+    char buf[256];
+    struct sockaddr *u_addr = (void *)scargs->arg1;
+    struct sockaddr *sockaddr;
+    int error;
+    int sockfd = scargs->arg0;
+    socklen_t len = scargs->arg2;
+
+    if (len >= sizeof(buf)) {
+        pr_error("sys_connect: address too big\n");
+        return -E2BIG;
+    }
+
+    error = copyin(u_addr, buf, len);
+    if (error < 0) {
+        pr_error("sys_connect: bad 'address'\n");
+        return error;
+    }
+
+    sockaddr = (struct sockaddr *)buf;
+    return connect(sockfd, sockaddr, len);
 }
 
 static struct vops socket_vops = {
