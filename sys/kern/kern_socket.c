@@ -30,6 +30,7 @@
 #include <sys/socket.h>
 #include <sys/sio.h>
 #include <sys/systm.h>
+#include <sys/proc.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/filedesc.h>
@@ -322,6 +323,7 @@ fail:
 int
 bind(int sockfd, const struct sockaddr *addr, socklen_t len)
 {
+    struct proc *td;
     struct ksocket *ksock;
     struct cmsg_list *clp;
     int error;
@@ -336,6 +338,10 @@ bind(int sockfd, const struct sockaddr *addr, socklen_t len)
     if (ksock->mtx == NULL) {
         return -ENOMEM;
     }
+
+    /* Mark ourselves as the owner */
+    td = this_td();
+    ksock->owner = td;
 
     /* Initialize the cmsg list queue */
     clp = &ksock->cmsg_list;

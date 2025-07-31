@@ -36,6 +36,7 @@
 #include <sys/uio.h>
 #if defined(_KERNEL)
 #include <sys/types.h>
+#include <sys/proc.h>
 #include <sys/syscall.h>
 #include <sys/mutex.h>
 #else
@@ -154,6 +155,7 @@ struct ksocket {
         struct sockaddr sockaddr;
         struct sockaddr_un un;
     };
+    struct proc *owner;
     struct cmsg_list cmsg_list;
     struct sockbuf buf;
     struct mutex *mtx;
