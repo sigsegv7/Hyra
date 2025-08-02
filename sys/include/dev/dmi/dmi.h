@@ -34,6 +34,7 @@
 
 const char *dmi_vendor(void);
 const char *dmi_prodver(void);
+const char *dmi_prodfam(void);
 const char *dmi_product(void);
 const char *dmi_cpu_manufact(void);
 const char *dmi_cpu_version(void);

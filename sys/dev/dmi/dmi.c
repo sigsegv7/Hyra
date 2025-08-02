@@ -46,7 +46,8 @@
 /* String offsets */
 #define BIOSINFO_VENDOR     0x01
 #define SYSINFO_PRODUCT     0x02
-#define SYSINFO_FAMILY      0x03
+#define SYSINFO_VERSION     0x03
+#define SYSINFO_FAMILY      0x06
 #define PROCINFO_MANUFACT   0x02
 #define PROCINFO_VERSION    0x03
 #define PROCINFO_PARTNO     0x06
@@ -171,6 +172,24 @@ dmi_product(void)
  */
 const char *
 dmi_prodver(void)
+{
+    struct dmi_shdr *hdr;
+
+    if ((hdr = dmi_shdr(DMI_SYSTEM_INFO)) == NULL) {
+        return NULL;
+    }
+
+    return dmi_str_index(hdr, SYSINFO_VERSION);
+}
+
+/*
+ * Return the product family from the DMI/SMBIOS
+ * System Info structure
+ *
+ * Returns NULL if not found
+ */
+const char *
+dmi_prodfam(void)
 {
     struct dmi_shdr *hdr;
 
