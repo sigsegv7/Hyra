@@ -2,9 +2,9 @@ The Hyra Operating System
 =========================
 
 Welcome to the Hyra Operating System project! Hyra is an experimental
-operating system inspired by BSD and Plan 9 while being entirely written
-entirely from scratch. Hyra aims to rethink core fundamentals in modern operating system design
-in order to create new and improved architectural ideas.
+operating system inspired by BSD and Plan 9 while being entirely written from scratch.
+Hyra aims to rethink core fundamentals in modern operating system design in order to
+create new and improved architectural ideas.
 
 
 Project Goal:
