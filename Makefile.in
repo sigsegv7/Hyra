@@ -67,7 +67,7 @@ override USRDIR = $(shell pwd)/base/usr
 
 
 .PHONY: all
-all: stand/boot/ libc sbin bin base/boot/hyra.krq
+all: stand/boot/ libs sbin bin base/boot/hyra.krq
 		rm -f sys/include/machine
 
 .PHONY: sbin
@@ -82,9 +82,9 @@ bin: $(BIN_MAKEDIRS)
 			ROOT=$(PROJECT_ROOT) OSVER=$(HYRA_VERSION) OSARCH=$(ARCH)\
 			CC="$(CC)"
 
-.PHONY: libc
-libc:
-	$(MAKE) -C lib/libc/ -I$(shell pwd)/builddeps \
+.PHONY: libs
+libs:
+	$(MAKE) -C lib/ -I$(shell pwd)/builddeps \
 		USRDIR=$(USRDIR) ARCH=$(ARCH) ROOT=$(PROJECT_ROOT) \
 		CC="$(CC)"
 
