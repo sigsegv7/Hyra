@@ -72,7 +72,11 @@ And more! See ``lib/*``
 
 Documentation:
 --------------
-Documentation will be in the form of comments throughout the codebase and can also be found in the share/ directory within the project root.
+Documentation will be in the form of comments throughout the codebase and can also be found in:
+
+- ``share/man/*``: Man pages
+- ``share/contrib``: Information on contributing
+- ``share/docs/kernel``: Kernel documentation
 
 Hyra running on bare metal:
 --------------
