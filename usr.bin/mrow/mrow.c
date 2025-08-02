@@ -27,9 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/mman.h>
 #include <sys/types.h>
-#include <sys/fbdev.h>
 #include <fcntl.h>
 #include <stddef.h>
 #include <unistd.h>
@@ -37,6 +35,8 @@
 #include <time.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <libgfx/gfx.h>
+#include <libgfx/draw.h>
 
 #define IS_ASCII(C) ((C) > 0 && (C) < 127)
 
@@ -50,8 +50,8 @@
 #define MIN_MOUSE_SPEED 1
 #define PLAYER_SPEED 30
 
-#define SCR_WIDTH (fbattr.width)
-#define SCR_HEIGHT (fbattr.height)
+#define SCR_WIDTH (gfx_ctx.fbdev.width)
+#define SCR_HEIGHT (gfx_ctx.fbdev.height)
 #define MAX_X (SCR_WIDTH - SPRITE_WIDTH)
 #define MAX_Y (SCR_HEIGHT - SPRITE_HEIGHT)
 
@@ -59,7 +59,7 @@
 #define HIT_BEEP_MSEC 50
 #define HIT_BEEP_FREQ 600
 
-static struct fbattr fbattr;
+static struct gfx_ctx gfx_ctx;
 static uint32_t *framep;
 static int beep_fd;
 static size_t hit_count = 0;
@@ -77,26 +77,23 @@ struct mouse {
     uint8_t speed;
 };
 
-static inline size_t
-pixel_index(uint32_t x, uint32_t y)
-{
-    return x + y * (fbattr.pitch / 4);
-}
-
 static void
-draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t rgb)
+draw_sprite(uint32_t x, uint32_t y, uint32_t color)
 {
-    for (uint32_t xpos = x; xpos < x + width; ++xpos) {
-        for (uint32_t ypos = y; ypos < y + height; ++ypos) {
-            framep[pixel_index(xpos, ypos)] = rgb;
-        }
-    }
+    struct gfx_shape sprite_shape = GFX_SHAPE_DEFAULT;
+
+    sprite_shape.x = x;
+    sprite_shape.y = y;
+    sprite_shape.width = SPRITE_WIDTH;
+    sprite_shape.height = SPRITE_HEIGHT;
+    sprite_shape.color = color;
+    gfx_draw_shape(&gfx_ctx, &sprite_shape);
 }
 
 static void
 update_mouse(struct mouse *mouse)
 {
-    draw_rect(mouse->x, mouse->y, SPRITE_WIDTH, SPRITE_HEIGHT, GAME_BG);
+    draw_sprite(mouse->x, mouse->y, GAME_BG);
 
     /* Move the mouse in the x direction */
     if (mouse->x_inc) {
@@ -128,7 +125,7 @@ update_mouse(struct mouse *mouse)
         mouse->y_inc = 1;
     }
 
-    draw_rect(mouse->x, mouse->y, SPRITE_WIDTH, SPRITE_HEIGHT, MOUSE_BG);
+    draw_sprite(mouse->x, mouse->y, MOUSE_BG);
 }
 
 static void
@@ -178,8 +175,8 @@ mouse_collide(struct player *p, struct mouse *m)
         beep(HIT_BEEP_MSEC, HIT_BEEP_FREQ);
 
         /* Clear the sprites */
-        draw_rect(m->x, m->y, SPRITE_WIDTH, SPRITE_HEIGHT, GAME_BG);
-        draw_rect(p->x, p->y, SPRITE_WIDTH, SPRITE_HEIGHT, GAME_BG);
+        draw_sprite(m->x, m->y, GAME_BG);
+        draw_sprite(p->x, p->y, GAME_BG);
 
         m->x = 0;
         m->y = rand() % MAX_Y;
@@ -216,8 +213,8 @@ game_loop(void)
     mouse.speed = MIN_MOUSE_SPEED;
 
     /* Draw player and mouse */
-    draw_rect(p.x, p.y, SPRITE_WIDTH, SPRITE_HEIGHT, PLAYER_BG);
-    draw_rect(mouse.x, mouse.y, SPRITE_WIDTH, SPRITE_HEIGHT, MOUSE_BG);
+    draw_sprite(p.x, p.y, PLAYER_BG);
+    draw_sprite(mouse.x, mouse.y, MOUSE_BG);
 
     while (running) {
         if (mouse_collide(&p, &mouse)) {
@@ -229,7 +226,7 @@ game_loop(void)
         update_mouse(&mouse);
 
         if (IS_ASCII(c)) {
-            draw_rect(p.x, p.y, SPRITE_WIDTH, SPRITE_HEIGHT, GAME_BG);
+            draw_sprite(p.x, p.y, GAME_BG);
         }
 
         switch (c) {
@@ -263,42 +260,28 @@ game_loop(void)
             continue;
         }
 
-        draw_rect(p.x, p.y, SPRITE_WIDTH, SPRITE_HEIGHT, PLAYER_BG);
+        draw_sprite(p.x, p.y, PLAYER_BG);
     }
 }
 
 int
 main(void)
 {
-    int fb_fd, fbattr_fd, prot;
-    size_t fb_size;
+    int error;
     char c;
 
-    fb_fd = open("/dev/fb0", O_RDWR);
-    if (fb_fd < 0) {
-        return fb_fd;
-    }
-
-    fbattr_fd = open("/ctl/fb0/attr", O_RDONLY);
-    if (fbattr_fd < 0) {
-        close(fb_fd);
-        return fbattr_fd;
+    error = gfx_init(&gfx_ctx);
+    if (error < 0) {
+        printf("failed to init libgfx\n");
+        return error;
     }
 
     beep_fd = open("/dev/beep", O_WRONLY);
-    read(fbattr_fd, &fbattr, sizeof(fbattr));
-    close(fbattr_fd);
-
-    fb_size = fbattr.height * fbattr.pitch;
-    prot = PROT_READ | PROT_WRITE;
-    framep = mmap(NULL, fb_size, prot, MAP_SHARED, fb_fd, 0);
-
     game_loop();
     printf("\033[35;40mYOUR FINAL SCORE: %d\033[0m\n", hit_count);
 
     /* Cleanup */
     close(beep_fd);
-    munmap(framep, fb_size);
-    close(fb_fd);
+    gfx_cleanup(&gfx_ctx);
     return 0;
 }
