@@ -48,6 +48,7 @@
 #define SYSINFO_PRODUCT     0x02
 #define SYSINFO_FAMILY      0x03
 #define PROCINFO_MANUFACT   0x02
+#define PROCINFO_VERSION    0x03
 #define PROCINFO_PARTNO     0x06
 
 static struct limine_smbios_request smbios_req = {
@@ -196,6 +197,24 @@ dmi_cpu_manufact(void)
     }
 
     return dmi_str_index(hdr, PROCINFO_MANUFACT);
+}
+
+/*
+ * Return the CPU version string from the
+ * DMI/SMBIOS Processor Info structure
+ *
+ * Returns NULL if not found
+ */
+const char *
+dmi_cpu_version(void)
+{
+    struct dmi_shdr *hdr;
+
+    if ((hdr = dmi_shdr(DMI_PROCESSOR_INFO)) == NULL) {
+        return NULL;
+    }
+
+    return dmi_str_index(hdr, PROCINFO_VERSION);
 }
 
 static int
