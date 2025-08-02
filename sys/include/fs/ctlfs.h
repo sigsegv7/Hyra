@@ -42,12 +42,10 @@ struct ctlops {
 /*
  * Ctlfs op arguments
  *
- * @devname: Device name.
- * @major: Device major
- * @minor: Device minor.
- * @mode: Access flags.
  * @devname [1]: Device name (node name)
  * @ctlname: [1]: Control name (node entry name)
+ * @ops: Callbacks / fs hooks
+ * @mode: Access flags.
  */
 struct ctlfs_dev {
     union {
