@@ -25,3 +25,4 @@ all:
 	make -C whoami/ $(ARGS)
 	make -C oasm/ $(ARGS)
 	make -C oemu/ $(ARGS)
+	make -C dmidump/ $(ARGS)
