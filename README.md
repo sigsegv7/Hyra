@@ -1,13 +1,21 @@
 The Hyra Operating System
 =========================
 
-Welcome to the Hyra Operating System project!
+Welcome to the Hyra Operating System project! Hyra is an experimental
+operating system inspired by BSD and Plan 9 while being entirely written
+entirely from scratch. Hyra aims to rethink core fundamentals in modern operating system design
+in order to create new and improved architectural ideas.
+
 
 Project Goal:
 --------------
-The goal of this project is to redefine what modern operating systems are while taking inspiration from BSD. Hyra does not use
-POSIX by default and instead uses the [OSMORA Uniform System Interface (OUSI)](https://osmora.org/oap/oap-0002). Hyra also does
+The goal of this project is to redefine what modern operating systems are while taking inspiration from BSD. Hyra does
 not use CPIO for its initramfs like other operating systems typically would and instead uses the [OSMORA Archive Format (OMAR)](https://osmora.org/oap/oap-0005).
+
+What Hyra is NOT:
+--------------
+Hyra is *NOT* Linux, nor does extend or share any sources with any existing
+operating systems as it is written entirely from scratch. Hyra is *NOT* intended as a "toy" project as it is aimed to be the used as the main operating system for internal OSMORA operations and infrastructure.
 
 Getting Started:
 ----------------
@@ -31,7 +39,7 @@ password is also `root`.
 
 Programs:
 ----------------
-The Hyra userspace provides the user various programs that they can run, examples of
+The Hyra userspace provides the user various programs that they can run. Examples of
 such programs include:
 
 - ``beep`` - Play a tone
@@ -47,8 +55,20 @@ such programs include:
 - ``readcore`` - Read coredump files
 - ``oasm`` - OSMORA [OSMX64](https://github.com/sigsegv7/OSMX64) Assembler
 - ``oemu`` - OSMORA [OSMX64](https://github.com/sigsegv7/OSMX64) Emulator
+- ``kstat`` - Read kernel statistics
+- ``dmidump`` - Dump DMI/SMBios information
 
 And more! See ``usr.bin/*``
+
+Libraries:
+----------------
+The Hyra userspace additionally provides the user various libraries that they can
+link with. Examples of such libraries include:
+
+- ``libc`` - C library (link flag: ``-lc``)
+- ``libgfx`` - Low-level graphics (link flag: ``-lgfx``)
+
+And more! See ``lib/*``
 
 Documentation:
 --------------
