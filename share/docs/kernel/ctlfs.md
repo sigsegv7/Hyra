@@ -1,5 +1,7 @@
 # The Hyra control filesystem (ctlfs)
 
+Written by Ian M. Moffett
+
 ## Rationale
 
 Historically, Operating Systems of the Unix family typically relied
