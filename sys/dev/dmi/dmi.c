@@ -35,7 +35,9 @@
 #include <sys/cdefs.h>
 #include <sys/syslog.h>
 #include <dev/dmi/dmi.h>
+#include <dev/dmi/dmivar.h>
 #include <dev/acpi/tables.h>
+#include <fs/ctlfs.h>
 #include <string.h>
 
 #define DMI_BIOS_INFO       0
@@ -236,6 +238,20 @@ dmi_cpu_version(void)
     return dmi_str_index(hdr, PROCINFO_VERSION);
 }
 
+static void
+dmi_init_ctl(void)
+{
+    struct ctlfs_dev ctl;
+    char ctlname[] = "dmi";
+
+    /* Create '/ctl/dmi/board' */
+    ctl.mode = 0444;
+    ctlfs_create_node(ctlname, &ctl);
+    ctl.devname = ctlname;
+    ctl.ops = &g_ctl_board_ident;
+    ctlfs_create_entry("board", &ctl);
+}
+
 static int
 dmi_init(void)
 {
@@ -283,6 +299,7 @@ dmi_init(void)
         hdr = PTR_OFFSET(hdr, cur_nbytes);
     }
 
+    dmi_init_ctl();
     return 0;
 }
 
