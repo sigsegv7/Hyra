@@ -57,6 +57,8 @@ typedef pixel_t color_t;
 #define GFX_WHITE   0xFFFFFF
 #define GFX_PURPLE  0x800080
 #define GFX_YELLOW  0xFFFF00
+#define GFX_DARK    0x1D2021
+#define GFX_AQUA    0x427B58
 
 /*
  * Represents cartesian x/y values
