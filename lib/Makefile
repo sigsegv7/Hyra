@@ -7,3 +7,4 @@ ARGS = -I$(ROOT)/builddeps LDSCRIPT=$(LDSCRIPT) USRDIR=$(USRDIR) ROOT=$(ROOT)
 all:
 	make -C libc/ $(ARGS)
 	make -C libgfx/ $(ARGS)
+	make -C liboda/ $(ARGS)
