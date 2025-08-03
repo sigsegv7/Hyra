@@ -47,8 +47,6 @@
 #define ODA_KEY_ESCAPE      0x0001
 #define ODA_KEY_TAB         0x0002
 #define ODA_KEY_BACKSPACE   0x0003
-#define ODA_KEY_ALPHA       0x0004
-#define ODA_KEY_NUM         0x0005
 
 /*
  * Represents a key press
