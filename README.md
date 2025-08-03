@@ -77,6 +77,7 @@ Documentation will be in the form of comments throughout the codebase and can al
 - ``share/man/*``: Man pages
 - ``share/contrib``: Information on contributing
 - ``share/docs/kernel``: Kernel documentation
+- ``share/docs/lib``: Library documentation
 
 Hyra running on bare metal:
 --------------
