@@ -4,7 +4,6 @@ CFILES = $(shell find src/ -name "*.c")
 OBJ = $(CFILES:.c=.o)
 
 all: headers $(OBJ) build/libgfx.a
-	echo "----------------------------------------"
 	echo $(USRDIR)
 	mv build/libgfx.a $(USRDIR)/lib/
 	cp -r include/ $(USRDIR)/include/
