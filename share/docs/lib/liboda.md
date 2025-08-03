@@ -189,3 +189,41 @@ structure to minimize the number of parameters used in the function signature.
 
 Upon failure of ``oda_reqwin()`` a negative POSIX errno value
 is returned (see ``sys/errno.h``).
+
+### Input management
+
+The liboda library additionally provides an input API that facilitates
+management of user input (e.g., keyboard).
+
+(See ``liboda/input.h``)
+
+#### The ``oda_key`` structure
+
+ODA provides a standard description of keys received from a keyboard
+device. Keyboard input is represented by the ``oda_key`` structure shown
+below:
+
+```c
+struct oda_key {
+    uint16_t type;
+    uint8_t scancode;
+    char ch;
+    ...
+};
+```
+
+The ``type`` field describes the key type, valid key types can be
+found within the ``ODA_KEY_*`` definitions in ``liboda/input.h``.
+
+The ``scancode`` field contains the raw keyboard scancode received
+from the device.
+
+The ``ch`` field contains the ASCII representation of the input received
+from the device.
+
+#### The ``oda_kbd`` structure
+
+ODA represents keyboard devices through the ``oda_kbd`` structure found
+in ``liboda/input.h``. This structure contains callbacks that are set up
+by the compositor to be invoked when their respective keyboard related
+event occurs.
