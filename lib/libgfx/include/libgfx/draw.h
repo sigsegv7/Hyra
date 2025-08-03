@@ -89,7 +89,20 @@ struct gfx_shape {
     dimm_t height;
 };
 
+/*
+ * A point or single pixel that
+ * may be plotted onto the screen.
+ *
+ * @x,y: Position of the point on the screen
+ * @rgb: Color of the point (RGB)
+ */
+struct gfx_point {
+    scrpos_t x, y;
+    color_t rgb;
+};
+
 int gfx_draw_shape(struct gfx_ctx *ctx, const struct gfx_shape *shape);
+int gfx_plot_point(struct gfx_ctx *ctx, const struct gfx_point *point);
 
 __always_inline static inline size_t
 gfx_io_index(struct gfx_ctx *ctx, scrpos_t x, scrpos_t y)

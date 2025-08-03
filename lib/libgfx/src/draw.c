@@ -96,6 +96,39 @@ gfx_draw_square(struct gfx_ctx *ctx, const struct gfx_shape *shape)
 }
 
 /*
+ * Plot a single pixel (aka point) onto
+ * the screen.
+ *
+ * @ctx: The graphics context pointer
+ * @point: Point to plot
+ *
+ * Returns 0 on success, otherwise a less
+ * than zero value.
+ */
+int
+gfx_plot_point(struct gfx_ctx *ctx, const struct gfx_point *point)
+{
+    uint32_t index;
+
+    if (ctx == NULL || point == NULL) {
+        return -EINVAL;
+    }
+
+    /*
+     * Is this even a valid point on the screen for
+     * us to plot on?
+     */
+    if (gfx_pixel_bounds(ctx, point->x, point->y) < 0) {
+        return -1;
+    }
+
+    /* Plot it !! */
+    index = gfx_io_index(ctx, point->x, point->y);
+    ctx->io[index] = point->rgb;
+    return 0;
+}
+
+/*
  * Draw a shape onto the screen
  *
  * @ctx: libgfx graphics context
