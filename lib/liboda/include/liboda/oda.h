@@ -80,8 +80,26 @@ struct oda_wattr {
     odadimm_t w, h;
 };
 
+/*
+ * A pixel point that can be plotted
+ * onto a window.
+ *
+ * @x,y: Point position
+ * @rgb: Color (RGB)
+ * @window: Window this will be plotted to
+ *
+ * Just set x, y, the color (rgb) then point it
+ * to a window!
+ */
+struct oda_point {
+    odapos_t x, y;
+    odacolor_t rgb;
+    struct oda_window *window;
+};
+
 int oda_reqwin(struct oda_wattr *params, struct oda_window **res);
 int oda_termwin(struct oda_state *state, struct oda_window *win);
+int oda_plotwin(struct oda_state *state, const struct oda_point *point);
 
 int oda_start_win(struct oda_state *state, struct oda_window *win);
 int oda_init(struct oda_state *res);
