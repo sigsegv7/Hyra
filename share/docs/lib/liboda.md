@@ -144,7 +144,7 @@ structure defined in ``liboda/oda.h``. Additionally, in order for any ODA
 library calls to be made, the compositor must initialize the library with
 ``oda_init()`` like in the following example:
 
-```
+```c
 #include <liboda/oda.h>
 
 struct oda_state state;
@@ -163,7 +163,7 @@ is returned (see ``sys/errno.h``).
 A compositor may request windows from the ODA by using
 ``oda_reqwin()`` like in the following example:
 
-```
+```c
 #include <liboda/oda.h>
 
 ...
