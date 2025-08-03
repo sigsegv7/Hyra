@@ -33,6 +33,39 @@
 #include <libgfx/draw.h>
 
 /*
+ * See if a pixel is within the bounds of
+ * the screen.
+ *
+ * @ctx: Graphics context pointer
+ * @x: X position to check
+ * @y: Y position to check
+ *
+ * Returns 0 if within bounds, otherwise
+ * a negative value.
+ */
+static int
+gfx_pixel_bounds(struct gfx_ctx *ctx, uint32_t x, uint32_t y)
+{
+    scrpos_t scr_width, scr_height;
+    struct fbattr fbdev;
+
+    if (ctx == NULL) {
+        return -1;
+    }
+
+    /* Grab screen dimensions */
+    fbdev = ctx->fbdev;
+    scr_width = fbdev.width;
+    scr_height = fbdev.height;
+
+    if (x >= scr_height || y >= scr_width) {
+        return -1;
+    }
+
+    return 0;
+}
+
+/*
  * Draw a classic square onto the screen.
  *
  * @ctx: Graphics context
@@ -43,21 +76,15 @@ gfx_draw_square(struct gfx_ctx *ctx, const struct gfx_shape *shape)
 {
     struct fbattr fbdev;
     off_t idx;
-    scrpos_t scr_width, scr_height;
     scrpos_t x, y;
 
     if (ctx == NULL || shape == NULL) {
         return -EINVAL;
     }
 
-    /* Grab screen dimensions */
-    fbdev = ctx->fbdev;
-    scr_width = fbdev.width;
-    scr_height = fbdev.height;
-
     for (x = shape->x; x < shape->x + shape->width; ++x) {
         for (y = shape->y; y < shape->y + shape->height; ++y) {
-            if (x >= scr_width || y >= scr_height) {
+            if (gfx_pixel_bounds(ctx, x, y) < 0) {
                 break;
             }
 
