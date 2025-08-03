@@ -30,7 +30,6 @@
 #ifndef LIBODA_INPUT_H
 #define LIBODA_INPUT_H
 
-#include <sys/ascii.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -42,12 +41,24 @@
 #define ODA_KEYCHAR(KEY) ((char )(KEY) & 0xFF)
 
 /*
+ * Key defines
+ */
+#define ODA_KEY_OTHER       0x0000
+#define ODA_KEY_ESCAPE      0x0001
+#define ODA_KEY_TAB         0x0002
+#define ODA_KEY_BACKSPACE   0x0003
+#define ODA_KEY_ALPHA       0x0004
+#define ODA_KEY_NUM         0x0005
+
+/*
  * Represents a key press
  *
+ * @type: Key types (see ODA_KEY_*)
  * @scancode: Scancode
  * @ch: Character
  */
 struct oda_key {
+    uint16_t type;
     uint8_t scancode;
     char ch;
 };

@@ -27,11 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/ascii.h>
 #include <sys/errno.h>
+#include <sys/param.h>
 #include <liboda/oda.h>
 #include <liboda/input.h>
 #include <stdint.h>
 #include <stdio.h>
+
+/*
+ * Convert key scancode/char values to fixed
+ * ODA key constants
+ */
+static inline uint16_t
+oda_map_key(const struct oda_key *key)
+{
+    uint16_t type = ODA_KEY_OTHER;
+
+    switch (key->ch) {
+    case ASCII_ESC:
+        type = ODA_KEY_ESCAPE;
+        break;
+    case ASCII_HT:
+        type = ODA_KEY_TAB;
+        break;
+    case ASCII_BS:
+        type = ODA_KEY_BACKSPACE;
+        break;
+    }
+
+    return type;
+}
 
 /*
  * Dispatch keyboard events. This is typically
@@ -57,5 +83,6 @@ oda_kbd_dispatch(struct oda_kbd *kbd)
 
     key.scancode = ODA_SCANCODE(input);
     key.ch = ODA_KEYCHAR(input);
+    key.type = oda_map_key(&key);
     return kbd->handle_keyev(kbd, &key);
 }
