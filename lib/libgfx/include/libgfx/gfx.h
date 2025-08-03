@@ -48,19 +48,6 @@ typedef uint32_t pixel_t;
 typedef pixel_t color_t;
 
 /*
- * Basic color defines
- */
-#define GFX_BLACK   0x000000
-#define GFX_RED     0xFF0000
-#define GFX_GREEN   0x00FF00
-#define GFX_BLUE    0x0000FF
-#define GFX_WHITE   0xFFFFFF
-#define GFX_PURPLE  0x800080
-#define GFX_YELLOW  0xFFFF00
-#define GFX_DARK    0x1D2021
-#define GFX_AQUA    0x427B58
-
-/*
  * Represents cartesian x/y values
  */
 typedef uint32_t cartpos_t;
