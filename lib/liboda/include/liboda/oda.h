@@ -40,10 +40,12 @@
 /*
  * ODA representation of a window.
  *
+ * @wid: Window ID (identifies the window)
  * @surface: Window surface descriptor
  * @session: Session this window belongs to
  */
 struct oda_window {
+    odawid_t wid;
     struct gfx_shape surface;
     struct oda_state *session;
     TAILQ_ENTRY(oda_window) link;
@@ -99,9 +101,11 @@ struct oda_point {
 
 int oda_reqwin(struct oda_wattr *params, struct oda_window **res);
 int oda_termwin(struct oda_state *state, struct oda_window *win);
-int oda_plotwin(struct oda_state *state, const struct oda_point *point);
 
+int oda_plotwin(struct oda_state *state, const struct oda_point *point);
 int oda_start_win(struct oda_state *state, struct oda_window *win);
+
 int oda_init(struct oda_state *res);
+int oda_shutdown(struct oda_state *state);
 
 #endif  /* !LIBODA_ODA_H */

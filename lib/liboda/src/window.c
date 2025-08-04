@@ -28,12 +28,120 @@
  */
 
 #include <sys/errno.h>
+#include <sys/queue.h>
 #include <stdlib.h>
 #include <string.h>
 #include <liboda/oda.h>
 #include <liboda/odavar.h>
 #include <liboda/types.h>
 #include <libgfx/gfx.h>
+
+/*
+ * The window cache is used to reduce how many
+ * calls to malloc() and free() are made during
+ * window creation and destruction.
+ */
+static TAILQ_HEAD(, oda_window) wcache;
+static uint32_t wcache_cookie = 0;
+static odawid_t next_wid = 1;
+
+/*
+ * Pop a window from the window cache.
+ * Returns NULL there are no more windows.
+ */
+static struct oda_window *
+oda_window_pop(void)
+{
+    struct oda_window *wdp;
+
+    if (wcache_cookie != ODA_COOKIE) {
+        TAILQ_INIT(&wcache);
+        wcache_cookie = ODA_COOKIE;
+        return NULL;
+    }
+
+    wdp = TAILQ_FIRST(&wcache);
+    TAILQ_REMOVE(&wcache, wdp, link);
+    return wdp;
+}
+
+/*
+ * Place a window into the window cache.
+ */
+static void
+oda_window_cache(struct oda_window *wdp)
+{
+    /* Ensure arg is valid */
+    if (wdp == NULL) {
+        return;
+    }
+
+    if (wcache_cookie != ODA_COOKIE) {
+        TAILQ_INIT(&wcache);
+        wcache_cookie = ODA_COOKIE;
+    }
+
+    TAILQ_INSERT_TAIL(&wcache, wdp, link);
+}
+
+/*
+ * Allocate an ODP window
+ *
+ * Returns NULL on failure
+ */
+static struct oda_window *
+oda_window_alloc(void)
+{
+    struct oda_window *wdp;
+
+    /*
+     * First check if there are any entries
+     * we can grab from the window cache.
+     */
+    wdp = oda_window_pop();
+    if (wdp != NULL) {
+        return wdp;
+    }
+
+    /* Allocate a new window */
+    wdp = malloc(sizeof(*wdp));
+    if (wdp == NULL) {
+        return NULL;
+    }
+
+    memset(wdp, 0, sizeof(*wdp));
+    wdp->wid = next_wid++;
+    return wdp;
+}
+
+/*
+ * Release a given ODA window descriptor
+ *
+ * @wdp: Window to free
+ */
+static void
+oda_window_release(struct oda_state *state, struct oda_window *wdp)
+{
+    if (wdp == NULL) {
+        return;
+    }
+
+    /*
+     * It is probably a good idea to ensure previous
+     * state other than the old window ID is reset
+     * and zeroed.
+     */
+    wdp->session = NULL;
+    memset(&wdp->surface, 0, sizeof(wdp->surface));
+
+    /*
+     * Now we can remove this window from the list
+     * of windows we are tracking and add it to the
+     * cache.
+     */
+    TAILQ_REMOVE(&state->winq, wdp, link);
+    oda_window_cache(wdp);
+}
 
 /*
  * Check if a point is within the bounds of
@@ -74,6 +182,34 @@ oda_check_point(struct oda_window *wp, struct oda_point *point)
     }
 
     /* All good */
+    return 0;
+}
+
+/*
+ * Clean up after ourselves and release
+ * each entry of the wcache.
+ *
+ * Returns 0 on success.
+ */
+static int
+oda_free_wcache(void)
+{
+    struct oda_window *wdp, *next;
+
+    if (wcache_cookie != ODA_COOKIE) {
+        return -1;
+    }
+
+    /*
+     * Go through each entry and call free()
+     * on them.
+     */
+    wdp = TAILQ_FIRST(&wcache);
+    while (wdp != NULL) {
+        next = TAILQ_NEXT(wdp, link);
+        free(wdp);
+        wdp = next;
+    }
     return 0;
 }
 
@@ -176,7 +312,7 @@ oda_reqwin(struct oda_wattr *params, struct oda_window **res)
     }
 
     /* Allocate a new window */
-    wp = malloc(sizeof(*wp));
+    wp = oda_window_alloc();
     if (wp == NULL) {
         return -ENOMEM;
     }
@@ -255,7 +391,15 @@ oda_termwin(struct oda_state *state, struct oda_window *win)
         return error;
     }
 
-    TAILQ_REMOVE(&state->winq, win, link);
-    free(win);
+    oda_window_release(state, win);
     return 0;
+}
+
+/*
+ * Shutdown the ODA library
+ */
+int
+oda_shutdown(struct oda_state *state)
+{
+    return oda_free_wcache();
 }

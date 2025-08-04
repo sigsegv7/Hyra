@@ -36,5 +36,6 @@ typedef uint32_t odapos_t;      /* X/Y positions */
 typedef uint32_t odapix_t;      /* RGB pixel */
 typedef odapix_t odacolor_t;    /* RGB color */
 typedef uint32_t odadimm_t;     /* Dimensions */
+typedef uint32_t odawid_t;      /* Window ID */
 
 #endif  /* !LIBODA_TYPE_H */
