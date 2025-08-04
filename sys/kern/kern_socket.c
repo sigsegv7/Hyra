@@ -322,6 +322,7 @@ socket(int domain, int type, int protocol)
         goto fail;
     }
 
+    memset(ksock, 0, sizeof(*ksock));
     sbuf = &ksock->buf;
     sbuf->head = 0;
     sbuf->tail = 0;
