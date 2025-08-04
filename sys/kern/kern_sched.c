@@ -315,6 +315,92 @@ proc_unpin(struct proc *td)
     td->flags &= ~PROC_PINNED;
 }
 
+/*
+ * Suspend a process for a specified amount
+ * of time. This calling process will yield for
+ * the amount of time specified in 'tv'
+ *
+ * @td: Process to suspend (NULL for current)
+ * @tv: Time value to use
+ *
+ * XXX: 'tv' being NULL is equivalent to calling
+ *      sched_detach()
+ */
+void
+sched_suspend(struct proc *td, const struct timeval *tv)
+{
+    struct timer tmr;
+    const time_t USEC_PER_SEC = 1000000;
+    ssize_t usec;
+    time_t usec_cur, usec_tmp;
+    bool have_timer = true;
+    tmrr_status_t tmr_status;
+
+    if (td == NULL)
+        td = this_td();
+    if (__unlikely(td == NULL))
+        return;
+
+    if (tv == NULL) {
+        sched_detach(td);
+        return;
+    }
+
+    /*
+     * Now, we need a generic timer so that we can compute
+     * how much time has elapsed since this process has
+     * requested to be suspended. However, we cannot assume
+     * that it would be present. If the lookup fails, all we
+     * can do is try to estimate how much time went by which
+     * works fine too, just not as accurate.
+     */
+    tmr_status = req_timer(TIMER_GP, &tmr);
+    if (tmr_status != TMRR_SUCCESS) {
+        have_timer = false;
+    }
+
+    /* We need microsecond precision */
+    if (tmr.get_time_sec == NULL) {
+        have_timer = false;
+    }
+
+    /*
+     * Compute the max time in microseconds that
+     * we will wait. We are using both tv->tv_sec
+     * and tv->tv_usec
+     */
+    usec = tv->tv_usec;
+    usec += tv->tv_sec * USEC_PER_SEC;
+    usec_cur = (have_timer) ? tmr.get_time_usec() : 0;
+
+    for (;;) {
+        sched_yield();
+
+        /*
+         * If we have a timer in our paws, compute how much
+         * time went by. Otherwise we estimate by subtracting
+         * the scheduler quantum.
+         *
+         * XXX: The timing here works decently as intended. However,
+         *      it would be nice to smoothen out any jitter. Such can
+         *      probably be done by subtracting 'usec' by the exponential
+         *      moving average of 'usec_tmp' rather than the raw original
+         *      value.
+         */
+        if (have_timer) {
+            usec_tmp = (tmr.get_time_usec() - usec_cur);
+        } else {
+            usec_tmp = DEFAULT_TIMESLICE_USEC;
+        }
+
+        /* We are done here! */
+        usec -= usec_tmp;
+        if (usec <= 0) {
+            break;
+        }
+    }
+}
+
 void
 sched_init(void)
 {

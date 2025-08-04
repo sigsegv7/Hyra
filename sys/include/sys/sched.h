@@ -33,6 +33,7 @@
 #include <sys/proc.h>
 #include <sys/cdefs.h>
 #include <sys/limits.h>
+#include <sys/time.h>
 
 /*
  * Scheduler CPU information
@@ -66,6 +67,7 @@ void sched_stat(struct sched_stat *statp);
 void sched_init(void);
 
 void sched_yield(void);
+void sched_suspend(struct proc *td, const struct timeval *tv);
 void sched_detach(struct proc *td);
 
 __dead void sched_enter(void);
