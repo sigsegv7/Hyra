@@ -779,7 +779,7 @@ sys_sendmsg(struct syscall_args *scargs)
 }
 
 /*
- * connnect(3) syscall
+ * connect(3) syscall
  *
  * arg0: sockfd
  * arg1: address
