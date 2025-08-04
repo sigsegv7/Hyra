@@ -35,6 +35,7 @@
 #include <liboda/odavar.h>
 #include <liboda/types.h>
 #include <libgfx/gfx.h>
+#include <libgfx/draw.h>
 
 /*
  * The window cache is used to reduce how many
@@ -337,6 +338,61 @@ oda_reqwin(struct oda_wattr *params, struct oda_window **res)
     surf->height = params->h;
     surf->type = SHAPE_SQUARE;
     *res = wp;
+    return 0;
+}
+
+/*
+ * Move a window to a new position on the
+ * screen.
+ *
+ * @state: ODA state pointer
+ * @params: Arguments to this function
+ */
+int
+oda_movewin(struct oda_state *state, struct oda_movewin *params)
+{
+    struct oda_window *win;
+    struct gfx_shape *wsurf;
+    struct gfx_region r;
+    odadimm_t w, h;
+    odapos_t x, y, x_f, y_f;
+    odapos_t to_x, to_y;
+    uint32_t i = 0;
+    int error;
+
+    /* Make sure arguments are valid */
+    if (state == NULL || params == NULL) {
+        return -EINVAL;
+    }
+
+    /* We need the window */
+    if ((win = params->wp) == NULL) {
+        return -EINVAL;
+    }
+
+    /* Verify state cookie */
+    if ((error = oda_cookie_verify(state)) != 0) {
+        return error;
+    }
+
+    wsurf = &win->surface;
+    to_x = params->to_x;
+    to_y = params->to_y;
+
+    r.x = wsurf->x;
+    r.y = wsurf->y;
+    r.width = wsurf->width;
+    r.height = wsurf->height;
+
+    /*
+     * We will copy the window to the new location and
+     * fill where the old window was with GFX_BLACK.
+     *
+     * TODO: Handle overlapping of windows
+     */
+    gfx_copy_region(&state->gctx, &r, to_x, to_y);
+    wsurf->x = to_x;
+    wsurf->y = to_y;
     return 0;
 }
 

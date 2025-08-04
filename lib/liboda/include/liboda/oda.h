@@ -83,6 +83,22 @@ struct oda_wattr {
 };
 
 /*
+ * Arguments for oda_movewin() are stored
+ * within this structure to minimize the
+ * number of arguments within the function
+ * signature.
+ *
+ * @wp: Window to be moved
+ * @to_x: X position to move window to
+ * @to_y: Y position to move window to
+ */
+struct oda_movewin {
+    struct oda_window *wp;
+    odapos_t to_x;
+    odapos_t to_y;
+};
+
+/*
  * A pixel point that can be plotted
  * onto a window.
  *
@@ -103,6 +119,7 @@ int oda_reqwin(struct oda_wattr *params, struct oda_window **res);
 int oda_termwin(struct oda_state *state, struct oda_window *win);
 
 int oda_plotwin(struct oda_state *state, const struct oda_point *point);
+int oda_movewin(struct oda_state *state, struct oda_movewin *params);
 int oda_start_win(struct oda_state *state, struct oda_window *win);
 
 int oda_init(struct oda_state *res);
