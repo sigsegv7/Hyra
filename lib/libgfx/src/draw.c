@@ -129,6 +129,34 @@ gfx_plot_point(struct gfx_ctx *ctx, const struct gfx_point *point)
 }
 
 /*
+ * Grab the RGB value of a single pixel on
+ * the scren.
+ *
+ * @ctx: Graphics context pointer
+ * @x: X position to sample
+ * @y: Y position to sample
+ */
+color_t
+gfx_get_pix(struct gfx_ctx *ctx, uint32_t x, uint32_t y)
+{
+    const color_t ERROR_COLOR = GFX_BLACK;
+    uint32_t index;
+
+    /* The 'ctx' argument is required */
+    if (ctx == NULL) {
+        return ERROR_COLOR;
+    }
+
+    /* Are we within bounds of the screen */
+    if (gfx_pixel_bounds(ctx, x, y) < 0) {
+        return ERROR_COLOR;
+    }
+
+    index = gfx_io_index(ctx, x, y);
+    return ctx->io[index];
+}
+
+/*
  * Draw a shape onto the screen
  *
  * @ctx: libgfx graphics context

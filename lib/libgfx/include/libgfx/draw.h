@@ -103,6 +103,7 @@ struct gfx_point {
 
 int gfx_draw_shape(struct gfx_ctx *ctx, const struct gfx_shape *shape);
 int gfx_plot_point(struct gfx_ctx *ctx, const struct gfx_point *point);
+color_t gfx_get_pix(struct gfx_ctx *ctx, uint32_t x, uint32_t y);
 
 __always_inline static inline size_t
 gfx_io_index(struct gfx_ctx *ctx, scrpos_t x, scrpos_t y)
