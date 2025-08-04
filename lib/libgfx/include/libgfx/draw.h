@@ -101,8 +101,24 @@ struct gfx_point {
     color_t rgb;
 };
 
+/*
+ * Represents a rectangular region on
+ * the screen.
+ *
+ * @x,y: Position of this region on the screen
+ * @width: Region width
+ * @heght: Region height
+ */
+struct gfx_region {
+    scrpos_t x, y;
+    dimm_t width;
+    dimm_t height;
+};
+
 int gfx_draw_shape(struct gfx_ctx *ctx, const struct gfx_shape *shape);
 int gfx_plot_point(struct gfx_ctx *ctx, const struct gfx_point *point);
+
+int gfx_copy_region(struct gfx_ctx *ctx, struct gfx_region *r, scrpos_t x, scrpos_t y);
 color_t gfx_get_pix(struct gfx_ctx *ctx, uint32_t x, uint32_t y);
 
 __always_inline static inline size_t

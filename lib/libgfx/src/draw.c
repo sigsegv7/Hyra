@@ -182,3 +182,43 @@ gfx_draw_shape(struct gfx_ctx *ctx, const struct gfx_shape *shape)
 
     return -1;
 }
+
+/*
+ * Copy a region on one part of a screen to
+ * another part of a screen.
+ *
+ * @ctx: Graphics context pointer
+ * @r: Region to copy
+ * @x: X position for copy dest
+ * @y: Y position for copy dest
+ */
+int
+gfx_copy_region(struct gfx_ctx *ctx, struct gfx_region *r, scrpos_t x, scrpos_t y)
+{
+    struct gfx_point point;
+    color_t pixel;
+    scrpos_t src_cx, src_cy;
+    dimm_t w, h;
+
+    if (ctx == NULL || r == NULL) {
+        return -EINVAL;
+    }
+
+    w = r->width;
+    h = r->height;
+
+    for (int xoff = 0; xoff < w; ++xoff) {
+        for (int yoff = 0; yoff < h; ++yoff) {
+            /* Source position */
+            src_cx = r->x + xoff;
+            src_cy = r->y + yoff;
+
+            /* Plot the new pixel */
+            pixel = gfx_get_pix(ctx, src_cx, src_cy);
+            point.x = x + xoff;
+            point.y = y + yoff;
+            point.rgb = pixel;
+            gfx_plot_point(ctx, &point);
+        }
+    }
+}
