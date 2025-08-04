@@ -264,6 +264,7 @@ recv(int sockfd, void *buf, size_t len, int flags)
     struct sockbuf *sbuf;
     struct netbuf *netbuf;
     size_t head;
+    ssize_t retval = len;
     int error;
 
     /* Length cannot be zero */
@@ -283,7 +284,8 @@ recv(int sockfd, void *buf, size_t len, int flags)
     if (netbuf->len == 0) {
         sbuf->head = 0;
         sbuf->tail = 0;
-        return -EAGAIN;
+        retval = -EAGAIN;
+        goto done;
     }
 
     if (len > netbuf->len) {
@@ -292,10 +294,10 @@ recv(int sockfd, void *buf, size_t len, int flags)
 
     head = sbuf->head;
     memcpy(buf, &netbuf->data[head], len);
-
     sbuf->head = (sbuf->head + len) % NETBUF_LEN;
+done:
     mutex_release(ksock->mtx);
-    return len;
+    return retval;
 }
 
 /*
