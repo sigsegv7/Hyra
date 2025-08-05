@@ -316,7 +316,7 @@ send(int sockfd, const void *buf, size_t size, int flags)
  * @size: Size of the buffer
  * @flags: Optional flags
  *
- * Returns zero on success, otherwise a less
+ * Returns length on success, otherwise a less
  * than zero errno.
  */
 ssize_t
