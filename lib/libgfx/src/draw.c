@@ -58,7 +58,7 @@ gfx_pixel_bounds(struct gfx_ctx *ctx, uint32_t x, uint32_t y)
     scr_width = fbdev.width;
     scr_height = fbdev.height;
 
-    if (x >= scr_height || y >= scr_width) {
+    if (x >= scr_width || y >= scr_height) {
         return -1;
     }
 
@@ -221,4 +221,6 @@ gfx_copy_region(struct gfx_ctx *ctx, struct gfx_region *r, scrpos_t x, scrpos_t 
             gfx_plot_point(ctx, &point);
         }
     }
+
+    return 0;
 }
