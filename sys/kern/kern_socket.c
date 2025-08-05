@@ -31,6 +31,7 @@
 #include <sys/sio.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
+#include <sys/time.h>
 #include <sys/namei.h>
 #include <sys/sched.h>
 #include <sys/errno.h>
@@ -45,6 +46,17 @@
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
 static struct vops socket_vops;
+
+/*
+ * This table maps socket option names to
+ * lengths of their underlying structure.
+ *
+ * This is used for bounds/length checking within
+ * setsockopt()
+ */
+static size_t sockopt_lentab[_SO_MAX] = {
+    [ SO_RCVTIMEO ] = sizeof(struct timeval)
+};
 
 /*
  * Get a kernel socket structure from a
@@ -101,6 +113,7 @@ static int
 socket_reclaim(struct vnode *vp)
 {
     struct ksocket *ksock;
+    struct sockopt *opt;
 
     /* Is this even a socket? */
     if (vp->type != VSOCK) {
@@ -110,6 +123,15 @@ socket_reclaim(struct vnode *vp)
     /* Is there any data attached? */
     if ((ksock = vp->data) == NULL) {
         return -EIO;
+    }
+
+    /* Free up any used options */
+    for (int i = 0; i < _SO_MAX; ++i) {
+        opt = ksock->opt[i];
+        if (opt != NULL) {
+            dynfree(opt);
+            ksock->opt[i] = NULL;
+        }
     }
 
     fd_close(ksock->sockfd);
@@ -181,6 +203,46 @@ connect_domain(int sockfd, struct ksocket *ksock, struct sockaddr_un *un)
     }
 
     filedesc->vp = vp;
+    return 0;
+}
+
+/*
+ * Wait until data is received for the
+ * recv() function.
+ *
+ * @sockfd: Socket we are waiting on
+ *
+ * Returns zero on success, otherwise a less
+ * than zero value is returned.
+ */
+static int
+socket_rx_wait(int sockfd)
+{
+    struct ksocket *ksock;
+    struct sockopt *opt;
+    struct timeval tv;
+    int error;
+
+    if (ksock == NULL) {
+        return -EINVAL;
+    }
+
+    error = get_ksock(sockfd, &ksock);
+    if (error < 0) {
+        return error;
+    }
+
+    /*
+     * If the socket does not have this option set,
+     * we will assume that there is no timeout value.
+     */
+    opt = ksock->opt[SO_RCVTIMEO];
+    if (opt == NULL) {
+        return -1;
+    }
+
+    memcpy(&tv, opt->data, opt->len);
+    sched_suspend(NULL, &tv);
     return 0;
 }
 
@@ -393,6 +455,68 @@ bind(int sockfd, const struct sockaddr *addr, socklen_t len)
     clp = &ksock->cmsg_list;
     TAILQ_INIT(&clp->list);
     clp->is_init = 1;
+    return 0;
+}
+
+/*
+ * Set socket options - POSIX setsockopt(3) core
+ *
+ * @sockfd: File descriptor of socket
+ * @level: Protocol level
+ * @v: Options value
+ * @len: Length of data pointed to by 'v'
+ */
+int
+setsockopt(int sockfd, int level, int name, const void *v, socklen_t len)
+{
+    struct ksocket *ksock;
+    struct sockopt *opt;
+    size_t exp_len;
+    int error;
+
+    /* Must have a valid fd */
+    if (sockfd < 0) {
+        return -EBADF;
+    }
+
+    /* Ensure value and length are valid */
+    if (v == NULL || len == 0) {
+        return -EINVAL;
+    }
+
+    /* Verify the name */
+    if (name >= _SO_MAX) {
+        return -EINVAL;
+    }
+
+    /* Grab a new socket */
+    if ((error = get_ksock(sockfd, &ksock)) < 0) {
+        return error;
+    }
+
+    /* Clamp the input length as needed */
+    exp_len = sockopt_lentab[name];
+    if (len > exp_len) {
+        len = exp_len;
+    }
+
+    /*
+     * Here we will grab the socket options. If it is
+     * NULL, we'll need to allocate one.
+     */
+    if ((opt = ksock->opt[name]) == NULL) {
+        opt = dynalloc(sizeof(*opt) + len);
+
+        if (opt == NULL) {
+            return -ENOMEM;
+        }
+
+        opt->len = len;
+        ksock->opt[name] = opt;
+    }
+
+    memcpy(opt->data, v, len);
+    opt->len = len;
     return 0;
 }
 

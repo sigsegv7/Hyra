@@ -69,6 +69,10 @@ typedef uint32_t socklen_t;
 /* Socket types */
 #define SOCK_STREAM 1
 
+/* Socket option names */
+#define SO_RCVTIMEO 0           /* Max time recv(2) waits */
+#define _SO_MAX     1           /* Max socket options */
+
 struct sockaddr_un {
     sa_family_t sun_family;
     char sun_path[108];
@@ -149,12 +153,22 @@ struct cmsg_list {
     uint8_t is_init : 1;
 };
 
+/*
+ * Socket option that may be applied to
+ * sockets on the system.
+ */
+struct sockopt {
+    socklen_t len;
+    char data[];
+};
+
 struct ksocket {
     int sockfd;
     union {
         struct sockaddr sockaddr;
         struct sockaddr_un un;
     };
+    struct sockopt *opt[_SO_MAX];
     struct proc *owner;
     struct cmsg_list cmsg_list;
     struct sockbuf buf;
@@ -174,6 +188,8 @@ scret_t sys_sendmsg(struct syscall_args *scargs);
 
 int socket(int domain, int type, int protocol);
 int bind(int sockfd, const struct sockaddr *addr, socklen_t len);
+
+int setsockopt(int sockfd, int level, int name, const void *v, socklen_t len);
 int connect(int sockfd, const struct sockaddr *addr, socklen_t len);
 
 ssize_t send(int sockfd, const void *buf, size_t size, int flags);
