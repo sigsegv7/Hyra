@@ -75,6 +75,7 @@ static int
 gfx_draw_square(struct gfx_ctx *ctx, const struct gfx_shape *shape)
 {
     struct fbattr fbdev;
+    struct gfx_point p;
     off_t idx;
     scrpos_t x, y;
 
@@ -84,12 +85,10 @@ gfx_draw_square(struct gfx_ctx *ctx, const struct gfx_shape *shape)
 
     for (x = shape->x; x < shape->x + shape->width; ++x) {
         for (y = shape->y; y < shape->y + shape->height; ++y) {
-            if (gfx_pixel_bounds(ctx, x, y) < 0) {
-                break;
-            }
-
-            idx = gfx_io_index(ctx, x, y);
-            ctx->io[idx] = shape->color;
+            p.x = x;
+            p.y = y;
+            p.rgb = shape->color;
+            gfx_plot_point(ctx, &p);
         }
     }
     return 0;
