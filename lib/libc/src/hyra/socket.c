@@ -71,3 +71,16 @@ connect(int socket, const struct sockaddr *address, socklen_t len)
 {
     return syscall(SYS_connect, socket, (uintptr_t)address, len);
 }
+
+int
+setsockopt(int sockfd, int level, int name, const void *v, socklen_t len)
+{
+    return syscall(
+        SYS_setsockopt,
+        sockfd,
+        level,
+        name,
+        (uintptr_t)v,
+        len
+    );
+}

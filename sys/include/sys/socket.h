@@ -184,6 +184,7 @@ scret_t sys_send(struct syscall_args *scargs);
 
 scret_t sys_recvmsg(struct syscall_args *scargs);
 scret_t sys_sendmsg(struct syscall_args *scargs);
+scret_t sys_setsockopt(struct syscall_args *scargs);
 #endif  /* _KERNEL */
 
 int socket(int domain, int type, int protocol);

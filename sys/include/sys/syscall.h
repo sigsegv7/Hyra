@@ -66,6 +66,7 @@
 #define SYS_sendmsg 25
 #define SYS_recvmsg 26
 #define SYS_connect 27
+#define SYS_setsockopt 28
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */

@@ -953,6 +953,55 @@ sys_connect(struct syscall_args *scargs)
     return connect(sockfd, sockaddr, len);
 }
 
+/*
+ * POSIX setsockopt(3) syscall
+ *
+ * arg0: sockfd
+ * arg1: level
+ * arg2: name
+ * arg3: data
+ * arg4: len
+ */
+scret_t
+sys_setsockopt(struct syscall_args *scargs)
+{
+    int sockfd = scargs->arg0;
+    int level = scargs->arg1;
+    int name = scargs->arg2;
+    void *u_data = (void *)scargs->arg3;
+    socklen_t len = scargs->arg4;
+    void *data;
+    size_t exp_len;
+    int retval;
+
+    /* Verify that the name is correct */
+    if (name >= _SO_MAX) {
+        return -EINVAL;
+    }
+
+    /* Clamp length as needed */
+    exp_len = sockopt_lentab[name];
+    if (len > exp_len) {
+        len = exp_len;
+    }
+
+    data = dynalloc(len);
+    if (data == NULL) {
+        return -ENOMEM;
+    }
+
+    /* Grab data from userland */
+    retval = copyin(u_data, data, len);
+    if (retval < 0) {
+        dynfree(data);
+        return retval;
+    }
+
+    retval = setsockopt(sockfd, level, name, data, len);
+    dynfree(data);
+    return retval;
+}
+
 static struct vops socket_vops = {
     .read = NULL,
     .write = NULL,
