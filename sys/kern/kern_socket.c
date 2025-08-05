@@ -238,7 +238,7 @@ socket_rx_wait(int sockfd)
      */
     opt = ksock->opt[SO_RCVTIMEO];
     if (opt == NULL) {
-        return -1;
+        return 0;
     }
 
     memcpy(&tv, opt->data, opt->len);
