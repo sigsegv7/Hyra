@@ -95,6 +95,61 @@ gfx_draw_square(struct gfx_ctx *ctx, const struct gfx_shape *shape)
 }
 
 /*
+ * Draw a bordered square onto the screen.
+ *
+ * @ctx: Graphics context pointer
+ * @shape: Bordered square to draw
+ */
+static int
+gfx_draw_bsquare(struct gfx_ctx *ctx, const struct gfx_shape *shape)
+{
+    struct gfx_point p;
+    scrpos_t x_i, y_i;
+    scrpos_t x_f, y_f;
+    scrpos_t x, y;
+
+    if (ctx == NULL || shape == NULL) {
+        return -EINVAL;
+    }
+
+    x_i = shape->x;
+    y_i = shape->y;
+    x_f = shape->x + shape->width;
+    y_f = shape->y + shape->height;
+
+    /*
+     * Draw an unfilled square.
+     *
+     * If we are at the `y_i' or `y_f' position, draw
+     * pixels from 'x_i' to 'x_f'. If we are away
+     * from the `y_i' position, draw two pixels,
+     * one at `x_i' and the other at `x_f' for that
+     * current 'y' value.
+     */
+    for (y = y_i; y < y_f; ++y) {
+        for (x = x_i; x < x_f; ++x) {
+            p.x = x;
+            p.y = y;
+            p.rgb = shape->color;
+
+            /* Origin y, draw entire width */
+            if (y == y_i || y == y_f - 1) {
+                gfx_plot_point(ctx, &p);
+                continue;
+            }
+
+            p.x = x_i;
+            gfx_plot_point(ctx, &p);
+
+            p.x = x_f - 1;
+            gfx_plot_point(ctx, &p);
+        }
+    }
+
+    return 0;
+}
+
+/*
  * Plot a single pixel (aka point) onto
  * the screen.
  *
@@ -177,6 +232,8 @@ gfx_draw_shape(struct gfx_ctx *ctx, const struct gfx_shape *shape)
     switch (shape->type) {
     case SHAPE_SQUARE:
         return gfx_draw_square(ctx, shape);
+    case SHAPE_SQUARE_BORDER:
+        return gfx_draw_bsquare(ctx, shape);
     }
 
     return -1;

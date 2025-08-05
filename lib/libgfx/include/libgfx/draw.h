@@ -34,7 +34,8 @@
 #include <libgfx/gfx.h>
 
 /* Shape types */
-#define SHAPE_SQUARE  0x00000000
+#define SHAPE_SQUARE        0x00000000
+#define SHAPE_SQUARE_BORDER 0x00000001
 
 /* Basic color defines */
 #define GFX_BLACK   0x000000
