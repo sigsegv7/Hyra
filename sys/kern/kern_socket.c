@@ -741,10 +741,29 @@ sys_recv(struct syscall_args *scargs)
         return -ENOBUFS;
     }
 
-    do {
+    for (;;) {
         error = recv(sockfd, buf, len, flags);
-        sched_yield();
-    } while (error == -EAGAIN);
+        if (error <= 0 && error != -EAGAIN) {
+            break;
+        }
+
+        /*
+         * Wait for data to be ready on the socket.
+         * If a less than zero value is returned, don't
+         * handle timeouts.
+         */
+        error = socket_rx_wait(sockfd);
+        if (error < 0) {
+            continue;
+        }
+
+        /* Try one more time, obey timeout */
+        error = recv(sockfd, buf, len, flags);
+        if (error == -EAGAIN) {
+            return error;
+        }
+        break;
+    }
 
     if (error < 0) {
         pr_error("sys_recv: recv() fail (fd=%d)\n", sockfd);
