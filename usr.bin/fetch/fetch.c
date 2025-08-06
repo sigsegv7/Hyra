@@ -30,21 +30,78 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 static const char *user = "unknown";
 
+#define CPUID(level, a, b, c, d)                        \
+    __ASMV("cpuid\n\t"                                  \
+            : "=a" (a), "=b" (b), "=c" (c), "=d" (d)    \
+            : "0" (level))
+
 #define ASCII_ART \
     "  ____      \n" \
-    " | \\__\\     \n" \
-    " | /\\  \\     user: %s\n" \
-    " |/  \\  \\    OS:   Hyra/amd64 v"_OSVER"\n" \
-    " \\ R. \\  \\   arch: "_OSARCH"\n" \
+    " | \\__\\      user: %s\n" \
+    " | /\\  \\     OS:   Hyra/amd64 v"_OSVER"\n" \
+    " |/  \\  \\    arch: "_OSARCH"\n" \
+    " \\ R. \\  \\   cpu: %s\n" \
     "  \\ I. \\  \\\n"
+
+
+/*
+ * Get the processor brand string
+ *
+ * @buffer: Buffer to copy branch string
+ *
+ * Returns a pointer to newly allocated memory
+ * containing the vendor string. One must ensure
+ * to call free() after use.
+ */
+static char *
+get_brand(void)
+{
+    uint32_t eax, ebx, ecx, edx;
+    uint32_t regs[12];
+    char buf[sizeof(regs) + 1];
+    char *p = buf;
+
+    /* Can we even get the brand? */
+    CPUID(0x80000000, eax, ebx, ecx, edx);
+    if (eax < 0x80000004) {
+        return NULL;
+    }
+
+    CPUID(0x80000002, regs[0], regs[1], regs[2], regs[3]);
+    CPUID(0x80000003, regs[4], regs[5], regs[6], regs[7]);
+    CPUID(0x80000004, regs[8], regs[9], regs[10], regs[11]);
+
+    /* Log it */
+    memcpy(p, regs, sizeof(regs));
+    buf[sizeof(regs)] = '\0';
+
+    /* Strip away leading whitespaces */
+    for (int i = 0; i < sizeof(buf); ++i) {
+        if (buf[i] == ' ') {
+            ++p;
+        } else {
+            break;
+        }
+    }
+
+    return strdup(p);
+}
 
 int
 main(void)
 {
-    printf(ASCII_ART, getlogin());
+    char *brand = get_brand();
+
+    if (brand == NULL) {
+        brand = strdup("unknown");
+    }
+
+    printf(ASCII_ART, getlogin(), brand);
+    free(brand);
     return 0;
 }
