@@ -30,6 +30,7 @@
 #include <sys/exec.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <unistd.h>
 
 extern int __libc_stdio_init(void);
 extern int __malloc_mem_init(void);
@@ -51,6 +52,7 @@ __libc_entry(uint64_t *ctx)
     char **argv;
     char **envp;
 
+    optind = 1;
     argc = *ctx;
     argv = (char **)(ctx + 1);
     envp = (char **)(argv + argc + 1);
