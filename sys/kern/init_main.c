@@ -119,6 +119,7 @@ main(void)
     md_inton();
 
     /* Load all early drivers */
+    driver_blacklist("ahci");
     DRIVERS_INIT();
 
     /* Only log to kmsg from here */

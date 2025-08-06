@@ -122,8 +122,10 @@ struct proc {
 #define PROC_PINNED     BIT(7)  /* Pinned to CPU */
 
 struct proc *this_td(void);
+struct proc *td_copy(struct proc *td);
 struct proc *get_child(struct proc *cur, pid_t pid);
 
+int proc_init(struct proc *td, struct proc *parent);
 void proc_pin(struct proc *td, affinity_t cpu);
 void proc_unpin(struct proc *td);
 
