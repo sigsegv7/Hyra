@@ -30,9 +30,12 @@
 #ifndef _SYS_SYSCTL_H_
 #define _SYS_SYSCTL_H_
 
-#include <sys/types.h>
 #if defined(_KERNEL)
+#include <sys/types.h>
 #include <sys/syscall.h>
+#else
+#include <stdint.h>
+#include <stddef.h>
 #endif
 #include <sys/param.h>
 
