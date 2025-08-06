@@ -161,7 +161,7 @@ vfs_vcache_migrate(int newtype)
     args.oldp = NULL;
     args.oldlenp = NULL;
     args.newp = sysctl_val;
-    args.newlen = strlen(sysctl_val);
+    args.newlen = strlen(sysctl_val) + 1;
 
     if ((retval = sysctl(&args)) != 0) {
         return retval;
