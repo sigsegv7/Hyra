@@ -26,3 +26,4 @@ all:
 	make -C oasm/ $(ARGS)
 	make -C oemu/ $(ARGS)
 	make -C dmidump/ $(ARGS)
+	make -C sysctl/ $(ARGS)
