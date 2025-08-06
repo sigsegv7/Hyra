@@ -47,6 +47,13 @@
 #include <dev/cons/cons.h>
 #include <string.h>
 
+/*
+ * This defines the max number of frames
+ * we will pass while walking the callstack
+ * in md_backtrace()
+ */
+#define MAX_FRAME_DEPTH 16
+
 #define pr_trace(fmt, ...) kprintf("cpu: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 #define pr_trace_bsp(...)       \
@@ -263,9 +270,14 @@ md_backtrace(void)
     off_t off;
     const char *name;
     char line[256];
+    uint8_t n = 0;
 
     __ASMV("mov %%rbp, %0" : "=r" (rbp) :: "memory");
     while (1) {
+        if (n >= MAX_FRAME_DEPTH) {
+            break;
+        }
+
         rip = rbp[1];
         rbp = (uintptr_t *)rbp[0];
 
@@ -290,6 +302,7 @@ md_backtrace(void)
         name = backtrace_addr_to_name(rip, &off);
         snprintf(line, sizeof(line), "%p @ <%s+0x%x>\n", rip, name, off);
         cons_putstr(&g_root_scr, line, strlen(line));
+        ++n;
     }
 }
 
