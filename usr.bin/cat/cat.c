@@ -34,12 +34,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define NUM_MODE_NONE       0
+#define NUM_MODE_ALL        1
+#define NUM_MODE_NONBLANK   2
+
 static void
-cat(const char *pathname)
+help(void)
+{
+    printf(
+        "usage: cat <flags> <file>\n"
+        "[-b]   do not number blank lines\n"
+        "[-n]   number all lines\n"
+    );
+}
+
+static void
+cat(const char *pathname, int num_mode)
 {
     FILE *file;
     char buf[64];
     int fd;
+    size_t lineno = 1;
 
     file = fopen(pathname, "r");
     if (file == NULL) {
@@ -47,7 +62,21 @@ cat(const char *pathname)
     }
 
     while (fgets(buf, sizeof(buf), file) != NULL) {
+        switch (num_mode) {
+        case NUM_MODE_NONE:
+            break;
+        case NUM_MODE_ALL:
+            printf("%d   ", lineno);
+            break;
+        case NUM_MODE_NONBLANK:
+            if (buf[0] == '\n') {
+                break;
+            }
+            printf("%d   ", lineno);
+            break;
+        }
         printf("%s", buf);
+        ++lineno;
     }
 
     fclose(file);
@@ -56,8 +85,27 @@ cat(const char *pathname)
 int
 main(int argc, char **argv)
 {
-    for (size_t i = 1; i < argc; ++i) {
-        cat(argv[i]);
+    int num_mode = NUM_MODE_NONE;
+    int c;
+
+    if (argc < 2) {
+        help();
+        return -1;
+    }
+
+    while ((c = getopt(argc, argv, "nb")) != -1) {
+        switch (c) {
+        case 'n':
+            num_mode = NUM_MODE_ALL;
+            break;
+        case 'b':
+            num_mode = NUM_MODE_NONBLANK;
+            break;
+        }
+    }
+
+    for (size_t i = optind; i < argc; ++i) {
+        cat(argv[i], num_mode);
     }
 
     return 0;
