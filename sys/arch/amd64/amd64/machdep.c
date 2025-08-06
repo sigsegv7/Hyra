@@ -259,7 +259,7 @@ void
 md_backtrace(void)
 {
     uintptr_t *rbp;
-    uintptr_t rip;
+    uintptr_t rip, tmp;
     off_t off;
     const char *name;
     char line[256];
@@ -268,13 +268,26 @@ md_backtrace(void)
     while (1) {
         rip = rbp[1];
         rbp = (uintptr_t *)rbp[0];
-        name = backtrace_addr_to_name(rip, &off);
 
-        if (rbp == NULL)
+        /*
+         * RBP should be aligned on an 8-byte
+         * boundary... Don't trust this state
+         * anymore if it is not.
+         */
+        tmp = (uintptr_t)rbp;
+        if ((tmp & (8 - 1)) != 0) {
             break;
-        if (name == NULL)
-            name = "???";
+        }
 
+        /*
+         * This is not a valid value, get out
+         * of this loop!!
+         */
+        if (rbp == NULL || rip == 0) {
+            break;
+        }
+
+        name = backtrace_addr_to_name(rip, &off);
         snprintf(line, sizeof(line), "%p @ <%s+0x%x>\n", rip, name, off);
         cons_putstr(&g_root_scr, line, strlen(line));
     }
