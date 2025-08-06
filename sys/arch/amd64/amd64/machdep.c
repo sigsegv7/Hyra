@@ -268,13 +268,16 @@ md_backtrace(void)
     while (1) {
         rip = rbp[1];
         rbp = (uintptr_t *)rbp[0];
-        name = backtrace_addr_to_name(rip, &off);
 
-        if (rbp == NULL)
+        /*
+         * This is not a valid value, get out
+         * of this loop!!
+         */
+        if (rbp == NULL || rip == 0) {
             break;
-        if (name == NULL)
-            name = "???";
+        }
 
+        name = backtrace_addr_to_name(rip, &off);
         snprintf(line, sizeof(line), "%p @ <%s+0x%x>\n", rip, name, off);
         cons_putstr(&g_root_scr, line, strlen(line));
     }
