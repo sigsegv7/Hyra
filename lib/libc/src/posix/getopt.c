@@ -27,44 +27,74 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UNISTD_H
-#define _UNISTD_H
+#include <sys/errno.h>
+#include <unistd.h>
+#include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
 
-#include <sys/exec.h>
-#include <sys/types.h>
-#include <sys/cdefs.h>
-#include <stddef.h>
+char *optarg;
+int optind, opterr, optopt;
 
-#define F_OK 0
+int
+getopt(int argc, char *argv[], const char *optstring)
+{
+    size_t optstr_len;
+    char *arg;
+    bool has_arg = false;
 
-/* lseek whence, follows Hyra ABI */
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
+    if (argc == 0 || optstring == NULL) {
+        opterr = -EINVAL;
+        return -1;
+    }
 
-__BEGIN_DECLS
+    if (optind >= argc) {
+        return -1;
+    }
 
-int sysconf(int name);
-int setuid(uid_t new);
+    arg = argv[optind];
+    optstr_len = strlen(optstring);
 
-uid_t getuid(void);
-char *getlogin(void);
+    /* Non option argument? */
+    if (arg[0] != '-') {
+        return -1;
+    }
 
-ssize_t read(int fd, void *buf, size_t count);
-ssize_t write(int fd, const void *buf, size_t count);
+    /*
+     * We will look through each possible flag/option
+     * in the optstring and match it against our arg.
+     */
+    for (size_t i = 0; i < optstr_len; ++i) {
+        if (arg[1] != optstring[i]) {
+            continue;
+        }
 
-int close(int fd);
-int access(const char *path, int mode);
-off_t lseek(int fildes, off_t offset, int whence);
+        /*
+         * If this option has a ':' right next to it,
+         * it also has an argument.
+         */
+        if (i < optstr_len - 1) {
+            if (optstring[i + 1] == ':') {
+                has_arg = true;
+            }
+        }
 
-pid_t getpid(void);
-pid_t getppid(void);
+        break;
+    }
 
-extern char *optarg;
-extern int optind, opterr, optopt;
+    /*
+     * Handle cases where the option has an argument
+     * with it (-opt=arg)
+     */
+    if (has_arg && optind < argc ) {
+        if (arg[2] != '=') {
+            opterr = -EINVAL;
+            return -1;
+        }
+        optarg = &arg[3];
+        ++optind;
+    }
 
-int getopt(int argc, char *argv[], const char *optstring);
-
-__END_DECLS
-
-#endif  /* !_UNISTD_H */
+    ++optind;
+    return arg[1];
+}
