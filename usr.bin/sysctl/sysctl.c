@@ -73,7 +73,6 @@ varbuf_print(char data[BUF_SIZE], bool is_str)
     }
 }
 
-
 /*
  * Convert string name to a internal name
  * definition.
