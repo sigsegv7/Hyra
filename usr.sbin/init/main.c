@@ -29,10 +29,47 @@
 
 #include <sys/spawn.h>
 #include <stddef.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 
 #define SHELL_PATH   "/usr/bin/osh"
 #define LOGIN_PATH   "/usr/bin/login"
 #define INIT_RC_PATH "/usr/rc/init.rc"
+
+static void
+init_hostname(void)
+{
+    char hostname[128];
+    int error;
+    size_t len;
+    FILE *fp;
+
+    fp = fopen("/etc/hostname", "r");
+    if (fp == NULL) {
+        printf("[init]: error opening /etc/hostname\n");
+        return;
+    }
+
+    error = fread(hostname, sizeof(char), sizeof(hostname), fp);
+    if (error <= 0) {
+        printf("[init]: error reading /etc/hostname\n");
+        fclose(fp);
+        return;
+    }
+
+    len = strlen(hostname);
+    hostname[len - 2] = '\0';
+
+    if (sethostname(hostname, len) < 0) {
+        printf("[init]: error setting hostname\n");
+        printf("[init]: tried to set %s (len=%d)\n", hostname, len);
+        fclose(fp);
+        return;
+    }
+
+    fclose(fp);
+}
 
 int
 main(int argc, char **argv)
@@ -40,6 +77,9 @@ main(int argc, char **argv)
     char *login_argv[] = { LOGIN_PATH, NULL };
     char *start_argv[] = { SHELL_PATH, INIT_RC_PATH, NULL };
     char *envp[] = { NULL };
+
+    /* Initialize the system hostname */
+    init_hostname();
 
     /* Start the init.rc */
     spawn(SHELL_PATH, start_argv, envp, 0);
