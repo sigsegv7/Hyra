@@ -44,7 +44,6 @@ static void
 init_hostname(void)
 {
     char hostname[128];
-    int error;
     size_t len;
     FILE *fp;
 
@@ -54,16 +53,14 @@ init_hostname(void)
         return;
     }
 
-    error = fread(hostname, sizeof(char), sizeof(hostname), fp);
-    if (error <= 0) {
+    len = fread(hostname, sizeof(char), sizeof(hostname), fp);
+    if (len == 0) {
         log_error("[init]: error reading /etc/hostname\n");
         fclose(fp);
         return;
     }
 
-    len = strlen(hostname);
-    hostname[len - 2] = '\0';
-
+    hostname[len - 1] = '\0';
     if (sethostname(hostname, len) < 0) {
         log_error("[init]: error setting hostname\n");
         log_error("[init]: tried to set %s (len=%d)\n", hostname, len);
