@@ -154,6 +154,33 @@ done:
     return retval;
 }
 
+/*
+ * Clear a writable sysctl string variable to the
+ * value of "(undef)"
+ *
+ * @name: Name to clear
+ */
+int
+sysctl_clearstr(int name)
+{
+    struct sysctl_args args;
+    char val[] = "(undef)";
+    int error;
+
+    args.name = &name;
+    args.nlen = 1;
+    args.oldlenp = 0;
+    args.oldp = NULL;
+    args.newp = val;
+    args.newlen = sizeof(val);
+
+    if ((error = sysctl(&args)) != 0) {
+        return error;
+    }
+
+    return 0;
+}
+
 int
 sysctl(struct sysctl_args *args)
 {

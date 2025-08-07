@@ -64,6 +64,7 @@ struct sysctl_entry {
 };
 
 scret_t sys_sysctl(struct syscall_args *scargs);
+int sysctl_clearstr(int name);
 #endif  /* _KERNEL */
 
 /*
