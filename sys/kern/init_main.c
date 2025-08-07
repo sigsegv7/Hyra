@@ -35,6 +35,7 @@
 #include <sys/exec.h>
 #include <sys/driver.h>
 #include <sys/panic.h>
+#include <sys/sysctl.h>
 #include <sys/systm.h>
 #include <dev/acpi/uacpi.h>
 #include <dev/cons/cons.h>
@@ -113,6 +114,7 @@ main(void)
     sched_init();
 
     memset(&g_proc0, 0, sizeof(g_proc0));
+    sysctl_clearstr(KERN_HOSTNAME);
 
     /* Startup pid 1 */
     spawn(&g_proc0, start_init, NULL, 0, &g_init);

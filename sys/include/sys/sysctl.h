@@ -43,6 +43,7 @@
 #define KERN_OSRELEASE      1
 #define KERN_VERSION        2
 #define KERN_VCACHE_TYPE    3
+#define KERN_HOSTNAME       4
 
 /*
  * Option types (i.e., int, string, etc) for
