@@ -47,6 +47,9 @@ __BEGIN_DECLS
 int sysconf(int name);
 int setuid(uid_t new);
 
+int gethostname(char *name, size_t size);
+int sethostname(const char *name, size_t size);
+
 uid_t getuid(void);
 char *getlogin(void);
 
