@@ -136,6 +136,7 @@ do_sysctl(struct sysctl_args *args)
     new_args.oldp = oldp;
     new_args.oldlenp = &oldlenp;
     new_args.newp = newp;
+    new_args.newlen = args->newlen;
 
     retval = sysctl(&new_args);
     if (retval != 0) {
