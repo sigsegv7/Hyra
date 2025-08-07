@@ -41,6 +41,7 @@
         HYRA_BUILDDATE
 
 static uint32_t pagesize = DEFAULT_PAGESIZE;
+static char machine[] = HYRA_ARCH;
 static char hyra[] = "Hyra";
 static char hyra_version[] = HYRA_VERSION;
 static char osrelease[] = HYRA_RELEASE;
@@ -60,7 +61,8 @@ static struct sysctl_entry common_optab[] = {
 
     /* 'hw.*' */
     [HW_PAGESIZE] = { HW_PAGESIZE, SYSCTL_OPTYPE_INT_RO, &pagesize },
-    [HW_NCPU] = { HW_NCPU, SYSCTL_OPTYPE_INT, NULL }
+    [HW_NCPU] = { HW_NCPU, SYSCTL_OPTYPE_INT, NULL },
+    [HW_MACHINE] = {HW_MACHINE, SYSCTL_OPTYPE_STR_RO, &machine }
 };
 
 static int

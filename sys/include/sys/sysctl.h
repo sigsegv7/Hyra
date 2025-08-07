@@ -53,6 +53,7 @@
  */
 #define HW_PAGESIZE   5
 #define HW_NCPU       6
+#define HW_MACHINE    7
 
 /*
  * Option types (i.e., int, string, etc) for
