@@ -241,7 +241,7 @@ fd_rw(unsigned int fd, void *buf, size_t count, uint8_t write)
 
     /* Increment the offset per read */
     filedes->offset += n;
-    retval = count;
+    retval = n;
 done:
     if (kbuf != NULL) {
         dynfree(kbuf);
