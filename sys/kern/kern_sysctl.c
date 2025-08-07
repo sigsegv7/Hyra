@@ -91,19 +91,17 @@ static int
 do_sysctl(struct sysctl_args *args)
 {
     struct sysctl_args new_args;
-    size_t name_len, oldlenp;
+    size_t name_len = 1, oldlenp = 0;
     int *name = NULL;
     void *oldp = NULL, *newp = NULL;
     int retval = 0;
 
-    if (args->oldlenp == NULL) {
-        return -EINVAL;
-    }
-
-    name_len = args->nlen;
-    retval = copyin(args->oldlenp, &oldlenp, sizeof(oldlenp));
-    if (retval != 0) {
-        goto done;
+    if (args->oldlenp != NULL) {
+        name_len = args->nlen;
+        retval = copyin(args->oldlenp, &oldlenp, sizeof(oldlenp));
+        if (retval != 0) {
+            goto done;
+        }
     }
 
     /* Copy in newp if it is set */
@@ -124,10 +122,12 @@ do_sysctl(struct sysctl_args *args)
         return retval;
     }
 
-    oldp = dynalloc(oldlenp);
-    retval = copyin(args->oldp, oldp, oldlenp);
-    if (retval != 0) {
-        return retval;
+    if (oldlenp != 0) {
+        oldp = dynalloc(oldlenp);
+        retval = copyin(args->oldp, oldp, oldlenp);
+        if (retval != 0) {
+            return retval;
+        }
     }
 
     /* Prepare the arguments for the sysctl call */
@@ -143,7 +143,9 @@ do_sysctl(struct sysctl_args *args)
         goto done;
     }
 
-    copyout(oldp, args->oldp, oldlenp);
+    if (oldlenp != 0) {
+        copyout(oldp, args->oldp, oldlenp);
+    }
 done:
     if (name != NULL)
         dynfree(name);
