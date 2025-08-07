@@ -31,17 +31,153 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
+#define BUF_SIZE 128
+
+/* Kern var string constants */
 #define NAME_OSTYPE         "ostype"
 #define NAME_OSRELEASE      "osrelease"
 #define NAME_VERSION        "version"
 #define NAME_VCACHE_TYPE    "vcache_type"
 
+/* Hw var string constants */
+#define NAME_PAGESIZE "pagesize"
+#define NAME_NCPU     "ncpu"
+
+/* Name start string constants */
+#define NAME_KERN "kern"
+#define NAME_HW   "hw"
+
+/* Name start int constants */
+#define NAME_DEF_KERN 0
+#define NAME_DEF_HW   1
+
 /*
- * Convert string name to a sysctl name
+ * Print the contents read from a sysctl
+ * variable depending on its type.
+ *
+ * @data: Data to print
+ * @is_str: True if a string
+ */
+static inline void
+varbuf_print(char data[BUF_SIZE], bool is_str)
+{
+    uint32_t *val;
+
+    if (is_str) {
+        printf("%s\n", data);
+    } else {
+        val = (uint32_t *)data;
+        printf("%d\n", *val);
+    }
+}
+
+
+/*
+ * Convert string name to a internal name
  * definition.
  *
  * @name: Name to convert
+ *
+ *                Convert to int def
+ *               /
+ *    kern.ostype
+ *    ^^
+ *
+ *  --
+ *  Returns a less than zero value on failure
+ *  (e.g., entry not found).
+ */
+static int
+name_to_def(const char *name)
+{
+    switch (*name) {
+    case 'k':
+        if (strcmp(name, NAME_KERN) == 0) {
+            return NAME_DEF_KERN;
+        }
+
+        return -1;
+    case 'h':
+        if (strcmp(name, NAME_HW) == 0) {
+            return NAME_DEF_HW;
+        }
+
+        return -1;
+    }
+
+    return -1;
+}
+
+/*
+ * Handle parsing of 'kern.*' node names
+ *
+ * @node: Node name to parse
+ * @is_str: Set to true if string
+ */
+static int
+kern_node(const char *node, bool *is_str)
+{
+    switch (*node) {
+    case 'v':
+        if (strcmp(node, NAME_VERSION) == 0) {
+            return KERN_VERSION;
+        }
+
+        if (strcmp(node, NAME_VCACHE_TYPE) == 0) {
+            return KERN_VCACHE_TYPE;
+        }
+        return -1;
+    case 'o':
+        if (strcmp(node, NAME_OSTYPE) == 0) {
+            return KERN_OSTYPE;
+        }
+
+        if (strcmp(node, NAME_OSRELEASE) == 0) {
+            return KERN_OSRELEASE;
+        }
+        return -1;
+    }
+
+    return -1;
+}
+
+/*
+ * Handle parsing of 'hw.*' node names
+ *
+ * @node: Node name to parse
+ * @is_str: Set to true if string
+ */
+static int
+hw_node(const char *node, bool *is_str)
+{
+    switch (*node) {
+    case 'p':
+        if (strcmp(node, NAME_PAGESIZE) == 0) {
+            *is_str = false;
+            return HW_PAGESIZE;
+        }
+
+        return -1;
+    case 'n':
+        if (strcmp(node, NAME_NCPU) == 0) {
+            *is_str = false;
+            return HW_NCPU;
+        }
+
+        return -1;
+    }
+
+    return -1;
+}
+
+/*
+ * Convert string node to a sysctl name
+ * definition.
+ *
+ * @name: Name to convert
+ * @is_str: Set to true if string
  *
  *                Convert to int def
  *               /
@@ -53,29 +189,27 @@
  *  (e.g., entry not found).
  */
 static int
-name_to_def(const char *name)
+node_to_def(int name, const char *node, bool *is_str)
 {
-    switch (*name) {
-    case 'v':
-        if (strcmp(name, NAME_VERSION) == 0) {
-            return KERN_VERSION;
-        }
+    int retval;
+    bool dmmy;
 
-        if (strcmp(name, NAME_VCACHE_TYPE) == 0) {
-            return KERN_VCACHE_TYPE;
-        }
+    /*
+     * If the caller did not set `is_str' just
+     * set it to a dummy value. Otherwise, we will
+     * make it *default* to a 'true' value.
+     */
+    if (is_str == NULL) {
+        is_str = &dmmy;
+    } else {
+        *is_str = true;
+    }
 
-        return -1;
-    case 'o':
-        if (strcmp(name, NAME_OSTYPE) == 0) {
-            return KERN_OSTYPE;
-        }
-
-        if (strcmp(name, NAME_OSRELEASE) == 0) {
-            return KERN_OSRELEASE;
-        }
-
-        return -1;
+    switch (name) {
+    case NAME_DEF_KERN:
+        return kern_node(node, is_str);
+    case NAME_DEF_HW:
+        return hw_node(node, is_str);
     }
 
     return -1;
@@ -86,9 +220,11 @@ main(int argc, char **argv)
 {
     struct sysctl_args args;
     char *var, *p;
-    int type, name, error;
+    int type, error;
+    int root, name;
     size_t oldlen;
-    char buf[128];
+    bool is_str;
+    char buf[BUF_SIZE];
 
     if (argc < 2) {
         printf("sysctl: usage: sysctl <var>\n");
@@ -103,10 +239,9 @@ main(int argc, char **argv)
         return -1;
     }
 
-    /* TODO: Non kern.* vars */
-    if (strcmp(p, "kern") != 0) {
-        printf("unknown var \"%s\"\n", p);
-        return -1;
+    if ((root = name_to_def(p)) < 0) {
+        printf("sysctl: bad var \"%s\"", p);
+        return root;
     }
 
     p = strtok(NULL, ".");
@@ -115,12 +250,12 @@ main(int argc, char **argv)
         return -1;
     }
 
-    if ((name = name_to_def(p)) < 0) {
+    if ((name = node_to_def(root, p, &is_str)) < 0) {
         printf("sysctl: bad var \"%s\"\n", p);
         return name;
     }
 
-    name = name;
+    memset(buf, 0, sizeof(buf));
     oldlen = sizeof(buf);
     args.name = &name;
     args.nlen = 1;
@@ -134,6 +269,6 @@ main(int argc, char **argv)
         return error;
     }
 
-    printf("%s\n", buf);
+    varbuf_print(buf, is_str);
     return 0;
 }
