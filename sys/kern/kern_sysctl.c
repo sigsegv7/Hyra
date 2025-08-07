@@ -95,9 +95,10 @@ do_sysctl(struct sysctl_args *args)
     size_t name_len = 1, oldlenp = 0;
     int *name = NULL;
     void *oldp = NULL, *newp = NULL;
-    int retval = 0;
+    int retval = 0, have_oldlen = 0;
 
     if (args->oldlenp != NULL) {
+        have_oldlen = 1;
         name_len = args->nlen;
         retval = copyin(args->oldlenp, &oldlenp, sizeof(oldlenp));
         if (retval != 0) {
@@ -135,7 +136,7 @@ do_sysctl(struct sysctl_args *args)
     new_args.name = name;
     new_args.nlen = name_len;
     new_args.oldp = oldp;
-    new_args.oldlenp = &oldlenp;
+    new_args.oldlenp = (have_oldlen) ? &oldlenp : NULL;
     new_args.newp = newp;
     new_args.newlen = args->newlen;
 
