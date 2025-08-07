@@ -72,6 +72,7 @@ __isspace(int c)
         return 1;
 
     return 0;
+    }
 }
 
 __END_DECLS
