@@ -67,7 +67,7 @@
     "clear    - Clear the screen\n"     \
     "exit     - Exit the shell"
 
-#define PROMPT "[%s::osmora]~ "
+#define PROMPT "[%s::%s]~ "
 
 static char last_command[INPUT_SIZE];
 static char buf[INPUT_SIZE];
@@ -466,6 +466,7 @@ main(int argc, char **argv)
 {
     int found, prog_argc;
     int stdout_fd;
+    char hostname[128] = "osmora";
     uint8_t buf_i;
     char *p;
     char c;
@@ -478,9 +479,10 @@ main(int argc, char **argv)
     running = 1;
     bell_fd = open("/dev/beep", O_WRONLY);
     dump_file("/etc/motd");
+    gethostname(hostname, sizeof(hostname));
 
     while (running) {
-        printf(PROMPT, getlogin());
+        printf(PROMPT, getlogin(), hostname);
 
         buf_i = getstr();
         if (buf[0] == '\0') {
