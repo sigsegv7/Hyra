@@ -33,8 +33,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static const char *user = "unknown";
-
 #define CPUID(level, a, b, c, d)                        \
     __ASMV("cpuid\n\t"                                  \
             : "=a" (a), "=b" (b), "=c" (c), "=d" (d)    \
