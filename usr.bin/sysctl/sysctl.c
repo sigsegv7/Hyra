@@ -44,6 +44,7 @@
 /* Hw var string constants */
 #define NAME_PAGESIZE "pagesize"
 #define NAME_NCPU     "ncpu"
+#define NAME_MACHINE  "machine"
 
 /* Name start string constants */
 #define NAME_KERN "kern"
@@ -165,6 +166,11 @@ hw_node(const char *node, bool *is_str)
             return HW_NCPU;
         }
 
+        return -1;
+    case 'm':
+        if (strcmp(node, NAME_MACHINE) == 0) {
+            return HW_MACHINE;
+        }
         return -1;
     }
 
