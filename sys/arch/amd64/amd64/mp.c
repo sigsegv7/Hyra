@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/limine.h>
 #include <sys/limits.h>
+#include <sys/systm.h>
 #include <sys/syslog.h>
 #include <sys/proc.h>
 #include <sys/spinlock.h>
@@ -149,4 +150,5 @@ mp_bootstrap_aps(struct cpu_info *ci)
 
     /* Wait for all cores to be ready */
     while ((ncpu_up - 1) < cpu_init_counter);
+    cpu_report_count(ncpu_up);
 }

@@ -33,12 +33,14 @@
 #include <sys/errno.h>
 #include <sys/systm.h>
 #include <vm/dynalloc.h>
+#include <vm/vm.h>
 #include <string.h>
 
 #define HYRA_RELEASE "Hyra/" HYRA_ARCH " " \
         HYRA_VERSION " "              \
         HYRA_BUILDDATE
 
+static uint32_t pagesize = DEFAULT_PAGESIZE;
 static char hyra[] = "Hyra";
 static char hyra_version[] = HYRA_VERSION;
 static char osrelease[] = HYRA_RELEASE;
@@ -49,11 +51,16 @@ static char osrelease[] = HYRA_RELEASE;
  *      allocated through dynalloc(9).
  */
 static struct sysctl_entry common_optab[] = {
+    /* 'kern.*' */
     [KERN_OSTYPE] = { KERN_OSTYPE, SYSCTL_OPTYPE_STR_RO, hyra },
     [KERN_OSRELEASE] = { KERN_OSRELEASE, SYSCTL_OPTYPE_STR_RO, &osrelease },
     [KERN_VERSION] = { KERN_VERSION, SYSCTL_OPTYPE_STR_RO, &hyra_version },
     [KERN_VCACHE_TYPE] = { KERN_VCACHE_TYPE, SYSCTL_OPTYPE_STR, NULL },
-    [KERN_HOSTNAME] = { KERN_HOSTNAME, SYSCTL_OPTYPE_STR, NULL }
+    [KERN_HOSTNAME] = { KERN_HOSTNAME, SYSCTL_OPTYPE_STR, NULL },
+
+    /* 'hw.*' */
+    [HW_PAGESIZE] = { HW_PAGESIZE, SYSCTL_OPTYPE_INT_RO, &pagesize },
+    [HW_NCPU] = { HW_NCPU, SYSCTL_OPTYPE_INT, NULL }
 };
 
 static int

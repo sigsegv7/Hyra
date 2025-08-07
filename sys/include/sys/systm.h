@@ -39,6 +39,7 @@
 int copyin(const void *uaddr, void *kaddr, size_t len);
 int copyout(const void *kaddr, void *uaddr, size_t len);
 int copyinstr(const void *uaddr, char *kaddr, size_t len);
+int cpu_report_count(uint32_t count);
 
 __always_inline static inline void
 __sigraise(int signo)

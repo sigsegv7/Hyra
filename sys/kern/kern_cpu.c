@@ -27,71 +27,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SYSCTL_H_
-#define _SYS_SYSCTL_H_
-
-#if defined(_KERNEL)
+#include <sys/systm.h>
+#include <sys/sysctl.h>
 #include <sys/types.h>
-#include <sys/syscall.h>
-#else
-#include <stdint.h>
-#include <stddef.h>
-#endif
-#include <sys/param.h>
 
 /*
- * List of 'kern.* ' identifiers
- */
-#define KERN_OSTYPE         0
-#define KERN_OSRELEASE      1
-#define KERN_VERSION        2
-#define KERN_VCACHE_TYPE    3
-#define KERN_HOSTNAME       4
-
-/*
- * List of 'hw.* ' identifiers
- */
-#define HW_PAGESIZE   5
-#define HW_NCPU       6
-
-/*
- * Option types (i.e., int, string, etc) for
- * sysctl entries.
+ * Report the number of processors that are online
+ * in the machine.
  *
- * TODO: Add SYSCTL_OPTYPE_NODE to define sysctl nodes in
- *       the hierarchy.
+ * @count: Number of processors active
+ *
+ * Returns zero on success, otherwise a less
+ * than zero value is returned.
  */
-#define SYSCTL_OPTYPE_INT_RO   0
-#define SYSCTL_OPTYPE_STR_RO   1
-#define SYSCTL_OPTYPE_INT      2
-#define SYSCTL_OPTYPE_STR      3
+int
+cpu_report_count(uint32_t count)
+{
+    struct sysctl_args args;
+    int error, name = HW_NCPU;
 
-#if defined(_KERNEL)
-struct sysctl_entry {
-    int enttype;
-    int optype;
-    void *data;
-};
+    args.name = &name;
+    args.nlen = 1;
+    args.oldlenp = 0;
+    args.oldp = NULL;
+    args.newp = &count;
+    args.newlen = sizeof(count);
 
-scret_t sys_sysctl(struct syscall_args *scargs);
-int sysctl_clearstr(int name);
-#endif  /* _KERNEL */
+    if ((error = sysctl(&args)) != 0) {
+        return error;
+    }
 
-/*
- * The sysctl entries use an MIB (Management Information Base) style
- * naming scheme and follow a hierarchical naming structure. This is
- * similar to the structure described in RFC 3418 for the Simple
- * Network Management Protocol (SNMP).
- */
-struct sysctl_args {
-    int *name;
-    int nlen;
-    void *oldp;
-    size_t *oldlenp;
-    void *newp;
-    size_t newlen;
-};
-
-int sysctl(struct sysctl_args *args);
-
-#endif  /* !_SYS_SYSCTL_H_ */
+    return 0;
+}
