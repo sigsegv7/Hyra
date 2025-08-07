@@ -33,6 +33,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#define log_trace(fmt, ...) printf("[init]: " fmt, ##__VA_ARGS__)
+#define log_error(fmt, ...) printf("[error]: " fmt, ##__VA_ARGS__)
+
 #define SHELL_PATH   "/usr/bin/osh"
 #define LOGIN_PATH   "/usr/bin/login"
 #define INIT_RC_PATH "/usr/rc/init.rc"
@@ -47,13 +50,13 @@ init_hostname(void)
 
     fp = fopen("/etc/hostname", "r");
     if (fp == NULL) {
-        printf("[init]: error opening /etc/hostname\n");
+        log_error("[init]: error opening /etc/hostname\n");
         return;
     }
 
     error = fread(hostname, sizeof(char), sizeof(hostname), fp);
     if (error <= 0) {
-        printf("[init]: error reading /etc/hostname\n");
+        log_error("[init]: error reading /etc/hostname\n");
         fclose(fp);
         return;
     }
@@ -62,12 +65,13 @@ init_hostname(void)
     hostname[len - 2] = '\0';
 
     if (sethostname(hostname, len) < 0) {
-        printf("[init]: error setting hostname\n");
-        printf("[init]: tried to set %s (len=%d)\n", hostname, len);
+        log_error("[init]: error setting hostname\n");
+        log_error("[init]: tried to set %s (len=%d)\n", hostname, len);
         fclose(fp);
         return;
     }
 
+    log_trace("hostname -> %s\n", hostname);
     fclose(fp);
 }
 
@@ -82,6 +86,7 @@ main(int argc, char **argv)
     init_hostname();
 
     /* Start the init.rc */
+    log_trace("init.rc up\n");
     spawn(SHELL_PATH, start_argv, envp, 0);
     start_argv[1] = NULL;
 
