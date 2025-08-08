@@ -32,6 +32,8 @@
 #include <sys/param.h>
 #include <sys/syslog.h>
 #include <sys/panic.h>
+#include <sys/proc.h>
+#include <sys/queue.h>
 #include <dev/timer.h>
 #include <uacpi/kernel_api.h>
 #include <uacpi/platform/arch_helpers.h>
@@ -58,17 +60,88 @@ typedef struct {
     uacpi_size length;
 } io_range_t;
 
+struct uacpi_work {
+    uacpi_work_handler hand;
+    uacpi_handle ctx;
+    TAILQ_ENTRY(uacpi_work) link;
+};
+
+uacpi_status
+uacpi_kernel_schedule_work(uacpi_work_type type, uacpi_work_handler h, uacpi_handle ctx);
+
+extern struct proc g_proc0;
+
+static struct proc *event_td;
+static TAILQ_HEAD(, uacpi_work) acpi_gpe_eventq;
+static TAILQ_HEAD(, uacpi_work) acpi_notify_eventq;
+
 /*
- * TODO: Schedule a system shutdown
+ * Dispatch ACPI general purpose events from
+ * hardware.
  */
+static void
+uacpi_gpe_dispatch(void)
+{
+    struct uacpi_work *work;
+
+    work = TAILQ_FIRST(&acpi_gpe_eventq);
+    if (work == NULL) {
+        return;
+    }
+
+    work->hand(work->ctx);
+    TAILQ_REMOVE(&acpi_gpe_eventq, work, link);
+    dynfree(work);
+}
+
+/*
+ * Dispatch ACPI general notify events.
+ */
+static void
+uacpi_notify_dispatch(void)
+{
+    struct uacpi_work *work;
+
+    work = TAILQ_FIRST(&acpi_notify_eventq);
+    if (work == NULL) {
+        return;
+    }
+
+    work->hand(work->ctx);
+    TAILQ_REMOVE(&acpi_gpe_eventq, work, link);
+    dynfree(work);
+}
+
+static void
+uacpi_event_td(void)
+{
+    for (;;) {
+        uacpi_gpe_dispatch();
+        uacpi_notify_dispatch();
+        sched_yield();
+    }
+}
+
+static void
+shutdown(uacpi_handle ctx)
+{
+    kprintf("power button pressed\n");
+    kprintf("halting machine...\n");
+    cpu_halt_all();
+}
+
 static uacpi_interrupt_ret
 power_button_handler(uacpi_handle ctx)
 {
     md_intoff();
-    kprintf("power button pressed\n");
-    kprintf("halting machine...\n");
-    cpu_halt_all();
-    return UACPI_INTERRUPT_HANDLED;
+    uacpi_kernel_schedule_work(UACPI_WORK_GPE_EXECUTION, shutdown, NULL);
+    md_inton();
+
+    for (;;) {
+        md_hlt();
+    }
+
+    __builtin_unreachable();
 }
 
 void *
@@ -278,9 +351,28 @@ uacpi_kernel_uninstall_interrupt_handler([[maybe_unused]] uacpi_interrupt_handle
 }
 
 uacpi_status
-uacpi_kernel_schedule_work(uacpi_work_type, uacpi_work_handler, uacpi_handle ctx)
+uacpi_kernel_schedule_work(uacpi_work_type type, uacpi_work_handler h, uacpi_handle ctx)
 {
-    return UACPI_STATUS_UNIMPLEMENTED;
+    struct uacpi_work *work;
+
+    work = dynalloc(sizeof(*work));
+    if (work == NULL) {
+        return UACPI_STATUS_OUT_OF_MEMORY;
+    }
+
+    work->hand = h;
+    work->ctx = ctx;
+
+    switch (type) {
+    case UACPI_WORK_GPE_EXECUTION:
+        TAILQ_INSERT_TAIL(&acpi_gpe_eventq, work, link);
+        break;
+    case UACPI_WORK_NOTIFICATION:
+        TAILQ_INSERT_TAIL(&acpi_notify_eventq, work, link);
+        break;
+    }
+
+    return 0;
 }
 
 uacpi_status
@@ -575,5 +667,8 @@ uacpi_init(void)
         return -1;
     }
 
+    TAILQ_INIT(&acpi_gpe_eventq);
+    TAILQ_INIT(&acpi_notify_eventq);
+    spawn(&g_proc0, uacpi_event_td, NULL, 0, &event_td);
     return 0;
 }
