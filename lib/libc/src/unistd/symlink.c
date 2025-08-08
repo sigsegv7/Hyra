@@ -27,60 +27,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UNISTD_H
-#define _UNISTD_H
+#include <sys/errno.h>
+#include <unistd.h>
 
-#include <sys/exec.h>
-#include <sys/types.h>
-#include <sys/cdefs.h>
-#include <stddef.h>
+int
+symlink(const char *target, const char *linkpath)
+{
+    if (target == NULL || linkpath == NULL) {
+        return -EINVAL;
+    }
 
-#define F_OK 0
+    /* TODO: STUB */
+    return -1;
+}
 
-/* lseek whence, follows Hyra ABI */
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
+int
+synlinkat(const char *target, int newdirfd, const char *linkpath)
+{
+    if (target == NULL || linkpath == NULL) {
+        return -EINVAL;
+    }
 
-__BEGIN_DECLS
-
-int sysconf(int name);
-int setuid(uid_t new);
-
-int gethostname(char *name, size_t size);
-int sethostname(const char *name, size_t size);
-
-uid_t getuid(void);
-char *getlogin(void);
-
-char *getcwd(char *buf, size_t size);
-char *getwd(char *pathname);
-
-int symlink(const char *target, const char *linkpath);
-int synlinkat(const char *target, int newdirfd, const char *linkpath);
-
-ssize_t read(int fd, void *buf, size_t count);
-ssize_t write(int fd, const void *buf, size_t count);
-
-int close(int fd);
-int access(const char *path, int mode);
-
-off_t lseek(int fildes, off_t offset, int whence);
-int unlinkat(int dirfd, const char *pathname, int flags);
-int unlink(const char *path);
-
-int dup(int fd);
-int dup2(int fd, int fd1);
-
-pid_t getpid(void);
-pid_t getppid(void);
-pid_t fork(void);
-
-extern char *optarg;
-extern int optind, opterr, optopt;
-
-int getopt(int argc, char *argv[], const char *optstring);
-
-__END_DECLS
-
-#endif  /* !_UNISTD_H */
+    /* TODO: STUB */
+    return -1;
+}
