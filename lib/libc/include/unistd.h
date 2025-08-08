@@ -52,7 +52,9 @@ int sethostname(const char *name, size_t size);
 
 uid_t getuid(void);
 char *getlogin(void);
+
 char *getcwd(char *buf, size_t size);
+char *getwd(char *pathname);
 
 ssize_t read(int fd, void *buf, size_t count);
 ssize_t write(int fd, const void *buf, size_t count);

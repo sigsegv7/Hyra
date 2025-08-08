@@ -39,3 +39,14 @@ getcwd(char *buf, size_t size)
     /* TODO: STUB */
     return NULL;
 }
+
+char *
+getwd(char *pathname)
+{
+    if (pathname == NULL) {
+        return NULL;
+    }
+
+    /* TODO: STUB */
+    return NULL;
+}
