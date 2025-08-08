@@ -118,6 +118,43 @@ struct __packed acpi_gas {
     uint64_t address;
 };
 
+/*
+ * ACPI Address Space ID definitions for GAS
+ *
+ * See section 5.2.3.2 of the ACPI software programming
+ * manual.
+ *
+ * XXX: 0x0B->0x7E is reserved as well as 0x80->0xBF
+ *      and 0xC0->0xFF is OEM defined. Values other than
+ *      the ones specified below are either garbage or
+ *      OEM specific values.
+ */
+#define ACPI_GAS_SYSMEM   0x00      /* System memory space */
+#define ACPI_GAS_SYSIO    0x01      /* System I/O space */
+#define ACPI_GAS_PCICONF  0x02      /* PCI configuration space */
+#define ACPI_GAS_EC       0x03      /* Embedded controller */
+#define ACPI_GAS_SMBUS    0x04      /* System management bus */
+#define ACPI_GAS_CMOS     0x05      /* System CMOS */
+#define ACPI_GAS_PCIBAR   0x06      /* PCI BAR target */
+#define ACPI_GAS_IPMI     0x07      /* IPMI (sensor monitoring) */
+#define ACPI_GAS_GPIO     0x08      /* General Purpose I/O */
+#define ACPI_GAS_GSBUS    0x09      /* GenericSerialBus */
+#define ACPI_GAS_PLATCOM  0x0A      /* Platform Communications Channel */
+
+/*
+ * ACPI address size definitions for GAS
+ *
+ * See section 5.2.3.2 of the ACPI software programming
+ * manual.
+ *
+ * This is really retarded Intel and Microsoft, thank you.
+ */
+#define ACPI_GAS_UNDEF  0   /* Undefined (legacy reasons) */
+#define ACPI_GAS_BYTE   1   /* Byte access */
+#define ACPI_GAS_WORD   2   /* Word access */
+#define ACPI_GAS_DWORD  3   /* Dword access */
+#define ACPI_GAS_QWORD  4   /* Qword access */
+
 struct __packed acpi_hpet {
     struct acpi_header hdr;
     uint8_t hardware_rev_id;
