@@ -27,50 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UNISTD_H
-#define _UNISTD_H
+#include <sys/errno.h>
+#include <unistd.h>
 
-#include <sys/exec.h>
-#include <sys/types.h>
-#include <sys/cdefs.h>
-#include <stddef.h>
+int
+unlink(const char *path)
+{
+    if (path == NULL) {
+        return -EINVAL;
+    }
 
-#define F_OK 0
-
-/* lseek whence, follows Hyra ABI */
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
-
-__BEGIN_DECLS
-
-int sysconf(int name);
-int setuid(uid_t new);
-
-int gethostname(char *name, size_t size);
-int sethostname(const char *name, size_t size);
-
-uid_t getuid(void);
-char *getlogin(void);
-
-ssize_t read(int fd, void *buf, size_t count);
-ssize_t write(int fd, const void *buf, size_t count);
-
-int close(int fd);
-int access(const char *path, int mode);
-
-off_t lseek(int fildes, off_t offset, int whence);
-int unlink(const char *path);
-
-pid_t getpid(void);
-pid_t getppid(void);
-pid_t fork(void);
-
-extern char *optarg;
-extern int optind, opterr, optopt;
-
-int getopt(int argc, char *argv[], const char *optstring);
-
-__END_DECLS
-
-#endif  /* !_UNISTD_H */
+    /* TODO: STUB */
+    return -1;
+}
