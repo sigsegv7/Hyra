@@ -60,6 +60,7 @@ int close(int fd);
 int access(const char *path, int mode);
 
 off_t lseek(int fildes, off_t offset, int whence);
+int unlinkat(int dirfd, const char *pathname, int flags);
 int unlink(const char *path);
 
 pid_t getpid(void);

@@ -40,3 +40,14 @@ unlink(const char *path)
     /* TODO: STUB */
     return -1;
 }
+
+int
+unlinkat(int dirfd, const char *pathname, int flags)
+{
+    if (pathname == NULL || dirfd < 0) {
+        return -EINVAL;
+    }
+
+    /* TODO: STUB */
+    return -1;
+}
