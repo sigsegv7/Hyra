@@ -77,6 +77,7 @@ struct xhci_opregs {
 
 /* USBSTS bits */
 #define USBSTS_HCH      BIT(0)    /* HC halted */
+#define USBSTS_CNR      BIT(11)   /* Controller not ready */
 
 /* CAPS.HCSPARAMS1 fields */
 #define XHCI_MAXSLOTS(HCSPARAMS1) (HCSPARAMS1 & 0xFF)
