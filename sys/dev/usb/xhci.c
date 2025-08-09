@@ -268,7 +268,7 @@ xhci_init_evring(struct xhci_hc *hc)
 
     /* setup the event ring segment */
     segtab->base = VIRT_TO_PHYS(tmp_p);
-    segtab->base = ((uintptr_t)segtab->base) + (2 * 4096) & ~0xF;
+    segtab->base = ((uintptr_t)segtab->base);
     segtab->size = XHCI_EVRING_LEN;
 
     /* Setup the event ring dequeue pointer */
