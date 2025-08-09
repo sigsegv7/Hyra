@@ -79,6 +79,26 @@ Documentation will be in the form of comments throughout the codebase and can al
 - ``share/docs/kernel``: Kernel documentation
 - ``share/docs/lib``: Library documentation
 
+# Maintainers
+--------------
+| Component  | Maintainer         |
+|------------|--------------------|
+| Kernel     | <ian@osmora.org>   |
+| C Library  | <ian@osmora.org>   |
+| C Library  | <quinn@osmora.org> |
+| Killing MS | <quinn@osmora.org> |
+
+--------------
+# To-do
+
+```
+[ ] kern: dev: AHCI DCDR cache (<ian@osmora.org>)
+[ ] kern: Worker threads (<ian@osmora.org>)
+[ ] kern: Multithreaded driver startup (<quinn@osmora.org>)
+[ ] libc: Slab allocator (<quinn@osmora.org>)
+...
+```
+
 Hyra running on bare metal:
 --------------
 ![Hyra](./.github/assets/hyra.png)
