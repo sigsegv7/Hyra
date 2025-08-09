@@ -200,12 +200,12 @@ xhci_init_scratchpads(struct xhci_hc *hc)
 
     for (size_t i = 0; i < max_bufs; ++i) {
         tmp = vm_alloc_frame(1);
-        memset(PHYS_TO_VIRT(tmp), 0, 0x1000);
         if (tmp == 0) {
             /* TODO: Shutdown, free memory */
             pr_error("failed to fill scratchpad buffer array\n");
             return -1;
         }
+        memset(PHYS_TO_VIRT(tmp), 0, 0x1000);
         bufarr[i] = tmp;
     }
 
