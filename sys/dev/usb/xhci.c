@@ -221,7 +221,7 @@ xhci_alloc_dcbaa(struct xhci_hc *hc)
 {
     size_t size;
 
-    size = sizeof(uintptr_t) * hc->maxslots;
+    size = sizeof(uintptr_t) * (hc->maxslots + 1);
     hc->dcbaap = dynalloc_memalign(size, 0x1000);
     __assert(hc->dcbaap != NULL);
     return VIRT_TO_PHYS(hc->dcbaap);
