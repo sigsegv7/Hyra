@@ -463,6 +463,7 @@ xhci_init_hc(struct xhci_hc *hc)
 
     pr_trace("resetting xHC chip...\n");
     if ((error = xhci_reset(hc)) != 0) {
+        pr_error("reset timeout\n");
         return error;
     }
 
