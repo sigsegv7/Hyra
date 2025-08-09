@@ -372,7 +372,7 @@ xhci_start_hc(struct xhci_hc *hc)
     /* Don't start up if we are already running */
     usbcmd = mmio_read32(&opregs->usbcmd);
     if (ISSET(usbcmd, USBCMD_RUN))
-        return -EBUSY;
+        return 0;
 
     usbcmd |= USBCMD_RUN;
     mmio_write32(&opregs->usbcmd, usbcmd);
