@@ -79,14 +79,23 @@ Documentation will be in the form of comments throughout the codebase and can al
 - ``share/docs/kernel``: Kernel documentation
 - ``share/docs/lib``: Library documentation
 
-# Maintainers
+# Maintainers (by author)
 --------------
-| Component  | Maintainer         |
-|------------|--------------------|
-| Kernel     | <ian@osmora.org>   |
-| C Library  | <ian@osmora.org>   |
-| C Library  | <quinn@osmora.org> |
-| Killing MS | <quinn@osmora.org> |
+| Maintainer         | Component          |
+|--------------------|--------------------|
+| <ian@osmora.org>   | Hyra AMD64 Kernel  |
+| <ian@osmora.org>   | User C Library     |
+| <ian@osmora.org>   | NVMe Driver        |
+| <ian@osmora.org>   | AHCI Driver        |
+| <ian@osmora.org>   | xHCI Driver        |
+| <ian@osmora.org>   | RTL8139 Driver     |
+| <ian@osmora.org>   | E1000E Driver      |
+| <ian@osmora.org>   | ET131X Driver      |
+| <ian@osmora.org>   | PCI Driver         |
+| <ian@osmora.org>   | PCIe Driver        |
+| <quinn@osmora.org> | PCI Driver         |
+| <quinn@osmora.org> | User C Library     |
+| <quinn@osmora.org> | Killing MS         |
 
 --------------
 # To-do
