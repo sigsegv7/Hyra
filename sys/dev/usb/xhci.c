@@ -340,6 +340,13 @@ xhci_reset(struct xhci_hc *hc)
         return error;
     }
 
+    /* Wait longer if the xHC is not ready */
+    error = xhci_poll32(&opregs->usbsts, USBSTS_CNR, false);
+    if (error < 0) {
+        pr_error("xhci_reset: xHC ready wait timeout\n");
+        return error;
+    }
+
     return 0;
 }
 
