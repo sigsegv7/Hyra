@@ -379,6 +379,26 @@ xhci_start_hc(struct xhci_hc *hc)
     return 0;
 }
 
+/*
+ * Stop and bring down the host controller.
+ * Returns 0 on success.
+ */
+static int
+xhci_stop_hc(struct xhci_hc *hc)
+{
+    struct xhci_opregs *opregs = hc->opregs;
+    uint32_t usbcmd;
+
+    /* Don't continue if we aren't running */
+    usbcmd = mmio_read32(&opregs->usbcmd);
+    if (!ISSET(usbcmd, USBCMD_RUN))
+        return 0;
+
+    usbcmd &= ~USBCMD_RUN;
+    mmio_write32(&opregs->usbcmd, usbcmd);
+    return 0;
+}
+
 static int
 xhci_init_ports(struct xhci_hc *hc)
 {
@@ -459,6 +479,12 @@ xhci_init_hc(struct xhci_hc *hc)
     if (!PTR_ALIGNED(hc->opregs, 4)) {
         pr_error("xhci_init_hc: fatal: Got bad operational base\n");
         return -1;
+    }
+
+    pr_trace("stopping xHC chip...\n");
+    if ((error = xhci_stop_hc(hc)) != 0) {
+        pr_error("run/stop timeout\n");
+        return error;
     }
 
     pr_trace("resetting xHC chip...\n");
