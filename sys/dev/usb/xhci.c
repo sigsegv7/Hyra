@@ -71,11 +71,16 @@ xhci_intr(void *sf)
 static inline uint32_t *
 xhci_get_portsc(struct xhci_hc *hc, uint8_t portno)
 {
-    if (portno > hc->maxports) {
-        portno = hc->maxports;
+    if (portno >= hc->maxports) {
+        return NULL;
     }
 
-    return PTR_OFFSET(hc->opregs, 0x400 + (0x10 * (portno - 1)));
+    /* Zero based */
+    if (portno > 0) {
+        --portno;
+    }
+
+    return PTR_OFFSET(hc->opregs, 0x400 + (0x10 * portno));
 }
 
 static int
@@ -408,6 +413,9 @@ xhci_init_ports(struct xhci_hc *hc)
 
     for (size_t i = 1; i < hc->maxports; ++i) {
         portsc_p = xhci_get_portsc(hc, i);
+        if (portsc_p == NULL) {
+            continue;
+        }
         portsc = mmio_read32(portsc_p);
 
         /*
