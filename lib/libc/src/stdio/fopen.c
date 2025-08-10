@@ -51,6 +51,8 @@ fopen(const char *__restrict path, const char *__restrict mode)
         seal |= (O_WRONLY | O_CREAT);
     } else if (strcmp(mode, "r+") == 0) {
         seal |= O_RDWR;
+    } else if (strcmp(mode, "rb") == 0) {
+        seal |= O_RDONLY;
     } else {
         return NULL;
     }
