@@ -37,6 +37,7 @@
 #include <sys/spinlock.h>
 #include <machine/tss.h>
 #include <machine/cdefs.h>
+#include <machine/intr.h>
 
 #define CPU_IRQ(IRQ_N) (BIT((IRQ_N)) & 0xFF)
 
@@ -44,9 +45,14 @@
 #define CPU_FEAT_SMAP  BIT(0)
 #define CPU_FEAT_SMEP  BIT(1)
 
+typedef uint16_t ipi_pend_t;
+
 struct cpu_info {
     uint32_t apicid;
     uint32_t feat;
+    uint8_t ipi_dispatch : 1;   /* 1: IPIs being dispatched */
+    uint8_t ipi_id;
+    ipi_pend_t ipi_pending[N_IPIVEC];
     uint8_t id;                 /* MI Logical ID */
     uint8_t model : 4;          /* CPU model number */
     uint8_t family : 4;         /* CPU family ID */

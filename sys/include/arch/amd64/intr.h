@@ -48,6 +48,9 @@
 #define IPL_CLOCK   2   /* Clock */
 #define IPL_HIGH    3   /* Defer everything */
 
+#define N_IPIVEC 4      /* Number of vectors reserved for IPIs */
+#define IPI_PER_VEC 16  /* Max IPIs per vector */
+
 struct intr_hand;
 
 /*

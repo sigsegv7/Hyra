@@ -42,6 +42,7 @@
 #include <machine/uart.h>
 #include <machine/sync.h>
 #include <machine/intr.h>
+#include <machine/ipi.h>
 #include <machine/cdefs.h>
 #include <machine/isa/i8042var.h>
 #include <dev/cons/cons.h>
@@ -61,9 +62,6 @@
         pr_trace(__VA_ARGS__);  \
     }
 
-#define HALT_VECTOR 0x21
-#define TLB_VECTOR  0x22
-
 #if defined(__SPECTRE_IBRS)
 #define SPECTRE_IBRS  __SPECTRE_IBRS
 #else
@@ -82,19 +80,20 @@ void syscall_isr(void);
 void pin_isr_load(void);
 
 struct cpu_info g_bsp_ci = {0};
+static struct cpu_ipi *halt_ipi;
+static struct cpu_ipi *tlb_ipi;
+static struct spinlock ipi_lock = {0};
 static bool bsp_init = false;
 
-__attribute__((__interrupt__))
-static void
-cpu_halt_isr(void *p)
+static int
+cpu_halt_handler(struct cpu_ipi *ipi)
 {
     __ASMV("cli; hlt");
     __builtin_unreachable();
 }
 
-__attribute__((__interrupt__))
-static void
-tlb_shootdown_isr(void *p)
+static int
+tlb_shootdown_handler(struct cpu_ipi *ipi)
 {
     struct cpu_info *ci;
     int ipl;
@@ -106,7 +105,7 @@ tlb_shootdown_isr(void *p)
      */
     ci = this_cpu();
     if (!ci->tlb_shootdown) {
-        return;
+        return -1;
     }
 
     ipl = splraise(IPL_HIGH);
@@ -115,6 +114,7 @@ tlb_shootdown_isr(void *p)
     ci->shootdown_va = 0;
     ci->tlb_shootdown = 0;
     splx(ipl);
+    return 0;
 }
 
 static void
@@ -141,8 +141,6 @@ setup_vectors(struct cpu_info *ci)
     idt_set_desc(0xD, IDT_TRAP_GATE, ISR(general_prot), 0);
     idt_set_desc(0xE, IDT_TRAP_GATE, ISR(page_fault), 0);
     idt_set_desc(0x80, IDT_USER_INT_GATE, ISR(syscall_isr), IST_SYSCALL);
-    idt_set_desc(HALT_VECTOR, IDT_INT_GATE, ISR(cpu_halt_isr), 0);
-    idt_set_desc(TLB_VECTOR, IDT_INT_GATE, ISR(tlb_shootdown_isr), 0);
     pin_isr_load();
 }
 
@@ -202,6 +200,44 @@ enable_simd(void)
 }
 
 static void
+init_ipis(void)
+{
+    int error;
+
+    if (bsp_init) {
+        return;
+    }
+
+    spinlock_acquire(&ipi_lock);
+    error = md_ipi_alloc(&halt_ipi);
+    if (error < 0) {
+        pr_error("md_ipi_alloc: returned %d\n", error);
+        panic("failed to init halt IPI\n");
+    }
+
+    halt_ipi->handler = cpu_halt_handler;
+    error = md_ipi_alloc(&tlb_ipi);
+    if (error < 0) {
+        pr_error("md_ipi_alloc: returned %d\n", error);
+        panic("failed to init TLB IPI\n");
+    }
+
+    tlb_ipi->handler = tlb_shootdown_handler;
+
+    /*
+     * Some IPIs must have very specific IDs
+     * so that they are standard and usable
+     * throughout the rest of the sytem.
+     */
+    if (halt_ipi->id != IPI_HALT)
+        panic("expected IPI_HALT for halt IPI\n");
+    if (tlb_ipi->id != IPI_TLB)
+        panic("expected IPI_TLB for TLB IPI\n");
+
+    spinlock_release(&ipi_lock);
+}
+
+static void
 cpu_get_info(struct cpu_info *ci)
 {
     uint32_t eax, ebx, unused;
@@ -257,7 +293,7 @@ cpu_shootdown_tlb(vaddr_t va)
         spinlock_acquire(&cip->lock);
         cip->shootdown_va = va;
         cip->tlb_shootdown = 1;
-        lapic_send_ipi(cip->apicid, IPI_SHORTHAND_NONE, TLB_VECTOR);
+        cpu_ipi_send(cip, IPI_TLB);
         spinlock_release(&cip->lock);
     }
 }
@@ -309,6 +345,9 @@ md_backtrace(void)
 void
 cpu_halt_all(void)
 {
+    struct cpu_info *ci;
+    uint32_t ncpu;
+
     /*
      * If we have no current 'cpu_info' structure set,
      * we can't send IPIs, so just assume only the current
@@ -319,8 +358,15 @@ cpu_halt_all(void)
         __ASMV("cli; hlt");
     }
 
-    /* Send IPI to all cores */
-    lapic_send_ipi(0, IPI_SHORTHAND_ALL, HALT_VECTOR);
+    for (int i = 0; i < ncpu; ++i) {
+        ci = cpu_get(i);
+        if (ci == NULL) {
+            continue;
+        }
+
+        cpu_ipi_send(ci, IPI_HALT);
+    }
+
     for (;;);
 }
 
@@ -331,12 +377,24 @@ cpu_halt_all(void)
 void
 cpu_halt_others(void)
 {
+    struct cpu_info *curcpu, *ci;
+    uint32_t ncpu;
+
     if (rdmsr(IA32_GS_BASE) == 0) {
         __ASMV("cli; hlt");
     }
 
-    /* Send IPI to all cores */
-    lapic_send_ipi(0, IPI_SHORTHAND_OTHERS, HALT_VECTOR);
+    curcpu = this_cpu();
+    ncpu = cpu_count();
+
+    for (int i = 0; i < ncpu; ++i) {
+        if ((ci = cpu_get(i)) == NULL)
+            continue;
+        if (ci->id == curcpu->id)
+            continue;
+
+        cpu_ipi_send(ci, IPI_HALT);
+    }
 }
 
 void
@@ -441,7 +499,10 @@ cpu_startup(struct cpu_info *ci)
 
     wrmsr(IA32_GS_BASE, (uintptr_t)ci);
     init_tss(ci);
+
     setup_vectors(ci);
+    md_ipi_init();
+    init_ipis();
 
     try_mitigate_spectre();
     ci->online = 1;

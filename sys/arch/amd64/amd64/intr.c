@@ -98,12 +98,12 @@ intr_register(const char *name, const struct intr_hand *ih)
      * Try to allocate an interrupt vector. An IPL is made up
      * of 4 bits so there can be 16 vectors per IPL.
      *
-     * XXX: Vector 0x20 is reserved for the Hyra scheduler,
-     *      vector 0x21 is reserved for the CPU halt IPI,
-     *      and vector 0x22 is reserved for TLB shootdowns.
+     * XXX: Vector 0x20 is reserved for the Hyra scheduler and
+     *      vectors 0x21 to 0x21 + N_IPIVEC are reserved for
+     *      inter-processor interrupts.
      */
     for (int i = vec; i < vec + 16; ++i) {
-        if (g_intrs[i] != NULL || i < 0x23) {
+        if (g_intrs[i] != NULL || i < 0x24) {
             continue;
         }
 
