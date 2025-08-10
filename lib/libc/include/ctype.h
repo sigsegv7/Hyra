@@ -36,6 +36,12 @@
 __BEGIN_DECLS
 
 __always_inline static inline int
+__isascii(int c)
+{
+    return c >= 0 && c <= 127;
+}
+
+__always_inline static inline int
 __tolower(int c)
 {
     return c | 0x20;
@@ -91,5 +97,8 @@ __END_DECLS
 
 /* Is a space? */
 #define isspace(C) __isspace((C))
+
+/* Is ascii? */
+#define isascii(C) __isascii((C))
 
 #endif  /* _CTYPE_H */
