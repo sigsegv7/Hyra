@@ -240,12 +240,12 @@ main(int argc, char **argv)
     p = strtok(var, ".");
 
     if (p == NULL) {
-        printf("sysctl: bad var\n");
+        printf("sysctl: bad var \"%s\"\n", p);
         return -1;
     }
 
     if ((root = name_to_def(p)) < 0) {
-        printf("sysctl: bad var \"%s\"", p);
+        printf("sysctl: bad var \"%s\"\n", p);
         return root;
     }
 
