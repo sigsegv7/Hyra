@@ -34,10 +34,8 @@
 #include <sys/mman.h>
 #include <sys/systm.h>
 #include <sys/errno.h>
-#include <sys/atomic.h>
 #include <sys/syslog.h>
 #include <sys/syscall.h>
-#include <sys/atomic.h>
 #include <sys/signal.h>
 #include <sys/limits.h>
 #include <sys/sched.h>
@@ -50,7 +48,6 @@
 #define ARGVP_MAX (ARG_MAX / sizeof(void *))
 
 static size_t next_pid = 1;
-extern volatile size_t g_nthreads;
 
 /*
  * TODO: envp
@@ -183,8 +180,6 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
     }
 
     newproc->data = p;
-    atomic_inc_64(&g_nthreads);
-
     newproc->pid = next_pid++;
     sched_enqueue_td(newproc);
     pid = newproc->pid;

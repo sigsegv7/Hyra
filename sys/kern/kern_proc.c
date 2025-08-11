@@ -39,6 +39,8 @@
 #include <string.h>
 #include <crc32.h>
 
+extern volatile size_t g_nthreads;
+
 pid_t
 getpid(void)
 {
@@ -114,6 +116,7 @@ proc_init(struct proc *td, struct proc *parent)
     /* Add to parent leafq */
     TAILQ_INSERT_TAIL(&parent->leafq, td, leaf_link);
     atomic_inc_int(&parent->nleaves);
+    atomic_inc_64(&g_nthreads);
     td->parent = parent;
     td->exit_status = -1;
     td->cred = parent->cred;
