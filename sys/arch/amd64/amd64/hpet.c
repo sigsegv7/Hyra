@@ -197,6 +197,7 @@ hpet_init(void)
     timer.get_time_usec = hpet_time_usec;
     timer.get_time_nsec = hpet_time_nsec;
     timer.get_time_sec = hpet_time_sec;
+    timer.flags = TIMER_MONOTONIC;
     register_timer(TIMER_GP, &timer);
     return 0;
 }

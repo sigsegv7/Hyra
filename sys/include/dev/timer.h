@@ -31,10 +31,14 @@
 #define _DEV_TIMER_H_
 
 #include <sys/types.h>
+#include <sys/param.h>
 
 /* Timer IDs */
 #define TIMER_SCHED 0x00000000U     /* Scheduler reserved timer */
 #define TIMER_GP    0x00000001U     /* General purpose timer */
+
+/* Timer flags */
+#define TIMER_MONOTONIC BIT(0)
 
 /* Number of timer IDs, adjust when adding timer IDs */
 #define TIMER_ID_COUNT 2
@@ -79,6 +83,7 @@ struct timer {
     void(*oneshot_ms)(size_t ms);
     void(*oneshot_us)(size_t ms);
     void(*stop)(void);
+    uint8_t flags;
 };
 
 tmrr_status_t register_timer(timer_id_t id, const struct timer *tmr);
