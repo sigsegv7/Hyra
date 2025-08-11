@@ -52,7 +52,6 @@ getpid(void)
     return td->pid;
 }
 
-
 pid_t
 getppid(void)
 {
