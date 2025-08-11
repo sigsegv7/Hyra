@@ -29,8 +29,10 @@
 
 #include <sys/types.h>
 #include <sys/proc.h>
+#include <sys/errno.h>
 #include <sys/cdefs.h>
 #include <sys/vnode.h>
+#include <sys/tree.h>
 #include <sys/syscall.h>
 #include <sys/filedesc.h>
 #include <sys/fcntl.h>
@@ -98,6 +100,32 @@ proc_coredump(struct proc *td, uintptr_t fault_addr)
     /* Write the core file */
     vfs_vop_write(vp, &sio);
     fd_close(fd);
+}
+
+int
+proc_init(struct proc *td, struct proc *parent)
+{
+    struct mmap_lgdr *mlgdr;
+
+    mlgdr = dynalloc(sizeof(*mlgdr));
+    if (mlgdr == NULL) {
+        return -ENOMEM;
+    }
+
+    /* Add to parent leafq */
+    TAILQ_INSERT_TAIL(&parent->leafq, td, leaf_link);
+    atomic_inc_int(&parent->nleaves);
+    td->parent = parent;
+    td->exit_status = -1;
+    td->cred = parent->cred;
+
+    /* Initialize the mmap ledger */
+    mlgdr->nbytes = 0;
+    RBT_INIT(lgdr_entries, &mlgdr->hd);
+    td->mlgdr = mlgdr;
+    td->flags |= PROC_WAITED;
+    signals_init(td);
+    return 0;
 }
 
 scret_t

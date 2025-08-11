@@ -145,7 +145,6 @@ pid_t
 spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **newprocp)
 {
     struct proc *newproc;
-    struct mmap_lgdr *mlgdr;
     int error;
     pid_t pid;
 
@@ -156,19 +155,10 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
         return -ENOMEM;
     }
 
-    mlgdr = dynalloc(sizeof(*mlgdr));
-    if (mlgdr == NULL) {
-        dynfree(newproc);
-        try_free_data(p);
-        pr_error("could not alloc proc mlgdr (-ENOMEM)\n");
-        return -ENOMEM;
-    }
-
     memset(newproc, 0, sizeof(*newproc));
     error = md_spawn(newproc, cur, (uintptr_t)func);
     if (error < 0) {
         dynfree(newproc);
-        dynfree(mlgdr);
         try_free_data(p);
         pr_error("error initializing proc\n");
         return error;
@@ -184,23 +174,18 @@ spawn(struct proc *cur, void(*func)(void), void *p, int flags, struct proc **new
         cur->flags |= PROC_LEAFQ;
     }
 
-    /* Add to parent leafq */
-    TAILQ_INSERT_TAIL(&cur->leafq, newproc, leaf_link);
-    atomic_inc_int(&cur->nleaves);
-    newproc->parent = cur;
+    error = proc_init(newproc, cur);
+    if (error < 0) {
+        dynfree(newproc);
+        try_free_data(p);
+        pr_error("error initializing proc\n");
+        return error;
+    }
+
     newproc->data = p;
-    newproc->exit_status = -1;
-    newproc->cred = cur->cred;
-
-    /* Initialize the mmap ledger */
-    mlgdr->nbytes = 0;
-    RBT_INIT(lgdr_entries, &mlgdr->hd);
-    newproc->mlgdr = mlgdr;
-    newproc->flags |= PROC_WAITED;
-
     atomic_inc_64(&g_nthreads);
+
     newproc->pid = next_pid++;
-    signals_init(newproc);
     sched_enqueue_td(newproc);
     pid = newproc->pid;
     return pid;
