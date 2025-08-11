@@ -107,7 +107,6 @@ workqueue_worker(void)
  * to hold queued up tasks.
  *
  * @name: Name to give the workqueue
- * @func: Function for work thread of this queue
  * @max_work: Maximum number of jobs to be added
  * @ipl: IPL that the work must operate in
  *
@@ -115,7 +114,7 @@ workqueue_worker(void)
  * otherwise a value of NULL is returned.
  */
 struct workqueue *
-workqueue_new(const char *name, workfunc_t func, size_t max_work, int ipl)
+workqueue_new(const char *name, size_t max_work, int ipl)
 {
     struct workqueue *wqp;
     struct proc *td;
@@ -138,7 +137,6 @@ workqueue_new(const char *name, workfunc_t func, size_t max_work, int ipl)
     wqp->nwork = 0;
     wqp->cookie = WQ_COOKIE;
     wqp->lock = mutex_new(wqp->name);
-    wqp->func = func;
 
     /*
      * We need to spawn the work thread which
@@ -162,15 +160,20 @@ workqueue_new(const char *name, workfunc_t func, size_t max_work, int ipl)
  * workqueue.
  *
  * @wqp: Pointer to specific workqueue
+ * @name: Name to set for work unit
  * @wp: Pointer to work that should be enqueued
  *
  * Returns zero on success, otherwise a less than
  * zero value is returned.
  */
 int
-workqueue_enq(struct workqueue *wqp, struct work *wp)
+workqueue_enq(struct workqueue *wqp, const char *name, struct work *wp)
 {
     if (wqp == NULL || wp == NULL) {
+        return -EINVAL;
+    }
+
+    if (name == NULL) {
         return -EINVAL;
     }
 
@@ -179,6 +182,7 @@ workqueue_enq(struct workqueue *wqp, struct work *wp)
         panic("workq: bad cookie on work enqueue\n");
     }
 
+    wp->name = strdup(name);
     mutex_acquire(wqp->lock, 0);
 
     /*
@@ -247,5 +251,24 @@ workqueue_destroy(struct workqueue *wqp)
      *      meaning this is already cleaned up.
      */
     memset(wqp, 0, sizeof(*wqp));
+    return 0;
+}
+
+/*
+ * Cleanup after work
+ *
+ * @wp: Work to clean up
+ */
+int
+work_destroy(struct work *wp)
+{
+    if (wp == NULL) {
+        return -EINVAL;
+    }
+
+    if (wp->name != NULL) {
+        dynfree(wp->name);
+    }
+
     return 0;
 }

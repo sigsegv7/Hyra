@@ -50,12 +50,18 @@ typedef void(*workfunc_t)(struct workqueue *wqp, struct work *wp);
  * Represents work that may be added to a
  * workqueue.
  *
- * @name: Name of this work/task
- * @func: Function with work to be done
- * @cookie: Used for validating the work structure
+ * @name: Name of this work/task [i]
+ * @data: Optional data to be passed with work [p]
+ * @func: Function with work to be done [p]
+ * @cookie: Used for validating the work structure [i]
+ *
+ * Field attributes:
+ * - [i]: Used internally
+ * - [p]: Used as parameter
  */
 struct work {
-    const char *name;
+    char *name;
+    void *data;
     workfunc_t func;
     TAILQ_ENTRY(work) link;
 };
@@ -81,16 +87,15 @@ struct workqueue {
     size_t max_work;
     ssize_t nwork;
     uint16_t cookie;
-    workfunc_t func;
     struct proc *worktd;
     struct mutex *lock;
 };
 
-struct workqueue *workqueue_new(const char *name, workfunc_t func,
-    size_t max_work, int ipl);
+struct workqueue *workqueue_new(const char *name, size_t max_work, int ipl);
 
-int workqueue_enq(struct workqueue *wqp, struct work *wp);
+int workqueue_enq(struct workqueue *wqp, const char *name, struct work *wp);
 int workqueue_destroy(struct workqueue *wqp);
+int work_destroy(struct work *wp);
 
 #endif  /* !_KERNEL */
 #endif  /* !_SYS_WORKQUEUE_H_ */
