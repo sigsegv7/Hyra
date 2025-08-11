@@ -56,6 +56,11 @@
 #define HW_MACHINE    7
 
 /*
+ * List of 'proc.*' identifiers
+ */
+#define PROC_COUNT    8
+
+/*
  * Option types (i.e., int, string, etc) for
  * sysctl entries.
  *
