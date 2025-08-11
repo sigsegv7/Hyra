@@ -55,6 +55,9 @@
 #include <vm/vm.h>
 #include <string.h>
 
+#define pr_trace(fmt, ...) kprintf("acpi: " fmt, ##__VA_ARGS__)
+#define pr_error(...) pr_trace(__VA_ARGS__)
+
 typedef struct {
     uacpi_io_addr base;
     uacpi_size length;
@@ -633,25 +636,25 @@ uacpi_init(void)
 
     ret = uacpi_initialize(0);
     if (uacpi_unlikely_error(ret)) {
-        kprintf("uacpi init error: %s\n", uacpi_status_to_string(ret));
+        pr_error("uacpi init error: %s\n", uacpi_status_to_string(ret));
         return -1;
     }
 
     ret = uacpi_namespace_load();
     if (uacpi_unlikely_error(ret)) {
-        kprintf("uacpi namespace load error: %s\n", uacpi_status_to_string(ret));
+        pr_error("uacpi namespace load error: %s\n", uacpi_status_to_string(ret));
         return -1;
     }
 
     ret = uacpi_namespace_initialize();
     if (uacpi_unlikely_error(ret)) {
-        kprintf("uacpi namespace init error: %s\n", uacpi_status_to_string(ret));
+        pr_error("uacpi namespace init error: %s\n", uacpi_status_to_string(ret));
         return -1;
     }
 
     ret = uacpi_finalize_gpe_initialization();
     if (uacpi_unlikely_error(ret)) {
-        kprintf("uacpi GPE init error: %s\n", uacpi_status_to_string(ret));
+        pr_error("uacpi GPE init error: %s\n", uacpi_status_to_string(ret));
         return -1;
     }
 
@@ -661,7 +664,7 @@ uacpi_init(void)
     );
 
     if (uacpi_unlikely_error(ret)) {
-        kprintf("failed to install power button event: %s\n",
+        pr_error("failed to install power button event: %s\n",
             uacpi_status_to_string(ret)
         );
         return -1;
