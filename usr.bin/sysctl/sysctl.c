@@ -46,13 +46,18 @@
 #define NAME_NCPU     "ncpu"
 #define NAME_MACHINE  "machine"
 
+/* Proc var string constants */
+#define NAME_COUNT "count"
+
 /* Name start string constants */
 #define NAME_KERN "kern"
 #define NAME_HW   "hw"
+#define NAME_PROC "proc"
 
 /* Name start int constants */
 #define NAME_DEF_KERN 0
 #define NAME_DEF_HW   1
+#define NAME_DEF_PROC 2
 
 /*
  * Print the contents read from a sysctl
@@ -102,6 +107,12 @@ name_to_def(const char *name)
     case 'h':
         if (strcmp(name, NAME_HW) == 0) {
             return NAME_DEF_HW;
+        }
+
+        return -1;
+    case 'p':
+        if (strcmp(name, NAME_PROC) == 0) {
+            return NAME_DEF_PROC;
         }
 
         return -1;
@@ -178,6 +189,28 @@ hw_node(const char *node, bool *is_str)
 }
 
 /*
+ * Handle parsing of 'proc.*' node names
+ *
+ * @node: Node name to parse
+ * @is_str: Set to true if string
+ */
+static int
+proc_node(const char *node, bool *is_str)
+{
+    switch (*node) {
+    case 'c':
+        if (strcmp(node, NAME_COUNT) == 0) {
+            *is_str = false;
+            return PROC_COUNT;
+        }
+
+        return -1;
+    }
+
+    return -1;
+}
+
+/*
  * Convert string node to a sysctl name
  * definition.
  *
@@ -215,6 +248,8 @@ node_to_def(int name, const char *node, bool *is_str)
         return kern_node(node, is_str);
     case NAME_DEF_HW:
         return hw_node(node, is_str);
+    case NAME_DEF_PROC:
+        return proc_node(node, is_str);
     }
 
     return -1;
