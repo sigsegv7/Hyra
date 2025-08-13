@@ -42,7 +42,7 @@
  * @idle: Number of milliseconds idle
  */
 struct sched_cpu {
-    uint32_t nswitch;
+    uint64_t nswitch;
 };
 
 /*

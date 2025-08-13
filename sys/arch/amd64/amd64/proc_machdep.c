@@ -256,7 +256,7 @@ sched_switch_to(struct trapframe *tf, struct proc *td)
 
     /* Update stats */
     cpustat = &ci->stat;
-    cpustat->nswitch++;
+    atomic_inc_64(&cpustat->nswitch);
 
     ci->curtd = td;
     pcbp = &td->pcb;
