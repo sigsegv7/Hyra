@@ -97,12 +97,10 @@ get_sched_stat(void)
     nonline = (stat.ncpu - noffline);
     online_percent = (uint16_t)(((double)nonline / (nonline + noffline)) * 100);
 
-    printf("-------------------------------\n");
-    printf("Number of tasks: %d\n", stat.nproc);
-    printf("Number of cores online: %d\n", stat.ncpu);
-    printf("Scheduler quantum: %d usec\n", stat.quantum_usec);
+    printf("number of tasks: %d\n", stat.nproc);
+    printf("number of cores online: %d\n", stat.ncpu);
+    printf("scheduler quantum: %d usec\n", stat.quantum_usec);
     printf("CPU is %d%% online\n", online_percent);
-    printf("-------------------------------\n");
 
     /*
      * Log out some per-cpu information
@@ -116,7 +114,9 @@ get_sched_stat(void)
 int
 main(void)
 {
+    printf("-- scheduler statistics --\n");
     get_sched_stat();
+    printf("-- memory statistics --\n");
     get_vm_stat();
     return 0;
 }
