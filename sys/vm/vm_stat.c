@@ -71,6 +71,7 @@ vm_stat_get(struct vm_stat *vmstat)
 
     vmstat->mem_avail = vm_mem_free();
     vmstat->mem_used = vm_mem_used();
+    vmstat->mem_total = vm_mem_total();
     return 0;
 }
 

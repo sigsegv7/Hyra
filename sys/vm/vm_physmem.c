@@ -40,6 +40,7 @@
 
 static size_t pages_free = 0;
 static size_t pages_used = 0;
+static size_t pages_total = 0;
 static size_t highest_frame_idx = 0;
 static size_t bitmap_size = 0;
 static size_t bitmap_free_start = 0;
@@ -64,6 +65,7 @@ physmem_populate_bitmap(void)
 
     for (size_t i = 0; i < resp->entry_count; ++i) {
         ent = resp->entries[i];
+        pages_total += ent->length / DEFAULT_PAGESIZE;
 
         if (ent->type != LIMINE_MEMMAP_USABLE) {
             /* This memory is not usable */
@@ -228,6 +230,16 @@ uint32_t
 vm_mem_free(void)
 {
     return (pages_free * DEFAULT_PAGESIZE) / BYTES_PER_MIB;
+}
+
+/*
+ * Return the total amount of memory supported
+ * by the machine.
+ */
+size_t
+vm_mem_total(void)
+{
+    return (pages_total * DEFAULT_PAGESIZE) / BYTES_PER_MIB;
 }
 
 void

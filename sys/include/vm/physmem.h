@@ -34,6 +34,7 @@
 
 uint32_t vm_mem_used(void);
 uint32_t vm_mem_free(void);
+size_t vm_mem_total(void);
 
 void vm_physmem_init(void);
 uintptr_t vm_alloc_frame(size_t count);

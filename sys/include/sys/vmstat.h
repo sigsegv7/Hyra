@@ -37,10 +37,12 @@
  *
  * @mem_avail: Available memory in MiB
  * @mem_used: Allocated memory in MiB
+ * @mem_total: Total system memory in MiB
  */
 struct vm_stat {
     uint32_t mem_avail;
     uint32_t mem_used;
+    size_t mem_total;
 };
 
 #endif  /* !_VM_STAT_H_ */
