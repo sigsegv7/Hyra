@@ -36,6 +36,10 @@
 #include <vm/vm.h>
 #include <string.h>
 
+#define BYTES_PER_MIB 8388608
+
+static size_t pages_free = 0;
+static size_t pages_used = 0;
 static size_t highest_frame_idx = 0;
 static size_t bitmap_size = 0;
 static size_t bitmap_free_start = 0;
@@ -63,6 +67,7 @@ physmem_populate_bitmap(void)
 
         if (ent->type != LIMINE_MEMMAP_USABLE) {
             /* This memory is not usable */
+            pages_used += ent->length / DEFAULT_PAGESIZE;
             continue;
         }
 
@@ -73,6 +78,8 @@ physmem_populate_bitmap(void)
         for (size_t j = 0; j < ent->length; j += DEFAULT_PAGESIZE) {
             clrbit(bitmap, (ent->base + j) / DEFAULT_PAGESIZE);
         }
+
+        pages_free += ent->length / DEFAULT_PAGESIZE;
     }
 }
 
@@ -201,6 +208,26 @@ vm_free_frame(uintptr_t base, size_t count)
         clrbit(bitmap, p / DEFAULT_PAGESIZE);
     }
     spinlock_release(&lock);
+}
+
+/*
+ * Return the amount of memory in MiB that is
+ * currently allocated.
+ */
+uint32_t
+vm_mem_used(void)
+{
+    return (pages_used * DEFAULT_PAGESIZE) / BYTES_PER_MIB;
+}
+
+/*
+ * Return the amount of memory in MiB that is
+ * currently free.
+ */
+uint32_t
+vm_mem_free(void)
+{
+    return (pages_free * DEFAULT_PAGESIZE) / BYTES_PER_MIB;
 }
 
 void

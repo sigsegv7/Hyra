@@ -27,16 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _VM_PHYSMEM_H_
-#define _VM_PHYSMEM_H_
+#ifndef _VM_STAT_H_
+#define _VM_STAT_H_
 
 #include <sys/types.h>
+#include <sys/vmstat.h>
 
-uint32_t vm_mem_used(void);
-uint32_t vm_mem_free(void);
+int vm_stat_get(struct vm_stat *vmstat);
+void vm_stat_init(void);
 
-void vm_physmem_init(void);
-uintptr_t vm_alloc_frame(size_t count);
-void vm_free_frame(uintptr_t base, size_t count);
-
-#endif  /* !_VM_PHYSMEM_H_ */
+#endif  /* !_VM_STAT_H_ */

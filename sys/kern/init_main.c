@@ -43,6 +43,7 @@
 #include <machine/cpu.h>
 #include <machine/cdefs.h>
 #include <vm/vm.h>
+#include <vm/stat.h>
 #include <string.h>
 
 #define _START_PATH "/usr/sbin/init"
@@ -103,6 +104,9 @@ main(void)
 
     /* Init the virtual file system */
     vfs_init();
+
+    /* Init vmstats */
+    vm_stat_init();
 
     /* Expose the console to devfs */
     cons_expose();

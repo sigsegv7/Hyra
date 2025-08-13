@@ -27,16 +27,68 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _VM_PHYSMEM_H_
-#define _VM_PHYSMEM_H_
-
 #include <sys/types.h>
+#include <sys/errno.h>
+#include <fs/ctlfs.h>
+#include <vm/physmem.h>
+#include <vm/vm.h>
+#include <vm/stat.h>
+#include <string.h>
 
-uint32_t vm_mem_used(void);
-uint32_t vm_mem_free(void);
+#include <sys/syslog.h>
 
-void vm_physmem_init(void);
-uintptr_t vm_alloc_frame(size_t count);
-void vm_free_frame(uintptr_t base, size_t count);
+static struct ctlops vm_stat_ctl;
 
-#endif  /* !_VM_PHYSMEM_H_ */
+/*
+ * ctlfs hook to read the virtual memory
+ * statistics.
+ */
+static int
+vm_stat_read(struct ctlfs_dev *cdp, struct sio_txn *sio)
+{
+    struct vm_stat stat;
+    int error;
+
+    if (sio->len > sizeof(stat)) {
+        sio->len = sizeof(stat);
+    }
+
+    error = vm_stat_get(&stat);
+    if (error < 0) {
+        return error;
+    }
+
+    memcpy(sio->buf, &stat, sio->len);
+    return sio->len;
+}
+
+int
+vm_stat_get(struct vm_stat *vmstat)
+{
+    if (vmstat == NULL) {
+        return -EINVAL;
+    }
+
+    vmstat->mem_avail = vm_mem_free();
+    vmstat->mem_used = vm_mem_used();
+    return 0;
+}
+
+void
+vm_stat_init(void)
+{
+    char devname[] = "vm";
+    struct ctlfs_dev ctl;
+
+    /* Register a stat control file */
+    ctl.mode = 0444;
+    ctlfs_create_node(devname, &ctl);
+    ctl.devname = devname;
+    ctl.ops = &vm_stat_ctl;
+    ctlfs_create_entry("stat", &ctl);
+}
+
+static struct ctlops vm_stat_ctl = {
+    .read = vm_stat_read,
+    .write = NULL
+};
