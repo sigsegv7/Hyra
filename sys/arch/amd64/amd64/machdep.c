@@ -74,6 +74,12 @@
 #define CPU_SMEP 0
 #endif
 
+#if defined(__CPU_UMIP)
+#define CPU_UMIP __CPU_UMIP
+#else
+#define CPU_UMIP 0
+#endif
+
 int ibrs_enable(void);
 int simd_init(void);
 void syscall_isr(void);
@@ -354,6 +360,11 @@ cpu_enable_umip(void)
 {
     struct cpu_info *ci = this_cpu();
     uint64_t cr4;
+
+    if (!CPU_UMIP) {
+        pr_trace_bsp("UMIP not configured\n");
+        return;
+    }
 
     if (ISSET(ci->feat, CPU_FEAT_UMIP)) {
         cr4 = amd64_read_cr4();

@@ -7,6 +7,7 @@
 //
 option SPECTRE_IBRS no   // Enable the IBRS CPU feature
 option SERIAL_DEBUG yes  // Enable kmsg serial logging
+option CPU_UMIP     yes  // Enable User-mode Instruction Prevention
 option USER_KMSG    no   // Show kmsg in user consoles
 option USER_TSC     no   // Enable 'rdtsc' in user mode
 option CPU_SMEP     yes  // Supervisor Memory Exec Protection
