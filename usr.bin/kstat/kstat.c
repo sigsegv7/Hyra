@@ -33,6 +33,22 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#define MIB_PER_GIB 1024
+
+static void
+print_size_mib(const char *name, size_t mib)
+{
+    if (name == NULL) {
+        return;
+    }
+
+    if (mib >= MIB_PER_GIB) {
+        printf("%s: %d GiB\n", name, mib / MIB_PER_GIB);
+    } else {
+        printf("%s: %d MiB\n", name, mib);
+    }
+}
+
 static void
 get_vm_stat(void)
 {
@@ -52,8 +68,8 @@ get_vm_stat(void)
     }
 
     close(fd);
-    printf("memory available: %d MiB\n", vmstat.mem_avail);
-    printf("memory used: %d MiB\n", vmstat.mem_used);
+    print_size_mib("memory available", vmstat.mem_avail);
+    print_size_mib("memory used", vmstat.mem_used);
 }
 
 static void
