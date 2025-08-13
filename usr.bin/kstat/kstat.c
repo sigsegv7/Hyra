@@ -28,9 +28,33 @@
  */
 
 #include <sys/sched.h>
+#include <sys/vmstat.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+static void
+get_vm_stat(void)
+{
+    struct vm_stat vmstat;
+    int retval, fd;
+
+    fd = open("/ctl/vm/stat", O_RDONLY);
+    if (fd < 0) {
+        printf("failed to open '/ctl/vm/stat'\n");
+        return;
+    }
+
+    retval = read(fd, &vmstat, sizeof(vmstat));
+    if (retval <= 0) {
+        printf("failed to read vmstat\n");
+        return;
+    }
+
+    close(fd);
+    printf("memory available: %d MiB\n", vmstat.mem_avail);
+    printf("memory used: %d MiB\n", vmstat.mem_used);
+}
 
 static void
 get_sched_stat(void)
@@ -76,5 +100,6 @@ int
 main(void)
 {
     get_sched_stat();
+    get_vm_stat();
     return 0;
 }
