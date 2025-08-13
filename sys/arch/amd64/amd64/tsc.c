@@ -32,6 +32,14 @@
 #include <sys/driver.h>
 #include <sys/syslog.h>
 #include <machine/tsc.h>
+#include <machine/asm.h>
+
+/* See kconf(9) */
+#if defined(__USER_TSC)
+#define USER_TSC __USER_TSC
+#else
+#define USER_TSC 0
+#endif  /* __USER_TSC */
 
 #define pr_trace(fmt, ...) kprintf("tsc: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
@@ -47,8 +55,24 @@ rdtsc_rel(void)
 static int
 tsc_init(void)
 {
+    uint64_t cr4;
+
+    cr4 = amd64_read_cr4();
     tsc_i = rdtsc();
     pr_trace("initial count @ %d\n", rdtsc_rel());
+
+    /*
+     * If we USER_TSC is configured to "yes" then
+     * we'll need to enable the 'rdtsc' instruction
+     * in user mode.
+     */
+    if (!USER_TSC) {
+        cr4 &= ~CR4_TSD;
+    } else {
+        cr4 |= CR4_TSD;
+    }
+
+    amd64_write_cr4(cr4);
     return 0;
 }
 

@@ -8,5 +8,6 @@
 option SPECTRE_IBRS no   // Enable the IBRS CPU feature
 option SERIAL_DEBUG yes  // Enable kmsg serial logging
 option USER_KMSG    no   // Show kmsg in user consoles
+option USER_TSC     no   // Enable 'rdtsc' in user mode
 option CPU_SMEP     yes  // Supervisor Memory Exec Protection
 option I8042_POLL   yes  // Use polling for the i8042
