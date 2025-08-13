@@ -300,18 +300,20 @@ cpu_get_vendor(struct cpu_info *ci)
 static void
 cpu_get_info(struct cpu_info *ci)
 {
-    uint32_t eax, ebx, unused;
+    uint32_t eax, ebx, ecx, unused;
     uint8_t ext_model, ext_family;
 
     /* Get the vendor information */
     cpu_get_vendor(ci);
 
     /* Extended features */
-    CPUID(0x07, unused, ebx, unused, unused);
+    CPUID(0x07, unused, ebx, ecx, unused);
     if (ISSET(ebx, BIT(7)))
         ci->feat |= CPU_FEAT_SMEP;
     if (ISSET(ebx, BIT(20)))
         ci->feat |= CPU_FEAT_SMAP;
+    if (ISSET(ecx, BIT(2)))
+        ci->feat |= CPU_FEAT_UMIP;
 
     /*
      * Processor info and feature bits
@@ -338,6 +340,25 @@ cpu_get_info(struct cpu_info *ci)
     if (ci->family == 6 || ci->family == 15) {
         ext_model = (eax >> 16) & 0xF;
         ci->model |= (ext_model << 4);
+    }
+}
+
+/*
+ * The CR4.UMIP bit prevents user programs from
+ * executing instructions related to accessing
+ * system memory structures. This should be enabled
+ * by default if supported.
+ */
+static void
+cpu_enable_umip(void)
+{
+    struct cpu_info *ci = this_cpu();
+    uint64_t cr4;
+
+    if (ISSET(ci->feat, CPU_FEAT_UMIP)) {
+        cr4 = amd64_read_cr4();
+        cr4 |= CR4_UMIP;
+        amd64_write_cr4(cr4);
     }
 }
 
@@ -572,6 +593,7 @@ cpu_startup(struct cpu_info *ci)
 
     cpu_get_info(ci);
     cpu_enable_smep();
+    cpu_enable_umip();
 
     enable_simd();
     lapic_init();

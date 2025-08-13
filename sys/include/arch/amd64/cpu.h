@@ -44,6 +44,7 @@
 /* Feature bits */
 #define CPU_FEAT_SMAP  BIT(0)
 #define CPU_FEAT_SMEP  BIT(1)
+#define CPU_FEAT_UMIP  BIT(2)
 
 /* CPU vendors */
 #define CPU_VENDOR_OTHER    0x00000000
