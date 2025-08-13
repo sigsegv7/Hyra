@@ -306,7 +306,7 @@ cpu_get_vendor(struct cpu_info *ci)
 static void
 cpu_get_info(struct cpu_info *ci)
 {
-    uint32_t eax, ebx, ecx, unused;
+    uint32_t unused, eax, ebx, ecx, edx;
     uint8_t ext_model, ext_family;
 
     /* Get the vendor information */
@@ -320,6 +320,14 @@ cpu_get_info(struct cpu_info *ci)
         ci->feat |= CPU_FEAT_SMAP;
     if (ISSET(ecx, BIT(2)))
         ci->feat |= CPU_FEAT_UMIP;
+
+    /*
+     * Processor power management information bits as well
+     * as bits describing RAS capabilities
+     */
+    CPUID(0x80000007, unused, unused, unused, edx);
+    if (ISSET(edx, BIT(8)))
+        ci->feat |= CPU_FEAT_TSCINV;
 
     /*
      * Processor info and feature bits
