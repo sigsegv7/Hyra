@@ -34,6 +34,16 @@
 #include <sys/param.h>
 #include <machine/msr.h>
 
+/* CR4 bits */
+#define CR4_TSD     BIT(2)  /* Timestamp disable */
+#define CR4_DE      BIT(3)  /* Debugging extensions */
+#define CR4_PSE     BIT(4)  /* Page size extensions */
+#define CR4_PCE     BIT(8)  /* Performance monitoring counter enable */
+#define CR4_UMIP    BIT(11) /* User mode instruction prevention */
+#define CR4_LA57    BIT(12) /* Level 5 paging enable */
+#define CR4_VMXE    BIT(13) /* Virtual machine extensions enable */
+#define CR4_SMXE    BIT(14) /* Safer mode extensions enable */
+
 /*
  * Contains information for the current
  * core. Stored in %GS.
