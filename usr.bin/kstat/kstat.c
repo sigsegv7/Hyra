@@ -70,6 +70,7 @@ get_vm_stat(void)
     close(fd);
     print_size_mib("memory available", vmstat.mem_avail);
     print_size_mib("memory used", vmstat.mem_used);
+    print_size_mib("memory total", vmstat.mem_total);
 }
 
 static void
