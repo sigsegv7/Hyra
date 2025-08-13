@@ -27,12 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/errno.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/cdefs.h>
 #include <sys/driver.h>
 #include <sys/syslog.h>
 #include <machine/tsc.h>
 #include <machine/asm.h>
+#include <machine/cpuid.h>
 
 /* See kconf(9) */
 #if defined(__USER_TSC)
@@ -52,10 +55,37 @@ rdtsc_rel(void)
     return rdtsc() - tsc_i;
 }
 
+/*
+ * Check if the TSC and RDTSC instruction is
+ * supported on the current CPU.
+ *
+ * Returns zero if supported, otherwise a less
+ * than zero value is returned.
+ */
+static int
+tsc_check(void)
+{
+    uint32_t edx, unused;
+
+    CPUID(1, unused, unused, unused, edx);
+    if (ISSET(edx, BIT(4))) {
+        return 0;
+    }
+
+    return -ENOTSUP;
+}
+
 static int
 tsc_init(void)
 {
     uint64_t cr4;
+    int error;
+
+    /* Is the TSC even supported? */
+    if ((error = tsc_check()) != 0) {
+        pr_error("TSC not supported by machine\n");
+        return error;
+    }
 
     cr4 = amd64_read_cr4();
     tsc_i = rdtsc();
