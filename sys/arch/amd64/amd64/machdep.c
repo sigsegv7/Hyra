@@ -238,10 +238,73 @@ init_ipis(void)
 }
 
 static void
+cpu_get_vendor(struct cpu_info *ci)
+{
+    uint32_t unused, ebx, ecx, edx;
+    char vendor_str[13];
+
+    /*
+     * This CPUID returns a 12 byte CPU vendor string
+     * that we'll put together and use to detect the vendor.
+     */
+    CPUID(0, unused, ebx, ecx, edx);
+
+    /* Dword 0 */
+    vendor_str[0] = ebx & 0xFF;
+    vendor_str[1] = (ebx >> 8) & 0xFF;
+    vendor_str[2] = (ebx >> 16) & 0xFF;
+    vendor_str[3] = (ebx >> 24) & 0xFF;
+
+    /* Dword 1 */
+    vendor_str[4] = edx & 0xFF;
+    vendor_str[5] = (edx >> 8) & 0xFF;
+    vendor_str[6] = (edx >> 16) & 0xFF;
+    vendor_str[7] = (edx >> 24) & 0xFF;
+
+    /* Dword 2 */
+    vendor_str[8] = ecx & 0xFF;
+    vendor_str[9] = (ecx >> 8) & 0xFF;
+    vendor_str[10] = (ecx >> 16) & 0xFF;
+    vendor_str[11] = (ecx >> 24) & 0xFF;
+    vendor_str[12] = '\0';
+
+    /* Is this an AMD CPU? */
+    if (strcmp(vendor_str, "AuthenticAMD") == 0) {
+        ci->vendor = CPU_VENDOR_AMD;
+        return;
+    }
+
+    /* Is this an Intel CPU? */
+    if (strcmp(vendor_str, "GenuineIntel") == 0) {
+        ci->vendor = CPU_VENDOR_INTEL;
+        return;
+    }
+
+    /*
+     * Some buggy Intel CPUs report the string "GenuineIotel"
+     * instead of "GenuineIntel". This is rare but we should
+     * still handle it as it can happen. Probably a good idea
+     * to log it so the user can know about their rare CPU
+     * quirk and brag to their friends :~)
+     */
+    if (strcmp(vendor_str, "GenuineIotel") == 0) {
+        pr_trace_bsp("vendor_str=%s\n", vendor_str);
+        pr_trace_bsp("detected vendor string quirk\n");
+        ci->vendor = CPU_VENDOR_INTEL;
+        return;
+    }
+
+    ci->vendor = CPU_VENDOR_OTHER;
+}
+
+static void
 cpu_get_info(struct cpu_info *ci)
 {
     uint32_t eax, ebx, unused;
     uint8_t ext_model, ext_family;
+
+    /* Get the vendor information */
+    cpu_get_vendor(ci);
 
     /* Extended features */
     CPUID(0x07, unused, ebx, unused, unused);

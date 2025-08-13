@@ -45,11 +45,17 @@
 #define CPU_FEAT_SMAP  BIT(0)
 #define CPU_FEAT_SMEP  BIT(1)
 
+/* CPU vendors */
+#define CPU_VENDOR_OTHER    0x00000000
+#define CPU_VENDOR_INTEL    0x00000001
+#define CPU_VENDOR_AMD      0x00000002
+
 typedef uint16_t ipi_pend_t;
 
 struct cpu_info {
     uint32_t apicid;
     uint32_t feat;
+    uint32_t vendor;            /* Vendor (see CPU_VENDOR_*) */
     uint8_t ipi_dispatch : 1;   /* 1: IPIs being dispatched */
     uint8_t ipi_id;
     ipi_pend_t ipi_pending[N_IPIVEC];
