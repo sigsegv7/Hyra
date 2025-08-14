@@ -111,8 +111,6 @@ main(void)
     /* Expose the console to devfs */
     cons_expose();
 
-    uacpi_init();
-
     /* Start scheduler and bootstrap APs */
     md_intoff();
     sched_init();
@@ -123,6 +121,8 @@ main(void)
     /* Startup pid 1 */
     spawn(&g_proc0, start_init, NULL, 0, &g_init);
     md_inton();
+
+    uacpi_init();
 
     /* Load all early drivers */
     DRIVERS_INIT();
