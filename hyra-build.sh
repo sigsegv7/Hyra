@@ -34,6 +34,7 @@ set -e
 RAMFS_TOOL="tools/omar/bin/omar"
 RAMFS_NAME="ramfs.omar"
 install_flag="false"
+NTHREADS="-j$(nproc)"
 
 ###############################
 # Generate sysroot skeleton
@@ -85,6 +86,17 @@ gen_isofs() {
     stand/limine/limine bios-install $1
 }
 
+build() {
+    echo "-- Building libs --"
+    make libs
+
+    echo "-- Building world --"
+    make $NTHREADS sbin bin
+
+    echo "-- Building kernel --"
+    make $NTHREADS base/boot/hyra.krq
+}
+
 ####################################
 # Stage 1 - build production media
 ####################################
@@ -93,7 +105,7 @@ stage1() {
     sysroot_skel
 
     echo "[*] stage1: Build kernel"
-    make
+    build
 
     echo "[*] stage1: Generate stage 1 RAMFS via OMAR"
     $RAMFS_TOOL -i base/ -o $RAMFS_NAME
@@ -123,7 +135,8 @@ stage2() {
 
     echo "[*] stage2: Build kernel"
     gen_iso_root
-    make KBUILD_ARGS="-D_INSTALL_MEDIA=1"
+    export KBUILD_ARGS="-D_INSTALL_MEDIA=1"
+    build
 
     echo "[*] stage2: Generate stage 2 ISOFS (installer)"
     gen_isofs "Hyra-install.iso"
