@@ -239,6 +239,13 @@ disk_add(const char *name, dev_t dev, const struct bdevsw *bdev, int flags)
     /* Disk queue must be initialized */
     check_diskq();
 
+    /* There is a limit to how many can be added */
+    if (disk_count >= DISK_MAX) {
+        pr_error("disk_add: disk limit %d/%d reached\n",
+            disk_count, DISK_MAX);
+        return -EAGAIN;
+    }
+
     /* Is the disk name of correct length? */
     name_len = strlen(name);
     if (name_len >= sizeof(dp->name) - 1) {
