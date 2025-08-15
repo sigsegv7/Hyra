@@ -760,6 +760,53 @@ ahci_dev_bsize(dev_t dev)
 }
 
 /*
+ * Register a block device connected to an HBA port
+ * to the rest of the system.
+ *
+ * @dp: Device pointer
+ * @hba: HBA this device belongs to
+ *
+ * Returns zero on success, otherwise a less than
+ * zero value is returned.
+ */
+static int
+ahci_register(struct hba_device *dp, struct ahci_hba *hba)
+{
+    struct ctlfs_dev dev;
+    char devname[128];
+    int error;
+
+    if (hba->major == 0) {
+        hba->major = dev_alloc_major();
+    }
+
+    dp->dev = dev_alloc(hba->major);
+    snprintf(devname, sizeof(devname), "sd%d", dp->dev);
+
+    /* Register the device */
+    dev_register(hba->major, dp->dev, &ahci_bdevsw);
+    pr_trace("drive @ /dev/%s\n", devname);
+
+    /* Register a control node */
+    dev.mode = 0444;
+    ctlfs_create_node(devname, &dev);
+    pr_trace("drive control @ /ctl/%s/\n", devname);
+
+    /* Register control files */
+    dev.devname = devname;
+    dev.ops = &g_sata_bsize_ops;
+    ctlfs_create_entry("bsize", &dev);
+
+    error = devfs_create_entry(devname, hba->major, dp->dev, 060444);
+    if (error < 0) {
+        pr_error("failed to create devfs entry\n");
+        return error;
+    }
+
+    return 0;
+}
+
+/*
  * Initialize a drive on an HBA port
  *
  * @hba: HBA descriptor
@@ -768,11 +815,9 @@ ahci_dev_bsize(dev_t dev)
 static int
 ahci_init_port(struct ahci_hba *hba, uint32_t portno)
 {
-    char devname[128];
     struct hba_memspace *abar = hba->io;
     struct hba_port *port;
     struct hba_device *dp;
-    struct ctlfs_dev dev;
     size_t clen, pagesz;
     uint32_t lo, hi, sig;
     paddr_t fra, cmdlist, tmp;
@@ -853,27 +898,7 @@ ahci_init_port(struct ahci_hba *hba, uint32_t portno)
     }
 
     ahci_identify(hba, dp);
-
-    if (hba->major == 0) {
-        hba->major = dev_alloc_major();
-    }
-    dp->dev = dev_alloc(hba->major);
-    snprintf(devname, sizeof(devname), "sd%d", dp->dev);
-
-    /* Register the device */
-    dev_register(hba->major, dp->dev, &ahci_bdevsw);
-    pr_trace("drive @ /dev/%s\n", devname);
-
-    /* Register a control node */
-    dev.mode = 0444;
-    ctlfs_create_node(devname, &dev);
-    pr_trace("drive control @ /ctl/%s/\n", devname);
-
-    /* Register control files */
-    dev.devname = devname;
-    dev.ops = &g_sata_bsize_ops;
-    ctlfs_create_entry("bsize", &dev);
-    return devfs_create_entry(devname, hba->major, dp->dev, 060444);
+    return ahci_register(dp, hba);
 }
 
 /*
