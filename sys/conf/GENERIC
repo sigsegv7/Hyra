@@ -3,6 +3,7 @@ option PANIC_SCR    no   // Clear screen on panic
 
 // Kernel constants
 setval SCHED_NQUEUE 4    // Number of scheduler queues (for MLFQ)
+setval DISK_MAX     16   // Maximum disks to be registered
 
 // Console attributes
 setval CONSOLE_BG 0x000000
