@@ -30,12 +30,28 @@
 #ifndef _SYS_DISK_H_
 #define _SYS_DISK_H_
 
+#include <sys/syscall.h>
 #include <sys/queue.h>
 #include <sys/device.h>
 #include <sys/types.h>
 #include <sys/limits.h>
+#include <sys/cdefs.h>
 
 #define DISK_PRIMARY 0  /* ID of primary disk */
+
+/*
+ * To prevent unlikely cases of unintended disk
+ * operations (e.g., read, write, etc), we store
+ * a cookie within each set of parameters.
+ *
+ * Requests whose bundle of parameters have no valid
+ * cookie shall be rejected by us.
+ */
+#define DISK_PARAM_COOKIE  0xD1531001
+
+/* Valid disk operations */
+#define DISK_IO_READ    0x00
+#define DISK_IO_WRITE   0x01
 
 /*
  * A disk identifier is a zero-based index into
@@ -48,6 +64,79 @@ typedef uint16_t diskid_t;
  */
 typedef off_t blkoff_t;
 
+/*
+ * Disk operations may be requested by user
+ * programs by using a disk operation code.
+ */
+typedef uint8_t diskop_t;
+
+/*
+ * The disk metadata structure contains information
+ * describing the disk. It is used for Hyra's pbuf
+ * (persistent buffers / sls) support. This structure
+ * is to be stored at the very last sector of the drive.
+ *
+ * @root_blk: Disk offset to root block
+ * @n_ublk: Number of usable user blocks
+ */
+struct disk_meta {
+    char magic[6];
+    blkoff_t root_blk;
+    size_t n_ublk;
+};
+
+/*
+ * A disk I/O parameter contains information
+ * that is passed from a user application to
+ * the kernel for specific operations.
+ *
+ * @buf: User-side pointer to data buffer
+ * @size: Size of data buffer in bytes
+ * @cookie: Used to prevent unintended operations
+ * @blk: Disk block offset
+ * @u_buf: Used by the kernel to keep track of user buffer
+ */
+struct disk_param {
+    void *buf;
+    size_t size;
+    uint32_t cookie;
+    blkoff_t blk;
+#if defined(_KERNEL)
+    void *u_buf;
+#endif
+};
+
+/*
+ * Helper used to initialize disk I/O parameters.
+ * This is used by the user to initialize a declared
+ * set of parameters.
+ *
+ * @buf: Buffer to operate on
+ * @blk: Disk block to operate on
+ * @size: Operation size in bytes (block-aligned)
+ * @res: Pointer to params to be initialized
+ */
+__always_inline static inline void
+disk_param_init(uint8_t *buf, blkoff_t blk, size_t size, struct disk_param *res)
+{
+    if (res != NULL) {
+        res->buf = buf;
+        res->blk = blk;
+        res->size = size;
+        res->cookie = DISK_PARAM_COOKIE;
+    }
+}
+
+/*
+ * User side disk API
+ */
+#if !defined(_KERNEL)
+ssize_t __disk_io(diskid_t id, diskop_t op, const struct disk_param *param);
+ssize_t disk_write(diskid_t id, blkoff_t off, const void *buf, size_t len);
+ssize_t disk_read(diskid_t id, blkoff_t off, void *buf, size_t len);
+#endif  /* !_KERNEL */
+
+#if defined(_KERNEL)
 /*
  * Represents a block storage device
  *
@@ -78,4 +167,6 @@ ssize_t disk_write(diskid_t id, blkoff_t blk, const void *buf, size_t len);
 int disk_add(const char *name, dev_t dev, const struct bdevsw *bdev, int flags);
 int disk_get_id(diskid_t id, struct disk **res);
 
+scret_t sys_disk(struct syscall_args *scargs);
+#endif  /* _KERNEL */
 #endif  /* !_SYS_DISK_H_ */

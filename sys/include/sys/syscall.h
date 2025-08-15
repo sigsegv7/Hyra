@@ -67,6 +67,7 @@
 #define SYS_recvmsg 26
 #define SYS_connect 27
 #define SYS_setsockopt 28
+#define SYS_disk    29
 
 #if defined(_KERNEL)
 /* Syscall return value and arg type */
