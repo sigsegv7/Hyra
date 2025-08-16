@@ -60,6 +60,18 @@ static struct timer tmr;
 static struct ahci_hba g_hba;
 static struct driver_var __driver_var;
 
+#define MODEL_LEN 40    /* Model number length */
+#define SERIAL_LEN 20   /* Serial number length */
+
+/*
+ * Simplified structure containing certain
+ * information from device identity.
+ */
+struct dev_info {
+    char model[MODEL_LEN];
+    char serial[SERIAL_LEN];
+};
+
 /*
  * Poll register to have 'bits' set/unset.
  *
@@ -181,35 +193,50 @@ ahci_hba_reset(struct ahci_hba *hba)
 /*
  * Dump identify structure for debugging
  * purposes.
+ *
+ * Returns a pointer to a 'dev_info' structure
+ * on success, otherwise a value of NULL is returned
+ * on failure.
  */
-static void
-ahci_dump_identity(struct ata_identity *identity)
+static int
+ahci_dump_identity(struct ata_identity *identity, struct dev_info *res)
 {
-    char serial_number[20];
-    char model_number[40];
     char tmp;
 
-    memcpy(serial_number, identity->serial_number, sizeof(serial_number));
-    memcpy(model_number, identity->model_number, sizeof(model_number));
+    if (res == NULL) {
+        return -EINVAL;
+    }
 
-    serial_number[sizeof(serial_number) - 1] = '\0';
-    model_number[sizeof(model_number) - 1] = '\0';
+    /* Copy the data, might be big endian */
+    memcpy(
+        res->serial,
+        identity->serial_number,
+        SERIAL_LEN
+    );
+    memcpy(
+        res->model,
+        identity->model_number,
+        sizeof(res->model)
+    );
+
+    res->serial[SERIAL_LEN - 1] = '\0';
+    res->model[MODEL_LEN - 1] = '\0';
 
     /* Fixup endianess for serial number */
-    for (size_t i = 0; i < sizeof(serial_number); i += 2) {
-        tmp = serial_number[i];
-        serial_number[i] = serial_number[i + 1];
-        serial_number[i + 1] = tmp;
+    for (size_t i = 0; i < SERIAL_LEN; i += 2) {
+        tmp = res->serial[i];
+        res->serial[i] = res->serial[i + 1];
+        res->serial[i + 1] = tmp;
     }
 
     /* Fixup endianess for model number */
-    for (size_t i = 0; i < sizeof(model_number); i += 2) {
-        tmp = model_number[i];
-        model_number[i] = model_number[i + 1];
-        model_number[i + 1] = tmp;
+    for (size_t i = 0; i < MODEL_LEN; i += 2) {
+        tmp = res->model[i];
+        res->model[i] = res->model[i + 1];
+        res->model[i + 1] = tmp;
     }
 
-    pr_trace("model number: %s\n", model_number);
+    return 0;
 }
 
 /*
@@ -452,6 +479,7 @@ static int
 ahci_identify(struct ahci_hba *hba, struct hba_device *dp)
 {
     paddr_t base, buf;
+    struct dev_info dev_info;
     struct hba_port *port;
     struct ahci_cmd_hdr *cmdhdr;
     struct ahci_cmdtab *cmdtbl;
@@ -496,10 +524,13 @@ ahci_identify(struct ahci_hba *hba, struct hba_device *dp)
         goto done;
     }
 
-    ahci_dump_identity(PHYS_TO_VIRT(buf));
+    ahci_dump_identity(PHYS_TO_VIRT(buf), &dev_info);
     p = (uint16_t *)PHYS_TO_VIRT(buf);
     dp->nlba = (p[61] << 16) | p[60];
+
     pr_trace("max block size: %d\n", dp->nlba);
+    pr_trace("model number: %s\n", dev_info.model);
+    pr_trace("serial number: %s\n", dev_info.serial);
 done:
     vm_free_frame(buf, 1);
     return status;
