@@ -36,6 +36,7 @@
 #include <sys/param.h>
 #include <sys/bitops.h>
 #include <sys/mmio.h>
+#include <sys/disk.h>
 #include <dev/pci/pci.h>
 #include <dev/pci/pciregs.h>
 #include <dev/timer.h>
@@ -834,6 +835,12 @@ ahci_register(struct hba_device *dp, struct ahci_hba *hba)
         return error;
     }
 
+    snprintf(devname, sizeof(devname), "SATA drive %d", dp->dev);
+    error = disk_add(devname, dp->dev, &ahci_bdevsw, 0);
+    if (error < 0) {
+        pr_error("failed to add disk \"%s\"\n", devname);
+        return 1;
+    }
     return 0;
 }
 
