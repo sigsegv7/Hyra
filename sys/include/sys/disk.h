@@ -166,7 +166,7 @@ ssize_t disk_read(diskid_t id, blkoff_t off, void *buf, size_t len);
  *
  * @name: Name of disk
  * @cookie: Used internally to ensure validity
- * @bsize: Block size (defaults to 512 bytes)
+ * @bsize: Hardware block size (defaults to 512 bytes)
  * @dev: Device minor
  * @id: Disk ID (zero-based index)
  * @bdev: Block device operations
