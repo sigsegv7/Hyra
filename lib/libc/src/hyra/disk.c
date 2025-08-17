@@ -77,7 +77,7 @@ disk_write(diskid_t id, blkoff_t blk, const void *buf, size_t len)
         return -EINVAL;
     }
 
-    disk_param_init(buf, blk, len, &param);
+    disk_param_init((void *)buf, blk, len, &param);
     return __disk_io(id, DISK_IO_WRITE, &param);
 }
 
