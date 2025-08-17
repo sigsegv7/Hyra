@@ -274,6 +274,11 @@ disk_add(const char *name, dev_t dev, const struct bdevsw *bdev, int flags)
     dp->id = disk_count++;
     dp->bsize = DEFAULT_BSIZE;
 
+    /*
+     * We are to panic if the virtual blocksize
+     * defined is not a multiple of any hardware
+     * block size
+     */
     if ((V_BSIZE & (dp->bsize - 1)) != 0) {
         panic("virtual block size not hw bsize aligned\n");
     }
