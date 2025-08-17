@@ -33,9 +33,33 @@
 #include <sys/syscall.h>
 #include <sys/queue.h>
 #include <sys/device.h>
+#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/limits.h>
 #include <sys/cdefs.h>
+#if defined(_KERNEL)
+#include <dev/dcdr/cache.h>
+#endif  /* _KERNEL */
+
+/*
+ * V_BSIZE is the virtual block size in bytes used
+ * by the disk framework. The virtual block size is a
+ * multiple of the hardware block size and defines
+ * how many bytes a virtual block is made up of.
+ *
+ * A virtual block is simply a unit specific to
+ * the disk framework that represents multiple
+ * hardware disk blocks.
+ */
+#if defined(__V_BSIZE)
+#define V_BSIZE __V_BSIZE
+#else
+#define V_BSIZE 4096
+#endif  /* __V_BSIZE */
+
+/* Sanitize the silly human's input */
+_Static_assert(V_BSIZE > 512, "V_BSIZE must be > 512");
+_Static_assert((V_BSIZE & 1) == 0, "V_BSIZE must be a power of two");
 
 #define DISK_PRIMARY 0  /* ID of primary disk */
 

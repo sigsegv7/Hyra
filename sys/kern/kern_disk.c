@@ -171,6 +171,10 @@ __disk_get_id(diskid_t id)
  * @buf: Buffer to read data into
  * @len: Number of bytes to read
  * @write: If true, do a write
+ *
+ * XXX: The size in which blocks are read at is in
+ *      virtual blocks which is defined by V_BSIZE
+ *      in sys/disk.h
  */
 static ssize_t
 disk_rw(diskid_t id, blkoff_t blk, void *buf, size_t len, bool write)
@@ -179,6 +183,8 @@ disk_rw(diskid_t id, blkoff_t blk, void *buf, size_t len, bool write)
     struct sio_txn sio;
     struct disk *dp;
     int error;
+
+    len = ALIGN_UP(len, V_BSIZE);
 
     /* Attempt to grab the disk object */
     error = disk_get_id(id, &dp);
@@ -268,6 +274,10 @@ disk_add(const char *name, dev_t dev, const struct bdevsw *bdev, int flags)
     dp->id = disk_count++;
     dp->bsize = DEFAULT_BSIZE;
 
+    if ((V_BSIZE & (dp->bsize - 1)) != 0) {
+        panic("virtual block size not hw bsize aligned\n");
+    }
+
     /* Now we can add it to the queue */
     spinlock_acquire(&diskq_lock);
     TAILQ_INSERT_TAIL(&diskq, dp, link);
@@ -343,9 +353,9 @@ disk_buf_alloc(diskid_t id, size_t len)
 
     /*
      * Here we will align the buffer size by the
-     * disk's block size to ensure it is big enough.
+     * virtual block size to ensure it is big enough.
      */
-    len = ALIGN_UP(len, dp->bsize);
+    len = ALIGN_UP(len, V_BSIZE);
     buf = dynalloc(len);
     return buf;
 }
