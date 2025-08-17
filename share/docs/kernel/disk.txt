@@ -1,0 +1,49 @@
+=======================================
+    Device filesystem (/dev) interface
+=======================================
+
+             USER
+            /    \
+      /dev/sd0, /dev/sd1
+         /          \
+       namei()       namei()
+      /                \
+     vop()              vop()
+    /                     \
+   driver                   driver
+  /                          \
+ HARD DRIVE 0                 HARD DRIVE 1
+
+=======================================
+    Hyra disk engine framework
+=======================================
+             USER
+              |
+             HDEI     [ hyra disk-engine interface: like disk_io() ]
+  kernel --   |
+             HDE      [ hyra disk engine: drives the core disk logic ]
+              |
+             HDF      [ hyra disk framework (core logic) ]
+            /   \
+  HARD DRIVE 0   HARD DRIVE 1
+
+
+  [DRIVER] <-> [DISK ENGINE]
+                     ^
+                     |
+                     V
+               [ SLS / FILESYSTEM]
+                     ^
+                     |
+                     V
+                   [USER]
+
+
+   NOTES:
+
+           - Unix filesystem-like strucuture with indirection
+           for orthogonally persistent objects
+
+           - Explicit storage lifetime (i.e., persistent or ephemeral)
+           during allocation at a page-level granularity
+
