@@ -78,6 +78,7 @@ _Static_assert((V_BSIZE & 1) == 0, "V_BSIZE must be a power of two");
 /* Valid disk operations */
 #define DISK_IO_READ    0x00    /* Read data from the disk */
 #define DISK_IO_WRITE   0x01    /* Write data to disk */
+#define DISK_IO_QUERY   0x02    /* Query disk information */
 
 /*
  * A disk identifier is a zero-based index into

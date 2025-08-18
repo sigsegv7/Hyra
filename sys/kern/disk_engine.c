@@ -172,6 +172,18 @@ disk_mux_io(diskid_t id, diskop_t opcode, struct disk_param *u_param)
             param.size
         );
         break;
+    case DISK_IO_QUERY:
+        retval = disk_query(
+            id,
+            param.buf
+        );
+
+        /* Write back info to user program */
+        error = copyout(param.buf, param.u_buf, param.size);
+        if (error < 0) {
+            retval = error;
+        }
+        break;
     }
 
     disk_param_free(&param);
