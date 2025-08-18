@@ -76,8 +76,8 @@ _Static_assert((V_BSIZE & 1) == 0, "V_BSIZE must be a power of two");
 #define DISK_PARAM_COOKIE  0xD1531001
 
 /* Valid disk operations */
-#define DISK_IO_READ    0x00
-#define DISK_IO_WRITE   0x01
+#define DISK_IO_READ    0x00    /* Read data from the disk */
+#define DISK_IO_WRITE   0x01    /* Write data to disk */
 
 /*
  * A disk identifier is a zero-based index into
