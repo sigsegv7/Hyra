@@ -158,9 +158,12 @@ disk_param_init(uint8_t *buf, blkoff_t blk, size_t size, struct disk_param *res)
  */
 #if !defined(_KERNEL)
 ssize_t __disk_io(diskid_t id, diskop_t op, const struct disk_param *param);
-ssize_t disk_write(diskid_t id, blkoff_t off, const void *buf, size_t len);
-ssize_t disk_read(diskid_t id, blkoff_t off, void *buf, size_t len);
 #endif  /* !_KERNEL */
+
+/* Common disk operations */
+int disk_query(diskid_t id, struct disk_info *res);
+ssize_t disk_read(diskid_t id, blkoff_t blk, void *buf, size_t len);
+ssize_t disk_write(diskid_t id, blkoff_t blk, const void *buf, size_t len);
 
 #if defined(_KERNEL)
 /*
@@ -186,9 +189,6 @@ struct disk {
 
 void *disk_buf_alloc(diskid_t id, size_t len);
 void disk_buf_free(void *p);
-
-ssize_t disk_read(diskid_t id, blkoff_t blk, void *buf, size_t len);
-ssize_t disk_write(diskid_t id, blkoff_t blk, const void *buf, size_t len);
 
 int disk_add(const char *name, dev_t dev, const struct bdevsw *bdev, int flags);
 int disk_get_id(diskid_t id, struct disk **res);
