@@ -104,3 +104,22 @@ disk_read(diskid_t id, blkoff_t blk, void *buf, size_t len)
     disk_param_init(buf, blk, len, &param);
     return __disk_io(id, DISK_IO_READ, &param);
 }
+
+/*
+ * Query information from a specific disk
+ *
+ * @id: ID of disk to query from
+ * @res: Resulting information goes here
+ */
+int
+disk_query(diskid_t id, struct disk_info *res)
+{
+    struct disk_param param;
+
+    if (res == NULL) {
+        return -EINVAL;
+    }
+
+    disk_param_init(res, 0, sizeof(*res), &param);
+    return __disk_io(id, DISK_IO_QUERY, &param);
+}
