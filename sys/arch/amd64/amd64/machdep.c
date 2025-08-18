@@ -449,7 +449,7 @@ void
 cpu_halt_all(void)
 {
     struct cpu_info *ci;
-    uint32_t ncpu;
+    uint32_t ncpu = cpu_count();
 
     /*
      * If we have no current 'cpu_info' structure set,
