@@ -143,7 +143,7 @@ struct disk_param {
  * @res: Pointer to params to be initialized
  */
 __always_inline static inline void
-disk_param_init(uint8_t *buf, blkoff_t blk, size_t size, struct disk_param *res)
+disk_param_init(void *buf, blkoff_t blk, size_t size, struct disk_param *res)
 {
     if (res != NULL) {
         res->buf = buf;
