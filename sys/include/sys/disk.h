@@ -41,6 +41,8 @@
 #include <dev/dcdr/cache.h>
 #endif  /* _KERNEL */
 
+#define DISK_NAME_MAX 64
+
 /*
  * V_BSIZE is the virtual block size in bytes used
  * by the disk framework. The virtual block size is a
@@ -173,7 +175,7 @@ ssize_t disk_read(diskid_t id, blkoff_t off, void *buf, size_t len);
  * @link: TAILQ link
  */
 struct disk {
-    char name[NAME_MAX];
+    char name[DISK_NAME_MAX];
     uint32_t cookie;
     uint16_t bsize;
     dev_t dev;
