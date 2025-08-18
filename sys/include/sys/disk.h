@@ -97,18 +97,30 @@ typedef off_t blkoff_t;
 typedef uint8_t diskop_t;
 
 /*
+ * Describes basic disk information
+ *
+ * @block_size: Hardware block size
+ * @vblock_size: Virtual block size
+ * @n_block: Number of blocks total
+ */
+struct disk_info {
+    uint32_t block_size;
+    uint32_t vblock_size;
+    size_t n_block;
+};
+
+/*
  * The disk metadata structure contains information
  * describing the disk. It is used for Hyra's pbuf
  * (persistent buffers / sls) support. This structure
  * is to be stored at the very last sector of the drive.
  *
- * @root_blk: Disk offset to root block
- * @n_ublk: Number of usable user blocks
+ * @canary: Boot canary to verify persistent instance
+ * @info: Disk attributes
  */
-struct disk_meta {
-    char magic[6];
-    blkoff_t root_blk;
-    size_t n_ublk;
+struct disk_root {
+    uint32_t canary;
+    struct disk_info info;
 };
 
 /*
