@@ -433,3 +433,43 @@ disk_write(diskid_t id, blkoff_t blk, const void *buf, size_t len)
     disk_buf_free(tmp);
     return retval;
 }
+
+/*
+ * Attempt to request attributes from a specific
+ * device.
+ *
+ * @id: ID of disk to query
+ * @res: Resulting information goes here
+ *
+ * This function returns zero on success, otherwise
+ * a less than zero value is returned.
+ */
+int
+disk_query(diskid_t id, struct disk_info *res)
+{
+    const struct bdevsw *bdev;
+    struct disk *dp;
+    int error;
+
+    if (res == NULL) {
+        return -EINVAL;
+    }
+
+    /* Attempt to grab the disk */
+    error = disk_get_id(id, &dp);
+    if (error < 0) {
+        pr_error("disk_query: bad disk ID %d\n", id);
+        return error;
+    }
+
+    bdev = dp->bdev;
+    if (__unlikely(bdev == NULL)) {
+        pr_error("disk_query: no bdev for disk %d\n", id);
+        return -EIO;
+    }
+
+    res->block_size = dp->bsize;
+    res->vblock_size = V_BSIZE;
+    res->n_block = bdev->bsize(dp->dev);
+    return 0;
+}
