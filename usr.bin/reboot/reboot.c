@@ -29,10 +29,50 @@
 
 #include <sys/reboot.h>
 #include <stdio.h>
+#include <unistd.h>
+
+#define REBOOT_FLAGS "rh"
+#define REBOOT_FLAG_RB  'r'     /* Reboot */
+#define REBOOT_FLAG_HLT 'h'     /* Halt */
+
+static void
+help(void)
+{
+    printf(
+        "reboot: usage: reboot [flags]\n"
+        "flags:\n"
+        "   [-r] Reboot\n"
+        "   [-h] Halt\n"
+    );
+}
 
 int
-main(void)
+main(int argc, char **argv)
 {
-    cpu_reboot(REBOOT_RESET);
+    int c;
+
+    if (argc < 2) {
+        help();
+        return -1;
+    }
+
+    /*
+     * Now we parse the args. Every case is a fall through
+     * as if one fails (indicated by us returning), another
+     * method is attempted.
+     */
+    while ((c = getopt(argc, argv, REBOOT_FLAGS)) != -1) {
+        switch (c) {
+        case REBOOT_FLAG_RB:
+            cpu_reboot(REBOOT_RESET);
+            printf("REBOOT failed\n");
+            /* Fall through */
+        case REBOOT_FLAG_HLT:
+            cpu_reboot(REBOOT_FLAG_HLT);
+            printf("HALT failed\n");
+            /* Fall through */
+        }
+    }
+
     return 0;
 }
