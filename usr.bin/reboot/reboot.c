@@ -70,7 +70,7 @@ main(int argc, char **argv)
             printf("REBOOT failed\n");
             /* Fall through */
         case REBOOT_FLAG_HLT:
-            cpu_reboot(REBOOT_FLAG_HLT);
+            cpu_reboot(REBOOT_HALT);
             printf("HALT failed\n");
             /* Fall through */
         case REBOOT_FLAG_PWR:
