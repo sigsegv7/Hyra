@@ -27,3 +27,4 @@ all:
 	make -C oemu/ $(ARGS)
 	make -C dmidump/ $(ARGS)
 	make -C sysctl/ $(ARGS)
+	make -C reboot/ $(ARGS)

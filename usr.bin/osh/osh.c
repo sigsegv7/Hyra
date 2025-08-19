@@ -78,7 +78,6 @@ static bool bs_bell = true; /* Beep on backspace */
 static void cmd_help(int argc, char *argv[]);
 static void cmd_echo(int argc, char *argv[]);
 static void cmd_exit(int argc, char *argv[]);
-static void cmd_reboot(int argc, char *argv[]);
 static void cmd_shutdown(int argc, char *argv[]);
 static void cmd_bell(int argc, char *argv[]);
 static void cmd_clear(int argc, char *argv[]);
@@ -100,7 +99,6 @@ struct parse_state {
 static struct builtin_cmd cmds[] = {
     {"help",cmd_help},
     {"exit",cmd_exit},
-    {"reboot",cmd_reboot},
     {"shutdown", cmd_shutdown},
     {"bell", cmd_bell},
     {"clear", cmd_clear},
@@ -117,12 +115,6 @@ static void
 cmd_exit(int argc, char *argv[])
 {
     running = 0;
-}
-
-static void
-cmd_reboot(int argc, char *argv[])
-{
-    cpu_reboot(REBOOT_RESET);
 }
 
 static void
