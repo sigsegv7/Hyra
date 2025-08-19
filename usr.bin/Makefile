@@ -28,3 +28,4 @@ all:
 	make -C dmidump/ $(ARGS)
 	make -C sysctl/ $(ARGS)
 	make -C reboot/ $(ARGS)
+	make -C screensave/ $(ARGS)
