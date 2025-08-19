@@ -271,6 +271,31 @@ i8042_en_intr(void)
 }
 
 /*
+ * Toggle the capslock and LED
+ */
+static void
+capslock_toggle(void)
+{
+    /*
+     * In case we are holding the caps lock button down,
+     * we don't want it to be spam toggled as that would
+     * be pretty strange looking and probably annoying.
+     */
+    if (!capslock_released) {
+        return;
+    }
+
+    capslock_released = false;
+    capslock = !capslock;
+
+    if (!capslock) {
+        kbd_set_leds(0);
+    } else {
+        kbd_set_leds(I8042_LED_CAPS);
+    }
+}
+
+/*
  * Convert scancode to character
  *
  * @sc: Scancode
@@ -289,23 +314,7 @@ i8042_kb_getc(uint8_t sc, char *chr)
         return 0;
     /* Caps lock [press] */
     case 0x3A:
-        /*
-         * In case we are holding the caps lock button down,
-         * we don't want it to be spam toggled as that would
-         * be pretty strange looking and probably annoying.
-         */
-        if (!capslock_released) {
-            return -EAGAIN;
-        }
-
-        capslock_released = false;
-        capslock = !capslock;
-
-        if (!capslock) {
-            kbd_set_leds(0);
-        } else {
-            kbd_set_leds(I8042_LED_CAPS);
-        }
+        capslock_toggle();
         return -EAGAIN;
     /* Caps lock [release] */
     case 0xBA:
