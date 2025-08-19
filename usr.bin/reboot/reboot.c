@@ -71,6 +71,9 @@ main(int argc, char **argv)
             cpu_reboot(REBOOT_FLAG_HLT);
             printf("HALT failed\n");
             /* Fall through */
+        default:
+            printf("got bad flag '%c'\n", c);
+            break;
         }
     }
 
