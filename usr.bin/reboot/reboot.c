@@ -31,9 +31,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define REBOOT_FLAGS "rh"
+#define REBOOT_FLAGS "rhp"
 #define REBOOT_FLAG_RB  'r'     /* Reboot */
 #define REBOOT_FLAG_HLT 'h'     /* Halt */
+#define REBOOT_FLAG_PWR 'p'     /* Power off */
 
 static void
 help(void)
@@ -43,6 +44,7 @@ help(void)
         "flags:\n"
         "   [-r] Reboot\n"
         "   [-h] Halt\n"
+        "   [-p] Power off\n"
     );
 }
 
@@ -70,6 +72,10 @@ main(int argc, char **argv)
         case REBOOT_FLAG_HLT:
             cpu_reboot(REBOOT_FLAG_HLT);
             printf("HALT failed\n");
+            /* Fall through */
+        case REBOOT_FLAG_PWR:
+            cpu_reboot(REBOOT_POWEROFF);
+            printf("POWEROFF failed\n");
             /* Fall through */
         default:
             printf("got bad flag '%c'\n", c);

@@ -29,7 +29,6 @@
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
-#include <sys/reboot.h>
 #include <sys/errno.h>
 #include <sys/spawn.h>
 #include <sys/wait.h>
@@ -58,7 +57,6 @@
     "help     - Display this help message\n" \
     "echo     - Print the arguments to the console\n" \
     "reboot   - Reboot the machine\n" \
-    "shutdown - Power off the machine\n" \
     "kmsg     - Print kernel message buffer\n" \
     "fetch    - System information\n" \
     "kfg      - Start up kfgwm\n"     \
@@ -78,7 +76,6 @@ static bool bs_bell = true; /* Beep on backspace */
 static void cmd_help(int argc, char *argv[]);
 static void cmd_echo(int argc, char *argv[]);
 static void cmd_exit(int argc, char *argv[]);
-static void cmd_shutdown(int argc, char *argv[]);
 static void cmd_bell(int argc, char *argv[]);
 static void cmd_clear(int argc, char *argv[]);
 
@@ -99,7 +96,6 @@ struct parse_state {
 static struct builtin_cmd cmds[] = {
     {"help",cmd_help},
     {"exit",cmd_exit},
-    {"shutdown", cmd_shutdown},
     {"bell", cmd_bell},
     {"clear", cmd_clear},
     {NULL, NULL}
@@ -115,12 +111,6 @@ static void
 cmd_exit(int argc, char *argv[])
 {
     running = 0;
-}
-
-static void
-cmd_shutdown(int argc, char *argv[])
-{
-    cpu_reboot(REBOOT_POWEROFF | REBOOT_HALT);
 }
 
 static void
