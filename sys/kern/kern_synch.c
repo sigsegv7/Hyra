@@ -42,9 +42,6 @@
 #define pr_trace(fmt, ...) kprintf("synch: " fmt, ##__VA_ARGS__)
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
-/* XXX: Be very careful with this */
-static struct spinlock __syslock;
-
 /*
  * Returns 0 on success, returns non-zero value
  * on timeout/failure.
@@ -119,29 +116,6 @@ spinlock_release(struct spinlock *lock)
 {
     __atomic_clear(&lock->lock, __ATOMIC_RELEASE);
     sched_preempt_set(true);
-}
-
-/*
- * Attempt to hold the system-wide lock, returns 1
- * if already held.
- *
- * XXX: Only use for CRITICAL code sections.
- */
-int
-syslock(void)
-{
-    return spinlock_try_acquire(&__syslock);
-}
-
-/*
- * Release the system-wide lock
- *
- * XXX: Only use for CRITICAL code sections.
- */
-void
-sysrel(void)
-{
-    spinlock_release(&__syslock);
 }
 
 /*
