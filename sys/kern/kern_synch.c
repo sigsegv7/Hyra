@@ -84,6 +84,7 @@ spinlock_usleep(struct spinlock *lock, size_t usec_max)
 void
 spinlock_acquire(struct spinlock *lock)
 {
+    sched_preempt_set(false);
     while (__atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE)) {
         md_pause();
     }
@@ -117,6 +118,7 @@ void
 spinlock_release(struct spinlock *lock)
 {
     __atomic_clear(&lock->lock, __ATOMIC_RELEASE);
+    sched_preempt_set(true);
 }
 
 /*
