@@ -110,8 +110,7 @@ spinlock_try_acquire(struct spinlock *lock)
         return 1;
     }
 
-    while (__atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE));
-    return 0;
+    return __atomic_test_and_set(&lock->lock, __ATOMIC_ACQUIRE);
 }
 
 void
