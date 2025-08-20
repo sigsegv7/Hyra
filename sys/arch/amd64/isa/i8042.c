@@ -67,6 +67,28 @@
 
 #define IO_NOP() inb(0x80)
 
+struct i8042_databuf {
+    uint8_t data[8];
+    size_t len;
+};
+
+/*
+ * This table allows the lookup of extended
+ * scancode bytes.
+ *
+ * XXX: Excludes the 0xE0 byte
+ */
+static struct i8042_databuf i8042_etab[] = {
+    [ I8042_XSC_ENDPR] = {
+        .data = { 0x4F },
+        .len = 1
+    },
+    [I8042_XSC_ENDRL] = {
+        .data = { 0xCF },
+        .len = 1
+    }
+};
+
 static struct spinlock data_lock;
 static struct spinlock isr_lock;
 static bool shift_key = false;
@@ -80,7 +102,7 @@ static bool is_init = false;
 static void i8042_ibuf_wait(void);
 static int dev_send(bool aux, uint8_t data);
 static int i8042_kb_getc(uint8_t sc, char *chr);
-static void i8042_drain(void);
+static void i8042_drain(struct i8042_databuf *res);
 
 static char keytab[] = {
     '\0', '\x1B', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
@@ -141,15 +163,28 @@ i8042_ibuf_wait(void)
 
 /*
  * Drain i8042 internal data registers.
+ *
+ * @res: Pointer for read data to be buffered to
+ *
+ * XXX: The 'res' argument is NULLable
  */
 static void
-i8042_drain(void)
+i8042_drain(struct i8042_databuf *res)
 {
-    spinlock_acquire(&data_lock);
     while (ISSET(inb(I8042_STATUS), I8042_OBUFF)) {
-        inb(I8042_DATA);
+        if (res == NULL) {
+            inb(I8042_DATA);
+            continue;
+        }
+
+        if (res->len >= sizeof(res->data)) {
+            pr_error("data recieved from i8042 is too big\n");
+            break;
+        }
+
+        res->data[res->len++] = inb(I8042_DATA);
+        tmr.msleep(10);
     }
-    spinlock_release(&data_lock);
 }
 
 /*
@@ -296,6 +331,53 @@ capslock_toggle(void)
 }
 
 /*
+ * Dump extended data buffer
+ *
+ * @buf: Data
+ */
+static void
+i8042_ext_dump(struct i8042_databuf *buf)
+{
+    if (buf == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < buf->len; ++i) {
+        kprintf(OMIT_TIMESTAMP "%x", buf->data[i]);
+    }
+
+    kprintf(OMIT_TIMESTAMP "\n");
+}
+
+/*
+ * Used internally by i8042_kb_getc() to acquire
+ * a key from an extended scancode
+ *
+ * @buf: Scancode buf
+ * @chr: Char res
+ *
+ * Returns the extended scancode type on success,
+ * otherwise a less than zero value (see I8042_XSC_*)
+ */
+static int
+i8042_kb_getxc(struct i8042_databuf *buf, char *chr)
+{
+    size_t nelem = NELEM(i8042_etab);
+    struct i8042_databuf *buf_tmp;
+    size_t len;
+
+    for (int i = 0; i < nelem; ++i) {
+        buf_tmp = &i8042_etab[i];
+        len = buf_tmp->len;
+        if (memcmp(buf->data, buf_tmp->data, len) == 0) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/*
  * Convert scancode to character
  *
  * @sc: Scancode
@@ -307,6 +389,8 @@ static int
 i8042_kb_getc(uint8_t sc, char *chr)
 {
     bool release = ISSET(sc, BIT(7));
+    struct i8042_databuf buf = {0};
+    int x_type;
 
     switch (sc) {
     case 0x76:
@@ -331,6 +415,26 @@ i8042_kb_getc(uint8_t sc, char *chr)
             shift_key = false;
         }
         return -EAGAIN;
+    /* Extended byte */
+    case 0xE0:
+        /*
+         * Most keyboards have extended scancodes which
+         * consist of multiple bytes to represent certain
+         * special keys. We'll need to give the controller
+         * about 10 ms to refill its buffer.
+         */
+        tmr.msleep(10);
+        i8042_drain(&buf);
+        x_type = i8042_kb_getxc(&buf, chr);
+
+        /* Did we implement it? */
+        if (x_type < 0) {
+            pr_error("unknown xsc: ");
+            i8042_ext_dump(&buf);
+            return -EAGAIN;
+        }
+
+        return -1;
     }
 
     if (release) {
@@ -449,7 +553,7 @@ i8042_init(void)
      */
     if (!ISSET(quirks, I8042_HOSTILE) && !I8042_POLL) {
         /* Enable interrupts */
-        i8042_drain();
+        i8042_drain(NULL);
         i8042_en_intr();
     } else if (ISSET(quirks, I8042_HOSTILE) || I8042_POLL) {
         spawn(&polltd, i8042_sync_loop, NULL, 0, NULL);
@@ -457,7 +561,7 @@ i8042_init(void)
     }
 
     i8042_write(I8042_CMD, I8042_ENABLE_PORT0);
-    i8042_drain();
+    i8042_drain(NULL);
     is_init = true;
     return 0;
 }

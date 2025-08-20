@@ -74,6 +74,10 @@
 #define I8042_LED_NUM       BIT(1)
 #define I8042_LED_CAPS      BIT(2)
 
+/* Extended scancode types */
+#define I8042_XSC_ENDPR  0      /* End pressed */
+#define I8042_XSC_ENDRL  1      /* End released */
+
 /* Quirks */
 #define I8042_HOSTILE       BIT(0)      /* If EC likes throwing NMIs */
 
