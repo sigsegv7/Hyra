@@ -145,8 +145,7 @@ trap_user(struct trapframe *tf)
         sigaddset(&sigset, SIGFPE);
         break;
     default:
-        kprintf("got unknown user trap %d\n", tf->trapno);
-        sigaddset(&sigset, SIGKILL);
+        panic("got unknown user trap %d\n", tf->trapno);
         break;
     }
 
