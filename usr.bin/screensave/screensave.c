@@ -67,7 +67,7 @@ screensave(void)
     uint8_t step = 0;
 
     ts.tv_sec = 0;
-    ts.tv_nsec = 70000000;
+    ts.tv_nsec = 3000000;
 
     /* Begin the radiation ::) */
     for (;;) {
