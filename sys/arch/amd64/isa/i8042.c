@@ -89,7 +89,6 @@ static struct i8042_databuf i8042_etab[] = {
     }
 };
 
-static struct spinlock data_lock;
 static struct spinlock isr_lock;
 static bool shift_key = false;
 static bool capslock = false;
