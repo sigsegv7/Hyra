@@ -609,6 +609,7 @@ cpu_startup(struct cpu_info *ci)
 
     try_mitigate_spectre();
     ci->online = 1;
+    ci->preempt  = 1;
 
     cpu_get_info(ci);
     cpu_enable_smep();

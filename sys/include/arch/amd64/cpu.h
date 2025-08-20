@@ -58,6 +58,7 @@ struct cpu_info {
     uint32_t apicid;
     uint32_t feat;
     uint32_t vendor;            /* Vendor (see CPU_VENDOR_*) */
+    uint8_t preempt : 1;        /* CPU is preemptable */
     uint8_t ipi_dispatch : 1;   /* 1: IPIs being dispatched */
     uint8_t ipi_id;
     ipi_pend_t ipi_pending[N_IPIVEC];

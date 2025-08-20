@@ -273,6 +273,11 @@ md_sched_switch(struct trapframe *tf)
     struct cpu_info *ci;
 
     ci = this_cpu();
+    if (!ci->preempt) {
+        sched_oneshot(false);
+        return;
+    }
+
     td = ci->curtd;
     mi_sched_switch(td);
 
