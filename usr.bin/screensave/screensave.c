@@ -76,7 +76,7 @@ screensave(void)
             curpix = ctx.io[i];
             nextpix = ctx.io[i + 1];
 
-            /* If a multiple of 15, AND, otherwise XOR */
+            /* If a multiple of 16, AND, otherwise XOR */
             if ((n_iter & 15) != 0) {
                 curpix ^= randbuf[0] & 3;
                 nextpix ^= (curpix | (nextpix << 1));
