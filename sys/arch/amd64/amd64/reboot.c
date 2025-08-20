@@ -34,9 +34,49 @@
 #include <machine/cpu.h>
 #include <dev/acpi/acpi.h>
 
+static void
+cpu_reset_intel(struct cpu_info *ci)
+{
+    /*
+     * Ivy bridge processors and their panther point chipsets
+     * (family 6) can be reset through special PCH reset control
+     * registers
+     */
+    if (ci->family == 6) {
+        outb(0xCF9, 3 << 1);
+    }
+}
+
+/*
+ * Attempt to reboot the system, we do this in many
+ * stages of escalation. If a reset via the i8042
+ * controller fails and we are on an Intel processor,
+ * attempt a chipset specific reset. If that somehow fails
+ * as well, just smack the cpu with a NULL IDTR as well
+ * as an INT $0x0
+ */
+static void
+__cpu_reset(struct cpu_info *ci)
+{
+    /* Try via the i8042 */
+    outb(0x64, 0xFE);
+
+    /* Something went wrong if we are here */
+    if (ci == NULL) {
+        return;
+    }
+
+    if (ci->vendor == CPU_VENDOR_INTEL) {
+        cpu_reset_intel(ci);
+    }
+}
+
 void
 cpu_reboot(int method)
 {
+    struct cpu_info *ci = this_cpu();
+    uint32_t *__dmmy = NULL;
+
     if (ISSET(method, REBOOT_POWEROFF)) {
         acpi_sleep(ACPI_SLEEP_S5);
     }
@@ -45,10 +85,9 @@ cpu_reboot(int method)
         cpu_halt_all();
     }
 
-    /* Pulse the reset line until the machine goes down */
-    for (;;) {
-        outb(0x64, 0xFE);
-    }
+    __cpu_reset(ci);
+    asm volatile("lgdt %0; int $0x0" :: "m" (__dmmy));
+    __builtin_unreachable();
 }
 
 /*
