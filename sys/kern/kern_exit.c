@@ -190,6 +190,14 @@ exit1(struct proc *td, int flags)
      * and do not return.
      */
     if (target_pid == curpid) {
+        /*
+         * If the thread is exiting on a core that is not
+         * preemptable, something is not right.
+         */
+        if (__unlikely(!sched_preemptable())) {
+            panic("exit1: cpu %d not preemptable\n", ci->id);
+        }
+
         ci->curtd = NULL;
         if (parent->pid == 0)
             sched_enter();

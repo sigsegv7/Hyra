@@ -281,6 +281,18 @@ sched_preempt_set(bool enable)
     ci->preempt = enable;
 }
 
+bool
+sched_preemptable(void)
+{
+    struct cpu_info *ci = this_cpu();
+
+    if (ci == NULL) {
+        return false;
+    }
+
+    return ci->preempt;
+}
+
 /*
  * Perform a context switch.
  */
