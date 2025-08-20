@@ -264,6 +264,24 @@ sched_switch_to(struct trapframe *tf, struct proc *td)
 }
 
 /*
+ * Enable or disable preemption on the current
+ * processor
+ *
+ * @enable: Enable preemption if true
+ */
+void
+sched_preempt_set(bool enable)
+{
+    struct cpu_info *ci = this_cpu();
+
+    if (ci == NULL) {
+        return;
+    }
+
+    ci->preempt = enable;
+}
+
+/*
  * Perform a context switch.
  */
 void

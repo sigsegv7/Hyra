@@ -66,6 +66,7 @@ struct sched_stat {
 void sched_stat(struct sched_stat *statp);
 void sched_init(void);
 
+void sched_preempt_set(bool enable);
 void sched_yield(void);
 void sched_suspend(struct proc *td, const struct timeval *tv);
 void sched_detach(struct proc *td);
