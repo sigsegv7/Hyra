@@ -32,6 +32,7 @@
 #include <sys/limine.h>
 #include <sys/syslog.h>
 #include <sys/spinlock.h>
+#include <sys/panic.h>
 #include <vm/physmem.h>
 #include <vm/vm.h>
 #include <string.h>
@@ -192,6 +193,10 @@ vm_alloc_frame(size_t count)
     if ((ret = __vm_alloc_frame(count)) == 0) {
         last_idx = 0;
         ret = __vm_alloc_frame(count);
+    }
+
+    if (ret == 0) {
+        panic("out of memory\n");
     }
 
     pages_used += count;
