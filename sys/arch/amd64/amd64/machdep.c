@@ -127,20 +127,28 @@ static void
 setup_vectors(struct cpu_info *ci)
 {
     union tss_stack scstack;
+    union tss_stack dfstack;
 
     /* Try to allocate a syscall stack */
     if (tss_alloc_stack(&scstack, DEFAULT_PAGESIZE) != 0) {
         panic("failed to allocate syscall stack\n");
     }
 
+    /* Try to allocate a double fault stack */
+    if (tss_alloc_stack(&dfstack, DEFAULT_PAGESIZE) != 0) {
+        panic("failed to allocate double fault stack\n");
+    }
+
     tss_update_ist(ci, scstack, IST_SYSCALL);
+    tss_update_ist(ci, dfstack, IST_DBFLT);
+
     idt_set_desc(0x0, IDT_TRAP_GATE, ISR(arith_err), 0);
     idt_set_desc(0x2, IDT_TRAP_GATE, ISR(nmi), 0);
     idt_set_desc(0x3, IDT_TRAP_GATE, ISR(breakpoint_handler), 0);
     idt_set_desc(0x4, IDT_TRAP_GATE, ISR(overflow), 0);
     idt_set_desc(0x5, IDT_TRAP_GATE, ISR(bound_range), 0);
     idt_set_desc(0x6, IDT_TRAP_GATE, ISR(invl_op), 0);
-    idt_set_desc(0x8, IDT_TRAP_GATE, ISR(double_fault), 0);
+    idt_set_desc(0x8, IDT_TRAP_GATE, ISR(double_fault), IST_DBFLT);
     idt_set_desc(0xA, IDT_TRAP_GATE, ISR(invl_tss), 0);
     idt_set_desc(0xB, IDT_TRAP_GATE, ISR(segnp), 0);
     idt_set_desc(0xC, IDT_TRAP_GATE, ISR(ss_fault), 0);
