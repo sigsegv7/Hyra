@@ -481,14 +481,13 @@ void
 cpu_halt_others(void)
 {
     struct cpu_info *curcpu, *ci;
-    uint32_t ncpu;
+    uint32_t ncpu = cpu_count();
 
-    if (rdmsr(IA32_GS_BASE) == 0) {
-        __ASMV("cli; hlt");
+    if (rdmsr(IA32_GS_BASE) == 0 || ncpu <= 1) {
+        return;
     }
 
     curcpu = this_cpu();
-    ncpu = cpu_count();
 
     for (int i = 0; i < ncpu; ++i) {
         if ((ci = cpu_get(i)) == NULL)
