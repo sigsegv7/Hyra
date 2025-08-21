@@ -181,9 +181,6 @@ trap_syscall(struct trapframe *tf)
 void
 trap_handler(struct trapframe *tf)
 {
-    int ipl;
-
-    ipl = splraise(IPL_HIGH);
     if (tf->trapno >= NELEM(trap_type)) {
         panic("got unknown trap %d\n", tf->trapno);
     }
@@ -192,7 +189,6 @@ trap_handler(struct trapframe *tf)
 
     /* Handle traps from userland */
     if (ISSET(tf->cs, 3)) {
-        splx(ipl);
         trap_user(tf);
         return;
     }
