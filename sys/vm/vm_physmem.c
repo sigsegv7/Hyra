@@ -194,6 +194,8 @@ vm_alloc_frame(size_t count)
         ret = __vm_alloc_frame(count);
     }
 
+    pages_used += count;
+    pages_free -= count;
     spinlock_release(&lock);
     return ret;
 }
@@ -209,6 +211,8 @@ vm_free_frame(uintptr_t base, size_t count)
     for (uintptr_t p = base; p < stop_at; p += DEFAULT_PAGESIZE) {
         clrbit(bitmap, p / DEFAULT_PAGESIZE);
     }
+    pages_used -= count;
+    pages_free += count;
     spinlock_release(&lock);
 }
 
