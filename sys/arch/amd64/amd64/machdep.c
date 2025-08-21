@@ -404,7 +404,7 @@ cpu_shootdown_tlb(vaddr_t va)
 void
 md_backtrace(void)
 {
-    uintptr_t *rbp;
+    uintptr_t *rbp = NULL;
     uintptr_t rip, tmp;
     off_t off;
     const char *name;
@@ -414,6 +414,11 @@ md_backtrace(void)
     __ASMV("mov %%rbp, %0" : "=r" (rbp) :: "memory");
     while (1) {
         if (n >= MAX_FRAME_DEPTH) {
+            break;
+        }
+
+        /* End of callstack */
+        if (rbp == NULL) {
             break;
         }
 
@@ -434,7 +439,7 @@ md_backtrace(void)
          * This is not a valid value, get out
          * of this loop!!
          */
-        if (rbp == NULL || rip == 0) {
+        if (rip == 0) {
             break;
         }
 
