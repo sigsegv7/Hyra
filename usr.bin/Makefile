@@ -29,3 +29,4 @@ all:
 	make -C sysctl/ $(ARGS)
 	make -C reboot/ $(ARGS)
 	make -C screensave/ $(ARGS)
+	make -C notes/ $(ARGS)
