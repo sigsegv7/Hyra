@@ -139,31 +139,11 @@ pin_isr_load:
     IDT_SET_VEC 100, ioapic_edge_63
     ret
 
-    .globl ipi_isr0
-INTRENTRY(ipi_isr0, ipi_trampoline)
+    .globl ipi_isr
+INTRENTRY(ipi_isr, ipi_trampoline)
     call ipi_trampoline
     retq
 
-    .globl ipi_isr1
-INTRENTRY(ipi_isr1, ipi_trampoline)
-    call ipi_trampoline
-    retq
-
-    .globl ipi_isr2
-INTRENTRY(ipi_isr2, ipi_trampoline)
-    call ipi_trampoline
-    retq
-
-    .globl ipi_isr3
-INTRENTRY(ipi_isr3, ipi_trampoline)
-    call ipi_trampoline
-    retq
-
-/*
- * Hyra supports 16 IPI handlers per 4 reserved
- * IDT vectors. That allows for a maximum of
- * 64 IPIs.
- */
 ipi_trampoline:
     call __ipi_handle_common
     retq

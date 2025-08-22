@@ -53,57 +53,8 @@ struct cpu_ipi {
     int(*handler)(struct cpu_ipi *ipi);
 };
 
-/*
- * Represents an interrupt vector for a
- * specific IPI
- *
- * @ipi: IPIs associated with this vector
- * @cookie: Used to verify an instance
- * @nipi: Number of IPIs associated
- * @vec: System interrupt vector number
- */
-struct ipi_vector {
-    struct cpu_ipi ipi[IPI_PER_VEC];
-    uint16_t cookie;
-    uint8_t nipi;
-    uint8_t vec;
-};
-
 int md_ipi_alloc(struct cpu_ipi **res);
-int md_ipi_send(struct cpu_info *ci);
+int md_ipi_send(struct cpu_info *ci, ipi_pend_t ipi);
 void md_ipi_init(void);
-
-/*
- * Get the vector an IPI belongs to
- *
- * @ipi: IPI to check
- */
-__always_inline static inline uint8_t
-ipi_vector(uint8_t ipi)
-{
-    return ipi / N_IPIVEC;
-}
-
-/*
- * Get the handler index an IPI belongs
- * to
- *
- * @ipi: IPI to check
- */
-__always_inline static inline uint8_t
-ipi_index(uint8_t ipi)
-{
-    return ipi % (sizeof(ipi_pend_t) * 8);
-}
-
-__always_inline static inline int
-cpu_ipi_send(struct cpu_info *ci, uint8_t ipi)
-{
-    uint8_t vec = ipi_vector(ipi);
-    uint8_t idx = ipi_index(ipi);
-
-    ci->ipi_pending[vec] |= BIT(idx);
-    return md_ipi_send(ci);
-}
 
 #endif  /* !_MACHINE_IPI_H_ */

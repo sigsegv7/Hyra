@@ -52,7 +52,7 @@
 #define CPU_VENDOR_INTEL    0x00000001
 #define CPU_VENDOR_AMD      0x00000002
 
-typedef uint16_t ipi_pend_t;
+typedef uint32_t ipi_pend_t;
 
 struct cpu_info {
     uint32_t apicid;
@@ -60,8 +60,7 @@ struct cpu_info {
     uint32_t vendor;            /* Vendor (see CPU_VENDOR_*) */
     uint8_t preempt : 1;        /* CPU is preemptable */
     uint8_t ipi_dispatch : 1;   /* 1: IPIs being dispatched */
-    uint8_t ipi_id;
-    ipi_pend_t ipi_pending[N_IPIVEC];
+    ipi_pend_t ipi_pending;
     uint8_t id;                 /* MI Logical ID */
     uint8_t model : 4;          /* CPU model number */
     uint8_t family : 4;         /* CPU family ID */

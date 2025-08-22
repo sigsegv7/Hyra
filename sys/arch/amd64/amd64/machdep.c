@@ -404,7 +404,7 @@ cpu_shootdown_tlb(vaddr_t va)
         spinlock_acquire(&cip->lock);
         cip->shootdown_va = va;
         cip->tlb_shootdown = 1;
-        cpu_ipi_send(cip, IPI_TLB);
+        md_ipi_send(cip, IPI_TLB);
         spinlock_release(&cip->lock);
     }
 }
@@ -461,7 +461,7 @@ md_backtrace(void)
 void
 cpu_halt_all(void)
 {
-    struct cpu_info *ci;
+    struct cpu_info *ci, *curcpu;
     uint32_t ncpu = cpu_count();
 
     /*
@@ -470,19 +470,21 @@ cpu_halt_all(void)
      * processor is the only one active, clear interrupts
      * then halt it.
      */
-    if (rdmsr(IA32_GS_BASE) == 0) {
-        __ASMV("cli; hlt");
+    __ASMV("cli");
+    if ((curcpu = this_cpu()) == NULL) {
+        __ASMV("hlt");
     }
 
     for (int i = 0; i < ncpu; ++i) {
         ci = cpu_get(i);
-        if (ci == NULL) {
+        if (ci->id == curcpu->id) {
             continue;
         }
 
-        cpu_ipi_send(ci, IPI_HALT);
+        md_ipi_send(ci, IPI_HALT);
     }
 
+    __ASMV("hlt");
     for (;;);
 }
 
@@ -508,7 +510,7 @@ cpu_halt_others(void)
         if (ci->id == curcpu->id)
             continue;
 
-        cpu_ipi_send(ci, IPI_HALT);
+        md_ipi_send(ci, IPI_HALT);
     }
 }
 
