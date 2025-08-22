@@ -36,6 +36,7 @@
 #define IST_HW_IRQ  2U
 #define IST_SW_INT  3U
 #define IST_SYSCALL 4U
+#define IST_DBFLT   5U
 
 /* Upper 4 bits of interrupt vector */
 #define IPL_SHIFT 4
