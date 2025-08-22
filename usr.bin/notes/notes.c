@@ -33,14 +33,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 
-/*
- * We start at 'BASE_NOTE' Hz and increment by
- * 'NOTE_STEP' Hz every next key.
- */
-#define BASE_NOTE 300
-#define NOTE_STEP 50
 #define BEEP_MSEC 100
-
 #define key_step(KEY) ('9' - ((KEY)))
 
 static uint16_t freqtab[] = {
