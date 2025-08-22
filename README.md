@@ -57,6 +57,10 @@ such programs include:
 - ``oemu`` - OSMORA [OSMX64](https://github.com/sigsegv7/OSMX64) Emulator
 - ``kstat`` - Read kernel statistics
 - ``dmidump`` - Dump DMI/SMBios information
+- ``screensave`` - Glitch art screensaver
+- ``whoami`` - Print effective user name
+- ``sysctl`` - Runtime kernel parameters
+- ``notes`` - Music box
 
 And more! See ``usr.bin/*``
 
