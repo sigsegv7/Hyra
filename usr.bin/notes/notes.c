@@ -36,6 +36,8 @@
 #define BEEP_MSEC 100
 #define key_step(KEY) ('9' - ((KEY)))
 
+static uint8_t freq_addend = 0;
+
 static uint16_t freqtab[] = {
     [ key_step('0') ] = 950,
     [ key_step('9') ] = 900,
@@ -70,13 +72,15 @@ static inline void
 play_notekey(char key)
 {
     uint8_t step = key_step(key);
+    uint16_t freq;
 
     /* Should not happen */
     if (step >= NELEM(freqtab)) {
         step = key_step('0');
     }
 
-    beep(freqtab[step]);
+    freq = freqtab[step] + freq_addend;
+    beep(freq);
 }
 
 static void
@@ -92,6 +96,16 @@ play_loop(void)
         case 'q':
             running = false;
             break;
+        case 'i':
+            /* NOTE: Overflow purposefully allowed here */
+            ++freq_addend;
+            printf("%d ", freq_addend);
+            break;
+        case 'd':
+            /* NOTE: Underflow purposefully allowed here */
+            --freq_addend;
+            printf("%d ", freq_addend);
+            break;
         default:
             if (!isdigit(c)) {
                 break;
@@ -100,6 +114,8 @@ play_loop(void)
             play_notekey(c);
         }
     }
+
+    printf("\ncya!\n");
 }
 
 int
@@ -110,6 +126,7 @@ main(int argc, char **argv)
         return -1;
     }
 
+    printf("bleep bloop time! - [i]nc/[d]ec\n");
     play_loop();
     close(beep_fd);
 }
