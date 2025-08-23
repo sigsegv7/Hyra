@@ -41,6 +41,7 @@
 #include <string.h>
 
 void ipi_isr(void);
+void halt_isr(void);
 
 void __ipi_handle_common(void);
 
@@ -48,7 +49,6 @@ void __ipi_handle_common(void);
 #define pr_error(...) pr_trace(__VA_ARGS__)
 
 #define COOKIE 0x7E0A
-#define IPI_VECTOR 0x21
 #define MAX_IPI 32
 
 /* For the global state of the subsystem */
@@ -186,5 +186,6 @@ md_ipi_init(void)
 {
     /* Initialize the IPI vectors */
     idt_set_desc(IPI_VECTOR, IDT_INT_GATE, ISR(ipi_isr), 0);
+    idt_set_desc(HALT_VECTOR, IDT_INT_GATE, ISR(halt_isr), 0);
     cookie = COOKIE;
 }

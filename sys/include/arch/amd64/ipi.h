@@ -34,9 +34,16 @@
 #include <machine/cpu.h>
 #include <machine/lapic.h>
 
+/*
+ * IPI_VECTOR is the main vector used for all misc
+ * IPIs, the HALT_VECTOR is used to slam the system
+ * to a screetching halt.
+ */
+#define IPI_VECTOR 0x21
+#define HALT_VECTOR 0x22
+
 /* Fixed IPI IDs */
-#define IPI_HALT   0
-#define IPI_TLB    1
+#define IPI_TLB    0
 
 /*
  * Represents an interprocessor interrupt

@@ -86,17 +86,9 @@ void syscall_isr(void);
 void pin_isr_load(void);
 
 struct cpu_info g_bsp_ci = {0};
-static struct cpu_ipi *halt_ipi;
 static struct cpu_ipi *tlb_ipi;
 static struct spinlock ipi_lock = {0};
 static bool bsp_init = false;
-
-static int
-cpu_halt_handler(struct cpu_ipi *ipi)
-{
-    __ASMV("cli; hlt");
-    __builtin_unreachable();
-}
 
 static int
 tlb_shootdown_handler(struct cpu_ipi *ipi)
@@ -223,13 +215,6 @@ init_ipis(void)
     }
 
     spinlock_acquire(&ipi_lock);
-    error = md_ipi_alloc(&halt_ipi);
-    if (error < 0) {
-        pr_error("md_ipi_alloc: returned %d\n", error);
-        panic("failed to init halt IPI\n");
-    }
-
-    halt_ipi->handler = cpu_halt_handler;
     error = md_ipi_alloc(&tlb_ipi);
     if (error < 0) {
         pr_error("md_ipi_alloc: returned %d\n", error);
@@ -243,8 +228,6 @@ init_ipis(void)
      * so that they are standard and usable
      * throughout the rest of the sytem.
      */
-    if (halt_ipi->id != IPI_HALT)
-        panic("expected IPI_HALT for halt IPI\n");
     if (tlb_ipi->id != IPI_TLB)
         panic("expected IPI_TLB for TLB IPI\n");
 
@@ -461,31 +444,14 @@ md_backtrace(void)
 void
 cpu_halt_all(void)
 {
-    struct cpu_info *ci, *curcpu;
-    uint32_t ncpu = cpu_count();
+    lapic_send_ipi(
+        0,
+        IPI_SHORTHAND_ALL,
+        HALT_VECTOR
+    );
 
-    /*
-     * If we have no current 'cpu_info' structure set,
-     * we can't send IPIs, so just assume only the current
-     * processor is the only one active, clear interrupts
-     * then halt it.
-     */
-    __ASMV("cli");
-    if ((curcpu = this_cpu()) == NULL) {
-        __ASMV("hlt");
-    }
-
-    for (int i = 0; i < ncpu; ++i) {
-        ci = cpu_get(i);
-        if (ci->id == curcpu->id) {
-            continue;
-        }
-
-        md_ipi_send(ci, IPI_HALT);
-    }
-
-    __ASMV("hlt");
-    for (;;);
+    __ASMV("cli; hlt");
+    __builtin_unreachable();
 }
 
 /*
@@ -495,23 +461,11 @@ cpu_halt_all(void)
 void
 cpu_halt_others(void)
 {
-    struct cpu_info *curcpu, *ci;
-    uint32_t ncpu = cpu_count();
-
-    if (rdmsr(IA32_GS_BASE) == 0 || ncpu <= 1) {
-        return;
-    }
-
-    curcpu = this_cpu();
-
-    for (int i = 0; i < ncpu; ++i) {
-        if ((ci = cpu_get(i)) == NULL)
-            continue;
-        if (ci->id == curcpu->id)
-            continue;
-
-        md_ipi_send(ci, IPI_HALT);
-    }
+    lapic_send_ipi(
+        0,
+        IPI_SHORTHAND_OTHERS,
+        HALT_VECTOR
+    );
 }
 
 void

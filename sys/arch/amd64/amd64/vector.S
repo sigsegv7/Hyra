@@ -144,6 +144,12 @@ INTRENTRY(ipi_isr, ipi_trampoline)
     call ipi_trampoline
     retq
 
+    .globl halt_isr
+INTRENTRY(halt_isr, halt_trampoline)
+halt_trampoline:
+    cli
+    hlt
+
 ipi_trampoline:
     call __ipi_handle_common
     retq
