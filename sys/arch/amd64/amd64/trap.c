@@ -111,12 +111,13 @@ trap_fatal(struct trapframe *tf)
         pf_code(tf->error_code);
     }
 
-    panic("got fatal trap\n\n"
+    panic("got fatal trap (%s)\n\n"
         "-- DUMPING PROCESSOR STATE --\n"
         "RAX=%p RCX=%p RDX=%p\n"
         "RBX=%p RSI=%p RDI=%p\n"
         "RFL=%p CR2=%p CR3=%p\n"
         "RBP=%p RSP=%p RIP=%p\n\n",
+        trap_type[tf->trapno],
         tf->rax, tf->rcx, tf->rdx,
         tf->rbx, tf->rsi, tf->rdi,
         tf->rflags, cr2, cr3,
