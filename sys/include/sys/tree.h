@@ -746,7 +746,6 @@ name##_RB_MINMAX(struct name *head, int val)				\
 	    ((x) != NULL) && ((y) = name##_RB_PREV(x), 1);		\
 	     (x) = (y))
 
-
 /*
  * Copyright (c) 2016 David Gwynne <dlg@openbsd.org>
  *

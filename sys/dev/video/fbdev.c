@@ -114,7 +114,6 @@ fbdev_init(void)
     dev_register(major, dev, &fb_cdevsw);
     devfs_create_entry(devname, major, dev, 0444);
 
-
     /* Register control files */
     ctl.mode = 0444;
     ctlfs_create_node(devname, &ctl);

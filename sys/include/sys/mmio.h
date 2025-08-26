@@ -42,7 +42,6 @@
 
 #if defined(_KERNEL)
 
-
 /*
  * mmio_write<n> - Writes to MMIO address with specific size
  *

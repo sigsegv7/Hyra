@@ -1211,7 +1211,6 @@ static void gas_init_system_io(
     gas->access_size = 0;
 }
 
-
 struct register_description {
     uacpi_size offset, xoffset;
     uacpi_size length_offset;

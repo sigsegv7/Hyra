@@ -84,7 +84,6 @@ struct {								\
 	  ((tvar) = TAILQ_NEXT(var, field), 1);			\
 	  (var) = (tvar))
 
-
 #define TAILQ_FOREACH_REVERSE(var, head, headname, field)		\
 	for((var) = TAILQ_LAST(head, headname);				\
 	  (var) != TAILQ_END(head);					\

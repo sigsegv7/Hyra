@@ -42,7 +42,6 @@ void uacpi_deinitialize_namespace(void);
 uacpi_namespace_node *uacpi_namespace_node_alloc(uacpi_object_name name);
 void uacpi_namespace_node_unref(uacpi_namespace_node *node);
 
-
 uacpi_status uacpi_namespace_node_type_unlocked(
     const uacpi_namespace_node *node, uacpi_object_type *out_type
 );

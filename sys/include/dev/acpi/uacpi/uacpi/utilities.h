@@ -128,7 +128,6 @@ uacpi_status uacpi_eval_cls(uacpi_namespace_node*, uacpi_id_string **out_id);
  */
 uacpi_status uacpi_eval_uid(uacpi_namespace_node*, uacpi_id_string **out_uid);
 
-
 // uacpi_namespace_node_info->flags
 #define UACPI_NS_NODE_INFO_HAS_ADR (1 << 0)
 #define UACPI_NS_NODE_INFO_HAS_HID (1 << 1)

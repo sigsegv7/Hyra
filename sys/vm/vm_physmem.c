@@ -116,7 +116,6 @@ physmem_alloc_bitmap(void)
     }
 }
 
-
 /*
  * Init the physical memory bitmap.
  */

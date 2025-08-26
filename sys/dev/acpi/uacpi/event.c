@@ -1054,7 +1054,6 @@ static uacpi_status create_gpe_block(
          */
         reg->base_idx = base_idx + (i * EVENTS_PER_GPE_REGISTER);
 
-
         tmp_gas.address = address + i;
         ret = uacpi_map_gas_noalloc(&tmp_gas, &reg->status);
         if (uacpi_unlikely_error(ret))

@@ -32,7 +32,6 @@
 
 #include <sys/types.h>
 
-
 /* Danger: Do not change these !! */
 #define AT_NULL 0
 #define AT_ENTRY 1

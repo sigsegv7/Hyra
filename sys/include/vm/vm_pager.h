@@ -40,7 +40,6 @@ struct vm_pagerops;
 extern const struct vm_pagerops vm_vnops;
 extern const struct vm_pagerops vm_anonops;
 
-
 /*
  * Pager operations.
  *

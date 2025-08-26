@@ -162,7 +162,6 @@ md_ipi_send(struct cpu_info *ci, ipi_pend_t ipi)
     return 0;
 }
 
-
 /*
  * IPI allocation interface with
  * locking.

@@ -44,4 +44,3 @@ void chacha20_init(uint32_t state[16], const uint8_t key[32],
 
 void chacha20_block(uint32_t state[16], uint8_t out[64]);
 void chacha20_encrypt(uint32_t state[16], uint8_t *in, uint8_t *out, size_t len);
-

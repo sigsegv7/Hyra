@@ -39,5 +39,4 @@
 #define outw(...)   __nothing
 #define outl(...)   __nothing
 
-
 #endif  /* _MACHINE_PIO_H_ */

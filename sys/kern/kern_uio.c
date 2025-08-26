@@ -235,7 +235,6 @@ uio_copyin(const struct iovec *u_iov, struct iovec *k_iov, int iovcnt)
     return 0;
 }
 
-
 /*
  * Validate iovecs going out from kernel space (us)
  * before actually sending it out.

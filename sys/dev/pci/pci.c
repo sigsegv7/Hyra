@@ -331,7 +331,6 @@ pci_get_device(struct pci_lookup lookup, uint16_t lookup_type)
     return NULL;
 }
 
-
 void
 pci_add_device(struct pci_device *dev)
 {
@@ -339,7 +338,6 @@ pci_add_device(struct pci_device *dev)
     TAILQ_INSERT_TAIL(&device_list, dev, link);
     spinlock_release(&devlist_lock);
 }
-
 
 pcireg_t
 pci_readl(struct pci_device *dev, uint32_t offset)

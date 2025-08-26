@@ -33,4 +33,3 @@ md_cpu_init:
     ldr x0, =__vectab
     msr vbar_el1, x0
     ret
-

@@ -963,7 +963,6 @@ static uacpi_iteration_decision find_one_device(
     return ctx->cb(ctx->user, node, depth);
 }
 
-
 uacpi_status uacpi_find_devices_at(
     uacpi_namespace_node *parent, const uacpi_char *const *hids,
     uacpi_iteration_callback cb, void *user

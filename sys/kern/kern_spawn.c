@@ -112,7 +112,6 @@ waitpid(pid_t pid, int *wstatus, int options)
         sched_yield();
     }
 
-
     /* Give back the status */
     if (wstatus != NULL) {
         copyout(&child->exit_status, wstatus, sizeof(*wstatus));

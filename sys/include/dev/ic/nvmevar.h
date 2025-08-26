@@ -200,7 +200,6 @@ struct nvme_rw_cmd {
     uint16_t appmask;
 };
 
-
 struct nvme_cmd {
     union {
         struct nvme_identify_cmd identify;

@@ -602,7 +602,6 @@ static uacpi_size aml_size_for_serial_connection(
 #define ARG1(value) .f2.arg1 = (value)
 #define ARG2(value) .f3.arg2 = (value)
 
-
 static const struct uacpi_resource_convert_instruction convert_irq_to_native[] = {
     OP(PACKED_ARRAY_16, AML_F(irq, irq_mask), NATIVE_F(irq, irqs),
        ARG2(NATIVE_O(irq, num_irqs))),

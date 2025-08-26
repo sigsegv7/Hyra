@@ -85,7 +85,6 @@ rgb_invert(uint32_t rgb)
     return ret;
 }
 
-
 /*
  * Render a character onto the screen.
  *
