@@ -34,6 +34,7 @@
 #include <dev/acpi/tables.h>
 #include <machine/ioapic.h>
 #include <machine/lapic.h>
+#include <vm/vm.h>
 
 #define pr_trace(fmt, ...) kprintf("acpi: " fmt, ##__VA_ARGS__)
 
@@ -51,7 +52,7 @@ acpi_init_madt(void)
 
     cur = (uint8_t *)(madt + 1);
     end = (uint8_t *)madt + madt->hdr.length;
-    g_lapic_base = madt->lapic_addr;
+    g_lapic_base = PHYS_TO_VIRT(madt->lapic_addr);
 
     while (cur < end) {
         apichdr = (void *)cur;

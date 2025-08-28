@@ -45,6 +45,6 @@ void lapic_init(void);
 void lapic_eoi(void);
 void lapic_send_ipi(uint8_t id, uint8_t shorthand, uint8_t vector);
 
-extern uintptr_t g_lapic_base;
+extern void *g_lapic_base;
 
 #endif  /* !_MACHINE_LAPIC_H_ */

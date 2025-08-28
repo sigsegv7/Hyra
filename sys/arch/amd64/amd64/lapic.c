@@ -60,7 +60,7 @@
 
 static struct timer lapic_timer;
 static uint8_t lapic_timer_vec = 0;
-uintptr_t g_lapic_base = 0;
+void *g_lapic_base = 0;
 
 void lapic_tmr_isr(void);
 
@@ -104,7 +104,7 @@ lapic_readl(uint32_t reg)
     const struct cpu_info *ci = this_cpu();
 
     if (!ci->has_x2apic) {
-        addr = (void *)(g_lapic_base + reg);
+        addr = PTR_OFFSET(g_lapic_base, reg);
         return mmio_read32(addr);
     } else {
         reg >>= 4;
@@ -125,7 +125,7 @@ lapic_writel(uint32_t reg, uint64_t val)
     const struct cpu_info *ci = this_cpu();
 
     if (!ci->has_x2apic) {
-        addr = (void *)(g_lapic_base + reg);
+        addr = PTR_OFFSET(g_lapic_base, reg);
         mmio_write32(addr, val);
     } else {
         reg >>= 4;
