@@ -19,7 +19,7 @@ operating systems as it is written entirely from scratch. Hyra is *NOT* intended
 
 Getting Started:
 ----------------
-To build Hyra you'll need to bootstrap the project which is essentially just fetching dependencies for the project. This can be done by running the bootstrap script within the project root: `./bootstrap`.
+To build Hyra you'll need to bootstrap the project which is essentially just fetching dependencies for the project. This can be done by running the bootstrap script within the project root: `./tools/bootstrap`.
 
 Next, to configure for x86_64 just run configure:
 
