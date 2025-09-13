@@ -1,4 +1,32 @@
 .SILENT:
+#
+# Copyright (c) 2023-2025 Ian Marco Moffett and the Osmora Team.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of Hyra nor the names of its contributors may be used
+#    to endorse or promote products derived from this software without
+#    specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+
+.PHONY: all
 override PROMPT := printf "%s\t\t%s\n"
 
 ###############################
@@ -16,6 +44,14 @@ override QEMU_FLAGS = @QEMU_FLAGS@
 override KERNEL_DEFINES = $(KBUILD_ARGS) -DHYRA_VERSION="\"$(HYRA_VERSION)\""\
                           -DHYRA_BUILDDATE="\"@HYRA_BUILDDATE@\""\
                           -DHYRA_ARCH="\"@ARCH@\"" $(shell cat sys/arch/$(ARCH)/conf/GENERIC sys/conf/GENERIC | tools/kconf/kconf)
+
+########################
+# Userland
+########################
+override SBIN_MAKEDIRS = $(shell find usr.sbin/ -type d -name "*" | awk '!/usr.sbin\/$$/')
+override BIN_MAKEDIRS = $(shell find usr.bin/ -type d -name "*" | awk '!/usr.bin\/$$/')
+override USRDIR = $(shell pwd)/base/usr
+
 ######################
 # Toolchain
 ######################
@@ -38,37 +74,8 @@ else ifeq ($(TOOLCHAIN), gcc)
 	endif
 endif
 
-##########################
-# Architecture specifics
-##########################
-override ALL_ARCH_CFILES = find sys/ -name "*.c" |  grep "sys/arch/$(ARCH).*"
-override ALL_ARCH_ASM_FILES = find sys/ -name "*.S" | grep "sys/arch/$(ARCH).*"
-override QEMU = @QEMU@
-
-##########################
-# General kernel sources
-##########################
-override KERNEL_CFILES = $(shell find sys/ -name "*.c" | grep -v "sys/arch/*" | grep -v sys/kern/ksyms.c) $(shell $(ALL_ARCH_CFILES))
-override KERNEL_ASMFILES = $(shell find sys/ -name "*.S" | grep -v "sys/arch/*") $(shell $(ALL_ARCH_ASM_FILES))
-
-########################
-# Objects & header deps
-########################
-override KERNEL_OBJECTS = $(KERNEL_CFILES:.c=.o)
-override KERNEL_ASMOBJECTS = $(KERNEL_ASMFILES:.S=.S.o)
-override KERNEL_HEADER_DEPS = $(KERNEL_CFILES:.c=.d)
-
-########################
-# Userland
-########################
-override SBIN_MAKEDIRS = $(shell find usr.sbin/ -type d -name "*" | awk '!/usr.sbin\/$$/')
-override BIN_MAKEDIRS = $(shell find usr.bin/ -type d -name "*" | awk '!/usr.bin\/$$/')
-override USRDIR = $(shell pwd)/base/usr
-
-
 .PHONY: all
-all: stand/boot/ libs sbin bin base/boot/hyra.krq
-		rm -f sys/include/machine
+stand/boot: stand/boot/ libs sbin bin
 
 .PHONY: sbin
 sbin: $(SBIN_MAKEDIRS)
@@ -82,46 +89,12 @@ bin: $(BIN_MAKEDIRS)
 			ROOT=$(PROJECT_ROOT) OSVER=$(HYRA_VERSION) OSARCH=$(ARCH)\
 			CC="$(CC)"
 
+stand/boot/:
+	mkdir -p stand/boot/
+	cp stand/limine/$(BOOT_FW) stand/boot/
+
 .PHONY: libs
 libs:
 	$(MAKE) -C lib/ -I$(shell pwd)/builddeps \
 		USRDIR=$(USRDIR) ARCH=$(ARCH) ROOT=$(PROJECT_ROOT) \
 		CC="$(CC)"
-
-.PHONY: cross
-cross:
-	bash tools/cross.sh $(ARCH)
-
-.PHONY: run
-run:
-	$(QEMU) $(QEMU_FLAGS)
-
-.PHONY: clean
-clean:
-	rm -f $(KERNEL_ASMOBJECTS) $(KERNEL_OBJECTS) $(KERNEL_HEADER_DEPS)
-	rm -f sys/include/machine
-
-stand/boot/:
-	mkdir -p stand/boot/
-	cp stand/limine/$(BOOT_FW) stand/boot/
-
-base/boot/hyra.krq: $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS)
-	$(PROMPT) " LD " $(shell pwd)/base/boot/hyra.krq
-	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) -o base/boot/hyra.krq
-	tools/ksyms sys/kern/ksyms.c base/boot/hyra.krq
-	# === Generating symbols ===
-	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) sys/kern/ksyms.c -o sys/kern/ksyms.o
-	$(LD) $(KERNEL_LDFLAGS) $(KERNEL_OBJECTS) $(KERNEL_ASMOBJECTS) \
-		sys/kern/ksyms.o -o base/boot/hyra.krq
-
-sys/include/machine/:
-	cd sys/include/; ln -sf arch/$(ARCH) machine
-
--include $(KERNEL_HEADER_DEPS)
-%.o: %.c sys/include/machine/
-	$(PROMPT) " CC " $<
-	$(CC) -c $(KERNEL_CFLAGS) $(KERNEL_DEFINES) $< -o $@
-
-%.S.o: %.S
-	$(PROMPT) " AS " $<
-	$(CC) -c $< -o $@ -D__$(ARCH)__ -I sys/include/
